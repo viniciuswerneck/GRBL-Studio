@@ -82,7 +82,7 @@ LaserGRBL; a meta é paridade nos recursos essenciais + distribuição nativa Li
 | ADR-4 | Streaming | **Send-response (`ok`) agora; character-counting depois** | Fire-and-forget (atual) | Correção primeiro; otimização depois. |
 | ADR-5 | Estado entre processos | **Eventos IPC tipados (canal por tipo)** | `invoke` genérico | Contratos claros, menos bugs. |
 | ADR-6 | Persistência | **`electron-store`** | localStorage | Acessível no main (porta/baud) e seguro. |
-| ADR-7 | Processamento de imagem | **Canvas/`sharp` no main + worker** | Fazer no renderer | Evita travar a UI; reuso para geração de G-code. |
+| ADR-7 | Processamento de imagem | **`<canvas>` no renderer + Web Worker (`src/renderer/gcode.worker.ts`) sobre funções puras em `src/shared/image/*`** | `sharp` no main; rodar na thread principal | Decodificação nativa sem módulo nativo (evita rebuild do Electron), UI/main livres durante a conversão e pipeline testável no Vitest. *(refinada em 16/10/2026)* |
 | ADR-8 | Preview 2D | **`<canvas>` 2D** (WebGL só se necessário) | SVG, Three.js | Suficiente e leve para visualização 2D de caminhos. |
 | ADR-9 | Distribuição | **`electron-builder` → AppImage + deb; Flatpak depois** | Só tarball | Instalação nativa esperada no Linux. |
 | ADR-10 | Testes | **Vitest (unit) + Playwright (E2E) + GRBL simulado via socat** | Manual | Confiabilidade é o diferencial do produto. |
@@ -278,21 +278,32 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Objetivo:** entregar o diferencial de "imagem → gravação" do LaserGRBL.
 
 **Entregáveis**
-- Importação BMP/JPG/PNG/GIF com preview.
+- Importação de imagem (PNG/JPG/BMP/GIF/WebP/AVIF) por diálogo nativo já
+  filtrado, com preview.
 - Ajustes de imagem (brilho, contraste, white clip, inversão, B&W).
 - Conversão line-to-line (direção + linhas/mm) e dithering (Floyd–Steinberg).
 - Parâmetros de gravação (velocidade, S-min/S-max, M3/M4).
 - Geração de G-code otimizada (potência dinâmica no modo M4).
 
 **Tarefas**
-- [ ] RF-IMG-1/2: pipeline de imagem (ADR-7, em worker).
-- [ ] RF-IMG-3: dimensionamento/offset/posicionamento.
-- [ ] RF-IMG-4: gerador line-to-line.
-- [ ] RF-IMG-5: dithering.
-- [ ] RF-IMG-7: parâmetros de laser e modos M3/M4.
-- [ ] RF-IMG-9: compensação do tamanho do ponto (ex.: 0,08 mm).
-- [ ] RF-IMG-6: vetorização (Could) — avaliar `potrace`.
+- [x] RF-IMG-1/2: pipeline de imagem (ADR-7, em worker).
+- [x] RF-IMG-3: dimensionamento/offset/posicionamento.
+- [x] RF-IMG-4: gerador line-to-line.
+- [x] RF-IMG-5: dithering.
+- [x] RF-IMG-7: parâmetros de laser e modos M3/M4.
+- [x] RF-IMG-9: compensação do tamanho do ponto (ex.: 0,08 mm).
+- [x] Diálogos nativos de abrir/salvar (`file:open-image`, `file:open-gcode`,
+  `file:save-gcode`) com filtros em `shared/fileFilters.ts`.
+- [x] Clareza do fluxo na UI: passos explícitos, `#portHint`/`#runHint` e
+  `title` explicando cada ação desabilitada.
+- [x] RF-IMG-6: vetorização (Could) — traçador de contorno próprio em
+  `shared/image/contour.ts` (arestas + resolução de sela + RDP), sem
+  dependência externa (`potrace` dispensado).
 - [ ] RF-IMG-8: perfis de material (Could) — a partir das tabelas do manual COMGO.
+
+> **Nota de execução (16/10/2026):** esta fase foi iniciada antes das Fases 3/4
+> porque é a única parte que avança **sem hardware ligado** (preparação de
+> arquivo é 100 % offline). O gate da Fase 1 (bugs B1–B6) já está cumprido.
 
 **Critérios de aceite**
 - Importar uma foto, ajustar tamanho/parâmetros, gerar G-code e gravar em madeira

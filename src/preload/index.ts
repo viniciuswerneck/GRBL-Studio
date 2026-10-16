@@ -14,6 +14,8 @@ import type {
   JogCommand,
   JobInfo,
   JobProgress,
+  OpenedImageFile,
+  OpenedTextFile,
   OverrideAction,
   PortInfo,
 } from '../shared/types';
@@ -50,6 +52,10 @@ const api = {
   jog: (cmd: JogCommand): Promise<boolean> => ipcRenderer.invoke(CHANNELS.jog, cmd),
   overrideFeed: (action: OverrideAction): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.overrideFeed, action),
+  saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
+    ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
+  openImage: (): Promise<OpenedImageFile | null> => ipcRenderer.invoke(CHANNELS.fileOpenImage),
+  openGcode: (): Promise<OpenedTextFile | null> => ipcRenderer.invoke(CHANNELS.fileOpenGcode),
 
   // Eventos (main -> renderer)
   onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe => on(CHANNELS.evConsole, cb),

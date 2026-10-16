@@ -21,6 +21,9 @@ export const CHANNELS = {
   jog: 'grbl:jog',
   overrideFeed: 'grbl:override:feed',
   overrideReset: 'grbl:override:reset',
+  fileSave: 'file:save-gcode',
+  fileOpenImage: 'file:open-image',
+  fileOpenGcode: 'file:open-gcode',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',

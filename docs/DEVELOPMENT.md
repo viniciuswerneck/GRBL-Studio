@@ -18,17 +18,21 @@ npm install
 ## Compilar
 
 ```bash
-npm run build        # tsc + empacota o preload com esbuild
+npm run build        # tsc + empacota preload e worker de imagem (esbuild)
 npm run typecheck    # apenas verificação de tipos (tsc --noEmit)
 npm run dev          # tsc em watch (main/preload/shared)
 ```
 
-O `build` faz duas etapas:
+O `build` faz três etapas:
 
-1. `tsc` compila `src/**` para `dist/**` (main, preload, shared).
+1. `tsc` compila `src/**` para `dist/**` (main, preload, shared, renderer).
 2. `esbuild` **empacota o preload** em `dist/preload/index.js`. Isso é
    necessário porque o preload roda com `sandbox: true` e não pode usar
    `require` relativo nem módulos Node.
+3. `esbuild` **empacota o worker de imagem** em `public/gcode.worker.js`
+   (formato iife, plataforma browser). É artefato de build — está no
+   `.gitignore`; gere com `npm run build:worker` antes de usar a conversão
+   imagem → G-code.
 
 ## Rodar
 
@@ -53,6 +57,11 @@ Cobertura atual:
   overrides, watchdog (com transporte falso).
 - `tests/serial-integration.test.ts` — integração real de `SerialTransport` com
   um par de PTYs criado por `socat` (ignorado automaticamente se não houver socat).
+- `tests/image-adjust.test.ts` — cinza/alfa, ajustes, Floyd–Steinberg.
+- `tests/image-gcode.test.ts` — geometria, reamostragem e invariantes do
+  emissor (área de trabalho, limites de `S`, `G0` sem `F`, precisão).
+- `tests/file-filters.test.ts` — filtros dos diálogos nativos, detecção de
+  extensão (maiúsculas/minúsculas) e MIME da imagem.
 
 ### Smoke test (headless / CI)
 
@@ -62,6 +71,14 @@ Verifica que o app sobe e que o renderer carrega sem erros:
 GRBL_SMOKE_TEST=1 npx electron --no-sandbox .          # com display
 GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .   # headless
 # Saída esperada: SMOKE_OK
+```
+
+`SMOKE_EVAL` permite avaliar uma expressão JS no renderer após o load e imprimir
+`SMOKE_EVAL_RESULT` — útil para probes de UI (ex.: fluxo imagem → G-code) sem
+maquinário de E2E:
+
+```bash
+SMOKE_EVAL="$(cat probe.js)" GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .
 ```
 
 ## Emulador GRBL (testes manuais sem hardware)
@@ -87,13 +104,21 @@ src/
 │   └── services/
 │       ├── SerialTransport.ts  # I/O serial (serialport)
 │       └── GrblClient.ts       # protocolo: fila send-response, status, overrides
+├── renderer/
+│   └── gcode.worker.ts       # worker: imagem -> G-code (empacotado p/ public/)
 ├── shared/
 │   ├── channels.ts           # nomes de canais IPC (fonte única)
 │   ├── protocol.ts           # parser puro GRBL (testável)
-│   └── types.ts              # tipos compartilhados
+│   ├── types.ts              # tipos compartilhados
+│   └── image/                # pipeline puro de preparação de arquivo (testado)
+│       ├── adjust.ts         #   cinza + brilho/contraste/clip/inversão/B&W
+│       ├── dither.ts         #   Floyd–Steinberg e limiar
+│       ├── raster.ts         #   geometria da varredura + reamostragem
+│       ├── gcode.ts          #   emissão M3/M4 com invariantes de segurança
+│       └── types.ts          #   opções e estatísticas
 └── preload/
     └── index.ts              # contextBridge -> window.grbl (empacotado)
-public/                       # renderer (html/css/js) + tokens.css
+public/                       # renderer (html/css/js) + tokens.css (+ gcode.worker.js)
 tests/                        # Vitest (unit + integração)
 ```
 

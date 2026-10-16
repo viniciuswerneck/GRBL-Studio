@@ -191,15 +191,15 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-IMG-1 | Abrir BMP/JPG/PNG/GIF e exibir preview da imagem. | Must | ⬜ |
-| RF-IMG-2 | Ajustes de imagem: brilho, contraste, *white clip*, inversão, B&W. | Should | ⬜ |
-| RF-IMG-3 | Redimensionar/reposicionar: largura, altura, offset X/Y, manter proporção. | Must | ⬜ |
-| RF-IMG-4 | Conversão **line-to-line** (tons de cinza) com direção e resolução (linhas/mm). | Must | ⬜ |
-| RF-IMG-5 | Conversão **1-bit dithering** (ex.: Floyd–Steinberg). | Should | ⬜ |
-| RF-IMG-6 | **Vetorização** (raster → vetor) para corte/line-art. | Could | ⬜ |
-| RF-IMG-7 | Parâmetros de gravação: velocidade (mm/min), S-min/S-max, modo **M3/M4**. | Must | ⬜ |
+| RF-IMG-1 | Abrir imagem (PNG/JPG/BMP/GIF/WebP/AVIF) via diálogo nativo já filtrado, e exibir preview. | Must | ✅ |
+| RF-IMG-2 | Ajustes de imagem: brilho, contraste, *white clip*, inversão, B&W. | Should | ✅ |
+| RF-IMG-3 | Redimensionar/reposicionar: largura, altura, offset X/Y, manter proporção. | Must | ✅ |
+| RF-IMG-4 | Conversão **line-to-line** (tons de cinza) com direção e resolução (linhas/mm). | Must | ✅ |
+| RF-IMG-5 | Conversão **1-bit dithering** (ex.: Floyd–Steinberg). | Should | ✅ |
+| RF-IMG-6 | **Vetorização** (raster → vetor) para corte/line-art: contorno por limiar + simplificação (RDP). | Could | ✅ |
+| RF-IMG-7 | Parâmetros de gravação: velocidade (mm/min), S-min/S-max, modo **M3/M4**. | Must | ✅ |
 | RF-IMG-8 | Perfis de material (potência/velocidade/passes recomendados). | Could | ⬜ |
-| RF-IMG-9 | Compensar tamanho do ponto do laser (ex.: 0,08 mm da COMGO Z1). | Should | ⬜ |
+| RF-IMG-9 | Compensar tamanho do ponto do laser (ex.: 0,08 mm da COMGO Z1). | Should | ✅ |
 
 ### M10 — Macros e botões customizados
 
@@ -296,7 +296,7 @@ Campos: `MPos` (posição máquina), `WPos` (posição de trabalho), `FS` (feed/
 | Overrides de feed/potência | ✅ | Paridade |
 | Jogging | ✅ | Paridade |
 | Custom buttons | ✅ | Paridade |
-| Raster import (grayscale, line-to-line, dithering, vectorize, target options) | ✅ | Paridade (vetorização = Could) |
+| Raster import (grayscale, line-to-line, dithering, vectorize, target options) | ✅ | Paridade |
 | Configuração (`$$`) | ✅ | Paridade |
 | Machine status e alarmes | ✅ | Paridade |
 | Distribuição | Windows (Mono no Linux) | Nativa: AppImage/deb/Flatpak |

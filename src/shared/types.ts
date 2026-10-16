@@ -138,3 +138,22 @@ export interface ErrorPayload {
   message: string;
   code?: number;
 }
+
+/** Imagem escolhida no diálogo nativo (main -> renderer). */
+export interface OpenedImageFile {
+  /** Caminho absoluto escolhido pelo usuário (informativo). */
+  path: string;
+  /** Nome do arquivo, sem diretório. */
+  name: string;
+  /** MIME inferido pela extensão. */
+  mime: string;
+  /** Bytes originais do arquivo. */
+  data: Uint8Array;
+}
+
+/** Arquivo de texto (G-code) escolhido no diálogo nativo. */
+export interface OpenedTextFile {
+  path: string;
+  name: string;
+  text: string;
+}

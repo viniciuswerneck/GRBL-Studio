@@ -1,6 +1,7 @@
 # Dependências e artefatos de build
 node_modules/
 dist/
+public/gcode.worker.js
 
 # Logs e temporários
 *.log

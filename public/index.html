@@ -2,7 +2,10 @@
 <html lang="pt-br" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob: data:; worker-src 'self'"
+    />
     <title>GRBL Studio</title>
     <link rel="stylesheet" href="./tokens.css" />
     <link rel="stylesheet" href="./style.css" />
@@ -32,6 +35,9 @@
           <div class="conn-state">
             <span id="connDot" class="dot"></span>
             <span id="connText">Desconectado</span>
+          </div>
+          <div id="portHint" class="hint hidden">
+            Nenhuma placa USB detectada. Conecte a gravadora e clique em Atualizar.
           </div>
         </section>
 
@@ -70,8 +76,92 @@
         </section>
 
         <section class="card">
+          <h3>Imagem → G-code</h3>
+          <div class="hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
+          <button id="imageOpen">Escolher imagem…</button>
+          <div id="imageInfo" class="file-name">Nenhuma imagem carregada</div>
+
+          <details class="group" open>
+            <summary>Dimensionar (mm)</summary>
+            <div class="grid2">
+              <label class="field">Largura <input type="number" id="imgWidth" value="50" min="0.1" step="0.1" /></label>
+              <label class="field">Altura <input type="number" id="imgHeight" value="50" min="0.1" step="0.1" /></label>
+              <label class="field">Offset X <input type="number" id="imgOffsetX" value="0" step="0.1" /></label>
+              <label class="field">Offset Y <input type="number" id="imgOffsetY" value="0" step="0.1" /></label>
+            </div>
+            <label class="check"
+              ><input type="checkbox" id="imgKeepAspect" checked /> Manter proporção</label
+            >
+            <div id="sizeHint" class="hint">Proporção travada: a altura acompanha a largura.</div>
+          </details>
+
+          <details class="group">
+            <summary>Conversão</summary>
+            <div class="grid2">
+              <label class="field"
+                >Algoritmo
+                <select id="imgAlgorithm">
+                  <option value="line">Line-to-line</option>
+                  <option value="dither">Dithering (Floyd–Steinberg)</option>
+                  <option value="vector">Vetorizar (contorno / recorte)</option>
+                </select>
+              </label>
+              <label class="field raster-only"
+                >Linhas/mm <input type="number" id="imgLines" value="8" min="0.5" max="60" step="0.5"
+              /></label>
+              <label class="field raster-only"
+                >Direção
+                <select id="imgDirection">
+                  <option value="h">Horizontal</option>
+                  <option value="v">Vertical</option>
+                </select>
+              </label>
+              <label class="field raster-only"
+                >Ponto (mm) <input type="number" id="imgDot" value="0.08" min="0" step="0.01"
+              /></label>
+              <label class="field vector-only"
+                >Suavização (px) <input type="number" id="imgSimplify" value="0.5" min="0" step="0.1"
+              /></label>
+            </div>
+            <div id="algoHint" class="hint vector-only">
+              Vetorizar gera só o contorno (recorte): o Limiar B&amp;W define o que é recortado, e o desenho vira linhas fechadas a potência máxima (S-max).
+            </div>
+            <label class="field">Brilho <input type="range" id="imgBrightness" min="-1" max="1" step="0.05" value="0" /></label>
+            <label class="field">Contraste <input type="range" id="imgContrast" min="-1" max="1" step="0.05" value="0" /></label>
+            <label class="field">White clip <input type="range" id="imgWhiteClip" min="0" max="1" step="0.05" value="0" /></label>
+            <label class="field">Limiar B&amp;W <input type="range" id="imgThreshold" min="0" max="1" step="0.05" value="0.5" /></label>
+            <label class="check"><input type="checkbox" id="imgInvert" /> Inverter preto/branco</label>
+            <label class="check"><input type="checkbox" id="imgBW" /> Preto e branco (limiar)</label>
+          </details>
+
+          <details class="group" open>
+            <summary>Gravação</summary>
+            <div class="grid2">
+              <label class="field"
+                >Velocidade <input type="number" id="imgSpeed" value="1000" min="1" step="50"
+              /></label>
+              <label class="field"
+                >Modo
+                <select id="imgMode">
+                  <option value="M4">M4 (dinâmico)</option>
+                  <option value="M3">M3 (constante)</option>
+                </select>
+              </label>
+              <label class="field">S-min <input type="number" id="imgSmin" value="0" min="0" max="32767" step="1" /></label>
+              <label class="field">S-max <input type="number" id="imgSmax" value="1000" min="0" max="32767" step="1" /></label>
+            </div>
+          </details>
+
+          <button id="imgGenerate" class="primary" disabled title="Escolha uma imagem primeiro">
+            Gerar G-code
+          </button>
+          <button id="imgSave" disabled title="Gere o G-code primeiro">Salvar .gcode</button>
+          <div id="imgStats" class="file-name"></div>
+        </section>
+
+        <section class="card">
           <h3>Execução</h3>
-          <input type="file" id="fileInput" accept=".gcode,.nc,.tap,.txt" />
+          <button id="fileOpen">Abrir G-code…</button>
           <div id="fileInfo" class="file-name">Nenhum arquivo carregado</div>
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
@@ -79,6 +169,7 @@
             <button id="pauseBtn" disabled>⏸ Pausar</button>
           </div>
           <button id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
+          <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
         </section>
       </aside>
 
@@ -93,6 +184,13 @@
           <div class="meta">Feed <span id="metaFeed">—</span> · S <span id="metaS">—</span></div>
           <div class="spacer"></div>
           <div class="meta" id="progressText">0 / 0</div>
+        </div>
+
+        <div class="preview">
+          <canvas id="previewCanvas"></canvas>
+          <div id="previewHint" class="preview-hint">
+            Carregue uma imagem para preparar o arquivo de gravação
+          </div>
         </div>
 
         <div class="console">

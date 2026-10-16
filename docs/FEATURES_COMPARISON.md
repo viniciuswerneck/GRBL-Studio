@@ -24,10 +24,10 @@
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
 | G-Code (.gcode/.nc) | Sim | Sim | Implementado |
-| Imagem (JPG/BMP/PNG) | Sim | Não | Pendente |
+| Imagem (JPG/BMP/PNG) | Sim | Sim (PNG/JPG/BMP/GIF) | Implementado |
 | SVG | Experimental | Não | Pendente |
-| Rasterização (Line-to-line/Dithering) | Sim | Não | Pendente |
-| Vetorização | Sim | Não | Pendente |
+| Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | Implementado |
+| Vetorização | Sim | Sim (contorno/recorte por limiar) | Implementado |
 
 ## Configuração
 | Feature | LaserGRBL | GRBL Studio | Status |

@@ -62,8 +62,24 @@ function installSmokeTest(win: BrowserWindow): void {
   win.webContents.once('did-fail-load', (_e, code, desc) => fail(`did-fail-load ${code} ${desc}`));
   win.webContents.once('render-process-gone', (_e, d) => fail(`render-process-gone ${d.reason}`));
   win.webContents.once('did-finish-load', () => {
-    console.log('SMOKE_OK');
-    setTimeout(() => app.exit(0), 500);
+    const done = (): void => {
+      console.log('SMOKE_OK');
+      setTimeout(() => app.exit(0), 500);
+    };
+
+    // SMOKE_EVAL: expressão JS avaliada no renderer (probes de verificação).
+    const expr = process.env.SMOKE_EVAL;
+    if (!expr) {
+      done();
+      return;
+    }
+    win.webContents
+      .executeJavaScript(expr, true)
+      .then((result) => {
+        console.log('SMOKE_EVAL_RESULT:', JSON.stringify(result));
+        done();
+      })
+      .catch((err: unknown) => fail(`SMOKE_EVAL: ${String(err)}`));
   });
   setTimeout(() => fail('timeout carregando o renderer'), 15000);
 }

@@ -5,8 +5,9 @@
   "author": "vinicius",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload",
+    "build": "tsc && npm run build:preload && npm run build:worker",
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js",
+    "build:worker": "esbuild src/renderer/gcode.worker.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=public/gcode.worker.js",
     "dev": "tsc -w",
     "start": "electron .",
     "start:dev": "npm run build && electron .",

@@ -24,11 +24,11 @@ isolados por `contextIsolation`:
 ┌───────────────┴────────────────────────────▼──────────────────┐
 │ MAIN (Node/Electron)                                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐  │
-│  │ GrblClient   │  │ SettingsStore│  │ image/ (worker)    │  │
-│  │ (protocolo)  │  │                                 │  │  │
-│  └──────┬───────┘  └──────────────┘  │ grayscale/dither   │  │
-│         │                            │ vectorize/gcode    │  │
-│  ┌──────▼───────┐                    └────────────────────┘  │
+│  │ GrblClient   │  │ SettingsStore│  │ file:save/open     │  │
+│  │ (protocolo)  │  │              │  │ (dialog + fs)      │  │
+│  └──────┬───────┘  └──────────────┘  └────────────────────┘  │
+│         │                                                     │
+│  ┌──────▼───────┐                                             │
 │  │ SerialTransport │ ── USB/Serial ──▶ Gravadora (firmware GRBL) │
 │  └──────────────┘                                             │
 └───────────────────────────────────────────────────────────────┘
@@ -36,7 +36,9 @@ isolados por `contextIsolation`:
 
 **Princípios**
 
-1. **UI não bloqueia**: envio, parsing e processamento de imagem ficam no main.
+1. **UI não bloqueia**: envio e parsing ficam no main; a conversão
+   imagem → G-code roda em um **Web Worker** no renderer
+   (`src/renderer/gcode.worker.ts`) sobre funções puras em `src/shared/image/*`.
 2. **Protocolo isolado da UI**: `GrblClient` e o parser são puros e testáveis.
 3. **IPC tipado**: canais explícitos, payloads validados, nada de `invoke` genérico.
 4. **Segurança**: `nodeIntegration: false`, `contextIsolation: true`, superfície IPC mínima.
@@ -53,6 +55,16 @@ isolados por `contextIsolation`:
   (vanilla JS, tema escuro).
 - Responsável por: interface, entrada do usuário, DRO/estado, console,
   preview 2D (canvas), formulários de configuração e importação.
+- **Abertura de arquivos** é feita por diálogos nativos no main
+  (`file:open-image` / `file:open-gcode`), com filtros tipados em
+  `shared/fileFilters.ts` — o `<input type=file>` foi removido para garantir
+  filtro consistente e nenhum caminho vindo do renderer.
+- Cada ação desabilitada explica o motivo na UI (`#runHint`, `#portHint`,
+  `title` + texto do passo em "Imagem → G-code"), já que o fluxo tem 3 etapas
+  (escolher imagem → gerar G-code → conectar e enviar).
+- **Worker de imagem** (`src/renderer/gcode.worker.ts` → `public/gcode.worker.js`
+  via esbuild): executa `shared/image/*` fora da thread principal (ADR-7) e
+  devolve o G-code mais a grade processada para o preview.
 
 ### Preload (ponte)
 
@@ -72,7 +84,22 @@ isolados por `contextIsolation`:
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |
 | `services/SettingsStore` | Persistência (`electron-store`): porta, baud, tema, unidades. | ⬜ Fase 3 |
-| `services/image/*` | Imagem → grayscale/dithering/vetorização → G-code. | ⬜ Fase 5 |
+| `ipc.ts` (`file:save-gcode`) | Diálogo nativo e escrita do `.gcode` gerado pela UI. | ✅ |
+| `ipc.ts` (`file:open-image` / `file:open-gcode`) | Diálogos nativos de abertura; devolvem nome + bytes/texto (nunca deixam o renderer informar caminho). | ✅ |
+| `shared/fileFilters.ts` | Filtros dos diálogos e validação de extensões (funções puras). | ✅ |
+
+### Imagem → G-code (Fase 5)
+
+| Módulo | Responsabilidade | Status |
+| :--- | :--- | :--- |
+| `shared/image/adjust.ts` | Cinza (alfa composto sobre branco), brilho, contraste, white clip, inversão, B&W. | ✅ |
+| `shared/image/dither.ts` | Floyd–Steinberg e limiar (1-bit). | ✅ |
+| `shared/image/raster.ts` | Geometria da varredura (linhas/mm, direção, ponto) + reamostragem bilinear. | ✅ |
+| `shared/image/gcode.ts` | Emissão M3/M4, `S` limitado a `[sMin, sMax]`, gaps com `G0`, invariantes de área. | ✅ |
+| `shared/image/format.ts` | Utilitários dos emissores: `formatCoord` (3 decimais), `MAX_S` e invariante da área de trabalho. | ✅ |
+| `shared/image/contour.ts` | Traçado de contornos (arestas + resolução de sela) e simplificação RDP (RF-IMG-6). | ✅ |
+| `shared/image/vector.ts` | Emissão de G-code de recorte (contorno fechado a `sMax`) + grade de preview binária (RF-IMG-6). | ✅ |
+| `renderer/gcode.worker.ts` | Executa o pipeline fora da thread principal (ADR-7). | ✅ |
 
 ---
 
@@ -138,7 +165,7 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | Comandos de tempo real | ✅ Bytes únicos corretos | (concluído) |
 | Status/alarmes | ✅ Polling `?` + parser de alarmes | (concluído) |
 | Persistência | ⬜ Nenhuma | `electron-store` (Fase 3) |
-| Imagem → G-code | ⬜ Não existe | Pipeline em worker (Fase 5) |
+| Imagem → G-code | ✅ Web Worker + `shared/image/*` | Perfis de material (RF-IMG-8) |
 | Config `$$` | ⬜ Não existe | Viewer/editor (Fase 3) |
 | Preview 2D | ⬜ Não existe | Canvas (Fase 4) |
 
