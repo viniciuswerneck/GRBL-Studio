@@ -80,12 +80,8 @@ function emitVector(
 ): GcodeResult {
   const g = opts.geometry;
   const e = opts.engrave;
+  const passes = opts.passes ?? 1;
   const out: string[] = ['G21', 'G90', 'G94', 'M5'];
-
-  let lastF: number | null = null;
-  let lastS = 0; // modal inicial do GRBL é S0
-  let armed = false;
-  let cursor: Point = { x: g.offsetX, y: g.offsetY };
 
   let g0Mm = 0;
   let g1Mm = 0;
@@ -110,48 +106,56 @@ function emitVector(
     y: g.offsetY + (p.y / imgHeight) * g.heightMm,
   });
 
-  /** Deslocamento com laser desligado. */
-  const travel = (to: Point): void => {
-    g0Mm += Math.hypot(to.x - cursor.x, to.y - cursor.y);
-    if (armed) out.push('M5');
-    out.push(`G0 X${f(to.x)} Y${f(to.y)}`);
-    cursor = { ...to };
-    track(to.x, to.y);
+  // Uma passada por iteração (RF-GC-6). O corte repete os mesmos contornos.
+  for (let pass = 0; pass < passes; pass++) {
+    let lastF: number | null = null;
+    let lastS = 0; // modal inicial do GRBL é S0
+    let armed = false;
+    let cursor: Point = { x: g.offsetX, y: g.offsetY };
 
-    // Rearme: M4 é dinâmico (seguro parado); M3 precisa nascer com S0 para
-    // não acender o laser antes do movimento.
-    if (e.mode === 'M4') {
-      out.push('M4');
-    } else {
-      out.push('M3 S0');
-      lastS = 0;
+    /** Deslocamento com laser desligado. */
+    const travel = (to: Point): void => {
+      g0Mm += Math.hypot(to.x - cursor.x, to.y - cursor.y);
+      if (armed) out.push('M5');
+      out.push(`G0 X${f(to.x)} Y${f(to.y)}`);
+      cursor = { ...to };
+      track(to.x, to.y);
+
+      // Rearme: M4 é dinâmico (seguro parado); M3 precisa nascer com S0 para
+      // não acender o laser antes do movimento.
+      if (e.mode === 'M4') {
+        out.push('M4');
+      } else {
+        out.push('M3 S0');
+        lastS = 0;
+      }
+      armed = true;
+    };
+
+    /** Corte: mesmo feed e potência (s-max) do início ao fim do contorno. */
+    const burn = (to: Point): void => {
+      g1Mm += Math.hypot(to.x - cursor.x, to.y - cursor.y);
+      out.push(
+        `G1 X${f(to.x)} Y${f(to.y)}${e.sMax === lastS ? '' : ` S${e.sMax}`}${
+          e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
+        }`,
+      );
+      lastS = e.sMax;
+      lastF = e.speedMmMin;
+      segments++;
+      cursor = { ...to };
+      track(to.x, to.y);
+    };
+
+    for (const contour of contours) {
+      const points = contour.map(toMm);
+      travel(points[0]!);
+      for (let i = 1; i < points.length; i++) burn(points[i]!);
+      burn(points[0]!); // fecha o contorno (sem levantar o laser)
     }
-    armed = true;
-  };
 
-  /** Corte: mesmo feed e potência (s-max) do início ao fim do contorno. */
-  const burn = (to: Point): void => {
-    g1Mm += Math.hypot(to.x - cursor.x, to.y - cursor.y);
-    out.push(
-      `G1 X${f(to.x)} Y${f(to.y)}${e.sMax === lastS ? '' : ` S${e.sMax}`}${
-        e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
-      }`,
-    );
-    lastS = e.sMax;
-    lastF = e.speedMmMin;
-    segments++;
-    cursor = { ...to };
-    track(to.x, to.y);
-  };
-
-  for (const contour of contours) {
-    const points = contour.map(toMm);
-    travel(points[0]!);
-    for (let i = 1; i < points.length; i++) burn(points[i]!);
-    burn(points[0]!); // fecha o contorno (sem levantar o laser)
+    out.push('M5');
   }
-
-  out.push('M5');
 
   // Sem contorno (imagem branca): área alcançada é só o ponto inicial.
   if (!Number.isFinite(bounds.xMin)) {

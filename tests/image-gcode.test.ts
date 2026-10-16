@@ -443,3 +443,78 @@ describe('imageToGcode', () => {
     expect(Array.from(img)).toEqual(Array.from(before));
   });
 });
+
+describe('passadas (RF-GC-6)', () => {
+  it('repete a queima N vezes mantendo o laser desligado no retorno', () => {
+    const single = imageToGcode(solid(10, 10, 0, 0, 0), 10, 10, options());
+    const triple = imageToGcode(
+      solid(10, 10, 0, 0, 0),
+      10,
+      10,
+      options({ passes: 3 }),
+    );
+
+    // Queima e segmentos crescem ~3x (mesma geometria, mesmo grid).
+    expect(triple.stats.burnedMm).toBeCloseTo(single.stats.burnedMm * 3, 6);
+    expect(triple.stats.segments).toBe(single.stats.segments * 3);
+
+    // O cabeçalho desliga o laser e a última linha também (fim da última passada).
+    expect(lines(triple.gcode)[3]).toBe('M5'); // cabeçalho
+    expect(lines(triple.gcode).at(-1)).toBe('M5'); // última passada
+    // Cada passada acrescenta seus próprios M5 (rearmes + fechamento).
+    expect(
+      lines(triple.gcode).filter((l) => l === 'M5').length,
+    ).toBeGreaterThan(lines(single.gcode).filter((l) => l === 'M5').length);
+
+    // Invariante: todo G0 é precedido por M5 (inclusive o retorno entre passadas).
+    const ls = lines(triple.gcode);
+    for (let i = 1; i < ls.length; i++) {
+      if (ls[i]!.startsWith('G0')) expect(ls[i - 1]).toBe('M5');
+    }
+
+    // O retorno entre passadas entra no tempo estimado.
+    expect(triple.stats.travelMm).toBeGreaterThan(single.stats.travelMm);
+    expect(triple.stats.estimatedSec).toBeGreaterThan(
+      single.stats.estimatedSec,
+    );
+  });
+
+  it('passes=1 é idêntico ao comportamento anterior (sem regressão)', () => {
+    const implicit = imageToGcode(gradient(12, 12), 12, 12, options());
+    const explicit = imageToGcode(
+      gradient(12, 12),
+      12,
+      12,
+      options({ passes: 1 }),
+    );
+    expect(explicit.gcode).toBe(implicit.gcode);
+    expect(explicit.stats).toEqual(implicit.stats);
+  });
+
+  it('funciona no modo vetor', () => {
+    const geo = { ...options().geometry, offsetX: 1, offsetY: 1 };
+    const single = imageToGcode(
+      solid(16, 16, 0, 0, 0),
+      16,
+      16,
+      options({ algorithm: 'vector', geometry: geo }),
+    );
+    const double = imageToGcode(
+      solid(16, 16, 0, 0, 0),
+      16,
+      16,
+      options({ algorithm: 'vector', geometry: geo, passes: 2 }),
+    );
+    expect(single.stats.contours).toBeGreaterThan(0);
+    expect(double.stats.burnedMm).toBeCloseTo(single.stats.burnedMm * 2, 6);
+    expect(lines(double.gcode).filter((l) => l === 'M5').length).toBe(1 + 2);
+  });
+
+  it('valida o número de passadas', () => {
+    expect(() => validateOptions(options({ passes: 0 }))).toThrow(/passadas/);
+    expect(() => validateOptions(options({ passes: -1 }))).toThrow(/passadas/);
+    expect(() => validateOptions(options({ passes: 1.5 }))).toThrow(/passadas/);
+    expect(() => validateOptions(options({ passes: 100 }))).toThrow(/passadas/);
+    expect(() => validateOptions(options({ passes: 99 }))).not.toThrow();
+  });
+});

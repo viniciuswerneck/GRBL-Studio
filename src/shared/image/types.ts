@@ -80,6 +80,12 @@ export interface ImageToGcodeOptions {
    * com tolerância em pixels da imagem. Padrão 0.5. Ignorado nos demais modos.
    */
   simplifyPx?: number;
+  /**
+   * Número de passadas (RF-GC-6). Padrão 1. Cada passada repete todo o
+   * caminho de queima; entre passadas o laser é desligado e a cabeça volta
+   * ao início. Vale para os três algoritmos (`line`, `dither`, `vector`).
+   */
+  passes?: number;
 }
 
 export interface GcodeStats {

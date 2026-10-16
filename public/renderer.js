@@ -61,6 +61,7 @@ const el = {
   imgInvert: $('imgInvert'),
   imgBW: $('imgBW'),
   imgSpeed: $('imgSpeed'),
+  imgPasses: $('imgPasses'),
   imgMode: $('imgMode'),
   imgSmin: $('imgSmin'),
   imgSmax: $('imgSmax'),
@@ -654,6 +655,7 @@ function readImageOptions() {
       mode: el.imgMode.value,
     },
     algorithm: el.imgAlgorithm.value,
+    passes: Number(el.imgPasses.value),
     // Só existe no modo vetor: assim o campo vazio nunca invalida os modos raster.
     ...(el.imgAlgorithm.value === 'vector'
       ? { simplifyPx: Number(el.imgSimplify.value) }

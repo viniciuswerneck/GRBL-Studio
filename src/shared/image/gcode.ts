@@ -59,6 +59,12 @@ export function validateOptions(opts: ImageToGcodeOptions): void {
   ) {
     throw new Error('Suavização inválida.');
   }
+  if (
+    opts.passes !== undefined &&
+    (!Number.isInteger(opts.passes) || opts.passes < 1 || opts.passes > 99)
+  ) {
+    throw new Error('Número de passadas inválido (use um inteiro de 1 a 99).');
+  }
 }
 
 /**
@@ -99,16 +105,12 @@ function emitGcode(
   const g = opts.geometry;
   const e = opts.engrave;
   const gap = opts.gapThresholdMm ?? DEFAULT_GAP_MM;
+  const passes = opts.passes ?? 1;
   const cols = geom.cols;
   const halfDot = geom.halfDot;
   const pitch = geom.pitch;
 
   const out: string[] = ['G21', 'G90', 'G94', 'M5'];
-
-  let lastF: number | null = null;
-  let lastS: number | null = 0; // modal inicial do GRBL é S0
-  let armed = false;
-  let cursor: Point = { x: g.offsetX, y: g.offsetY };
 
   let g1Mm = 0;
   let g0Mm = 0;
@@ -133,26 +135,6 @@ function emitGcode(
       ? { x: scanCoord, y: rowCoord }
       : { x: rowCoord, y: scanCoord };
 
-  /** Deslocamento com laser desligado. */
-  const travel = (to: Point): void => {
-    const dist = Math.hypot(to.x - cursor.x, to.y - cursor.y);
-    g0Mm += dist;
-    if (armed) out.push('M5');
-    out.push(`G0 X${f(to.x)} Y${f(to.y)}`);
-    cursor = { ...to };
-    track(to.x, to.y);
-
-    // Rearme: M4 é dinâmico (seguro parado); M3 precisa nascer com S0 para
-    // não acender o laser antes do movimento.
-    if (e.mode === 'M4') {
-      out.push('M4');
-    } else {
-      out.push('M3 S0');
-      lastS = 0;
-    }
-    armed = true;
-  };
-
   /** S da potência de escurecimento (0..1) — sempre dentro de [sMin, sMax]. */
   const powerS = (darkness: number): number => {
     const value = e.sMin + (e.sMax - e.sMin) * darkness;
@@ -160,59 +142,93 @@ function emitGcode(
     return Math.min(e.sMax, Math.max(e.sMin, rounded));
   };
 
-  /** Emite um trecho [cursor -> to] com um valor de amostra fixo. */
-  const emitRun = (to: Point, value: number, runLength: number): void => {
-    const s = value < 1 ? powerS(1 - value) : 0;
+  // Uma passada por iteração (RF-GC-6): cada passada tem estado modal próprio,
+  // recomeça da origem do arquivo e termina com `M5` (laser desligado no
+  // retorno). Os totais (`g0Mm`, `g1Mm`, `segments`, `bounds`) são acumulados.
+  for (let pass = 0; pass < passes; pass++) {
+    let lastF: number | null = null;
+    let lastS: number | null = 0; // modal inicial do GRBL é S0
+    let armed = false;
+    let cursor: Point = { x: g.offsetX, y: g.offsetY };
 
-    if (s > 0) {
-      out.push(
-        `G1 X${f(to.x)} Y${f(to.y)}${s === lastS ? '' : ` S${s}`}${
-          e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
-        }`,
-      );
-      lastS = s;
-      lastF = e.speedMmMin;
-      segments++;
-      g1Mm += runLength;
-      burnedMm += runLength;
-    } else if (runLength >= gap) {
-      travel(to); // trecho longo em branco: pula com G0 (laser desligado)
-      return;
-    } else {
-      out.push(
-        `G1 X${f(to.x)} Y${f(to.y)}${lastS === 0 ? '' : ' S0'}${
-          e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
-        }`,
-      );
-      lastS = 0;
-      lastF = e.speedMmMin;
-      segments++;
-      g1Mm += runLength;
+    /** Deslocamento com laser desligado. */
+    const travel = (to: Point): void => {
+      const dist = Math.hypot(to.x - cursor.x, to.y - cursor.y);
+      g0Mm += dist;
+      if (armed) out.push('M5');
+      out.push(`G0 X${f(to.x)} Y${f(to.y)}`);
+      cursor = { ...to };
+      track(to.x, to.y);
+
+      // Rearme: M4 é dinâmico (seguro parado); M3 precisa nascer com S0 para
+      // não acender o laser antes do movimento.
+      if (e.mode === 'M4') {
+        out.push('M4');
+      } else {
+        out.push('M3 S0');
+        lastS = 0;
+      }
+      armed = true;
+    };
+
+    /** Emite um trecho [cursor -> to] com um valor de amostra fixo. */
+    const emitRun = (to: Point, value: number, runLength: number): void => {
+      const s = value < 1 ? powerS(1 - value) : 0;
+
+      if (s > 0) {
+        out.push(
+          `G1 X${f(to.x)} Y${f(to.y)}${s === lastS ? '' : ` S${s}`}${
+            e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
+          }`,
+        );
+        lastS = s;
+        lastF = e.speedMmMin;
+        segments++;
+        g1Mm += runLength;
+        burnedMm += runLength;
+      } else if (runLength >= gap) {
+        travel(to); // trecho longo em branco: pula com G0 (laser desligado)
+        return;
+      } else {
+        out.push(
+          `G1 X${f(to.x)} Y${f(to.y)}${lastS === 0 ? '' : ' S0'}${
+            e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
+          }`,
+        );
+        lastS = 0;
+        lastF = e.speedMmMin;
+        segments++;
+        g1Mm += runLength;
+      }
+
+      cursor = { ...to };
+      track(to.x, to.y);
+    };
+
+    for (let r = 0; r < geom.rows; r++) {
+      const rowCoord = geom.rowStart + r * pitch;
+      // Início da linha = borda da área (centro da 1ª amostra - metade do ponto).
+      travel(point(rowCoord, geom.scanStart - halfDot));
+
+      let c = 0;
+      while (c < cols) {
+        const value = grid[r * cols + c]!;
+        let cEnd = c;
+        while (cEnd + 1 < cols && grid[r * cols + cEnd + 1] === value) cEnd++;
+
+        const endScan = geom.scanStart + cEnd * pitch + halfDot;
+        const cursorScan = geom.direction === 'h' ? cursor.x : cursor.y;
+        emitRun(
+          point(rowCoord, endScan),
+          value,
+          Math.abs(endScan - cursorScan),
+        );
+        c = cEnd + 1;
+      }
     }
 
-    cursor = { ...to };
-    track(to.x, to.y);
-  };
-
-  for (let r = 0; r < geom.rows; r++) {
-    const rowCoord = geom.rowStart + r * pitch;
-    // Início da linha = borda da área (centro da 1ª amostra - metade do ponto).
-    travel(point(rowCoord, geom.scanStart - halfDot));
-
-    let c = 0;
-    while (c < cols) {
-      const value = grid[r * cols + c]!;
-      let cEnd = c;
-      while (cEnd + 1 < cols && grid[r * cols + cEnd + 1] === value) cEnd++;
-
-      const endScan = geom.scanStart + cEnd * pitch + halfDot;
-      const cursorScan = geom.direction === 'h' ? cursor.x : cursor.y;
-      emitRun(point(rowCoord, endScan), value, Math.abs(endScan - cursorScan));
-      c = cEnd + 1;
-    }
+    out.push('M5');
   }
-
-  out.push('M5');
 
   // Invariante: nenhuma coordenada fora da área de trabalho.
   assertWorkArea(bounds, g);

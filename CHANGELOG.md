@@ -6,6 +6,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — RF-GC-6: múltiplos passes
+- Campo **Passadas** (1–99) no card de imagem. O emissor repete todo o caminho
+  de queima N vezes, desligando o laser (`M5`) e voltando ao início entre
+  passadas. Vale para os três algoritmos (`line`, `dither`, `vector`).
+- `passes` entra em `ImageToGcodeOptions` (padrão 1, sem regressão); as
+  estatísticas (queima, deslocamento, tempo) somam todas as passadas.
+
 ### Added — RF-IMG-8: perfis de material
 - `shared/materials.ts` reproduz as matrizes do manual da COMGO Z1 (§9.1, 5W;
   §9.2, 10W): potência (%), velocidade (mm/min) e notas (preparo de superfície,

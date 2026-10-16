@@ -263,7 +263,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Tarefas**
 - [ ] RF-OVR-1…4: sliders de override com *worker* que emite bytes corretos.
 - [ ] RF-PRV-1…5: parser de movimento (`G0/G1/G2/G3`, `G90/G91`, unidades) → canvas.
-- [ ] RF-GC-6: múltiplos passes.
+- [x] RF-GC-6: múltiplos passes.
 - [ ] RF-PRV-3: crosshair de posição ligado ao status.
 - [ ] RF-GC-9: aviso quando o caminho excede a área de trabalho (`$130/$131`).
 
