@@ -1,0 +1,19 @@
+# Dependências e artefatos de build
+node_modules/
+dist/
+
+# Logs e temporários
+*.log
+*.tmp
+
+# Backups
+*.bak
+*~
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/

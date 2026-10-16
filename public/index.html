@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-br" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <title>GRBL Studio</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <h1>GRBL Studio</h1>
+          <button id="themeBtn" title="Alternar tema">◐</button>
+        </div>
+
+        <section class="card">
+          <h3>Serial</h3>
+          <select id="portList"></select>
+          <div class="row">
+            <select id="baudList">
+              <option value="115200" selected>115200</option>
+              <option value="250000">250000</option>
+              <option value="57600">57600</option>
+              <option value="38400">38400</option>
+              <option value="9600">9600</option>
+            </select>
+            <button id="refreshPorts">Atualizar</button>
+          </div>
+          <button id="connectBtn" class="primary">Conectar</button>
+          <div class="conn-state">
+            <span id="connDot" class="dot"></span>
+            <span id="connText">Desconectado</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Movimento</h3>
+          <div class="jog-grid">
+            <button id="jogYp">Y+</button>
+            <button id="jogXm">X−</button>
+            <button id="jogXp">X+</button>
+            <button id="jogYm">Y−</button>
+            <button id="homeBtn" class="span3">Homing ($H)</button>
+          </div>
+          <div class="row">
+            <select id="stepSelect">
+              <option value="0.01">0,01 mm</option>
+              <option value="0.1">0,1 mm</option>
+              <option value="1">1 mm</option>
+              <option value="5" selected>5 mm</option>
+              <option value="10">10 mm</option>
+              <option value="50">50 mm</option>
+            </select>
+            <select id="feedSelect">
+              <option value="500">500 mm/min</option>
+              <option value="1000" selected>1000 mm/min</option>
+              <option value="3000">3000 mm/min</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="setOriginBtn">Origem aqui</button>
+            <button id="gotoZeroBtn">Ir p/ zero</button>
+          </div>
+          <div class="row">
+            <button id="unlockBtn">Unlock ($X)</button>
+            <button id="resetBtn" class="danger">Reset</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Execução</h3>
+          <input type="file" id="fileInput" accept=".gcode,.nc,.tap,.txt" />
+          <div id="fileInfo" class="file-name">Nenhum arquivo carregado</div>
+          <div class="progress"><span id="progressBar"></span></div>
+          <div class="row">
+            <button id="playBtn" disabled>▶ Iniciar</button>
+            <button id="pauseBtn" disabled>⏸ Pausar</button>
+          </div>
+          <button id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
+        </section>
+      </aside>
+
+      <main class="main">
+        <div class="statusbar">
+          <span id="stateBadge" class="badge">Desconectado</span>
+          <div class="dro">
+            <div class="axis"><b>X</b><span id="droX">—</span></div>
+            <div class="axis"><b>Y</b><span id="droY">—</span></div>
+            <div class="axis"><b>Z</b><span id="droZ">—</span></div>
+          </div>
+          <div class="meta">Feed <span id="metaFeed">—</span> · S <span id="metaS">—</span></div>
+          <div class="spacer"></div>
+          <div class="meta" id="progressText">0 / 0</div>
+        </div>
+
+        <div class="console">
+          <pre id="consoleOutput" class="console-output"></pre>
+          <input
+            type="text"
+            id="consoleInput"
+            placeholder="Digite um comando GRBL e pressione Enter (ex.: $$, $G, G0 X0 Y0)"
+            autocomplete="off"
+          />
+        </div>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

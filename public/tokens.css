@@ -1,0 +1,89 @@
+/* GRBL Studio — design tokens (fonte única visual).
+   Padrão Windows 11 / Fluent Design 2. Ver docs/DESIGN.md. */
+
+:root {
+  color-scheme: dark;
+
+  /* cores — tema escuro (padrão) */
+  --bg: #202020;
+  --bg-card: #2b2b2b;
+  --bg-input: #1c1c1c;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-pressed: rgba(255, 255, 255, 0.03);
+  --stroke: rgba(255, 255, 255, 0.09);
+  --stroke-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #ffffff;
+  --text-sub: #a0a0a0;
+  --text-disabled: #6b6b6b;
+
+  --accent: #4cc2ff;
+  --accent-hover: #6fd0ff;
+  --accent-text: #003049;
+
+  --ok: #6ccb5f;
+  --warn: #fce100;
+  --danger: #ff5c5c;
+
+  /* espaço — grade de 4px */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+
+  /* raio */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-pill: 999px;
+
+  /* sombra */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.36);
+
+  /* tipografia */
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --fs-12: 12px;
+  --fs-14: 14px;
+  --fs-20: 20px;
+
+  /* motion */
+  --dur-fast: 80ms;
+  --dur: 150ms;
+  --ease: cubic-bezier(0.33, 0, 0.67, 1);
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f3f3f3;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-pressed: rgba(0, 0, 0, 0.07);
+  --stroke: rgba(0, 0, 0, 0.08);
+  --stroke-strong: rgba(0, 0, 0, 0.16);
+
+  --text: #1a1a1a;
+  --text-sub: #5d5d5d;
+  --text-disabled: #9a9a9a;
+
+  --accent: #0078d4;
+  --accent-hover: #106ebe;
+  --accent-text: #ffffff;
+
+  --ok: #0f7b0f;
+  --warn: #9d5d00;
+  --danger: #c42b1c;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.12);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+  }
+}
