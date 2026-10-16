@@ -310,5 +310,54 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     },
   );
 
+  // --------------------------------------------------- macros (RF-MAC-2)
+
+  ipcMain.handle(
+    CHANNELS.macrosOpen,
+    async (evt): Promise<OpenedTextFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: 'Importar macros',
+        buttonLabel: 'Importar',
+        properties: ['openFile'],
+        filters: [
+          { name: 'Macros (JSON)', extensions: ['json', 'JSON'] },
+          { name: 'Todos os arquivos', extensions: ['*'] },
+        ],
+      });
+      if (!filePath) return null;
+
+      const info = await stat(filePath);
+      if (!info.isFile()) throw new Error('O caminho escolhido não é arquivo.');
+      if (info.size > TEXT_MAX_BYTES) {
+        throw new Error(`Arquivo grande demais (${formatMb(info.size)}).`);
+      }
+      const text = await readFile(filePath, 'utf8');
+      return { path: filePath, name: path.basename(filePath), text };
+    },
+  );
+
+  ipcMain.handle(
+    CHANNELS.macrosSave,
+    async (evt, content: unknown): Promise<string | null> => {
+      if (typeof content !== 'string')
+        throw new Error('Conteúdo de macros ausente.');
+      const options = {
+        title: 'Exportar macros',
+        defaultPath: 'grbl-macros.json',
+        filters: [
+          { name: 'Macros (JSON)', extensions: ['json'] },
+          { name: 'Todos os arquivos', extensions: ['*'] },
+        ],
+      };
+      const owner = BrowserWindow.fromWebContents(evt.sender);
+      const result = owner
+        ? await dialog.showSaveDialog(owner, options)
+        : await dialog.showSaveDialog(options);
+      if (result.canceled || !result.filePath) return null;
+      await writeFile(result.filePath, content, 'utf8');
+      return result.filePath;
+    },
+  );
+
   return { client };
 }

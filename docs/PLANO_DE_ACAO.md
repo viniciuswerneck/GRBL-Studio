@@ -333,7 +333,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - (Could) Conexão WiFi via ESP8266.
 
 **Tarefas**
-- [ ] RF-MAC-1/2.
+- [x] RF-MAC-1/2: botões por grupo, editor, import/export JSON.
 - [x] RF-GC-7: retomada de job (preâmbulo modal + sugestão `done − N`).
 - [ ] RF-CON-7: transporte sobre TCP (Could).
 

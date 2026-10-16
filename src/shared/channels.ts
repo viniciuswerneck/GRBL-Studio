@@ -31,6 +31,8 @@ export const CHANNELS = {
   fileSave: 'file:save-gcode',
   fileOpenImage: 'file:open-image',
   fileOpenGcode: 'file:open-gcode',
+  macrosOpen: 'file:open-macros',
+  macrosSave: 'file:save-macros',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',

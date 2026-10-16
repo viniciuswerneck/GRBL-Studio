@@ -81,6 +81,10 @@ const api = {
     ipcRenderer.invoke(CHANNELS.fileOpenImage),
   openGcode: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenGcode),
+  openMacros: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.macrosOpen),
+  saveMacros: (content: string): Promise<string | null> =>
+    ipcRenderer.invoke(CHANNELS.macrosSave, content),
 
   // Eventos (main -> renderer)
   onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe =>

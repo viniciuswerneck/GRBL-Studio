@@ -6,6 +6,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — RF-MAC-1/2: macros e botões customizados
+- `shared/macros.ts` (puro, empacotado como `public/macros.js`): modelo de
+  macro (`id`, `label`, `gcode`, `group`), conjunto padrão, `macroLines`,
+  `sanitizeMacros`, `parseMacroFile` e `serializeMacros` (import/export JSON de
+  lista ou `{ "macros": [...] }`).
+- Card **Macros** no painel: botões agrupados (executam as linhas uma a uma pela
+  fila `send-response`), editor inline (rótulo, grupo, G-code, remover),
+  adicionar, restaurar padrão, importar/exportar via diálogos nativos
+  (`file:open-macros` / `file:save-macros`).
+- Macros persistem em `<userData>/prefs.json` (campo `macros`).
+- Testes: `tests/macros.test.ts`.
+
 ### Added — RF-GC-7: retomada de job interrompido
 - `shared/resume.ts` (puro, empacotado como `public/resume.js`): reconstrói o
   estado modal vigente antes da linha escolhida (`G17`–`G19`, `G20/G21`,

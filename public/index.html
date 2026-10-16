@@ -265,6 +265,26 @@
             </div>
           </details>
         </section>
+
+        <section class="card">
+          <h3>Macros (RF-MAC-1)</h3>
+          <div id="macroButtons" class="macro-buttons"></div>
+          <div id="macroHint" class="hint">
+            Conecte-se para usar as macros. Os comandos são enfileirados um a um.
+          </div>
+          <details class="group" id="macroManage">
+            <summary>Gerenciar macros (importar/exportar)</summary>
+            <div id="macroEditor" class="macro-editor"></div>
+            <div class="row">
+              <button type="button" id="macroAdd">Adicionar</button>
+              <button type="button" id="macroReset">Restaurar padrão</button>
+            </div>
+            <div class="row">
+              <button type="button" id="macroImport">Importar…</button>
+              <button type="button" id="macroExport">Exportar…</button>
+            </div>
+          </details>
+        </section>
       </aside>
 
       <main class="main">
@@ -350,6 +370,7 @@
     <script src="./materials.js"></script>
     <script src="./preview.js"></script>
     <script src="./resume.js"></script>
+    <script src="./macros.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

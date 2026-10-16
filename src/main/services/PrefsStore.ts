@@ -8,6 +8,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
+import { sanitizeMacros } from '../../shared/macros';
 import type { Prefs } from '../../shared/types';
 
 /** Filtra o que veio do disco, mantendo só chaves/tipos conhecidos. */
@@ -21,6 +22,7 @@ function sanitize(input: unknown): Prefs {
   if (raw.theme === 'dark' || raw.theme === 'light') prefs.theme = raw.theme;
   if (raw.units === 'mm' || raw.units === 'in') prefs.units = raw.units;
   if (typeof raw.autoConnect === 'boolean') prefs.autoConnect = raw.autoConnect;
+  if (Array.isArray(raw.macros)) prefs.macros = sanitizeMacros(raw.macros);
   return prefs;
 }
 

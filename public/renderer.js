@@ -94,6 +94,13 @@ const el = {
   resumeSuggest: $('resumeSuggest'),
   resumeFrom: $('resumeFrom'),
   resumeInfo: $('resumeInfo'),
+  macroButtons: $('macroButtons'),
+  macroEditor: $('macroEditor'),
+  macroHint: $('macroHint'),
+  macroAdd: $('macroAdd'),
+  macroReset: $('macroReset'),
+  macroImport: $('macroImport'),
+  macroExport: $('macroExport'),
 };
 
 const state = {
@@ -250,6 +257,12 @@ function updateControls() {
 
   // Retomada (RF-GC-7): só com arquivo, conectado e nada em execução.
   el.resumeFrom.disabled = !conn || !hasFile || running || paused;
+
+  // Macros (RF-MAC-1) só fazem sentido conectado.
+  for (const button of el.macroButtons.querySelectorAll('button')) {
+    button.disabled = !conn;
+  }
+  el.macroHint.classList.toggle('hidden', conn);
 }
 
 // -------------------------------------------------------------------- portas
@@ -1612,6 +1625,170 @@ for (const tab of el.settingsTabs) {
   );
 }
 
+// ------------------------------------------------------- macros (RF-MAC)
+
+const MACROS = window.GRBL_MACROS;
+
+/** Macros atuais (ou os padrões); nunca `undefined`. */
+function currentMacros() {
+  if (!Array.isArray(state.macros)) {
+    state.macros = MACROS ? [...MACROS.DEFAULT_MACROS] : [];
+  }
+  return state.macros;
+}
+
+/** Novo id de macro (o mesmo do arquivo/preferências). */
+function macroId() {
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+  return `m${Date.now().toString(36)}${Math.floor(Math.random() * 1e6)}`;
+}
+
+function runMacro(macro) {
+  if (!state.connected) {
+    appendLine('Conecte-se à máquina para executar a macro.', 'error');
+    return;
+  }
+  for (const line of MACROS.macroLines(macro)) window.grbl.writeLine(line);
+  appendLine(`Macro: ${macro.label}`, 'ok');
+}
+
+/** Desenha os botões agrupados; esconde o grupo no estilo do console. */
+function renderMacroButtons() {
+  el.macroButtons.innerHTML = '';
+  const groups = new Map();
+  for (const macro of currentMacros()) {
+    const group = macro.group || 'Outros';
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(macro);
+  }
+  for (const [group, list] of groups) {
+    const title = document.createElement('div');
+    title.className = 'macro-group';
+    title.textContent = group;
+    el.macroButtons.appendChild(title);
+    for (const macro of list) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = macro.label;
+      button.title = macro.gcode;
+      button.disabled = !state.connected;
+      button.addEventListener('click', () => runMacro(macro));
+      el.macroButtons.appendChild(button);
+    }
+  }
+}
+
+/** Grava macros (via prefs) e redesenha botões + editor. */
+function commitMacros() {
+  renderMacroButtons();
+  renderMacroEditor();
+  persistPrefs({ macros: currentMacros() });
+}
+
+function macroEditorNode(macro) {
+  const row = document.createElement('div');
+  row.className = 'macro-row';
+
+  const label = document.createElement('input');
+  label.type = 'text';
+  label.value = macro.label;
+  label.placeholder = 'Rótulo';
+  label.addEventListener('change', () => {
+    macro.label = label.value.trim() || macro.label;
+    label.value = macro.label;
+    commitMacros();
+  });
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.textContent = '✕';
+  remove.title = 'Remover macro';
+  remove.addEventListener('click', () => {
+    state.macros = currentMacros().filter((m) => m.id !== macro.id);
+    commitMacros();
+  });
+
+  const group = document.createElement('select');
+  const groups = new Set([...MACROS.MACRO_GROUPS, macro.group]);
+  for (const value of groups) {
+    if (!value) continue;
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    group.appendChild(option);
+  }
+  group.value = macro.group;
+  group.addEventListener('change', () => {
+    macro.group = group.value;
+    commitMacros();
+  });
+
+  const gcode = document.createElement('textarea');
+  gcode.value = macro.gcode;
+  gcode.rows = 2;
+  gcode.spellcheck = false;
+  gcode.placeholder = 'G-code (uma linha por comando)';
+  gcode.addEventListener('change', () => {
+    macro.gcode = gcode.value;
+    commitMacros();
+  });
+
+  row.append(label, group, remove, gcode);
+  return row;
+}
+
+function renderMacroEditor() {
+  el.macroEditor.innerHTML = '';
+  for (const macro of currentMacros()) {
+    el.macroEditor.appendChild(macroEditorNode(macro));
+  }
+}
+
+el.macroAdd.addEventListener('click', () => {
+  state.macros = currentMacros().concat({
+    id: macroId(),
+    label: 'Nova macro',
+    gcode: 'M5',
+    group: 'Outros',
+  });
+  commitMacros();
+});
+
+el.macroReset.addEventListener('click', () => {
+  state.macros = [...MACROS.DEFAULT_MACROS];
+  commitMacros();
+});
+
+el.macroExport.addEventListener('click', async () => {
+  try {
+    const saved = await window.grbl.saveMacros(
+      MACROS.serializeMacros(currentMacros()),
+    );
+    if (saved) appendLine(`Macros exportadas: ${saved}`, 'ok');
+  } catch (err) {
+    appendLine(`Falha ao exportar macros: ${err.message}`, 'error');
+  }
+});
+
+el.macroImport.addEventListener('click', async () => {
+  let opened;
+  try {
+    opened = await window.grbl.openMacros();
+  } catch (err) {
+    appendLine(`Falha ao abrir macros: ${err.message}`, 'error');
+    return;
+  }
+  if (!opened) return;
+  try {
+    state.macros = MACROS.parseMacroFile(opened.text);
+  } catch (err) {
+    appendLine(`Macros inválidas: ${err.message}`, 'error');
+    return;
+  }
+  commitMacros();
+  appendLine(`Macros importadas (${state.macros.length}).`, 'ok');
+});
+
 // ------------------------------------------------------- eventos do main
 
 const STATE_CLASS = {
@@ -1690,6 +1867,13 @@ window.grbl.onError((err) => {
 async function init() {
   // Preferências (tema/unidade/porta/baud) — RF-CFG-5, RF-CON-3.
   await loadPrefs();
+
+  // Macros (RF-MAC-1): preferências ou conjunto padrão.
+  state.macros =
+    state.prefs.macros ??
+    (window.GRBL_MACROS ? [...window.GRBL_MACROS.DEFAULT_MACROS] : []);
+  renderMacroButtons();
+  renderMacroEditor();
 
   // Travamento de proporção: o usuário decide uma vez e a escolha permanece.
   try {

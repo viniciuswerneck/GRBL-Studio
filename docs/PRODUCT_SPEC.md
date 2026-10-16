@@ -205,8 +205,8 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-MAC-1 | Criar/editar botões que executam comandos/macros. | Should | ⬜ |
-| RF-MAC-2 | Organizar macros por grupos e importar/exportar. | Could | ⬜ |
+| RF-MAC-1 | Criar/editar botões que executam comandos/macros. | Should | ✅ |
+| RF-MAC-2 | Organizar macros por grupos e importar/exportar. | Could | ✅ |
 
 ### M11 — App, i18n e distribuição
 

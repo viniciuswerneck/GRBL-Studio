@@ -3,6 +3,8 @@
  * Fonte da verdade dos contratos de dados do GRBL Studio.
  */
 
+import type { Macro } from './macros';
+
 /** Estado reportado pelo firmware GRBL no status report. */
 export type GrblState =
   | 'Idle'
@@ -197,4 +199,6 @@ export interface Prefs {
   units?: Units;
   /** Reconectar automaticamente à última porta ao abrir (padrão true). */
   autoConnect?: boolean;
+  /** Macro/botões customizados (RF-MAC-1). */
+  macros?: Macro[];
 }
