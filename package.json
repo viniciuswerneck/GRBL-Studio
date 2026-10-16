@@ -2,7 +2,8 @@
   "name": "grbl-studio",
   "version": "0.1.0",
   "main": "dist/main/index.js",
-  "author": "vinicius",
+  "author": "Vinicius Werneck",
+  "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
     "build": "tsc && npm run build:preload && npm run build:worker",
@@ -12,6 +13,10 @@
     "start": "electron .",
     "start:dev": "npm run build && electron .",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "smoke": "npm run build && GRBL_SMOKE_TEST=1 electron --no-sandbox .",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -20,6 +25,7 @@
     "serialport": "^13.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@types/node": "^26.6.5",
     "electron": "^44.8.0",
     "esbuild": "^0.28.2",

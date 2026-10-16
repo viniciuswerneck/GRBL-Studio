@@ -6,6 +6,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Fase 0: licença, CONTRIBUTING e lint/format
+- **Licença MIT** (`LICENSE`, campo `license` no `package.json`).
+- `CONTRIBUTING.md` com setup, Definition of Done e regras de estilo.
+- **Biome** como linter + formatter (`biome.json`, scripts `lint`, `lint:fix`,
+  `format`, `format:check`). A stack ESLint + `typescript-eslint` é inviável
+  com o **TypeScript 7** (compilador nativo, sem API JS); o Biome traz parser
+  próprio. Config equivalente ao estilo do repo (aspas simples, `;`, 2 espaços,
+  80 colunas); `style/noNonNullAssertion` desativada de propósito.
+
+### Changed — Fase 0: documentação unificada (B9)
+- Removidas duplicatas exatas: pasta `leia/` e `docs/manual laser gbrl.pdf`
+  (md5 idênticos a `docs/comgo_z1_lasergrbl_user_manual.md` e
+  `docs/lasergrbl-manual.pdf`), mais o índice secundário `docs/README_MAIN.md`.
+- `docs/README.md` atualizado (referência única ao PDF do LaserGRBL).
+
+### Changed — formatação
+- Código formatado com Biome e correções seguras de lint (`useTemplate`,
+  `useOptionalChain`, `Number.isFinite`), sem mudança de comportamento.
+- `public/index.html`: `lang="pt-BR"` e `type="button"` nos botões (a11y).
+
 ### Added — RF-IMG-6: vetorização (contorno / recorte)
 - Novo algoritmo **`vector`** no card "Imagem → G-code": gera só o contorno
   da forma (recorte/line-art) em vez de varredura raster.

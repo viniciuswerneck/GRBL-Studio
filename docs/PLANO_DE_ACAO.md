@@ -139,7 +139,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 0 — Fundação e documentação (1 semana)
 
-**Status:** 🟡 quase concluída (itens dependem de decisão sua)
+**Status:** 🟢 concluída (a revisão/aprovação do `PRODUCT_SPEC` e a decisão da ADR-11 seguem com você)
 
 **Objetivo:** fixar o contrato do produto e limpar o terreno.
 
@@ -153,9 +153,9 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - [ ] ADR-11: decidir design system (tokens próprios vs. Fluent UI React). *(decisão sua)*
 - [x] Criar `tokens.css` base do `DESIGN.md` (cores claro/escuro, espaço, raio, sombra, motion) + tema sem "flash".
 - [x] Remover `src/main-serial.ts.bak` (B8).
-- [ ] Unificar manuais: `leia/` → `docs/` (ou documento único) e remover duplicata (B9).
-- [ ] Definir licença (ex.: GPL-3.0 ou MIT) e `CONTRIBUTING.md`. *(decisão sua)*
-- [ ] Configurar lint/format (ESLint + Prettier) e `tsconfig` estrito. *(tsconfig estrito: ✅; lint/format pendente)*
+- [x] Unificar manuais: `leia/` → `docs/` e remover duplicatas (B9): pasta `leia/` e PDF `manual laser gbrl.pdf` (idênticos) removidos; `README_MAIN.md` (índice secundário) removido.
+- [x] Definir licença **MIT** (`LICENSE`, `package.json`) e `CONTRIBUTING.md`.
+- [x] Configurar lint/format: **Biome** (`biome.json`, scripts `lint`/`format`). *(ESLint + typescript-eslint é inviável com o TypeScript 7 — sem API JS; ver `DEVELOPMENT.md`.)* `tsconfig` estrito: ✅.
 
 **Critérios de aceite**
 - `npm install && npm run build` funciona em máquina limpa. ✅

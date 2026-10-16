@@ -123,7 +123,9 @@ export function parseStatusReport(line: string): GrblStatus | null {
         status.wco = parseVec3(value);
         break;
       case 'FS': {
-        const [feed, spindle] = value.split(',').map((v) => Number.parseFloat(v));
+        const [feed, spindle] = value
+          .split(',')
+          .map((v) => Number.parseFloat(v));
         status.fs = {
           feed: Number.isFinite(feed) ? feed! : 0,
           spindle: Number.isFinite(spindle) ? spindle! : 0,
@@ -132,7 +134,10 @@ export function parseStatusReport(line: string): GrblStatus | null {
       }
       case 'F': {
         const feed = Number.parseFloat(value);
-        status.fs = { feed: Number.isFinite(feed) ? feed : 0, spindle: status.fs?.spindle ?? 0 };
+        status.fs = {
+          feed: Number.isFinite(feed) ? feed : 0,
+          spindle: status.fs?.spindle ?? 0,
+        };
         break;
       }
       case 'Ov': {
@@ -144,7 +149,9 @@ export function parseStatusReport(line: string): GrblStatus | null {
         status.pn = value;
         break;
       case 'Bf': {
-        const [planned, rx] = value.split(',').map((v) => Number.parseInt(v, 10));
+        const [planned, rx] = value
+          .split(',')
+          .map((v) => Number.parseInt(v, 10));
         status.bf = { planned: planned ?? 0, rx: rx ?? 0 };
         break;
       }
@@ -184,7 +191,10 @@ export function classifyLine(rawLine: string): ClassifiedLine {
       kind: 'error',
       text: trimmed,
       code,
-      message: code !== undefined ? ERROR_DESCRIPTIONS[code] ?? `Erro ${code}.` : trimmed,
+      message:
+        code !== undefined
+          ? (ERROR_DESCRIPTIONS[code] ?? `Erro ${code}.`)
+          : trimmed,
     };
   }
 
@@ -194,12 +204,18 @@ export function classifyLine(rawLine: string): ClassifiedLine {
       kind: 'alarm',
       text: trimmed,
       code,
-      message: code !== undefined ? ALARM_DESCRIPTIONS[code] ?? `Alarme ${code}.` : trimmed,
+      message:
+        code !== undefined
+          ? (ALARM_DESCRIPTIONS[code] ?? `Alarme ${code}.`)
+          : trimmed,
     };
   }
 
   if (trimmed.startsWith('[MSG:')) {
-    const inner = trimmed.replace(/^\[MSG:/i, '').replace(/\]$/, '').trim();
+    const inner = trimmed
+      .replace(/^\[MSG:/i, '')
+      .replace(/\]$/, '')
+      .trim();
     return { kind: 'message', text: trimmed, message: inner };
   }
 
@@ -252,7 +268,10 @@ export function splitLines(buffer: string): { lines: string[]; rest: string } {
 }
 
 /** Formata um número de posição para o DRO (3 casas, sem arredondar dados de comando). */
-export function formatPosition(value: number | undefined, decimals = 3): string {
+export function formatPosition(
+  value: number | undefined,
+  decimals = 3,
+): string {
   if (value === undefined || !Number.isFinite(value)) return '—';
   return value.toFixed(decimals);
 }

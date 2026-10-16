@@ -1,6 +1,9 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GrblClient, type TransportLike } from '../src/main/services/GrblClient';
+import {
+  GrblClient,
+  type TransportLike,
+} from '../src/main/services/GrblClient';
 import type { GrblStatus, JobInfo } from '../src/shared/types';
 
 /** Transporte falso: registra escritas e permite injetar dados. */

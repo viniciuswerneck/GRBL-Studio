@@ -27,7 +27,15 @@ describe('extensionOf', () => {
 
 describe('validação de nomes', () => {
   it('aceita as imagens que o Chromium decodifica', () => {
-    for (const name of ['a.png', 'b.JPG', 'c.jpeg', 'd.bmp', 'e.gif', 'f.webp', 'g.avif']) {
+    for (const name of [
+      'a.png',
+      'b.JPG',
+      'c.jpeg',
+      'd.bmp',
+      'e.gif',
+      'f.webp',
+      'g.avif',
+    ]) {
       expect(isSupportedImageName(name)).toBe(true);
     }
   });
@@ -39,7 +47,14 @@ describe('validação de nomes', () => {
   });
 
   it('aceita as extensões de G-code usadas na bancada', () => {
-    for (const name of ['job.gcode', 'JOB.NC', 'a.ngc', 'b.tap', 'c.gc', 'd.txt']) {
+    for (const name of [
+      'job.gcode',
+      'JOB.NC',
+      'a.ngc',
+      'b.tap',
+      'c.gc',
+      'd.txt',
+    ]) {
       expect(isSupportedGcodeName(name)).toBe(true);
     }
     expect(isSupportedGcodeName('imagem.png')).toBe(false);

@@ -16,7 +16,12 @@
  */
 
 import { EventEmitter } from 'node:events';
-import { classifyLine, isStatusReport, parseStatusReport, splitLines } from '../../shared/protocol';
+import {
+  classifyLine,
+  isStatusReport,
+  parseStatusReport,
+  splitLines,
+} from '../../shared/protocol';
 import type {
   ConnectOptions,
   ConnectionState,
@@ -93,7 +98,8 @@ export class GrblClient extends EventEmitter {
     this.statusPollMs = options.statusPollMs ?? 200;
     this.stallMs = options.stallMs ?? DEFAULT_STALL_MS;
     this.transportFactory =
-      options.transportFactory ?? ((opts) => new SerialTransport(opts.path, opts.baudRate));
+      options.transportFactory ??
+      ((opts) => new SerialTransport(opts.path, opts.baudRate));
     // O evento 'error' do EventEmitter lança se não houver listener. Garantimos
     // um listener padrão; a camada IPC sempre registra o seu.
     this.on('error', () => undefined);
@@ -111,7 +117,11 @@ export class GrblClient extends EventEmitter {
     transport.on('close', (err?: Error) => {
       if (this.connection !== 'disconnected') {
         this.setConnection('disconnected');
-        this.emitError(err ? `Conexão serial encerrada: ${err.message}` : 'Conexão serial encerrada.');
+        this.emitError(
+          err
+            ? `Conexão serial encerrada: ${err.message}`
+            : 'Conexão serial encerrada.',
+        );
       }
       this.stopPolling();
     });
@@ -239,7 +249,9 @@ export class GrblClient extends EventEmitter {
     this.sendLine(`$J=${parts.join(' ')} F${feed}`);
   }
 
-  overrideFeed(action: 'reset' | 'plus10' | 'minus10' | 'plus1' | 'minus1'): void {
+  overrideFeed(
+    action: 'reset' | 'plus10' | 'minus10' | 'plus1' | 'minus1',
+  ): void {
     const map = {
       reset: REALTIME.overrideFeedDefault,
       plus10: REALTIME.overrideFeedPlus10,
@@ -260,7 +272,9 @@ export class GrblClient extends EventEmitter {
 
   private emitRealtime(byte: number): void {
     if (!this.transport) return;
-    this.transport.writeRealtime(byte).catch((err: Error) => this.emitError(err.message));
+    this.transport
+      .writeRealtime(byte)
+      .catch((err: Error) => this.emitError(err.message));
   }
 
   private emitError(message: string, code?: number): void {
@@ -284,7 +298,10 @@ export class GrblClient extends EventEmitter {
 
   private startPolling(): void {
     this.stopPolling();
-    this.pollTimer = setInterval(() => this.emitRealtime(REALTIME.statusReport), this.statusPollMs);
+    this.pollTimer = setInterval(
+      () => this.emitRealtime(REALTIME.statusReport),
+      this.statusPollMs,
+    );
   }
 
   private stopPolling(): void {

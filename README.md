@@ -21,6 +21,8 @@ npx electron --no-sandbox .
 
 ## Desenvolvimento
 - Testes: `npm test`
+- Lint/format: `npm run lint` (Biome)
+- Type-check: `npm run typecheck`
 - Smoke (headless): `GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .`
 - Guia completo: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
@@ -34,3 +36,7 @@ npx electron --no-sandbox .
 - [Desenvolvimento](docs/DEVELOPMENT.md)
 - [Comparação com LaserGRBL](docs/FEATURES_COMPARISON.md)
 - [Roadmap](docs/ROADMAP.md)
+
+## Licença
+
+[MIT](LICENSE) © 2026 Vinicius Werneck

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyAdjust, toGrayscale, validateAdjust } from '../src/shared/image/adjust';
+import {
+  applyAdjust,
+  toGrayscale,
+  validateAdjust,
+} from '../src/shared/image/adjust';
 import { floydSteinberg, threshold } from '../src/shared/image/dither';
 import type { AdjustOptions } from '../src/shared/image/types';
 
@@ -14,7 +18,14 @@ const base = (o: Partial<AdjustOptions> = {}): AdjustOptions => ({
 });
 
 /** Imagem sólida (r, g, b, a) em RGBA. */
-const solid = (w: number, h: number, r: number, g: number, b: number, a = 255): Uint8ClampedArray => {
+const solid = (
+  w: number,
+  h: number,
+  r: number,
+  g: number,
+  b: number,
+  a = 255,
+): Uint8ClampedArray => {
   const out = new Uint8ClampedArray(w * h * 4);
   for (let i = 0; i < w * h; i++) {
     out[i * 4] = r;
@@ -40,7 +51,9 @@ describe('toGrayscale', () => {
     // PNG de logo: RGB preto com alfa 0.
     expect(toGrayscale(new Uint8ClampedArray([0, 0, 0, 0]), 1, 1)[0]).toBe(1);
     // Meio transparente sobre preto -> meio termo.
-    expect(toGrayscale(new Uint8ClampedArray([0, 0, 0, 128]), 1, 1)[0]).toBeCloseTo(1 - (128 / 255), 5);
+    expect(
+      toGrayscale(new Uint8ClampedArray([0, 0, 0, 128]), 1, 1)[0],
+    ).toBeCloseTo(1 - 128 / 255, 5);
   });
 
   it('rejeita buffer RGBA pequeno', () => {
@@ -54,26 +67,42 @@ describe('toGrayscale', () => {
 
 describe('applyAdjust', () => {
   it('brilho aditivo', () => {
-    expect(applyAdjust(new Float32Array([0.5]), base({ brightness: 0.2 }))[0]).toBeCloseTo(0.7, 5);
+    expect(
+      applyAdjust(new Float32Array([0.5]), base({ brightness: 0.2 }))[0],
+    ).toBeCloseTo(0.7, 5);
   });
 
   it('contraste estica em torno do meio cinza', () => {
-    expect(applyAdjust(new Float32Array([0.6]), base({ contrast: 1 }))[0]).toBeCloseTo(0.7, 5);
-    expect(applyAdjust(new Float32Array([0.4]), base({ contrast: -1 }))[0]).toBeCloseTo(0.5, 5);
+    expect(
+      applyAdjust(new Float32Array([0.6]), base({ contrast: 1 }))[0],
+    ).toBeCloseTo(0.7, 5);
+    expect(
+      applyAdjust(new Float32Array([0.4]), base({ contrast: -1 }))[0],
+    ).toBeCloseTo(0.5, 5);
   });
 
   it('clampa em 0..1', () => {
-    expect(applyAdjust(new Float32Array([0.9]), base({ brightness: 1 }))[0]).toBe(1);
-    expect(applyAdjust(new Float32Array([0.1]), base({ brightness: -1 }))[0]).toBe(0);
+    expect(
+      applyAdjust(new Float32Array([0.9]), base({ brightness: 1 }))[0],
+    ).toBe(1);
+    expect(
+      applyAdjust(new Float32Array([0.1]), base({ brightness: -1 }))[0],
+    ).toBe(0);
   });
 
   it('white clip transforma quase-branco em branco puro', () => {
-    expect(applyAdjust(new Float32Array([0.98]), base({ whiteClip: 0.9 }))[0]).toBe(1);
-    expect(applyAdjust(new Float32Array([0.5]), base({ whiteClip: 0.9 }))[0]).toBeCloseTo(0.5, 5);
+    expect(
+      applyAdjust(new Float32Array([0.98]), base({ whiteClip: 0.9 }))[0],
+    ).toBe(1);
+    expect(
+      applyAdjust(new Float32Array([0.5]), base({ whiteClip: 0.9 }))[0],
+    ).toBeCloseTo(0.5, 5);
   });
 
   it('inversão espelha o valor', () => {
-    expect(applyAdjust(new Float32Array([0.25]), base({ invert: true }))[0]).toBeCloseTo(0.75, 5);
+    expect(
+      applyAdjust(new Float32Array([0.25]), base({ invert: true }))[0],
+    ).toBeCloseTo(0.75, 5);
   });
 
   it('B&W usa o limiar configurado', () => {
@@ -92,8 +121,12 @@ describe('applyAdjust', () => {
   it('valida faixas', () => {
     expect(() => validateAdjust(base({ contrast: 2 }))).toThrow(/Contraste/);
     expect(() => validateAdjust(base({ brightness: -2 }))).toThrow(/Brilho/);
-    expect(() => validateAdjust(base({ whiteClip: 1.5 }))).toThrow(/White clip/);
-    expect(() => validateAdjust(base({ bwThreshold: -0.1 }))).toThrow(/limiar/i);
+    expect(() => validateAdjust(base({ whiteClip: 1.5 }))).toThrow(
+      /White clip/,
+    );
+    expect(() => validateAdjust(base({ bwThreshold: -0.1 }))).toThrow(
+      /limiar/i,
+    );
     expect(() => validateAdjust(base())).not.toThrow();
   });
 });
@@ -106,7 +139,8 @@ describe('threshold', () => {
 });
 
 describe('floydSteinberg', () => {
-  const make = (w: number, h: number, v: number): Float32Array => new Float32Array(w * h).fill(v);
+  const make = (w: number, h: number, v: number): Float32Array =>
+    new Float32Array(w * h).fill(v);
 
   it('imagem 100% branca permanece branca', () => {
     const out = floydSteinberg(make(8, 8, 1), 8, 8);

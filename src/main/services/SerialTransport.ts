@@ -30,7 +30,9 @@ export class SerialTransport extends EventEmitter {
         autoOpen: false,
       });
 
-      port.on('data', (chunk: Buffer) => this.emit('data', chunk.toString('utf8')));
+      port.on('data', (chunk: Buffer) =>
+        this.emit('data', chunk.toString('utf8')),
+      );
       port.on('error', (err: Error) => this.emit('error', err));
       port.on('close', (err?: Error) => {
         this.port = null;
@@ -51,7 +53,7 @@ export class SerialTransport extends EventEmitter {
 
   /** Escreve uma linha de comando G-code (adiciona `\n`). */
   writeLine(line: string): Promise<void> {
-    return this.writeRaw(Buffer.from(line + '\n', 'utf8'));
+    return this.writeRaw(Buffer.from(`${line}\n`, 'utf8'));
   }
 
   /** Escreve um comando de tempo real: byte único, SEM `\n`. */
@@ -61,7 +63,7 @@ export class SerialTransport extends EventEmitter {
 
   private writeRaw(data: Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.port || !this.port.isOpen) {
+      if (!this.port?.isOpen) {
         reject(new Error('Porta serial não está aberta.'));
         return;
       }
@@ -70,7 +72,9 @@ export class SerialTransport extends EventEmitter {
           reject(err);
           return;
         }
-        this.port!.drain((drainErr) => (drainErr ? reject(drainErr) : resolve()));
+        this.port!.drain((drainErr) =>
+          drainErr ? reject(drainErr) : resolve(),
+        );
       });
     });
   }
@@ -79,7 +83,7 @@ export class SerialTransport extends EventEmitter {
   close(): Promise<void> {
     return new Promise((resolve) => {
       const port = this.port;
-      if (!port || !port.isOpen) {
+      if (!port?.isOpen) {
         this.port = null;
         resolve();
         return;

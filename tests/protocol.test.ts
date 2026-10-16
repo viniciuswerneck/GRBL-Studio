@@ -107,7 +107,11 @@ describe('parseSettingLine / parseSettings', () => {
       value: '1200.000',
       number: 1200,
     });
-    expect(parseSettingLine('$22=1')).toEqual({ key: 22, value: '1', number: 1 });
+    expect(parseSettingLine('$22=1')).toEqual({
+      key: 22,
+      value: '1',
+      number: 1,
+    });
     expect(parseSettingLine('nope')).toBeNull();
   });
 

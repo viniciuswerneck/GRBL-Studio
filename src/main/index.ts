@@ -52,15 +52,32 @@ function installSmokeTest(win: BrowserWindow): void {
   };
 
   win.webContents.on('console-message', (...args: unknown[]) => {
-    const details = args[1] as { level?: string; message?: string } | number | undefined;
-    const level = typeof args[1] === 'number' ? args[1] : details && typeof details === 'object' ? details.level : undefined;
+    const details = args[1] as
+      | { level?: string; message?: string }
+      | number
+      | undefined;
+    const level =
+      typeof args[1] === 'number'
+        ? args[1]
+        : details && typeof details === 'object'
+          ? details.level
+          : undefined;
     const message =
-      typeof args[2] === 'string' ? args[2] : details && typeof details === 'object' ? details.message : '';
-    if (level === 'error' || level === 3) console.error('RENDERER_ERROR:', message);
+      typeof args[2] === 'string'
+        ? args[2]
+        : details && typeof details === 'object'
+          ? details.message
+          : '';
+    if (level === 'error' || level === 3)
+      console.error('RENDERER_ERROR:', message);
   });
 
-  win.webContents.once('did-fail-load', (_e, code, desc) => fail(`did-fail-load ${code} ${desc}`));
-  win.webContents.once('render-process-gone', (_e, d) => fail(`render-process-gone ${d.reason}`));
+  win.webContents.once('did-fail-load', (_e, code, desc) =>
+    fail(`did-fail-load ${code} ${desc}`),
+  );
+  win.webContents.once('render-process-gone', (_e, d) =>
+    fail(`render-process-gone ${d.reason}`),
+  );
   win.webContents.once('did-finish-load', () => {
     const done = (): void => {
       console.log('SMOKE_OK');

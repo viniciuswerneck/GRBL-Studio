@@ -55,12 +55,18 @@ export interface FileDialogFilter {
  * O filtro "Todos os arquivos" fica sempre por último.
  */
 export const IMAGE_DIALOG_FILTERS: FileDialogFilter[] = [
-  { name: 'Imagens (PNG, JPG, BMP, GIF, WebP, AVIF)', extensions: IMAGE_EXTENSIONS },
+  {
+    name: 'Imagens (PNG, JPG, BMP, GIF, WebP, AVIF)',
+    extensions: IMAGE_EXTENSIONS,
+  },
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
 export const GCODE_DIALOG_FILTERS: FileDialogFilter[] = [
-  { name: 'G-code (gcode, nc, ngc, tap, gc, txt)', extensions: GCODE_EXTENSIONS },
+  {
+    name: 'G-code (gcode, nc, ngc, tap, gc, txt)',
+    extensions: GCODE_EXTENSIONS,
+  },
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 

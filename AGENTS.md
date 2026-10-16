@@ -90,7 +90,8 @@ Regras de leveza: nada de `backdrop-filter` na janela inteira; animar só
 - Protocolo/parsing = funções puras (fáceis de testar).
 - Nomes de canal IPC centralizados (`src/shared/channels.ts`) e tipados.
 - Design: use os tokens de `docs/DESIGN.md` (`tokens.css`), não valores soltos.
-- Lint/format: ESLint + Prettier (rode antes do commit).
+- Lint/format: **Biome** — `npm run lint` (+ `lint:fix`, `format`). Ver
+  `docs/DEVELOPMENT.md` §"Lint e formatação". Rode antes do commit.
 
 ## Não faça
 

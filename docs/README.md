@@ -16,13 +16,15 @@ rodam firmware GRBL.
 | [FEATURES_COMPARISON.md](FEATURES_COMPARISON.md) | Matriz de paridade de funcionalidades com o LaserGRBL. |
 | [ROADMAP.md](ROADMAP.md) | Roadmap histórico por versão (resumo de alto nível). |
 | [../CHANGELOG.md](../CHANGELOG.md) | Registro de mudanças por versão. |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Como contribuir (setup, DoD, estilo, testes). |
+| [../LICENSE](../LICENSE) | Licença do projeto (MIT). |
 
 ## Referências e material de origem
 
 | Arquivo | Conteúdo |
 | :--- | :--- |
 | [comgo_z1_lasergrbl_user_manual.md](comgo_z1_lasergrbl_user_manual.md) | Transcrição estruturada do manual da COMGO Z1 (parâmetros, fluxo de uso, modos M3/M4, tabelas de material, troubleshooting). |
-| [lasergrbl-manual.pdf](lasergrbl-manual.pdf) / [manual laser gbrl.pdf](manual%20laser%20gbrl.pdf) | PDFs de referência do LaserGRBL (originais em `leia/` e `docs/`). |
+| [lasergrbl-manual.pdf](lasergrbl-manual.pdf) | PDF de referência do LaserGRBL (manual oficial). |
 | [LaserGRBL — Usage](https://lasergrbl.com/usage/) | Documentação oficial do produto de referência (interface, conexão, load/send, overrides, jog, custom buttons, raster import, configuração, machine status). |
 
 ## Como a documentação se relaciona

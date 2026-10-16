@@ -177,4 +177,6 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 - Lógica de protocolo/parsing em funções puras (fáceis de testar).
 - IPC sempre tipado; nomes de canal em um único lugar (`shared/channels.ts`).
 - Sem lógica de negócio dentro de handlers de UI.
-- Lint (ESLint) + format (Prettier) no CI.
+- Lint + format com **Biome** (`biome.json`; `npm run lint`) no CI. A stack
+  ESLint + `typescript-eslint` é inviável com o TypeScript 7 (compilador
+  nativo, sem API JS) — por isso Biome, que traz parser próprio.

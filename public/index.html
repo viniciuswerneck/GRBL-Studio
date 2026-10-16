@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-br" data-theme="dark">
+<html lang="pt-BR" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -15,7 +15,7 @@
       <aside class="sidebar">
         <div class="brand">
           <h1>GRBL Studio</h1>
-          <button id="themeBtn" title="Alternar tema">◐</button>
+          <button type="button" id="themeBtn" title="Alternar tema">◐</button>
         </div>
 
         <section class="card">
@@ -29,9 +29,9 @@
               <option value="38400">38400</option>
               <option value="9600">9600</option>
             </select>
-            <button id="refreshPorts">Atualizar</button>
+            <button type="button" id="refreshPorts">Atualizar</button>
           </div>
-          <button id="connectBtn" class="primary">Conectar</button>
+          <button type="button" id="connectBtn" class="primary">Conectar</button>
           <div class="conn-state">
             <span id="connDot" class="dot"></span>
             <span id="connText">Desconectado</span>
@@ -44,11 +44,11 @@
         <section class="card">
           <h3>Movimento</h3>
           <div class="jog-grid">
-            <button id="jogYp">Y+</button>
-            <button id="jogXm">X−</button>
-            <button id="jogXp">X+</button>
-            <button id="jogYm">Y−</button>
-            <button id="homeBtn" class="span3">Homing ($H)</button>
+            <button type="button" id="jogYp">Y+</button>
+            <button type="button" id="jogXm">X−</button>
+            <button type="button" id="jogXp">X+</button>
+            <button type="button" id="jogYm">Y−</button>
+            <button type="button" id="homeBtn" class="span3">Homing ($H)</button>
           </div>
           <div class="row">
             <select id="stepSelect">
@@ -66,19 +66,19 @@
             </select>
           </div>
           <div class="row">
-            <button id="setOriginBtn">Origem aqui</button>
-            <button id="gotoZeroBtn">Ir p/ zero</button>
+            <button type="button" id="setOriginBtn">Origem aqui</button>
+            <button type="button" id="gotoZeroBtn">Ir p/ zero</button>
           </div>
           <div class="row">
-            <button id="unlockBtn">Unlock ($X)</button>
-            <button id="resetBtn" class="danger">Reset</button>
+            <button type="button" id="unlockBtn">Unlock ($X)</button>
+            <button type="button" id="resetBtn" class="danger">Reset</button>
           </div>
         </section>
 
         <section class="card">
           <h3>Imagem → G-code</h3>
           <div class="hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
-          <button id="imageOpen">Escolher imagem…</button>
+          <button type="button" id="imageOpen">Escolher imagem…</button>
           <div id="imageInfo" class="file-name">Nenhuma imagem carregada</div>
 
           <details class="group" open>
@@ -152,23 +152,23 @@
             </div>
           </details>
 
-          <button id="imgGenerate" class="primary" disabled title="Escolha uma imagem primeiro">
+          <button type="button" id="imgGenerate" class="primary" disabled title="Escolha uma imagem primeiro">
             Gerar G-code
           </button>
-          <button id="imgSave" disabled title="Gere o G-code primeiro">Salvar .gcode</button>
+          <button type="button" id="imgSave" disabled title="Gere o G-code primeiro">Salvar .gcode</button>
           <div id="imgStats" class="file-name"></div>
         </section>
 
         <section class="card">
           <h3>Execução</h3>
-          <button id="fileOpen">Abrir G-code…</button>
+          <button type="button" id="fileOpen">Abrir G-code…</button>
           <div id="fileInfo" class="file-name">Nenhum arquivo carregado</div>
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
-            <button id="playBtn" disabled>▶ Iniciar</button>
-            <button id="pauseBtn" disabled>⏸ Pausar</button>
+            <button type="button" id="playBtn" disabled>▶ Iniciar</button>
+            <button type="button" id="pauseBtn" disabled>⏸ Pausar</button>
           </div>
-          <button id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
+          <button type="button" id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
           <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
         </section>
       </aside>

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { polygonArea, simplifyContour, traceContours } from '../src/shared/image/contour';
+import {
+  polygonArea,
+  simplifyContour,
+  traceContours,
+} from '../src/shared/image/contour';
 import { imageToGcode, validateOptions } from '../src/shared/image/gcode';
 import type { ImageToGcodeOptions } from '../src/shared/image/types';
 
@@ -49,7 +53,9 @@ const solid = (w: number, h: number, v: number): Uint8ClampedArray => {
   return out;
 };
 
-const options = (o: Partial<ImageToGcodeOptions> = {}): ImageToGcodeOptions => ({
+const options = (
+  o: Partial<ImageToGcodeOptions> = {},
+): ImageToGcodeOptions => ({
   adjust: {
     brightness: 0,
     contrast: 0,
@@ -104,7 +110,10 @@ describe('traceContours', () => {
   });
 
   it('canto de sela: dois pixels na diagonal ficam em laços separados', () => {
-    for (const grid of [['X.', '.X'], ['.X', 'X.']]) {
+    for (const grid of [
+      ['X.', '.X'],
+      ['.X', 'X.'],
+    ]) {
       const contours = traceContours(mask(grid), 2, 2);
       expect(contours).toHaveLength(2);
       for (const c of contours) {
@@ -182,7 +191,13 @@ describe('imageToGcode (vector)', () => {
   });
 
   it('contorno ocupa exatamente o retângulo de trabalho', () => {
-    const geometry = { ...options().geometry, widthMm: 8, heightMm: 4, offsetX: 1, offsetY: 2 };
+    const geometry = {
+      ...options().geometry,
+      widthMm: 8,
+      heightMm: 4,
+      offsetX: 1,
+      offsetY: 2,
+    };
     const { gcode } = imageToGcode(solid(8, 8, 0), 8, 8, options({ geometry }));
     for (const m of gcode.matchAll(/X(-?[\d.]+)/g)) {
       const v = Number(m[1]);
@@ -199,7 +214,12 @@ describe('imageToGcode (vector)', () => {
   });
 
   it('invariantes: cabeçalho, M5 antes de G0, sem F em G0, 3 decimais', () => {
-    const { gcode } = imageToGcode(withRect(16, 16, 3, 3, 12, 13), 16, 16, options());
+    const { gcode } = imageToGcode(
+      withRect(16, 16, 3, 3, 12, 13),
+      16,
+      16,
+      options(),
+    );
     const ls = lines(gcode);
 
     expect(ls[0]).toBe('G21');
@@ -224,13 +244,25 @@ describe('imageToGcode (vector)', () => {
     const m4 = imageToGcode(solid(8, 8, 0), 8, 8, options()).gcode;
     expect(m4).toMatch(/\nM4\n/);
     expect(m4).not.toContain('M3');
-    expect([...m4.matchAll(/S(\d+)/g)].map((m) => Number(m[1])).every((v) => v === 1000)).toBe(true);
+    expect(
+      [...m4.matchAll(/S(\d+)/g)]
+        .map((m) => Number(m[1]))
+        .every((v) => v === 1000),
+    ).toBe(true);
 
     const m3 = imageToGcode(
       solid(8, 8, 0),
       8,
       8,
-      options({ engrave: { speedMmMin: 1000, travelSpeedMmMin: 5000, sMin: 0, sMax: 700, mode: 'M3' } }),
+      options({
+        engrave: {
+          speedMmMin: 1000,
+          travelSpeedMmMin: 5000,
+          sMin: 0,
+          sMax: 700,
+          mode: 'M3',
+        },
+      }),
     ).gcode;
     expect(m3).toMatch(/\nM3 S0\n/);
     expect(m3).not.toContain('M4');
@@ -239,13 +271,22 @@ describe('imageToGcode (vector)', () => {
 
   it('imagem branca não gera movimento; imagem invertida corta o retângulo inteiro', () => {
     const white = imageToGcode(solid(8, 8, 255), 8, 8, options());
-    expect(lines(white.gcode).filter((l) => l.startsWith('G0') || l.startsWith('G1'))).toHaveLength(0);
+    expect(
+      lines(white.gcode).filter(
+        (l) => l.startsWith('G0') || l.startsWith('G1'),
+      ),
+    ).toHaveLength(0);
     expect(white.stats.contours).toBe(0);
     expect(white.stats.burnedMm).toBe(0);
     expect(white.stats.travelMm).toBe(0);
     expect(Number.isFinite(white.stats.bounds.xMin)).toBe(true); // sem Infinity no stats
 
-    const inverted = imageToGcode(solid(8, 8, 255), 8, 8, options({ adjust: { ...options().adjust, invert: true } }));
+    const inverted = imageToGcode(
+      solid(8, 8, 255),
+      8,
+      8,
+      options({ adjust: { ...options().adjust, invert: true } }),
+    );
     expect(inverted.stats.contours).toBe(1);
     expect(inverted.stats.burnedMm).toBeCloseTo(4 * 10, 6); // perímetro do retângulo 10x10
   });
@@ -260,7 +301,12 @@ describe('imageToGcode (vector)', () => {
   });
 
   it('grade de preview é binária (0 = recorte, 1 = fundo)', () => {
-    const { grid } = imageToGcode(withRect(16, 16, 4, 4, 12, 12), 16, 16, options());
+    const { grid } = imageToGcode(
+      withRect(16, 16, 4, 4, 12, 12),
+      16,
+      16,
+      options(),
+    );
     expect(Array.from(grid).every((v) => v === 0 || v === 1)).toBe(true);
     expect(Array.from(grid).some((v) => v === 0)).toBe(true);
     expect(Array.from(grid).some((v) => v === 1)).toBe(true);
@@ -290,10 +336,16 @@ describe('imageToGcode (vector)', () => {
   });
 
   it('valida a suavização com mensagem amigável', () => {
-    expect(() => validateOptions(options({ simplifyPx: -1 }))).toThrow(/Suavização/);
-    expect(() => validateOptions(options({ simplifyPx: NaN }))).toThrow(/Suavização/);
+    expect(() => validateOptions(options({ simplifyPx: -1 }))).toThrow(
+      /Suavização/,
+    );
+    expect(() => validateOptions(options({ simplifyPx: NaN }))).toThrow(
+      /Suavização/,
+    );
     expect(() => validateOptions(options({ simplifyPx: 0 }))).not.toThrow();
-    expect(() => validateOptions(options({ algorithm: 'vector' }))).not.toThrow();
+    expect(() =>
+      validateOptions(options({ algorithm: 'vector' })),
+    ).not.toThrow();
   });
 });
 

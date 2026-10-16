@@ -14,7 +14,11 @@ export function threshold(src: Float32Array, t = 0.5): Float32Array {
  * (7/16 à direita, 3/16 inferior-esquerdo, 5/16 abaixo, 1/16 inferior-direito).
  * Nunca modifica o buffer de entrada.
  */
-export function floydSteinberg(src: Float32Array, width: number, height: number): Float32Array {
+export function floydSteinberg(
+  src: Float32Array,
+  width: number,
+  height: number,
+): Float32Array {
   if (src.length !== width * height) {
     throw new Error('Dimensões incompatíveis com o buffer de imagem.');
   }
@@ -32,7 +36,8 @@ export function floydSteinberg(src: Float32Array, width: number, height: number)
       if (y + 1 < height) {
         if (x > 0) buf[i + width - 1] = buf[i + width - 1]! + (err * 3) / 16;
         buf[i + width] = buf[i + width]! + (err * 5) / 16;
-        if (x + 1 < width) buf[i + width + 1] = buf[i + width + 1]! + (err * 1) / 16;
+        if (x + 1 < width)
+          buf[i + width + 1] = buf[i + width + 1]! + (err * 1) / 16;
       }
     }
   }

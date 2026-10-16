@@ -18,7 +18,13 @@
 import { applyAdjust, toGrayscale } from './adjust';
 import { assertWorkArea, formatCoord as f } from './format';
 import { computeScanGeometry, sampleGrid, type ScanGeometry } from './raster';
-import { polygonArea, simplifyContour, traceContours, type Contour, type PixelPoint } from './contour';
+import {
+  polygonArea,
+  simplifyContour,
+  traceContours,
+  type Contour,
+  type PixelPoint,
+} from './contour';
 import type { GcodeResult, GcodeStats, ImageToGcodeOptions } from './types';
 
 /** Área mínima de um ilhote para virar contorno (px²). Ilhote de 1 px é ruído de limiar. */
@@ -52,7 +58,8 @@ export function vectorToGcode(
   // Preview: mesma grade da varredura, limiada — sem mudança no renderer.
   const sampled = sampleGrid(gray, imgWidth, imgHeight, g, geom);
   const grid = new Float32Array(sampled.length);
-  for (let i = 0; i < sampled.length; i++) grid[i] = sampled[i]! < threshold ? 0 : 1;
+  for (let i = 0; i < sampled.length; i++)
+    grid[i] = sampled[i]! < threshold ? 0 : 1;
 
   const simplifyPx = opts.simplifyPx ?? DEFAULT_SIMPLIFY_PX;
   const contours = traceContours(mask, imgWidth, imgHeight)
@@ -83,7 +90,12 @@ function emitVector(
   let g0Mm = 0;
   let g1Mm = 0;
   let segments = 0;
-  const bounds = { xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity };
+  const bounds = {
+    xMin: Infinity,
+    xMax: -Infinity,
+    yMin: Infinity,
+    yMax: -Infinity,
+  };
 
   const track = (x: number, y: number): void => {
     if (x < bounds.xMin) bounds.xMin = x;
@@ -155,8 +167,9 @@ function emitVector(
     for (const p of contour) paths.push(p.x / imgWidth, p.y / imgHeight);
   }
 
-  const gcode = out.join('\n') + '\n';
-  const estimatedSec = ((g1Mm / e.speedMmMin + g0Mm / e.travelSpeedMmMin) * 60) || 0;
+  const gcode = `${out.join('\n')}\n`;
+  const estimatedSec =
+    (g1Mm / e.speedMmMin + g0Mm / e.travelSpeedMmMin) * 60 || 0;
 
   const stats: GcodeStats = {
     rows: geom.rows,

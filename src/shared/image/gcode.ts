@@ -11,7 +11,12 @@
 import { applyAdjust, toGrayscale, validateAdjust } from './adjust';
 import { floydSteinberg } from './dither';
 import { assertWorkArea, formatCoord as f, MAX_S } from './format';
-import { computeScanGeometry, sampleGrid, validateGeometry, type ScanGeometry } from './raster';
+import {
+  computeScanGeometry,
+  sampleGrid,
+  validateGeometry,
+  type ScanGeometry,
+} from './raster';
 import type { GcodeResult, GcodeStats, ImageToGcodeOptions } from './types';
 import { vectorToGcode } from './vector';
 
@@ -34,14 +39,24 @@ export function validateOptions(opts: ImageToGcodeOptions): void {
   if (!Number.isFinite(e.sMin) || !Number.isFinite(e.sMax)) {
     throw new Error('Potência inválida.');
   }
-  if (e.sMin < 0 || e.sMax < 0) throw new Error('Potência não pode ser negativa.');
+  if (e.sMin < 0 || e.sMax < 0)
+    throw new Error('Potência não pode ser negativa.');
   if (e.sMin > e.sMax) throw new Error('S-min não pode ser maior que S-max.');
-  if (e.sMax > MAX_S) throw new Error(`S-max acima do limite suportado pelo GRBL (${MAX_S}).`);
-  if (e.mode !== 'M3' && e.mode !== 'M4') throw new Error('Modo de laser inválido (M3/M4).');
-  if (opts.algorithm !== 'line' && opts.algorithm !== 'dither' && opts.algorithm !== 'vector') {
+  if (e.sMax > MAX_S)
+    throw new Error(`S-max acima do limite suportado pelo GRBL (${MAX_S}).`);
+  if (e.mode !== 'M3' && e.mode !== 'M4')
+    throw new Error('Modo de laser inválido (M3/M4).');
+  if (
+    opts.algorithm !== 'line' &&
+    opts.algorithm !== 'dither' &&
+    opts.algorithm !== 'vector'
+  ) {
     throw new Error('Algoritmo inválido (line/dither/vector).');
   }
-  if (opts.simplifyPx !== undefined && (!Number.isFinite(opts.simplifyPx) || opts.simplifyPx < 0)) {
+  if (
+    opts.simplifyPx !== undefined &&
+    (!Number.isFinite(opts.simplifyPx) || opts.simplifyPx < 0)
+  ) {
     throw new Error('Suavização inválida.');
   }
 }
@@ -99,7 +114,12 @@ function emitGcode(
   let g0Mm = 0;
   let burnedMm = 0;
   let segments = 0;
-  const bounds = { xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity };
+  const bounds = {
+    xMin: Infinity,
+    xMax: -Infinity,
+    yMin: Infinity,
+    yMax: -Infinity,
+  };
 
   const track = (x: number, y: number): void => {
     if (x < bounds.xMin) bounds.xMin = x;
@@ -109,7 +129,9 @@ function emitGcode(
   };
 
   const point = (rowCoord: number, scanCoord: number): Point =>
-    geom.direction === 'h' ? { x: scanCoord, y: rowCoord } : { x: rowCoord, y: scanCoord };
+    geom.direction === 'h'
+      ? { x: scanCoord, y: rowCoord }
+      : { x: rowCoord, y: scanCoord };
 
   /** Deslocamento com laser desligado. */
   const travel = (to: Point): void => {
@@ -195,9 +217,11 @@ function emitGcode(
   // Invariante: nenhuma coordenada fora da área de trabalho.
   assertWorkArea(bounds, g);
 
-  const gcode = out.join('\n') + '\n';
+  const gcode = `${out.join('\n')}\n`;
   const estimatedSec =
-    ((g1Mm / e.speedMmMin + g0Mm / (e.travelSpeedMmMin || TRAVEL_ESTIMATE_MMPM)) * 60) || 0;
+    (g1Mm / e.speedMmMin +
+      g0Mm / (e.travelSpeedMmMin || TRAVEL_ESTIMATE_MMPM)) *
+      60 || 0;
 
   const stats: GcodeStats = {
     rows: geom.rows,

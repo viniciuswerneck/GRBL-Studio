@@ -35,8 +35,10 @@ export function traceContours(
   width: number,
   height: number,
 ): Contour[] {
-  if (width <= 0 || height <= 0) throw new Error('Dimensão de máscara inválida.');
-  if (mask.length < width * height) throw new Error('Máscara incompatível com as dimensões.');
+  if (width <= 0 || height <= 0)
+    throw new Error('Dimensão de máscara inválida.');
+  if (mask.length < width * height)
+    throw new Error('Máscara incompatível com as dimensões.');
 
   const material = (x: number, y: number): boolean =>
     x >= 0 && x < width && y >= 0 && y < height && mask[y * width + x] !== 0;
@@ -82,7 +84,9 @@ export function traceContours(
         contour.push({ x: cx, y: cy });
         const next = edges.get(key(cx, cy));
         if (!next || next.length === 0) {
-          throw new Error('Falha ao traçar o contorno (máscara inconsistente).');
+          throw new Error(
+            'Falha ao traçar o contorno (máscara inconsistente).',
+          );
         }
         dir = pickDirection(next, dir);
         next.splice(next.indexOf(dir), 1); // dirs são únicos por vértice
@@ -129,7 +133,8 @@ export function polygonArea(contour: Contour): number {
  */
 export function simplifyContour(contour: Contour, epsilonPx: number): Contour {
   const n = contour.length;
-  if (n < 4 || !Number.isFinite(epsilonPx) || epsilonPx <= 0) return contour.slice();
+  if (n < 4 || !Number.isFinite(epsilonPx) || epsilonPx <= 0)
+    return contour.slice();
 
   const pts: PixelPoint[] = [...contour, contour[0]!]; // fecha explicitamente
   const keep = new Array<boolean>(pts.length).fill(false);
@@ -162,7 +167,11 @@ export function simplifyContour(contour: Contour, epsilonPx: number): Contour {
 }
 
 /** Distância de um ponto ao segmento [a, b]. */
-function pointSegmentDistance(p: PixelPoint, a: PixelPoint, b: PixelPoint): number {
+function pointSegmentDistance(
+  p: PixelPoint,
+  a: PixelPoint,
+  b: PixelPoint,
+): number {
   const vx = b.x - a.x;
   const vy = b.y - a.y;
   const wx = p.x - a.x;

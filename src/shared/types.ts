@@ -79,7 +79,11 @@ export interface ClassifiedLine {
   message?: string;
 }
 
-export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type ConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error';
 
 /** Evento de console (comando enviado ou linha recebida). */
 export interface ConsoleLine {
@@ -131,7 +135,12 @@ export interface PortInfo {
 }
 
 /** Ações de override de feed. */
-export type OverrideAction = 'reset' | 'plus10' | 'minus10' | 'plus1' | 'minus1';
+export type OverrideAction =
+  | 'reset'
+  | 'plus10'
+  | 'minus10'
+  | 'plus1'
+  | 'minus1';
 
 /** Payload do erro enviado à UI. */
 export interface ErrorPayload {

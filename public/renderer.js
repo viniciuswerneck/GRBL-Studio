@@ -87,7 +87,8 @@ let flushScheduled = false;
 
 function appendLine(text, kind) {
   pendingLines.push({ text, kind });
-  if (pendingLines.length > MAX_LINES * 2) pendingLines.splice(0, pendingLines.length - MAX_LINES);
+  if (pendingLines.length > MAX_LINES * 2)
+    pendingLines.splice(0, pendingLines.length - MAX_LINES);
   if (!flushScheduled) {
     flushScheduled = true;
     requestAnimationFrame(flushLines);
@@ -97,12 +98,15 @@ function appendLine(text, kind) {
 function flushLines() {
   flushScheduled = false;
   const nearBottom =
-    el.consoleOutput.scrollHeight - el.consoleOutput.scrollTop - el.consoleOutput.clientHeight < 40;
+    el.consoleOutput.scrollHeight -
+      el.consoleOutput.scrollTop -
+      el.consoleOutput.clientHeight <
+    40;
 
   const frag = document.createDocumentFragment();
   for (const { text, kind } of pendingLines) {
     const div = document.createElement('div');
-    div.className = 'line-' + kind;
+    div.className = `line-${kind}`;
     div.textContent = text;
     frag.appendChild(div);
   }
@@ -121,7 +125,15 @@ function setConnection(conn) {
   state.connection = conn;
   state.connected = conn === 'connected';
 
-  el.connDot.className = 'dot' + (conn === 'connected' ? ' connected' : conn === 'connecting' ? ' connecting' : conn === 'error' ? ' error' : '');
+  el.connDot.className =
+    'dot' +
+    (conn === 'connected'
+      ? ' connected'
+      : conn === 'connecting'
+        ? ' connecting'
+        : conn === 'error'
+          ? ' error'
+          : '');
   const labels = {
     disconnected: 'Desconectado',
     connecting: 'Conectando…',
@@ -129,8 +141,12 @@ function setConnection(conn) {
     error: 'Erro de conexão',
   };
   el.connText.textContent = labels[conn] ?? conn;
-  el.connectBtn.textContent = state.connected || conn === 'connecting' ? 'Desconectar' : 'Conectar';
-  el.connectBtn.classList.toggle('primary', !state.connected && conn !== 'connecting');
+  el.connectBtn.textContent =
+    state.connected || conn === 'connecting' ? 'Desconectar' : 'Conectar';
+  el.connectBtn.classList.toggle(
+    'primary',
+    !state.connected && conn !== 'connecting',
+  );
 
   if (!state.connected && state.jobState === 'running') setJobState('idle');
   updateControls();
@@ -146,7 +162,10 @@ function updateControls() {
   const hasFile = state.lines.length > 0;
   const running = state.jobState === 'running';
   const paused = state.jobState === 'paused';
-  const idle = state.jobState === 'idle' || state.jobState === 'finished' || state.jobState === 'aborted';
+  const idle =
+    state.jobState === 'idle' ||
+    state.jobState === 'finished' ||
+    state.jobState === 'aborted';
 
   el.playBtn.disabled = !conn || !hasFile || !idle;
   el.pauseBtn.disabled = !(running || paused);
@@ -157,9 +176,11 @@ function updateControls() {
   const lines = state.lines.length;
   let hint;
   if (!hasFile && !conn) {
-    hint = 'Gere o G-code (Imagem → G-code) ou abra um .gcode e conecte a máquina para enviar.';
+    hint =
+      'Gere o G-code (Imagem → G-code) ou abra um .gcode e conecte a máquina para enviar.';
   } else if (!hasFile) {
-    hint = 'Nenhum G-code carregado: gere um em “Imagem → G-code” ou abra um arquivo .gcode.';
+    hint =
+      'Nenhum G-code carregado: gere um em “Imagem → G-code” ou abra um arquivo .gcode.';
   } else if (!conn) {
     hint = `G-code pronto (${lines} linhas). Conecte a máquina em “Serial” para enviar.`;
   } else if (running) {
@@ -176,7 +197,17 @@ function updateControls() {
       ? 'Conecte a máquina para enviar'
       : '';
 
-  for (const b of [el.jogXp, el.jogXm, el.jogYp, el.jogYm, el.homeBtn, el.unlockBtn, el.resetBtn, el.setOriginBtn, el.gotoZeroBtn]) {
+  for (const b of [
+    el.jogXp,
+    el.jogXm,
+    el.jogYp,
+    el.jogYm,
+    el.homeBtn,
+    el.unlockBtn,
+    el.resetBtn,
+    el.setOriginBtn,
+    el.gotoZeroBtn,
+  ]) {
     b.disabled = !conn;
   }
 }
@@ -189,7 +220,7 @@ async function refreshPorts() {
   try {
     ports = await window.grbl.listPorts();
   } catch (err) {
-    appendLine('Falha ao listar portas: ' + err.message, 'error');
+    appendLine(`Falha ao listar portas: ${err.message}`, 'error');
     return;
   }
   // Placas laser aparecem como ttyUSB* (CH340/CP2102) ou ttyACM* (Arduino).
@@ -229,7 +260,7 @@ el.connectBtn.addEventListener('click', async () => {
     await window.grbl.connect({ path, baudRate: Number(el.baudList.value) });
   } catch (err) {
     setConnection('error');
-    appendLine('Erro ao conectar: ' + err.message, 'error');
+    appendLine(`Erro ao conectar: ${err.message}`, 'error');
   }
 });
 
@@ -261,13 +292,16 @@ el.fileOpen.addEventListener('click', async () => {
   try {
     opened = await window.grbl.openGcode();
   } catch (err) {
-    appendLine('Falha ao abrir o arquivo: ' + err.message, 'error');
+    appendLine(`Falha ao abrir o arquivo: ${err.message}`, 'error');
     return;
   }
   if (!opened) return;
 
   applyJobLines(opened.name, opened.text);
-  appendLine(`Arquivo carregado: ${opened.name} (${state.lines.length} linhas)`, 'ok');
+  appendLine(
+    `Arquivo carregado: ${opened.name} (${state.lines.length} linhas)`,
+    'ok',
+  );
 });
 
 function applyJobLines(name, text) {
@@ -326,12 +360,15 @@ function ensureWorker() {
   try {
     gcodeWorker = new Worker('./gcode.worker.js');
   } catch (err) {
-    appendLine('Worker de imagem indisponível: ' + err.message, 'error');
+    appendLine(`Worker de imagem indisponível: ${err.message}`, 'error');
     return null;
   }
   gcodeWorker.onmessage = onConvertResult;
   gcodeWorker.onerror = (e) => {
-    appendLine('Erro no worker de imagem: ' + (e.message || 'desconhecido'), 'error');
+    appendLine(
+      `Erro no worker de imagem: ${e.message || 'desconhecido'}`,
+      'error',
+    );
     endConvert();
   };
   return gcodeWorker;
@@ -341,7 +378,9 @@ function endConvert() {
   imageState.busy = false;
   el.imgGenerate.disabled = !imageState.loaded;
   el.imgGenerate.textContent = 'Gerar G-code';
-  el.imgGenerate.title = imageState.loaded ? 'Converte a imagem em G-code' : 'Escolha uma imagem primeiro';
+  el.imgGenerate.title = imageState.loaded
+    ? 'Converte a imagem em G-code'
+    : 'Escolha uma imagem primeiro';
 }
 
 function onConvertResult(ev) {
@@ -350,8 +389,8 @@ function onConvertResult(ev) {
   endConvert();
 
   if (!msg.ok) {
-    el.imgStats.textContent = 'Falha: ' + msg.error;
-    appendLine('Falha ao gerar G-code: ' + msg.error, 'error');
+    el.imgStats.textContent = `Falha: ${msg.error}`;
+    appendLine(`Falha ao gerar G-code: ${msg.error}`, 'error');
     return;
   }
   applyGenerated(msg.gcode, msg.stats, msg.grid, msg.contourPaths);
@@ -362,13 +401,15 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
   if (!image) return;
 
   state.lines = gcode.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  state.fileName = baseName(image.name) + '.gcode';
+  state.fileName = `${baseName(image.name)}.gcode`;
   el.fileInfo.textContent = `${state.fileName} — ${state.lines.length} linhas (gerado de ${image.name})`;
 
   imageState.stats = stats;
   imageState.grid = grid;
   el.imgSave.disabled = state.lines.length === 0;
-  el.imgSave.title = el.imgSave.disabled ? 'Gere o G-code primeiro' : 'Salva o G-code em disco';
+  el.imgSave.title = el.imgSave.disabled
+    ? 'Gere o G-code primeiro'
+    : 'Salva o G-code em disco';
   el.imgStats.textContent = formatStats(stats);
 
   imageState.preview = {
@@ -399,7 +440,7 @@ function formatBytes(n) {
 }
 
 function formatTime(sec) {
-  if (!isFinite(sec) || sec <= 0) return '—';
+  if (!Number.isFinite(sec) || sec <= 0) return '—';
   const s = Math.round(sec);
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60);
@@ -409,7 +450,9 @@ function formatTime(sec) {
 
 function formatStats(stats) {
   const contours =
-    typeof stats.contours === 'number' && stats.contours > 0 ? ` · ${stats.contours} contornos` : '';
+    typeof stats.contours === 'number' && stats.contours > 0
+      ? ` · ${stats.contours} contornos`
+      : '';
   return (
     `${stats.rows} linhas × ${stats.cols} amostras · ${stats.segments} segmentos · ` +
     `${formatBytes(stats.bytes)} · ~${formatTime(stats.estimatedSec)}${contours}`
@@ -427,13 +470,17 @@ el.imageOpen.addEventListener('click', async () => {
     return;
   }
   if (!opened) return;
-  loadImageBlob(opened.name, new Blob([toBytes(opened.data)], { type: opened.mime }));
+  loadImageBlob(
+    opened.name,
+    new Blob([toBytes(opened.data)], { type: opened.mime }),
+  );
 });
 
 /** Normaliza o retorno do IPC (Uint8Array/Buffer/ArrayBuffer) para bytes. */
 function toBytes(data) {
   if (data instanceof Uint8Array) return data;
-  if (ArrayBuffer.isView(data)) return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  if (ArrayBuffer.isView(data))
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   return new Uint8Array(data);
 }
 
@@ -470,12 +517,26 @@ function loadImageBlob(name, blob) {
     const imageData = ctx.getImageData(0, 0, w, h);
     URL.revokeObjectURL(url);
 
-    imageState.loaded = { name, width: w, height: h, aspect: naturalH / naturalW, data: imageData.data };
+    imageState.loaded = {
+      name,
+      width: w,
+      height: h,
+      aspect: naturalH / naturalW,
+      data: imageData.data,
+    };
     imageState.stats = null;
     imageState.grid = null;
-    imageState.preview = { kind: 'image', data: imageData.data, width: w, height: h };
+    imageState.preview = {
+      kind: 'image',
+      data: imageData.data,
+      width: w,
+      height: h,
+    };
 
-    const reduced = w !== naturalW || h !== naturalH ? ` (reduzida de ${naturalW}×${naturalH})` : '';
+    const reduced =
+      w !== naturalW || h !== naturalH
+        ? ` (reduzida de ${naturalW}×${naturalH})`
+        : '';
     el.imageInfo.textContent = `${name} — ${naturalW}×${naturalH}px${reduced}`;
     el.imageInfo.classList.remove('error');
     el.imgStats.textContent = '';
@@ -551,8 +612,12 @@ el.imgKeepAspect.addEventListener('change', () => {
 /** Linhas/mm, direção e ponto valem só no raster; suavização só no vetor (RF-IMG-6). */
 function updateAlgorithmVisibility() {
   const vector = el.imgAlgorithm.value === 'vector';
-  document.querySelectorAll('.vector-only').forEach((node) => node.classList.toggle('hidden', !vector));
-  document.querySelectorAll('.raster-only').forEach((node) => node.classList.toggle('hidden', vector));
+  document.querySelectorAll('.vector-only').forEach((node) => {
+    node.classList.toggle('hidden', !vector);
+  });
+  document.querySelectorAll('.raster-only').forEach((node) => {
+    node.classList.toggle('hidden', vector);
+  });
 }
 
 el.imgAlgorithm.addEventListener('change', updateAlgorithmVisibility);
@@ -586,7 +651,9 @@ function readImageOptions() {
     },
     algorithm: el.imgAlgorithm.value,
     // Só existe no modo vetor: assim o campo vazio nunca invalida os modos raster.
-    ...(el.imgAlgorithm.value === 'vector' ? { simplifyPx: Number(el.imgSimplify.value) } : {}),
+    ...(el.imgAlgorithm.value === 'vector'
+      ? { simplifyPx: Number(el.imgSimplify.value) }
+      : {}),
   };
 }
 
@@ -607,7 +674,13 @@ el.imgGenerate.addEventListener('click', () => {
   const buffer = image.data.slice().buffer;
   convertId += 1;
   worker.postMessage(
-    { id: convertId, width: image.width, height: image.height, rgba: buffer, options },
+    {
+      id: convertId,
+      width: image.width,
+      height: image.height,
+      rgba: buffer,
+      options,
+    },
     [buffer],
   );
 });
@@ -615,10 +688,13 @@ el.imgGenerate.addEventListener('click', () => {
 el.imgSave.addEventListener('click', async () => {
   if (!state.lines.length || !imageState.loaded) return;
   try {
-    const path = await window.grbl.saveGcode(baseName(imageState.loaded.name) + '.gcode', state.lines.join('\n') + '\n');
-    if (path) appendLine('G-code salvo em ' + path, 'ok');
+    const path = await window.grbl.saveGcode(
+      `${baseName(imageState.loaded.name)}.gcode`,
+      `${state.lines.join('\n')}\n`,
+    );
+    if (path) appendLine(`G-code salvo em ${path}`, 'ok');
   } catch (err) {
-    appendLine('Falha ao salvar: ' + err.message, 'error');
+    appendLine(`Falha ao salvar: ${err.message}`, 'error');
   }
 });
 
@@ -670,10 +746,12 @@ function drawSource(source, srcW, srcH, smooth, alpha = 1) {
  * `flat` é o formato comprimento-prefixado do worker, em coordenadas 0..1.
  */
 function drawContours(flat, box) {
-  if (!flat || !flat.length) return;
+  if (!flat?.length) return;
   const { ctx } = previewContext();
   const accent =
-    getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4cc2ff';
+    getComputedStyle(document.documentElement)
+      .getPropertyValue('--accent')
+      .trim() || '#4cc2ff';
 
   ctx.save();
   ctx.strokeStyle = accent;
@@ -709,7 +787,12 @@ function renderPreview() {
   el.previewHint.classList.add('hidden');
 
   if (preview.kind === 'image') {
-    drawSource(new ImageData(preview.data, preview.width, preview.height), preview.width, preview.height, true);
+    drawSource(
+      new ImageData(preview.data, preview.width, preview.height),
+      preview.width,
+      preview.height,
+      true,
+    );
     return;
   }
 
@@ -770,21 +853,32 @@ function applyTheme(theme) {
 }
 
 el.themeBtn.addEventListener('click', () => {
-  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  const next =
+    document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
   applyTheme(next);
 });
 
 // ------------------------------------------------------- eventos do main
 
-const STATE_CLASS = { Idle: 'idle', Run: 'run', Jog: 'run', Hold: 'hold', Alarm: 'alarm', Door: 'alarm' };
+const STATE_CLASS = {
+  Idle: 'idle',
+  Run: 'run',
+  Jog: 'run',
+  Hold: 'hold',
+  Alarm: 'alarm',
+  Door: 'alarm',
+};
 
 window.grbl.onConsole((line) => {
-  appendLine(line.direction === 'out' ? `> ${line.text}` : line.text, line.kind);
+  appendLine(
+    line.direction === 'out' ? `> ${line.text}` : line.text,
+    line.kind,
+  );
 });
 
 window.grbl.onStatus((s) => {
   const cls = STATE_CLASS[s.state] ?? '';
-  el.stateBadge.className = 'badge ' + cls;
+  el.stateBadge.className = `badge ${cls}`;
   el.stateBadge.textContent = s.state;
 
   const pos = s.mpos ?? s.wpos;
@@ -800,12 +894,13 @@ window.grbl.onConnection((conn) => setConnection(conn));
 window.grbl.onJob((job) => {
   setJobState(job.state);
   if (job.state === 'finished') appendLine('Job concluído.', 'ok');
-  if (job.state === 'aborted' && job.error) appendLine('Job abortado: ' + job.error, 'error');
+  if (job.state === 'aborted' && job.error)
+    appendLine(`Job abortado: ${job.error}`, 'error');
 });
 
 window.grbl.onProgress((p) => {
   const pct = p.total ? Math.round((p.sent / p.total) * 100) : 0;
-  el.progressBar.style.width = pct + '%';
+  el.progressBar.style.width = `${pct}%`;
   el.progressText.textContent = `${p.sent} / ${p.total} (${pct}%)`;
 });
 

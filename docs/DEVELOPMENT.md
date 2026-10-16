@@ -60,6 +60,8 @@ Cobertura atual:
 - `tests/image-adjust.test.ts` — cinza/alfa, ajustes, Floyd–Steinberg.
 - `tests/image-gcode.test.ts` — geometria, reamostragem e invariantes do
   emissor (área de trabalho, limites de `S`, `G0` sem `F`, precisão).
+- `tests/image-contour.test.ts` — traçador de contorno (RF-IMG-6): padrões,
+  furos, canto de sela, simplificação RDP, mapeamento px → mm e invariantes.
 - `tests/file-filters.test.ts` — filtros dos diálogos nativos, detecção de
   extensão (maiúsculas/minúsculas) e MIME da imagem.
 
@@ -80,6 +82,27 @@ maquinário de E2E:
 ```bash
 SMOKE_EVAL="$(cat probe.js)" GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .
 ```
+
+## Lint e formatação (Biome)
+
+Usamos **Biome** — linter + formatter num único binário (Rust). Não é
+capricho: o projeto usa **TypeScript 7** (compilador nativo), que **não expõe a
+API JavaScript** exigida pelo `typescript-eslint`; a stack ESLint + Prettier
+padrão é inviável aqui.
+
+```bash
+npm run lint          # biome check .            (lint + formatação; não altera)
+npm run lint:fix      # biome check --write .    (aplica correções seguras)
+npm run format        # biome format --write .
+npm run format:check  # biome format .
+```
+
+- Configuração em `biome.json` (aspas simples, `;`, 2 espaços, 80 colunas).
+- `vcs.useIgnoreFile` faz o Biome respeitar o `.gitignore` (não toca `dist/` nem
+  `public/gcode.worker.js`).
+- A regra `style/noNonNullAssertion` está **desativada de propósito**: o código
+  usa `!` em laços numéricos e o `tsc` estrito é a rede de segurança de tipos.
+- Rode `npm run lint` antes de cada commit (faz parte do DoD).
 
 ## Emulador GRBL (testes manuais sem hardware)
 
@@ -109,11 +132,15 @@ src/
 ├── shared/
 │   ├── channels.ts           # nomes de canais IPC (fonte única)
 │   ├── protocol.ts           # parser puro GRBL (testável)
+│   ├── fileFilters.ts        # filtros/MIME dos diálogos nativos
 │   ├── types.ts              # tipos compartilhados
 │   └── image/                # pipeline puro de preparação de arquivo (testado)
 │       ├── adjust.ts         #   cinza + brilho/contraste/clip/inversão/B&W
 │       ├── dither.ts         #   Floyd–Steinberg e limiar
 │       ├── raster.ts         #   geometria da varredura + reamostragem
+│       ├── contour.ts        #   traçador de contorno (RF-IMG-6) + RDP/shoelace
+│       ├── vector.ts         #   emissor de recorte (contorno fechado a S-max)
+│       ├── format.ts         #   formatCoord/MAX_S/assertWorkArea compartilhado
 │       ├── gcode.ts          #   emissão M3/M4 com invariantes de segurança
 │       └── types.ts          #   opções e estatísticas
 └── preload/
@@ -135,4 +162,4 @@ tests/                        # Vitest (unit + integração)
 - TypeScript estrito; sem `any` desnecessário.
 - Protocolo/parsing = funções puras e testadas (nunca na UI).
 - Comandos de tempo real **sem `\n`**; envio sempre send-response.
-- Lint/format (ESLint + Prettier) ainda não configurado — pendente na Fase 0.
+- Lint/format: **Biome** (`npm run lint`) — ver a seção "Lint e formatação".

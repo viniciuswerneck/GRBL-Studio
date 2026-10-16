@@ -100,7 +100,9 @@ export function sampleGrid(
   geom: ScanGeometry,
 ): Float32Array {
   if (gray.length !== imgWidth * imgHeight) {
-    throw new Error('Buffer de cinza incompatível com as dimensões informadas.');
+    throw new Error(
+      'Buffer de cinza incompatível com as dimensões informadas.',
+    );
   }
 
   const grid = new Float32Array(geom.rows * geom.cols);

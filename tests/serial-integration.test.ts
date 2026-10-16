@@ -12,7 +12,8 @@ import { SerialTransport } from '../src/main/services/SerialTransport';
 
 function hasSocat(): boolean {
   try {
-    const { execSync } = require('node:child_process') as typeof import('node:child_process');
+    const { execSync } =
+      require('node:child_process') as typeof import('node:child_process');
     execSync('command -v socat', { stdio: 'ignore' });
     return true;
   } catch {
@@ -22,12 +23,19 @@ function hasSocat(): boolean {
 
 const SOCAT = hasSocat();
 
-async function createPtyPair(): Promise<{ proc: ChildProcess; a: string; b: string }> {
+async function createPtyPair(): Promise<{
+  proc: ChildProcess;
+  a: string;
+  b: string;
+}> {
   const proc = spawn('socat', ['-d', '-d', 'pty,raw,echo=0', 'pty,raw,echo=0']);
   const paths: string[] = [];
 
   await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout aguardando PTYs do socat')), 5000);
+    const timer = setTimeout(
+      () => reject(new Error('timeout aguardando PTYs do socat')),
+      5000,
+    );
     const onData = (buf: Buffer): void => {
       const found = buf.toString().match(/\/dev\/pts\/\d+/g);
       if (found) paths.push(...found);
@@ -48,8 +56,14 @@ function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const tick = (): void => {
-      if (predicate()) return resolve();
-      if (Date.now() - start > timeoutMs) return reject(new Error('timeout esperando condição'));
+      if (predicate()) {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        reject(new Error('timeout esperando condição'));
+        return;
+      }
       setTimeout(tick, 20);
     };
     tick();
@@ -57,7 +71,11 @@ function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
 }
 
 const cleanups: Array<() => void> = [];
-afterAll(() => cleanups.forEach((fn) => fn()));
+afterAll(() => {
+  cleanups.forEach((fn) => {
+    fn();
+  });
+});
 
 describe.skipIf(!SOCAT)('SerialTransport — integração via PTY', () => {
   it('abre a porta, escreve uma linha e recebe dados', async () => {

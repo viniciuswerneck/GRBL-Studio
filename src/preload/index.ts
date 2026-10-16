@@ -33,9 +33,11 @@ function on<T>(channel: string, cb: (payload: T) => void): Unsubscribe {
 const api = {
   // Comandos (renderer -> main)
   listPorts: (): Promise<PortInfo[]> => ipcRenderer.invoke(CHANNELS.portsList),
-  connect: (opts: ConnectOptions): Promise<boolean> => ipcRenderer.invoke(CHANNELS.connect, opts),
+  connect: (opts: ConnectOptions): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.connect, opts),
   disconnect: (): Promise<boolean> => ipcRenderer.invoke(CHANNELS.disconnect),
-  writeLine: (line: string): Promise<boolean> => ipcRenderer.invoke(CHANNELS.writeLine, line),
+  writeLine: (line: string): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.writeLine, line),
 
   startJob: (lines: string[], name?: string): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.jobStart, { lines, name }),
@@ -49,22 +51,29 @@ const api = {
   setOrigin: (x = 0, y = 0, z = 0): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.setOrigin, { x, y, z }),
   gotoZero: (): Promise<boolean> => ipcRenderer.invoke(CHANNELS.gotoZero),
-  jog: (cmd: JogCommand): Promise<boolean> => ipcRenderer.invoke(CHANNELS.jog, cmd),
+  jog: (cmd: JogCommand): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.jog, cmd),
   overrideFeed: (action: OverrideAction): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.overrideFeed, action),
   saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
-  openImage: (): Promise<OpenedImageFile | null> => ipcRenderer.invoke(CHANNELS.fileOpenImage),
-  openGcode: (): Promise<OpenedTextFile | null> => ipcRenderer.invoke(CHANNELS.fileOpenGcode),
+  openImage: (): Promise<OpenedImageFile | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenImage),
+  openGcode: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenGcode),
 
   // Eventos (main -> renderer)
-  onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe => on(CHANNELS.evConsole, cb),
-  onStatus: (cb: (status: GrblStatus) => void): Unsubscribe => on(CHANNELS.evStatus, cb),
-  onProgress: (cb: (p: JobProgress) => void): Unsubscribe => on(CHANNELS.evProgress, cb),
+  onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe =>
+    on(CHANNELS.evConsole, cb),
+  onStatus: (cb: (status: GrblStatus) => void): Unsubscribe =>
+    on(CHANNELS.evStatus, cb),
+  onProgress: (cb: (p: JobProgress) => void): Unsubscribe =>
+    on(CHANNELS.evProgress, cb),
   onJob: (cb: (job: JobInfo) => void): Unsubscribe => on(CHANNELS.evJob, cb),
   onConnection: (cb: (state: ConnectionState) => void): Unsubscribe =>
     on(CHANNELS.evConnection, cb),
-  onError: (cb: (err: ErrorPayload) => void): Unsubscribe => on(CHANNELS.evError, cb),
+  onError: (cb: (err: ErrorPayload) => void): Unsubscribe =>
+    on(CHANNELS.evError, cb),
 };
 
 contextBridge.exposeInMainWorld('grbl', api);

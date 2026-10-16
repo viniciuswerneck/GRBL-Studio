@@ -5,7 +5,14 @@ import { toGrayscale } from '../src/shared/image/adjust';
 import type { ImageToGcodeOptions } from '../src/shared/image/types';
 
 /** Imagem sólida (r, g, b, a) em RGBA. */
-const solid = (w: number, h: number, r: number, g: number, b: number, a = 255): Uint8ClampedArray => {
+const solid = (
+  w: number,
+  h: number,
+  r: number,
+  g: number,
+  b: number,
+  a = 255,
+): Uint8ClampedArray => {
   const out = new Uint8ClampedArray(w * h * 4);
   for (let i = 0; i < w * h; i++) {
     out[i * 4] = r;
@@ -32,7 +39,9 @@ const gradient = (w: number, h: number): Uint8ClampedArray => {
   return out;
 };
 
-const options = (o: Partial<ImageToGcodeOptions> = {}): ImageToGcodeOptions => ({
+const options = (
+  o: Partial<ImageToGcodeOptions> = {},
+): ImageToGcodeOptions => ({
   adjust: {
     brightness: 0,
     contrast: 0,
@@ -62,7 +71,8 @@ const options = (o: Partial<ImageToGcodeOptions> = {}): ImageToGcodeOptions => (
 });
 
 const lines = (gcode: string): string[] => gcode.trimEnd().split('\n');
-const all = (gcode: string, re: RegExp): number[] => [...gcode.matchAll(re)].map((m) => Number(m[1]));
+const all = (gcode: string, re: RegExp): number[] =>
+  [...gcode.matchAll(re)].map((m) => Number(m[1]));
 
 describe('computeScanGeometry', () => {
   it('inserção do ponto mantém a área gravada dentro do retângulo', () => {
@@ -84,7 +94,8 @@ describe('computeScanGeometry', () => {
     expect(geom.rowStart - geom.halfDot).toBeCloseTo(0, 9);
 
     // Fim (último centro + metade do ponto) nunca passa da borda.
-    const lastScan = geom.scanStart + (geom.cols - 1) * geom.pitch + geom.halfDot;
+    const lastScan =
+      geom.scanStart + (geom.cols - 1) * geom.pitch + geom.halfDot;
     const lastRow = geom.rowStart + (geom.rows - 1) * geom.pitch + geom.halfDot;
     expect(lastScan).toBeLessThanOrEqual(10 + 1e-9);
     expect(lastRow).toBeLessThanOrEqual(20 + 1e-9);
@@ -138,9 +149,15 @@ describe('computeScanGeometry', () => {
       direction: 'h' as const,
       dotSizeMm: 0,
     };
-    expect(() => computeScanGeometry({ ...valid, linesPerMm: 0 })).toThrow(/Linhas\/mm/);
-    expect(() => computeScanGeometry({ ...valid, widthMm: -1 })).toThrow(/Largura/);
-    expect(() => computeScanGeometry({ ...valid, dotSizeMm: -1 })).toThrow(/ponto/);
+    expect(() => computeScanGeometry({ ...valid, linesPerMm: 0 })).toThrow(
+      /Linhas\/mm/,
+    );
+    expect(() => computeScanGeometry({ ...valid, widthMm: -1 })).toThrow(
+      /Largura/,
+    );
+    expect(() => computeScanGeometry({ ...valid, dotSizeMm: -1 })).toThrow(
+      /ponto/,
+    );
   });
 });
 
@@ -182,8 +199,16 @@ describe('sampleGrid', () => {
       direction: 'h' as const,
       dotSizeMm: 0,
     };
-    const grid = sampleGrid(gray, 8, 8, geometry, computeScanGeometry(geometry));
-    expect(Array.from(grid).every((v) => Math.abs(v - grid[0]!) < 1e-6)).toBe(true);
+    const grid = sampleGrid(
+      gray,
+      8,
+      8,
+      geometry,
+      computeScanGeometry(geometry),
+    );
+    expect(Array.from(grid).every((v) => Math.abs(v - grid[0]!) < 1e-6)).toBe(
+      true,
+    );
   });
 });
 
@@ -234,7 +259,9 @@ describe('imageToGcode', () => {
     for (const m of gcode.matchAll(/Y(-?[\d.]+)/g)) {
       const v = Number(m[1]);
       expect(v).toBeGreaterThanOrEqual(geometry.offsetY - 1e-9);
-      expect(v).toBeLessThanOrEqual(geometry.offsetY + geometry.heightMm + 1e-9);
+      expect(v).toBeLessThanOrEqual(
+        geometry.offsetY + geometry.heightMm + 1e-9,
+      );
     }
 
     expect(stats.bounds.xMin).toBeGreaterThanOrEqual(geometry.offsetX - 1e-9);
@@ -292,11 +319,16 @@ describe('imageToGcode', () => {
   });
 
   it('trecho branco longo vira G0; trecho curto continua no feed', () => {
-    const longGap = imageToGcode(solid(10, 10, 255, 255, 255), 10, 10, options());
-    // 10 mm de branco em cada linha (gap >= 1 mm) -> desloca, além da entrada de linha.
-    expect(lines(longGap.gcode).filter((l) => l.startsWith('G0')).length).toBeGreaterThanOrEqual(
-      longGap.stats.rows * 2,
+    const longGap = imageToGcode(
+      solid(10, 10, 255, 255, 255),
+      10,
+      10,
+      options(),
     );
+    // 10 mm de branco em cada linha (gap >= 1 mm) -> desloca, além da entrada de linha.
+    expect(
+      lines(longGap.gcode).filter((l) => l.startsWith('G0')).length,
+    ).toBeGreaterThanOrEqual(longGap.stats.rows * 2);
 
     // Gap acima de qualquer linha: sobram só os deslocamentos de entrada de linha.
     const shortGap = imageToGcode(
@@ -323,7 +355,15 @@ describe('imageToGcode', () => {
       solid(10, 10, 0, 0, 0),
       10,
       10,
-      options({ engrave: { speedMmMin: 1000, travelSpeedMmMin: 5000, sMin: 0, sMax: 1000, mode: 'M3' } }),
+      options({
+        engrave: {
+          speedMmMin: 1000,
+          travelSpeedMmMin: 5000,
+          sMin: 0,
+          sMax: 1000,
+          mode: 'M3',
+        },
+      }),
     ).gcode;
     expect(m3).toMatch(/\nM3 S0\n/);
     expect(m3).not.toContain('M4');
@@ -331,11 +371,23 @@ describe('imageToGcode', () => {
   });
 
   it('dithering gera grade binária e line-to-line mantém tons', () => {
-    const dither = imageToGcode(solid(20, 20, 128, 128, 128), 20, 20, options({ algorithm: 'dither' }));
+    const dither = imageToGcode(
+      solid(20, 20, 128, 128, 128),
+      20,
+      20,
+      options({ algorithm: 'dither' }),
+    );
     expect(Array.from(dither.grid).every((v) => v === 0 || v === 1)).toBe(true);
 
-    const line = imageToGcode(gradient(20, 20), 20, 20, options({ algorithm: 'line' }));
-    const distinct = new Set(Array.from(line.grid).map((v) => Math.round(v * 1000)));
+    const line = imageToGcode(
+      gradient(20, 20),
+      20,
+      20,
+      options({ algorithm: 'line' }),
+    );
+    const distinct = new Set(
+      Array.from(line.grid).map((v) => Math.round(v * 1000)),
+    );
     expect(distinct.size).toBeGreaterThan(5); // mantém os tons de cinza
   });
 
@@ -358,19 +410,29 @@ describe('imageToGcode', () => {
   });
 
   it('valida opções com mensagens amigáveis', () => {
-    expect(() => validateOptions(options({ geometry: { ...options().geometry, widthMm: 0 } }))).toThrow(
-      /Largura/,
-    );
     expect(() =>
-      validateOptions(options({ engrave: { ...options().engrave, sMin: 900, sMax: 100 } })),
+      validateOptions(
+        options({ geometry: { ...options().geometry, widthMm: 0 } }),
+      ),
+    ).toThrow(/Largura/);
+    expect(() =>
+      validateOptions(
+        options({ engrave: { ...options().engrave, sMin: 900, sMax: 100 } }),
+      ),
     ).toThrow(/S-min/);
     expect(() =>
-      validateOptions(options({ engrave: { ...options().engrave, speedMmMin: 0 } })),
+      validateOptions(
+        options({ engrave: { ...options().engrave, speedMmMin: 0 } }),
+      ),
     ).toThrow(/Velocidade/);
     expect(() =>
-      validateOptions(options({ engrave: { ...options().engrave, sMax: 99999 } })),
+      validateOptions(
+        options({ engrave: { ...options().engrave, sMax: 99999 } }),
+      ),
     ).toThrow(/32767/);
-    expect(() => validateOptions(options({ algorithm: 'nope' as 'line' }))).toThrow(/Algoritmo/);
+    expect(() =>
+      validateOptions(options({ algorithm: 'nope' as 'line' })),
+    ).toThrow(/Algoritmo/);
     expect(() => validateOptions(options())).not.toThrow();
   });
 

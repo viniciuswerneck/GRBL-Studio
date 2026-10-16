@@ -28,9 +28,17 @@ function log(...args) {
 /** Cria o par de PTYs com socat e devolve os dois caminhos. */
 function createPtyPair() {
   return new Promise((resolve, reject) => {
-    const proc = spawn('socat', ['-d', '-d', 'pty,raw,echo=0', 'pty,raw,echo=0']);
+    const proc = spawn('socat', [
+      '-d',
+      '-d',
+      'pty,raw,echo=0',
+      'pty,raw,echo=0',
+    ]);
     const paths = [];
-    const timer = setTimeout(() => reject(new Error('timeout aguardando PTYs do socat')), 5000);
+    const timer = setTimeout(
+      () => reject(new Error('timeout aguardando PTYs do socat')),
+      5000,
+    );
 
     proc.stderr.on('data', (buf) => {
       const found = buf.toString().match(/\/dev\/pts\/\d+/g);
@@ -164,7 +172,9 @@ function handleLine(raw) {
 
   if (/^\$J=/i.test(line)) {
     applyRelative(line.slice(3));
-    log(`${GRN}   -> ${st.x.toFixed(3)}, ${st.y.toFixed(3)}, ${st.z.toFixed(3)}${RST}`);
+    log(
+      `${GRN}   -> ${st.x.toFixed(3)}, ${st.y.toFixed(3)}, ${st.z.toFixed(3)}${RST}`,
+    );
     ok();
     return;
   }
@@ -221,7 +231,13 @@ function handleRealtime(byte, appPath, emuPath, proc) {
     write(banner);
     return;
   }
-  if (byte === 0x90 || byte === 0x91 || byte === 0x92 || byte === 0x93 || byte === 0x94) {
+  if (
+    byte === 0x90 ||
+    byte === 0x91 ||
+    byte === 0x92 ||
+    byte === 0x93 ||
+    byte === 0x94
+  ) {
     log(`${DIM}   [override ${byte.toString(16)}]${RST}`);
     return;
   }
@@ -280,7 +296,9 @@ try {
   process.stdout.write(`\n${GRN}GRBL emulator ativo${RST} (sem hardware)\n`);
   process.stdout.write(`  ${GRN}lado do app    :${RST} ${app}\n`);
   process.stdout.write(`  ${DIM}lado do emulador:${RST} ${emu}\n\n`);
-  process.stdout.write(`No app: cole "${app}" na caixa "Porta manual" e clique em Conectar.\n`);
+  process.stdout.write(
+    `No app: cole "${app}" na caixa "Porta manual" e clique em Conectar.\n`,
+  );
   process.stdout.write(`(Ctrl-C encerra e libera a porta)\n\n`);
 
   const shutdown = () => {

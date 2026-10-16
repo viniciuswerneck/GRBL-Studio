@@ -44,7 +44,12 @@ const ctx = self as unknown as WorkerScope;
 ctx.onmessage = (ev: MessageEvent<ConvertRequest>): void => {
   const { id, width, height, rgba, options } = ev.data;
   try {
-    const result = imageToGcode(new Uint8ClampedArray(rgba), width, height, options);
+    const result = imageToGcode(
+      new Uint8ClampedArray(rgba),
+      width,
+      height,
+      options,
+    );
     const transfer = [result.grid.buffer as unknown as Transferable];
     if (result.contourPaths) {
       transfer.push(result.contourPaths.buffer as unknown as Transferable);
@@ -61,6 +66,10 @@ ctx.onmessage = (ev: MessageEvent<ConvertRequest>): void => {
       transfer,
     );
   } catch (err) {
-    ctx.postMessage({ id, ok: false, error: err instanceof Error ? err.message : String(err) });
+    ctx.postMessage({
+      id,
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 };

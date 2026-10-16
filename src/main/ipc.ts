@@ -14,7 +14,11 @@ import { readFile, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { SerialPort } from 'serialport';
 import { CHANNELS } from '../shared/channels';
-import { GCODE_DIALOG_FILTERS, IMAGE_DIALOG_FILTERS, imageMimeType } from '../shared/fileFilters';
+import {
+  GCODE_DIALOG_FILTERS,
+  IMAGE_DIALOG_FILTERS,
+  imageMimeType,
+} from '../shared/fileFilters';
 import type {
   ConnectOptions,
   JogCommand,
@@ -34,7 +38,10 @@ function formatMb(bytes: number): string {
 }
 
 /** Abre o diálogo nativo e devolve o primeiro caminho escolhido. */
-async function pickFile(sender: WebContents, options: OpenDialogOptions): Promise<string | null> {
+async function pickFile(
+  sender: WebContents,
+  options: OpenDialogOptions,
+): Promise<string | null> {
   const owner = BrowserWindow.fromWebContents(sender);
   const result = owner
     ? await dialog.showOpenDialog(owner, options)
@@ -89,10 +96,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     return true;
   });
 
-  ipcMain.handle(CHANNELS.jobStart, (_evt, payload: { lines: string[]; name?: string }) => {
-    client.startJob(payload.lines, payload.name);
-    return true;
-  });
+  ipcMain.handle(
+    CHANNELS.jobStart,
+    (_evt, payload: { lines: string[]; name?: string }) => {
+      client.startJob(payload.lines, payload.name);
+      return true;
+    },
+  );
 
   ipcMain.handle(CHANNELS.jobPause, () => {
     client.pauseJob();
@@ -124,10 +134,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     return true;
   });
 
-  ipcMain.handle(CHANNELS.setOrigin, (_evt, p: { x?: number; y?: number; z?: number }) => {
-    client.setOrigin(p.x ?? 0, p.y ?? 0, p.z ?? 0);
-    return true;
-  });
+  ipcMain.handle(
+    CHANNELS.setOrigin,
+    (_evt, p: { x?: number; y?: number; z?: number }) => {
+      client.setOrigin(p.x ?? 0, p.y ?? 0, p.z ?? 0);
+      return true;
+    },
+  );
 
   ipcMain.handle(CHANNELS.gotoZero, () => {
     client.gotoZero();
@@ -148,57 +161,65 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
    * Abre uma imagem para preparação (Fase 5). O caminho vem sempre do
    * diálogo do sistema; o renderer recebe apenas nome + bytes.
    */
-  ipcMain.handle(CHANNELS.fileOpenImage, async (evt): Promise<OpenedImageFile | null> => {
-    const filePath = await pickFile(evt.sender, {
-      title: 'Abrir imagem',
-      buttonLabel: 'Abrir',
-      properties: ['openFile'],
-      filters: IMAGE_DIALOG_FILTERS,
-    });
-    if (!filePath) return null;
+  ipcMain.handle(
+    CHANNELS.fileOpenImage,
+    async (evt): Promise<OpenedImageFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: 'Abrir imagem',
+        buttonLabel: 'Abrir',
+        properties: ['openFile'],
+        filters: IMAGE_DIALOG_FILTERS,
+      });
+      if (!filePath) return null;
 
-    const info = await stat(filePath);
-    if (!info.isFile()) throw new Error('O caminho escolhido não é um arquivo.');
-    if (info.size > IMAGE_MAX_BYTES) {
-      throw new Error(
-        `Imagem muito grande (${formatMb(info.size)}). Limite: ${formatMb(IMAGE_MAX_BYTES)}.`,
-      );
-    }
+      const info = await stat(filePath);
+      if (!info.isFile())
+        throw new Error('O caminho escolhido não é um arquivo.');
+      if (info.size > IMAGE_MAX_BYTES) {
+        throw new Error(
+          `Imagem muito grande (${formatMb(info.size)}). Limite: ${formatMb(IMAGE_MAX_BYTES)}.`,
+        );
+      }
 
-    const buffer = await readFile(filePath);
-    const name = path.basename(filePath);
-    return {
-      path: filePath,
-      name,
-      mime: imageMimeType(name),
-      data: new Uint8Array(buffer),
-    };
-  });
+      const buffer = await readFile(filePath);
+      const name = path.basename(filePath);
+      return {
+        path: filePath,
+        name,
+        mime: imageMimeType(name),
+        data: new Uint8Array(buffer),
+      };
+    },
+  );
 
   /**
    * Abre um arquivo de G-code para envio. Mesmo contrato: caminho só vem do
    * diálogo; o renderer recebe o texto pronto.
    */
-  ipcMain.handle(CHANNELS.fileOpenGcode, async (evt): Promise<OpenedTextFile | null> => {
-    const filePath = await pickFile(evt.sender, {
-      title: 'Abrir G-code',
-      buttonLabel: 'Abrir',
-      properties: ['openFile'],
-      filters: GCODE_DIALOG_FILTERS,
-    });
-    if (!filePath) return null;
+  ipcMain.handle(
+    CHANNELS.fileOpenGcode,
+    async (evt): Promise<OpenedTextFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: 'Abrir G-code',
+        buttonLabel: 'Abrir',
+        properties: ['openFile'],
+        filters: GCODE_DIALOG_FILTERS,
+      });
+      if (!filePath) return null;
 
-    const info = await stat(filePath);
-    if (!info.isFile()) throw new Error('O caminho escolhido não é um arquivo.');
-    if (info.size > TEXT_MAX_BYTES) {
-      throw new Error(
-        `Arquivo muito grande (${formatMb(info.size)}). Limite: ${formatMb(TEXT_MAX_BYTES)}.`,
-      );
-    }
+      const info = await stat(filePath);
+      if (!info.isFile())
+        throw new Error('O caminho escolhido não é um arquivo.');
+      if (info.size > TEXT_MAX_BYTES) {
+        throw new Error(
+          `Arquivo muito grande (${formatMb(info.size)}). Limite: ${formatMb(TEXT_MAX_BYTES)}.`,
+        );
+      }
 
-    const text = await readFile(filePath, 'utf8');
-    return { path: filePath, name: path.basename(filePath), text };
-  });
+      const text = await readFile(filePath, 'utf8');
+      return { path: filePath, name: path.basename(filePath), text };
+    },
+  );
 
   /**
    * Salva o G-code preparado (Fase 5). Só grava o texto que a UI gerou —
@@ -206,8 +227,12 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
    */
   ipcMain.handle(
     CHANNELS.fileSave,
-    async (evt, payload: { suggestedName?: string; content?: string }): Promise<string | null> => {
-      if (typeof payload?.content !== 'string') throw new Error('Conteúdo de G-code ausente.');
+    async (
+      evt,
+      payload: { suggestedName?: string; content?: string },
+    ): Promise<string | null> => {
+      if (typeof payload?.content !== 'string')
+        throw new Error('Conteúdo de G-code ausente.');
 
       const options = {
         title: 'Salvar G-code',

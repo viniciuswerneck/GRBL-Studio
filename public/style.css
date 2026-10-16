@@ -72,8 +72,8 @@ body {
 /* ---------------------------------------------------------------- inputs */
 
 select,
-input[type='text'],
-input[type='number'] {
+input[type="text"],
+input[type="number"] {
   width: 100%;
   padding: 6px var(--sp-2);
   font: inherit;
@@ -195,12 +195,12 @@ button.danger {
   cursor: pointer;
 }
 
-input[type='range'] {
+input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
 }
 
-input[type='checkbox'] {
+input[type="checkbox"] {
   width: auto;
   margin: 0;
   accent-color: var(--accent);
