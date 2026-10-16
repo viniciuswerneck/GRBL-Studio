@@ -1,5 +1,7 @@
 # GRBL Studio
 
+[![CI](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml)
+
 GRBL Studio é uma alternativa moderna ao LaserGRBL, feita em Electron + TypeScript para Linux.
 
 ## Funcionalidades

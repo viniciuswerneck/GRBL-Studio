@@ -6,6 +6,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — CI (GitHub Actions)
+- `.github/workflows/ci.yml` com dois jobs em cada push para `main` e PR:
+  **quality** (`npm ci` → Biome lint → `tsc` → Vitest com `socat` instalado →
+  build) e **smoke** (Electron headless sob `xvfb`, esperando `SMOKE_OK`).
+- Badge de status no `README.md`; seção "Integração contínua" no
+  `docs/DEVELOPMENT.md`.
+
 ### Added — Fase 0: licença, CONTRIBUTING e lint/format
 - **Licença MIT** (`LICENSE`, campo `license` no `package.json`).
 - `CONTRIBUTING.md` com setup, Definition of Done e regras de estilo.

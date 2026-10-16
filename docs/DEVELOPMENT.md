@@ -104,6 +104,21 @@ npm run format:check  # biome format .
   usa `!` em laços numéricos e o `tsc` estrito é a rede de segurança de tipos.
 - Rode `npm run lint` antes de cada commit (faz parte do DoD).
 
+## Integração contínua (CI)
+
+`.github/workflows/ci.yml` roda em cada push para `main` e em cada PR:
+
+| Job | O que faz |
+| :--- | :--- |
+| **quality** | `npm ci` → `lint` (Biome) → `typecheck` → `test` (Vitest, com `socat` instalado para o teste PTY) → `build`. |
+| **smoke** | `npm ci` → `build` → smoke headless do Electron sob `xvfb`. |
+
+Rode a mesma sequência localmente antes de comitar:
+
+```bash
+npm run lint && npm run typecheck && npm test && npm run build
+```
+
 ## Emulador GRBL (testes manuais sem hardware)
 
 Crie um par de PTYs e converse com ele por um script simples:

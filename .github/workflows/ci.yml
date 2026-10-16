@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancela execuções antigas do mesmo ref (economiza runners).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # O Electron não é necessário para lint/testes/build: pula o download
+      # (~100 MB) para deixar o job mais rápido.
+      - name: Instalar dependências
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      # Habilita o teste de integração real via PTY (tests/serial-integration).
+      - name: Instalar socat
+        run: sudo apt-get update && sudo apt-get install -y socat
+
+      - name: Lint (Biome)
+        run: npm run lint
+
+      - name: Type-check (tsc)
+        run: npm run typecheck
+
+      - name: Testes (Vitest)
+        run: npm test
+
+      - name: Build (tsc + preload + worker)
+        run: npm run build
+
+  smoke:
+    name: Smoke headless (Electron)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke test (xvfb)
+        run: xvfb-run -a npx electron --no-sandbox --disable-dev-shm-usage .
+        env:
+          GRBL_SMOKE_TEST: '1'

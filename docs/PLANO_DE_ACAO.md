@@ -365,7 +365,7 @@ no nível do Windows 11**.
 **Tarefas contínuas**
 - [ ] Cobertura de testes do módulo de protocolo > 80%.
 - [ ] E2E Playwright para o fluxo conectar → carregar → enviar (com GRBL simulado).
-- [ ] CI (GitHub Actions): build + lint + testes em cada PR.
+- [x] CI (GitHub Actions): build + lint + typecheck + testes (+ smoke headless) em cada push/PR. *(`.github/workflows/ci.yml`)*
 - [ ] Testes manuais em hardware real por release (checklist).
 
 ---
