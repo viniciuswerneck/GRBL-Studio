@@ -261,10 +261,10 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - Múltiplos passes.
 
 **Tarefas**
-- [ ] RF-OVR-1…4: sliders de override com *worker* que emite bytes corretos.
-- [ ] RF-PRV-1…5: parser de movimento (`G0/G1/G2/G3`, `G90/G91`, unidades) → canvas.
+- [x] RF-OVR-1…4: sliders de override com *worker* que emite bytes corretos.
+- [x] RF-PRV-1…5: parser de movimento (`G0/G1/G2/G3`, `G90/G91`, unidades) → canvas.
 - [x] RF-GC-6: múltiplos passes.
-- [ ] RF-PRV-3: crosshair de posição ligado ao status.
+- [x] RF-PRV-3: crosshair de posição ligado ao status.
 - [ ] RF-GC-9: aviso quando o caminho excede a área de trabalho (`$130/$131`).
 
 **Critérios de aceite**

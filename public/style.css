@@ -269,6 +269,41 @@ input[type="checkbox"] {
   grid-column: span 3;
 }
 
+/* ---------------------------------------------------------------- overrides */
+
+.ovr-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+
+.ovr-label {
+  flex: 0 0 4.5rem;
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+}
+
+.ovr-row button {
+  flex: 0 0 auto;
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.ovr-value {
+  flex: 0 0 3.5rem;
+  text-align: center;
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.ovr-row button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---------------------------------------------------------------- job */
 
 .progress {
@@ -414,6 +449,63 @@ input[type="checkbox"] {
 
 .preview-hint.hidden {
   display: none;
+}
+
+.preview-warning {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  right: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--danger) 18%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--text);
+  font-size: var(--fs-12);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.preview-warning.hidden {
+  display: none;
+}
+
+.preview-legend {
+  position: absolute;
+  left: var(--sp-2);
+  bottom: var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--bg-card) 80%, transparent);
+  color: var(--text-sub);
+  font-size: var(--fs-12);
+  pointer-events: none;
+}
+
+.preview-legend.hidden {
+  display: none;
+}
+
+.lg-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: var(--r-pill);
+}
+
+.lg-cut {
+  background: var(--accent);
+}
+
+.lg-rapid {
+  background: var(--text-disabled);
+}
+
+.lg-tip {
+  color: var(--text-disabled);
 }
 
 /* ---------------------------------------------------------------- console */

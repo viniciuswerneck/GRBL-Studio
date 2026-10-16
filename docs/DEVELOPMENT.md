@@ -23,7 +23,7 @@ npm run typecheck    # apenas verificação de tipos (tsc --noEmit)
 npm run dev          # tsc em watch (main/preload/shared)
 ```
 
-O `build` faz quatro etapas:
+O `build` faz cinco etapas:
 
 1. `tsc` compila `src/**` para `dist/**` (main, preload, shared, renderer).
 2. `esbuild` **empacota o preload** em `dist/preload/index.js`. Isso é
@@ -37,6 +37,10 @@ O `build` faz quatro etapas:
    (iife, `global-name=GRBL_MATERIALS`) a partir de `shared/materials.ts`. O
    renderer é JS puro (não importa TS), então consome os perfis pelo global
    `window.GRBL_MATERIALS`. Também é artefato de build (`build:materials`).
+5. `esbuild` **empacota o parser de G-code** do preview em `public/preview.js`
+   (iife, `global-name=GRBL_PREVIEW`) a partir de `shared/preview.ts`. Mesmo
+   padrão dos perfis; expõe `window.GRBL_PREVIEW.parseGcode`. Artefato de
+   build (`build:preview`).
 
 ## Rodar
 

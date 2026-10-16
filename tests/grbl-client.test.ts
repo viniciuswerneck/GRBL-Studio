@@ -174,6 +174,24 @@ describe('GrblClient — tempo real', () => {
     expect(fake.realtime).toEqual([0x91, 0x90]);
   });
 
+  it('override de potência (spindle) emite bytes 0x99-0x9d', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    client.overrideSpindle('plus1');
+    client.overrideSpindle('minus10');
+    client.overrideSpindle('reset');
+    expect(fake.realtime).toEqual([0x9c, 0x9b, 0x99]);
+  });
+
+  it('override rápido emite bytes 0x95-0x97 (3 níveis)', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    client.overrideRapid('medium');
+    client.overrideRapid('low');
+    client.overrideRapid('default');
+    expect(fake.realtime).toEqual([0x96, 0x97, 0x95]);
+  });
+
   it('stopJob envia soft reset (0x18)', async () => {
     const { fake, client } = setup();
     await client.connect(CONNECT);

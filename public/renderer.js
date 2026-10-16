@@ -74,6 +74,11 @@ const el = {
   imgStats: $('imgStats'),
   previewCanvas: $('previewCanvas'),
   previewHint: $('previewHint'),
+  previewWarning: $('previewWarning'),
+  previewLegend: $('previewLegend'),
+  ovrFeedValue: $('ovrFeedValue'),
+  ovrRapidValue: $('ovrRapidValue'),
+  ovrSpindleValue: $('ovrSpindleValue'),
 };
 
 const state = {
@@ -290,6 +295,54 @@ el.gotoZeroBtn.addEventListener('click', () => window.grbl.gotoZero());
 el.unlockBtn.addEventListener('click', () => window.grbl.unlock());
 el.resetBtn.addEventListener('click', () => window.grbl.reset());
 
+// ---------------------------------------------------------------- overrides
+
+/** Liga um botão de override a uma ação da API (feed/spindle). */
+function bindOverride(button, method, action) {
+  $(button).addEventListener('click', () => window.grbl[method](action));
+}
+
+for (const [id, action] of [
+  ['ovrFeedMinus10', 'minus10'],
+  ['ovrFeedMinus1', 'minus1'],
+  ['ovrFeedPlus1', 'plus1'],
+  ['ovrFeedPlus10', 'plus10'],
+  ['ovrFeedReset', 'reset'],
+]) {
+  bindOverride(id, 'overrideFeed', action);
+}
+
+for (const [id, action] of [
+  ['ovrSpindleMinus10', 'minus10'],
+  ['ovrSpindleMinus1', 'minus1'],
+  ['ovrSpindlePlus1', 'plus1'],
+  ['ovrSpindlePlus10', 'plus10'],
+  ['ovrSpindleReset', 'reset'],
+]) {
+  bindOverride(id, 'overrideSpindle', action);
+}
+
+for (const [id, level] of [
+  ['ovrRapidDefault', 'default'],
+  ['ovrRapidMedium', 'medium'],
+  ['ovrRapidLow', 'low'],
+]) {
+  $(id).addEventListener('click', () => window.grbl.overrideRapid(level));
+}
+
+/** Mostra no botão o nível de rápido ativo (o GRBL só distingue 3 níveis). */
+function updateRapidButtons(percent) {
+  el.ovrRapidValue.textContent = `${percent}%`;
+  const active = percent >= 100 ? 'default' : percent >= 50 ? 'medium' : 'low';
+  for (const [id, level] of [
+    ['ovrRapidDefault', 'default'],
+    ['ovrRapidMedium', 'medium'],
+    ['ovrRapidLow', 'low'],
+  ]) {
+    $(id).classList.toggle('active', level === active);
+  }
+}
+
 // ------------------------------------------------------------------ arquivo
 
 el.fileOpen.addEventListener('click', async () => {
@@ -315,21 +368,15 @@ function applyJobLines(name, text) {
     .filter((l) => l.trim().length > 0);
   state.fileName = name;
   el.fileInfo.textContent = `${name} — ${state.lines.length} linhas`;
-  // Arquivo aberto manualmente: o preview volta para a imagem (se houver).
-  if (imageState.loaded) {
-    imageState.preview = {
-      kind: 'image',
-      data: imageState.loaded.data,
-      width: imageState.loaded.width,
-      height: imageState.loaded.height,
-    };
-    renderPreview();
-  }
+  // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
+  setGcodePreview(String(text), name);
   updateControls();
 }
 
 el.playBtn.addEventListener('click', () => {
   if (!state.connected || !state.lines.length) return;
+  // Preview do caminho para acompanhar a execução (RF-PRV-5).
+  setGcodePreview(state.lines.join('\n'), state.fileName);
   window.grbl.startJob(state.lines, state.fileName);
 });
 
@@ -843,10 +890,202 @@ function drawContours(flat, box) {
   ctx.restore();
 }
 
+// --- Preview de caminho (G-code): parser puro + canvas (RF-PRV-1…5) --------
+
+const previewProgram = {
+  program: null, // result de window.GRBL_PREVIEW.parseGcode
+  view: { scale: 1, tx: 0, ty: 0 },
+  /** Linhas já executadas (progresso do job) para destacar o percorrido. */
+  done: 0,
+  /** Área de trabalho em mm ($130/$131), quando conhecida. */
+  workArea: null,
+  /** Última posição (work coords) recebida no status. */
+  lastPos: null,
+  label: '',
+};
+
+function cssColor(name, fallback) {
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value || fallback;
+}
+
+/** Interpreta o G-code e passa o preview para o modo caminho (RF-PRV-2/4). */
+function setGcodePreview(text, label) {
+  const parser = window.GRBL_PREVIEW;
+  if (!parser) return;
+  previewProgram.program = parser.parseGcode(text);
+  previewProgram.view = { scale: 1, tx: 0, ty: 0 };
+  previewProgram.done = 0;
+  previewProgram.lastPos = null;
+  previewProgram.label = label || '';
+  imageState.preview = { kind: 'gcode' };
+  checkWorkArea();
+  renderPreview();
+}
+
+/** Atualiza a área de trabalho (vem das $130/$131 — Fase 3). */
+function setWorkArea(widthMm, heightMm) {
+  const ok = widthMm > 0 && heightMm > 0;
+  previewProgram.workArea = ok ? { widthMm, heightMm } : null;
+  if (imageState.preview?.kind === 'gcode') {
+    checkWorkArea();
+    renderPreview();
+  }
+}
+
+/** Avisa (RF-GC-9) quando o caminho sai da área de trabalho configurada. */
+function checkWorkArea() {
+  el.previewWarning.classList.add('hidden');
+  const bounds = previewProgram.program?.bounds;
+  const wa = previewProgram.workArea;
+  if (!bounds || !wa) return;
+  const eps = 1e-6;
+  const problems = [];
+  if (bounds.xMin < -eps || bounds.yMin < -eps) {
+    problems.push('coordenadas negativas');
+  }
+  if (bounds.xMax > wa.widthMm + eps) {
+    problems.push(`X até ${bounds.xMax.toFixed(1)} > $130`);
+  }
+  if (bounds.yMax > wa.heightMm + eps) {
+    problems.push(`Y até ${bounds.yMax.toFixed(1)} > $131`);
+  }
+  if (problems.length === 0) return;
+  el.previewWarning.textContent =
+    `⚠ O caminho excede a área configurada (${wa.widthMm}×${wa.heightMm} mm): ` +
+    `${problems.join(', ')}.`;
+  el.previewWarning.classList.remove('hidden');
+  appendLine(
+    `Aviso: o caminho excede a área de trabalho (${problems.join(', ')}).`,
+    'error',
+  );
+}
+
+function drawGcodePreview() {
+  const { ctx, rect } = previewContext();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  const prog = previewProgram.program;
+
+  el.previewLegend.classList.remove('hidden');
+  if (!prog || prog.moves.length === 0) {
+    el.previewHint.classList.remove('hidden');
+    el.previewHint.textContent = prog
+      ? 'Este G-code não tem movimentos para desenhar.'
+      : 'Abra um G-code ou inicie um job para ver o caminho.';
+    return;
+  }
+  el.previewHint.classList.add('hidden');
+
+  const b = prog.bounds;
+  if (!b) return;
+  const padW = (b.xMax - b.xMin) * 0.05;
+  const padH = (b.yMax - b.yMin) * 0.05;
+  const pad = Math.max(1, padW, padH);
+  const wx0 = b.xMin - pad;
+  const wx1 = b.xMax + pad;
+  const wy0 = b.yMin - pad;
+  const wy1 = b.yMax + pad;
+  const wmm = Math.max(1e-3, wx1 - wx0);
+  const hmm = Math.max(1e-3, wy1 - wy0);
+  const base = Math.min(rect.width / wmm, rect.height / hmm);
+  const scale = base * previewProgram.view.scale;
+  const cx = (wx0 + wx1) / 2;
+  const cy = (wy0 + wy1) / 2;
+  const { tx, ty } = previewProgram.view;
+  const toX = (mm) => rect.width / 2 + (mm - cx) * scale + tx;
+  const toY = (mm) => rect.height / 2 - (mm - cy) * scale + ty;
+
+  const accent = cssColor('--accent', '#4cc2ff');
+  const dim = cssColor('--text-disabled', '#6b6b6b');
+  const okColor = cssColor('--ok', '#6ccb5f');
+
+  // Área de trabalho ($130/$131) tracejada.
+  const wa = previewProgram.workArea;
+  if (wa) {
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = dim;
+    ctx.globalAlpha = 0.7;
+    ctx.strokeRect(
+      toX(0),
+      toY(wa.heightMm),
+      wa.widthMm * scale,
+      wa.heightMm * scale,
+    );
+    ctx.restore();
+  }
+
+  const moves = prog.moves;
+
+  // Deslocamentos (G0) em segundo plano.
+  ctx.strokeStyle = dim;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const m of moves) {
+    if (!m.rapid) continue;
+    ctx.moveTo(toX(m.x0), toY(m.y0));
+    ctx.lineTo(toX(m.x1), toY(m.y1));
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Queima/corte (G1/G2/G3).
+  ctx.strokeStyle = accent;
+  ctx.beginPath();
+  for (const m of moves) {
+    if (m.rapid) continue;
+    ctx.moveTo(toX(m.x0), toY(m.y0));
+    ctx.lineTo(toX(m.x1), toY(m.y1));
+  }
+  ctx.stroke();
+
+  // Trecho já executado (RF-PRV-5).
+  const done = previewProgram.done;
+  if (done > 0) {
+    ctx.strokeStyle = okColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (const m of moves) {
+      if (m.rapid || m.line >= done) continue;
+      ctx.moveTo(toX(m.x0), toY(m.y0));
+      ctx.lineTo(toX(m.x1), toY(m.y1));
+    }
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+
+  // Crosshair da posição (RF-PRV-3).
+  const pos = previewProgram.lastPos;
+  if (pos) {
+    const hx = toX(pos.x);
+    const hy = toY(pos.y);
+    ctx.strokeStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(hx - 8, hy);
+    ctx.lineTo(hx + 8, hy);
+    ctx.moveTo(hx, hy - 8);
+    ctx.lineTo(hx, hy + 8);
+    ctx.stroke();
+  }
+}
+
 function renderPreview() {
   const preview = imageState.preview;
+  if (preview?.kind === 'gcode') {
+    el.previewLegend.classList.remove('hidden');
+    drawGcodePreview();
+    return;
+  }
+  el.previewLegend.classList.add('hidden');
+  el.previewWarning.classList.add('hidden');
+
   if (!preview) {
     el.previewHint.classList.remove('hidden');
+    el.previewHint.textContent =
+      'Carregue uma imagem para preparar o arquivo de gravação';
     const { ctx, rect } = previewContext();
     ctx.clearRect(0, 0, rect.width, rect.height);
     return;
@@ -885,6 +1124,64 @@ function renderPreview() {
   if (hasContours) drawContours(preview.contours, box);
 }
 
+/* ------------------------- zoom e pan (RF-PRV-4) ------------------------- */
+
+let dragState = null;
+
+/** `true` quando o preview está no modo caminho (G-code). */
+function isPathPreview() {
+  return imageState.preview?.kind === 'gcode';
+}
+
+el.previewCanvas.addEventListener(
+  'wheel',
+  (e) => {
+    if (!isPathPreview()) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    previewProgram.view.scale = Math.min(
+      50,
+      Math.max(0.2, previewProgram.view.scale * factor),
+    );
+    renderPreview();
+  },
+  { passive: false },
+);
+
+el.previewCanvas.addEventListener('pointerdown', (e) => {
+  if (imageState.preview?.kind !== 'gcode') return;
+  dragState = {
+    x: e.clientX,
+    y: e.clientY,
+    tx: previewProgram.view.tx,
+    ty: previewProgram.view.ty,
+  };
+  el.previewCanvas.setPointerCapture(e.pointerId);
+});
+
+el.previewCanvas.addEventListener('pointermove', (e) => {
+  if (!dragState) return;
+  previewProgram.view.tx = dragState.tx + (e.clientX - dragState.x);
+  previewProgram.view.ty = dragState.ty + (e.clientY - dragState.y);
+  renderPreview();
+});
+
+el.previewCanvas.addEventListener('pointerup', (e) => {
+  if (!dragState) return;
+  dragState = null;
+  try {
+    el.previewCanvas.releasePointerCapture(e.pointerId);
+  } catch {
+    /* já liberado */
+  }
+});
+
+el.previewCanvas.addEventListener('dblclick', () => {
+  if (imageState.preview?.kind !== 'gcode') return;
+  previewProgram.view = { scale: 1, tx: 0, ty: 0 };
+  renderPreview();
+});
+
 let previewResize = null;
 window.addEventListener('resize', () => {
   if (previewResize) cancelAnimationFrame(previewResize);
@@ -893,6 +1190,16 @@ window.addEventListener('resize', () => {
     renderPreview();
   });
 });
+
+/** Re-renderiza no máximo uma vez por frame (status/progresso em alta taxa). */
+let previewFrame = null;
+function scheduleRenderPreview() {
+  if (previewFrame) return;
+  previewFrame = requestAnimationFrame(() => {
+    previewFrame = null;
+    renderPreview();
+  });
+}
 
 // ----------------------------------------------------------------- console
 
@@ -954,6 +1261,19 @@ window.grbl.onStatus((s) => {
   el.droZ.textContent = pos ? pos.z.toFixed(3) : '—';
   el.metaFeed.textContent = s.fs ? `${s.fs.feed}` : '—';
   el.metaS.textContent = s.fs ? `${s.fs.spindle}` : '—';
+
+  if (s.ov) {
+    el.ovrFeedValue.textContent = `${s.ov[0]}%`;
+    el.ovrSpindleValue.textContent = `${s.ov[2]}%`;
+    updateRapidButtons(s.ov[1]);
+  }
+
+  // Crosshair do preview segue a posição de trabalho (RF-PRV-3).
+  const work = s.wpos ?? s.mpos;
+  if (work) {
+    previewProgram.lastPos = { x: work.x, y: work.y };
+    if (imageState.preview?.kind === 'gcode') scheduleRenderPreview();
+  }
 });
 
 window.grbl.onConnection((conn) => setConnection(conn));
@@ -969,6 +1289,11 @@ window.grbl.onProgress((p) => {
   const pct = p.total ? Math.round((p.sent / p.total) * 100) : 0;
   el.progressBar.style.width = `${pct}%`;
   el.progressText.textContent = `${p.sent} / ${p.total} (${pct}%)`;
+  // Marca no preview o trecho já executado (RF-PRV-5).
+  if (imageState.preview?.kind === 'gcode') {
+    previewProgram.done = p.sent;
+    scheduleRenderPreview();
+  }
 });
 
 window.grbl.onError((err) => {

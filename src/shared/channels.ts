@@ -20,6 +20,8 @@ export const CHANNELS = {
   gotoZero: 'grbl:goto-zero',
   jog: 'grbl:jog',
   overrideFeed: 'grbl:override:feed',
+  overrideSpindle: 'grbl:override:spindle',
+  overrideRapid: 'grbl:override:rapid',
   overrideReset: 'grbl:override:reset',
   fileSave: 'file:save-gcode',
   fileOpenImage: 'file:open-image',

@@ -18,6 +18,7 @@ import type {
   OpenedTextFile,
   OverrideAction,
   PortInfo,
+  RapidOverrideLevel,
 } from '../shared/types';
 
 type Unsubscribe = () => void;
@@ -55,6 +56,10 @@ const api = {
     ipcRenderer.invoke(CHANNELS.jog, cmd),
   overrideFeed: (action: OverrideAction): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.overrideFeed, action),
+  overrideSpindle: (action: OverrideAction): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.overrideSpindle, action),
+  overrideRapid: (level: RapidOverrideLevel): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.overrideRapid, level),
   saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
   openImage: (): Promise<OpenedImageFile | null> =>

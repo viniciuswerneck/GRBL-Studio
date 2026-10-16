@@ -161,20 +161,20 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-OVR-1 | Override de feed rate em tempo real (0x90–0x94). | Should | ⬜ |
-| RF-OVR-2 | Override de potência/spindle em tempo real. | Should | ⬜ |
-| RF-OVR-3 | Exibir valores de override ativos. | Should | ⬜ |
-| RF-OVR-4 | Reset para 100% com um clique. | Could | ⬜ |
+| RF-OVR-1 | Override de feed rate em tempo real (0x90–0x94). | Should | ✅ |
+| RF-OVR-2 | Override de potência/spindle em tempo real. | Should | ✅ |
+| RF-OVR-3 | Exibir valores de override ativos. | Should | ✅ |
+| RF-OVR-4 | Reset para 100% com um clique. | Could | ✅ |
 
 ### M7 — Preview 2D
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-PRV-1 | Renderizar o caminho do G-code carregado em 2D. | Should | ⬜ |
-| RF-PRV-2 | Zoom e pan (mouse + barra de rolagem). | Should | ⬜ |
-| RF-PRV-3 | Indicador da posição atual da cabeça durante a execução. | Should | ⬜ |
-| RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | ⬜ |
-| RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`). | Could | ⬜ |
+| RF-PRV-1 | Renderizar o caminho do G-code carregado em 2D. | Should | ✅ |
+| RF-PRV-2 | Zoom e pan (mouse + barra de rolagem). | Should | ✅ |
+| RF-PRV-3 | Indicador da posição atual da cabeça durante a execução. | Should | ✅ |
+| RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | 🟡 |
+| RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`). | Could | ✅ |
 
 ### M8 — Configuração do GRBL e preferências
 

@@ -43,6 +43,14 @@ export const REALTIME = {
   overrideFeedMinus10: 0x92,
   overrideFeedPlus1: 0x93,
   overrideFeedMinus1: 0x94,
+  overrideRapidDefault: 0x95,
+  overrideRapidMedium: 0x96,
+  overrideRapidLow: 0x97,
+  overrideSpindleDefault: 0x99,
+  overrideSpindlePlus10: 0x9a,
+  overrideSpindleMinus10: 0x9b,
+  overrideSpindlePlus1: 0x9c,
+  overrideSpindleMinus1: 0x9d,
 } as const;
 
 interface QueueItem {
@@ -260,6 +268,30 @@ export class GrblClient extends EventEmitter {
       minus1: REALTIME.overrideFeedMinus1,
     } as const;
     this.emitRealtime(map[action]);
+  }
+
+  /** Override de potência do laser (spindle) em tempo real (0x99–0x9d). */
+  overrideSpindle(
+    action: 'reset' | 'plus10' | 'minus10' | 'plus1' | 'minus1',
+  ): void {
+    const map = {
+      reset: REALTIME.overrideSpindleDefault,
+      plus10: REALTIME.overrideSpindlePlus10,
+      minus10: REALTIME.overrideSpindleMinus10,
+      plus1: REALTIME.overrideSpindlePlus1,
+      minus1: REALTIME.overrideSpindleMinus1,
+    } as const;
+    this.emitRealtime(map[action]);
+  }
+
+  /** Override de deslocamento rápido (G0) — 3 níveis do GRBL (0x95–0x97). */
+  overrideRapid(level: 'default' | 'medium' | 'low'): void {
+    const map = {
+      default: REALTIME.overrideRapidDefault,
+      medium: REALTIME.overrideRapidMedium,
+      low: REALTIME.overrideRapidLow,
+    } as const;
+    this.emitRealtime(map[level]);
   }
 
   // ---------------------------------------------------------------- interno

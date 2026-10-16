@@ -6,6 +6,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Fase 4: overrides e preview 2D
+- **Overrides em tempo real** (RF-OVR-1…4): override de feed (0x90–0x94),
+  potência/spindle (0x99–0x9d) e deslocamento rápido em 3 níveis (0x95–0x97).
+  A UI mostra os valores ativos lidos do status (`Ov:`) e oferece reset.
+- **Preview 2D do caminho** (RF-PRV-1…5): parser puro de G-code
+  (`shared/preview.ts` → bundle `public/preview.js`) interpreta G0/G1/G2/G3,
+  G20/G21, G90/G91, G90.1/G91.1, G92, comentários e números de linha, com
+  segmentos em mm. O canvas desenha rápidos × queima, caixa delimitadora e
+  área de trabalho, com zoom/pan (roda, arrastar) e crosshair ligado ao status.
+  Durante o job, o trecho já executado é destacado por progresso (RF-PRV-5).
+- Testes: `tests/preview.test.ts` (parser completo).
+
 ### Added — RF-GC-6: múltiplos passes
 - Campo **Passadas** (1–99) no card de imagem. O emissor repete todo o caminho
   de queima N vezes, desligando o laser (`M5`) e voltando ao início entre

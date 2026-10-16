@@ -26,6 +26,7 @@ import type {
   OpenedTextFile,
   OverrideAction,
   PortInfo,
+  RapidOverrideLevel,
 } from '../shared/types';
 import { GrblClient } from './services/GrblClient';
 
@@ -154,6 +155,16 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
 
   ipcMain.handle(CHANNELS.overrideFeed, (_evt, action: OverrideAction) => {
     client.overrideFeed(action);
+    return true;
+  });
+
+  ipcMain.handle(CHANNELS.overrideSpindle, (_evt, action: OverrideAction) => {
+    client.overrideSpindle(action);
+    return true;
+  });
+
+  ipcMain.handle(CHANNELS.overrideRapid, (_evt, level: RapidOverrideLevel) => {
+    client.overrideRapid(level);
     return true;
   });
 

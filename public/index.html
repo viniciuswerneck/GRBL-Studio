@@ -76,6 +76,38 @@
         </section>
 
         <section class="card">
+          <h3>Overrides (tempo real)</h3>
+          <div class="hint">
+            Ajustam a máquina em movimento. O valor ativo vem do status (`Ov:`).
+          </div>
+          <div class="ovr-row">
+            <span class="ovr-label">Feed</span>
+            <button type="button" id="ovrFeedMinus10" title="−10%">−10</button>
+            <button type="button" id="ovrFeedMinus1" title="−1%">−1</button>
+            <span class="ovr-value" id="ovrFeedValue">100%</span>
+            <button type="button" id="ovrFeedPlus1" title="+1%">+1</button>
+            <button type="button" id="ovrFeedPlus10" title="+10%">+10</button>
+            <button type="button" id="ovrFeedReset" title="Voltar a 100%">100%</button>
+          </div>
+          <div class="ovr-row">
+            <span class="ovr-label">Rápido</span>
+            <button type="button" id="ovrRapidDefault">100%</button>
+            <button type="button" id="ovrRapidMedium">50%</button>
+            <button type="button" id="ovrRapidLow">25%</button>
+            <span class="ovr-value" id="ovrRapidValue">100%</span>
+          </div>
+          <div class="ovr-row">
+            <span class="ovr-label">Potência</span>
+            <button type="button" id="ovrSpindleMinus10" title="−10%">−10</button>
+            <button type="button" id="ovrSpindleMinus1" title="−1%">−1</button>
+            <span class="ovr-value" id="ovrSpindleValue">100%</span>
+            <button type="button" id="ovrSpindlePlus1" title="+1%">+1</button>
+            <button type="button" id="ovrSpindlePlus10" title="+10%">+10</button>
+            <button type="button" id="ovrSpindleReset" title="Voltar a 100%">100%</button>
+          </div>
+        </section>
+
+        <section class="card">
           <h3>Imagem → G-code</h3>
           <div class="hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
           <button type="button" id="imageOpen">Escolher imagem…</button>
@@ -228,6 +260,12 @@
           <div id="previewHint" class="preview-hint">
             Carregue uma imagem para preparar o arquivo de gravação
           </div>
+          <div id="previewWarning" class="preview-warning hidden"></div>
+          <div id="previewLegend" class="preview-legend hidden">
+            <span class="lg-swatch lg-cut"></span> Queima
+            <span class="lg-swatch lg-rapid"></span> Deslocamento
+            <span class="lg-tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
+          </div>
         </div>
 
         <div class="console">
@@ -243,6 +281,7 @@
     </div>
 
     <script src="./materials.js"></script>
+    <script src="./preview.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

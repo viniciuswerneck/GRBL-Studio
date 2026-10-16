@@ -142,6 +142,9 @@ export type OverrideAction =
   | 'plus1'
   | 'minus1';
 
+/** Níveis de override de deslocamento rápido (G0). */
+export type RapidOverrideLevel = 'default' | 'medium' | 'low';
+
 /** Payload do erro enviado à UI. */
 export interface ErrorPayload {
   message: string;
