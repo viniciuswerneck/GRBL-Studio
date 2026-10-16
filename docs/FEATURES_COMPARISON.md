@@ -15,7 +15,7 @@
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
-| Preview 2D | Sim | Não | Pendente |
+| Preview 2D | Sim | Sim (canvas) | ✅ Implementado |
 | OpenGL Preview | Sim | Não | Pendente |
 | Zoom/Pan | Sim | Não | Pendente |
 | Visualização tempo real | Sim | Não | Pendente |
@@ -24,10 +24,11 @@
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
 | G-Code (.gcode/.nc) | Sim | Sim | Implementado |
-| Imagem (JPG/BMP/PNG) | Sim | Sim (PNG/JPG/BMP/GIF) | Implementado |
+| Imagem (JPG/BMP/PNG) | Sim | Sim (PNG/JPEG/BMP/GIF/WebP/AVIF) | Implementado |
 | SVG | Experimental | Não | Pendente |
 | Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | Implementado |
 | Vetorização | Sim | Sim (contorno/recorte por limiar) | Implementado |
+| Perfis de material | Sim | Sim (matriz COMGO Z1: 5W e 10W) | Implementado |
 
 ## Configuração
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -42,7 +43,7 @@
 |---|---|---|---|
 | Interface Windows | Sim | Inspirada/Moderna | Parcial |
 | Linux nativo | Via Mono | Nativo | Implementado |
-| Dark/Light theme | Múltiplos | Dark | Parcial |
+| Dark/Light theme | Múltiplos | Dark/Light | Implementado |
 
 ## Prioridades para MVP funcional
 1. ~~Status GRBL em tempo real - `?` polling~~ ✅

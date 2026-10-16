@@ -134,6 +134,40 @@
             <label class="check"><input type="checkbox" id="imgBW" /> Preto e branco (limiar)</label>
           </details>
 
+          <details class="group">
+            <summary>Perfil de material (RF-IMG-8)</summary>
+            <div class="hint">
+              Sugestões do manual da COMGO Z1 (§9). Aplicar o perfil preenche a
+              <b>Velocidade</b> e a <b>S-max</b> lá embaixo — confira o resultado
+              antes de gravar.
+            </div>
+            <div class="grid2">
+              <label class="field"
+                >Módulo
+                <select id="profileModule">
+                  <option value="5W">5W</option>
+                  <option value="10W">10W</option>
+                </select>
+              </label>
+              <label class="field"
+                >Ação
+                <select id="profileAction">
+                  <option value="engrave">Gravação</option>
+                  <option value="cut">Corte</option>
+                </select>
+              </label>
+            </div>
+            <label class="field"
+              >Material
+              <select id="profileMaterial">
+                <option value="">— escolher material —</option>
+              </select>
+            </label>
+            <div id="profileHint" class="hint">
+              Escolha um material para ver a recomendação do manual.
+            </div>
+          </details>
+
           <details class="group" open>
             <summary>Gravação</summary>
             <div class="grid2">
@@ -205,6 +239,7 @@
       </main>
     </div>
 
+    <script src="./materials.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

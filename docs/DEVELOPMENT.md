@@ -23,7 +23,7 @@ npm run typecheck    # apenas verificação de tipos (tsc --noEmit)
 npm run dev          # tsc em watch (main/preload/shared)
 ```
 
-O `build` faz três etapas:
+O `build` faz quatro etapas:
 
 1. `tsc` compila `src/**` para `dist/**` (main, preload, shared, renderer).
 2. `esbuild` **empacota o preload** em `dist/preload/index.js`. Isso é
@@ -33,6 +33,10 @@ O `build` faz três etapas:
    (formato iife, plataforma browser). É artefato de build — está no
    `.gitignore`; gere com `npm run build:worker` antes de usar a conversão
    imagem → G-code.
+4. `esbuild` **empacota os perfis de material** em `public/materials.js`
+   (iife, `global-name=GRBL_MATERIALS`) a partir de `shared/materials.ts`. O
+   renderer é JS puro (não importa TS), então consome os perfis pelo global
+   `window.GRBL_MATERIALS`. Também é artefato de build (`build:materials`).
 
 ## Rodar
 

@@ -2,6 +2,7 @@
 node_modules/
 dist/
 public/gcode.worker.js
+public/materials.js
 
 # Logs e temporários
 *.log

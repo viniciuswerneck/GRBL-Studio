@@ -165,9 +165,9 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | Comandos de tempo real | ✅ Bytes únicos corretos | (concluído) |
 | Status/alarmes | ✅ Polling `?` + parser de alarmes | (concluído) |
 | Persistência | ⬜ Nenhuma | `electron-store` (Fase 3) |
-| Imagem → G-code | ✅ Web Worker + `shared/image/*` | Perfis de material (RF-IMG-8) |
+| Imagem → G-code | ✅ Web Worker + `shared/image/*` | Perfis de material (RF-IMG-8) ✅ |
 | Config `$$` | ⬜ Não existe | Viewer/editor (Fase 3) |
-| Preview 2D | ⬜ Não existe | Canvas (Fase 4) |
+| Preview 2D | ✅ Canvas (grid + contornos) | (concluído) |
 
 ---
 

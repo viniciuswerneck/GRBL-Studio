@@ -64,6 +64,10 @@ const el = {
   imgMode: $('imgMode'),
   imgSmin: $('imgSmin'),
   imgSmax: $('imgSmax'),
+  profileModule: $('profileModule'),
+  profileAction: $('profileAction'),
+  profileMaterial: $('profileMaterial'),
+  profileHint: $('profileHint'),
   imgGenerate: $('imgGenerate'),
   imgSave: $('imgSave'),
   imgStats: $('imgStats'),
@@ -655,6 +659,67 @@ function readImageOptions() {
       ? { simplifyPx: Number(el.imgSimplify.value) }
       : {}),
   };
+}
+
+// ------------------------------------------------------ perfil de material (RF-IMG-8)
+
+/** Catálogo empacotado por esbuild em `public/materials.js` (fonte: shared/materials.ts). */
+const materials = window.GRBL_MATERIALS;
+
+/** Opção "vazio" no topo do select de material. */
+const MATERIAL_PLACEHOLDER = '— escolher material —';
+
+/** Preenche o select de material conforme módulo + ação escolhidos. */
+function populateMaterials() {
+  if (!materials) return;
+  const module = el.profileModule.value;
+  const action = el.profileAction.value;
+  const list = materials.profilesFor(module, action);
+
+  el.profileMaterial.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = MATERIAL_PLACEHOLDER;
+  el.profileMaterial.appendChild(placeholder);
+  for (const profile of list) {
+    const option = document.createElement('option');
+    option.value = profile.material;
+    option.textContent = profile.material;
+    el.profileMaterial.appendChild(option);
+  }
+  el.profileHint.textContent =
+    'Escolha um material para ver a recomendação do manual.';
+}
+
+/**
+ * Aplica o perfil escolhido: preenche velocidade e S-max e mostra as notas.
+ * A coluna "Power (%)" vira `S` com referência `PROFILE_MAX_S` (≈ `$30 = 1000`).
+ */
+function applyProfile() {
+  const material = el.profileMaterial.value;
+  if (!materials || !material) return;
+  const profile = materials.findProfile(
+    el.profileModule.value,
+    el.profileAction.value,
+    material,
+  );
+  if (!profile) return;
+
+  const sMax = materials.powerPercentToS(profile.powerPercent);
+  el.imgSpeed.value = String(profile.speedMmMin);
+  el.imgSmax.value = String(sMax);
+  el.profileHint.textContent = `${profile.powerPercent}% de potência (S-max ${sMax}) · ${profile.speedMmMin} mm/min · ${profile.notes}`;
+}
+
+if (materials) {
+  el.profileModule.addEventListener('change', populateMaterials);
+  el.profileAction.addEventListener('change', populateMaterials);
+  el.profileMaterial.addEventListener('change', applyProfile);
+  populateMaterials();
+} else {
+  // Sem `public/materials.js` (build ausente): não deixa o campo parecer útil.
+  el.profileMaterial.disabled = true;
+  el.profileHint.textContent = 'Perfis indisponíveis: rode `npm run build`.';
 }
 
 el.imgGenerate.addEventListener('click', () => {

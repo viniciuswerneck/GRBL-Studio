@@ -6,6 +6,17 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — RF-IMG-8: perfis de material
+- `shared/materials.ts` reproduz as matrizes do manual da COMGO Z1 (§9.1, 5W;
+  §9.2, 10W): potência (%), velocidade (mm/min) e notas (preparo de superfície,
+  nº de passadas) por módulo × ação × material.
+- Seletor **Perfil de material** no card de imagem: escolher módulo (5W/10W),
+  ação (gravação/corte) e material preenche **Velocidade** e **S-max**
+  (`powerPercentToS`, referência `$30 = 1000`) e mostra a recomendação do manual.
+- Exposto ao renderer como `public/materials.js` (esbuild, `global-name=GRBL_MATERIALS`),
+  seguindo o mesmo padrão do worker; artefato de build (`.gitignore`).
+- Testes: `tests/materials.test.ts` (integridade da matriz, busca e conversão %→S).
+
 ### Added — CI (GitHub Actions)
 - `.github/workflows/ci.yml` com dois jobs em cada push para `main` e PR:
   **quality** (`npm ci` → Biome lint → `tsc` → Vitest com `socat` instalado →

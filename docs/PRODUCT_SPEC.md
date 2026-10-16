@@ -198,7 +198,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | RF-IMG-5 | Conversão **1-bit dithering** (ex.: Floyd–Steinberg). | Should | ✅ |
 | RF-IMG-6 | **Vetorização** (raster → vetor) para corte/line-art: contorno por limiar + simplificação (RDP). | Could | ✅ |
 | RF-IMG-7 | Parâmetros de gravação: velocidade (mm/min), S-min/S-max, modo **M3/M4**. | Must | ✅ |
-| RF-IMG-8 | Perfis de material (potência/velocidade/passes recomendados). | Could | ⬜ |
+| RF-IMG-8 | Perfis de material (potência/velocidade recomendadas; notas trazem as passadas). | Could | ✅ |
 | RF-IMG-9 | Compensar tamanho do ponto do laser (ex.: 0,08 mm da COMGO Z1). | Should | ✅ |
 
 ### M10 — Macros e botões customizados

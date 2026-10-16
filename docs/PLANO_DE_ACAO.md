@@ -299,7 +299,11 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - [x] RF-IMG-6: vetorização (Could) — traçador de contorno próprio em
   `shared/image/contour.ts` (arestas + resolução de sela + RDP), sem
   dependência externa (`potrace` dispensado).
-- [ ] RF-IMG-8: perfis de material (Could) — a partir das tabelas do manual COMGO.
+- [x] RF-IMG-8: perfis de material (Could) — `shared/materials.ts` reproduz as
+  matrizes §9.1 (5W) e §9.2 (10W) do manual COMGO; o seletor (módulo × ação ×
+  material) preenche **velocidade** e **S-max** (`powerPercentToS`, ref. `$30 =
+  1000`) e mostra as notas (preparo de superfície, nº de passadas).
+  Empacotado para o renderer como `public/materials.js`.
 
 > **Nota de execução (16/10/2026):** esta fase foi iniciada antes das Fases 3/4
 > porque é a única parte que avança **sem hardware ligado** (preparação de
