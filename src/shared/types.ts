@@ -169,3 +169,32 @@ export interface OpenedTextFile {
   name: string;
   text: string;
 }
+
+/** Consulta especial `$#`/`$I`/`$G` (RF-CFG-3). */
+export type SpecialQuery = 'offsets' | 'info' | 'state';
+
+/** Comando de escrita de uma configuração `$n=valor`. */
+export interface SettingApplyRequest {
+  code: number;
+  value: string;
+}
+
+/** Unidade de exibição escolhida pelo usuário (RF-APP-3). */
+export type Units = 'mm' | 'in';
+
+/**
+ * Preferências persistidas entre sessões (RF-CFG-5, RF-CON-3).
+ * Guardadas em `<userData>/prefs.json`.
+ */
+export interface Prefs {
+  /** Último caminho de porta selecionado (ex.: `/dev/ttyUSB0`). */
+  port?: string;
+  /** Último baud rate selecionado. */
+  baud?: number;
+  /** Tema escolhido. */
+  theme?: 'dark' | 'light';
+  /** Unidade de exibição (DRO). */
+  units?: Units;
+  /** Reconectar automaticamente à última porta ao abrir (padrão true). */
+  autoConnect?: boolean;
+}

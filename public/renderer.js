@@ -79,6 +79,16 @@ const el = {
   ovrFeedValue: $('ovrFeedValue'),
   ovrRapidValue: $('ovrRapidValue'),
   ovrSpindleValue: $('ovrSpindleValue'),
+  unitsSelect: $('unitsSelect'),
+  settingsBtn: $('settingsBtn'),
+  settingsOverlay: $('settingsOverlay'),
+  settingsClose: $('settingsClose'),
+  settingsRefresh: $('settingsRefresh'),
+  settingsFilter: $('settingsFilter'),
+  settingsList: $('settingsList'),
+  settingsStatus: $('settingsStatus'),
+  specialOutput: $('specialOutput'),
+  settingsTabs: document.querySelectorAll('.tabs .tab'),
 };
 
 const state = {
@@ -87,6 +97,12 @@ const state = {
   jobState: 'idle',
   lines: [],
   fileName: '',
+  /** Unidade de exibição (RF-APP-3). mm é a do G-code; in é só conversão visual. */
+  units: 'mm',
+  /** Último status recebido (para reprocessar o DRO ao trocar a unidade). */
+  lastStatus: null,
+  /** Preferências persistidas no main (RF-CFG-5). */
+  prefs: {},
 };
 
 // ------------------------------------------------------------------ console
@@ -255,6 +271,23 @@ async function refreshPorts() {
 
 el.refreshPorts.addEventListener('click', refreshPorts);
 
+/**
+ * Conecta à porta e, ao dar certo, guarda a última porta/baud (RF-CON-3)
+ * e lê `$130/$131` para o aviso de área de trabalho (RF-GC-9).
+ */
+async function tryConnect(path, baudRate) {
+  setConnection('connecting');
+  try {
+    await window.grbl.connect({ path, baudRate });
+    persistPrefs({ port: path, baud: baudRate });
+    // Área de trabalho para o aviso de excedente (RF-GC-9). Silencioso.
+    loadSettings().catch(() => {});
+  } catch (err) {
+    setConnection('error');
+    appendLine(`Erro ao conectar: ${err.message}`, 'error');
+  }
+}
+
 el.connectBtn.addEventListener('click', async () => {
   if (state.connected) {
     await window.grbl.disconnect();
@@ -265,13 +298,7 @@ el.connectBtn.addEventListener('click', async () => {
     appendLine('Selecione uma porta serial.', 'error');
     return;
   }
-  setConnection('connecting');
-  try {
-    await window.grbl.connect({ path, baudRate: Number(el.baudList.value) });
-  } catch (err) {
-    setConnection('error');
-    appendLine(`Erro ao conectar: ${err.message}`, 'error');
-  }
+  await tryConnect(path, Number(el.baudList.value));
 });
 
 // ----------------------------------------------------------------------- jog
@@ -1230,7 +1257,287 @@ el.themeBtn.addEventListener('click', () => {
   const next =
     document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
   applyTheme(next);
+  persistPrefs({ theme: next });
 });
+
+// ----------------------------------------------------- unidades (RF-APP-3)
+
+const IN_PER_MM = 1 / 25.4;
+
+/**
+ * Desenha o DRO na unidade escolhida. A máquina e o G-code continuam em mm;
+ * "in" é só conversão de exibição, para não alterar o estado modal do GRBL.
+ */
+function updateDro() {
+  const s = state.lastStatus;
+  const pos = s?.mpos ?? s?.wpos;
+  const fmt = (mm) =>
+    state.units === 'in' ? (mm * IN_PER_MM).toFixed(4) : mm.toFixed(3);
+  el.droX.textContent = pos ? fmt(pos.x) : '—';
+  el.droY.textContent = pos ? fmt(pos.y) : '—';
+  el.droZ.textContent = pos ? fmt(pos.z) : '—';
+}
+
+el.unitsSelect.addEventListener('change', () => {
+  state.units = el.unitsSelect.value === 'in' ? 'in' : 'mm';
+  persistPrefs({ units: state.units });
+  updateDro();
+});
+
+// --------------------------------------------------- preferências (RF-CFG-5)
+
+/** Grava preferências no main (melhor esforço; não bloqueia a UI). */
+async function persistPrefs(patch) {
+  state.prefs = { ...state.prefs, ...patch };
+  try {
+    state.prefs = await window.grbl.setPrefs(patch);
+  } catch (err) {
+    console.warn('Falha ao salvar preferências:', err);
+  }
+}
+
+/** Carrega e aplica tema, unidade, baud (porta é aplicada após listar). */
+async function loadPrefs() {
+  try {
+    state.prefs = (await window.grbl.getPrefs()) || {};
+  } catch (err) {
+    console.warn('Falha ao ler preferências:', err);
+    state.prefs = {};
+  }
+
+  let theme = state.prefs.theme;
+  if (theme !== 'light' && theme !== 'dark') {
+    try {
+      theme = localStorage.getItem('grbl-theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      theme = 'dark';
+    }
+  }
+  applyTheme(theme);
+
+  state.units = state.prefs.units === 'in' ? 'in' : 'mm';
+  el.unitsSelect.value = state.units;
+
+  if (state.prefs.baud) {
+    const baud = String(state.prefs.baud);
+    if ([...el.baudList.options].some((o) => o.value === baud)) {
+      el.baudList.value = baud;
+    }
+  }
+}
+
+/** Seleciona a última porta usada, quando ela ainda está disponível. */
+function applyPortPrefs() {
+  const saved = state.prefs.port;
+  if (!saved) return;
+  if ([...el.portList.options].some((o) => o.value === saved)) {
+    el.portList.value = saved;
+  }
+}
+
+/** Reconecta à última porta no boot, salvo se o usuário desligou (RF-CON-3). */
+function maybeAutoConnect() {
+  if (state.prefs.autoConnect === false) return;
+  const path = state.prefs.port;
+  if (!path || el.portList.value !== path) return;
+  tryConnect(path, Number(el.baudList.value));
+}
+
+// -------------------------------------------- configurações da máquina ($$)
+
+/** Últimas linhas lidas de `$$`, usadas para render e edição. */
+let settingRows = [];
+/** Aba ativa do modal: '' ($$), 'offsets', 'info' ou 'state'. */
+let settingsTab = '';
+
+function openSettings() {
+  el.settingsOverlay.classList.remove('hidden');
+  el.settingsFilter.value = '';
+  if (!state.connected) {
+    el.settingsStatus.textContent =
+      'Conecte-se à máquina para ler as configurações.';
+    return;
+  }
+  if (settingsTab === '') loadSettings();
+  else runSpecial(settingsTab);
+}
+
+function closeSettings() {
+  el.settingsOverlay.classList.add('hidden');
+}
+
+/** Alterna entre a tabela de `$$` e as consultas especiais ($#/$I/$G). */
+function setSettingsTab(mode) {
+  settingsTab = mode;
+  for (const tab of el.settingsTabs) {
+    tab.classList.toggle('active', (tab.dataset.special ?? '') === mode);
+  }
+  const special = mode !== '';
+  el.specialOutput.classList.toggle('hidden', !special);
+  el.settingsList.classList.toggle('hidden', special);
+  el.settingsFilter.classList.toggle('hidden', special);
+  el.settingsRefresh.classList.toggle('hidden', special);
+  el.settingsStatus.textContent = '';
+  if (!state.connected) {
+    el.settingsStatus.textContent = 'Conecte-se à máquina para consultar.';
+    return;
+  }
+  if (special) runSpecial(mode);
+  else loadSettings();
+}
+
+async function runSpecial(mode) {
+  el.settingsStatus.textContent = 'Consultando…';
+  try {
+    const lines = await window.grbl.querySpecial(mode);
+    el.specialOutput.textContent = lines.join('\n');
+    el.settingsStatus.textContent = lines.length ? '' : 'Sem resposta.';
+  } catch (err) {
+    el.specialOutput.textContent = '';
+    el.settingsStatus.textContent = `Falha: ${err.message}`;
+  }
+}
+
+/** Lê `$$` do GRBL, atualiza a área de trabalho e desenha a tabela. */
+async function loadSettings() {
+  el.settingsStatus.textContent = 'Lendo $$…';
+  el.settingsRefresh.disabled = true;
+  try {
+    settingRows = await window.grbl.readSettings();
+    applyWorkAreaFromSettings();
+    if (settingsTab === '') renderSettings();
+    el.settingsStatus.textContent = settingRows.length
+      ? `${settingRows.length} parâmetros lidos.`
+      : 'A máquina não devolveu configurações.';
+  } catch (err) {
+    el.settingsStatus.textContent = `Falha ao ler $$: ${err.message}`;
+  } finally {
+    el.settingsRefresh.disabled = false;
+  }
+}
+
+/** Extrai $130/$131 e alimenta o aviso de área de trabalho (RF-GC-9). */
+function applyWorkAreaFromSettings() {
+  const value = (code) => settingRows.find((r) => r.code === code)?.number;
+  const width = value(130);
+  const height = value(131);
+  if (typeof width === 'number' && typeof height === 'number') {
+    setWorkArea(width, height);
+  }
+}
+
+function renderSettings() {
+  el.settingsList.innerHTML = '';
+  const filter = el.settingsFilter.value.trim().toLowerCase();
+  const groups = new Map();
+  for (const row of settingRows) {
+    const haystack = `${row.name} $${row.code}`.toLowerCase();
+    if (filter && !haystack.includes(filter)) continue;
+    const group = row.group || 'Outros';
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(row);
+  }
+
+  if (groups.size === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'hint';
+    empty.textContent = 'Nenhum parâmetro corresponde ao filtro.';
+    el.settingsList.appendChild(empty);
+    return;
+  }
+
+  for (const [group, rows] of groups) {
+    const head = document.createElement('div');
+    head.className = 'settings-group';
+    head.textContent = group;
+    el.settingsList.appendChild(head);
+    for (const row of rows) el.settingsList.appendChild(settingNode(row));
+  }
+}
+
+/** Uma linha da tabela: `$n`, nome + ajuda, valor editável. */
+function settingNode(row) {
+  const wrap = document.createElement('div');
+  wrap.className = 'setting-row';
+
+  const key = document.createElement('span');
+  key.className = 'setting-key';
+  key.textContent = `$${row.code}`;
+
+  const main = document.createElement('div');
+  main.className = 'setting-main';
+  const name = document.createElement('div');
+  name.className = 'setting-name';
+  name.textContent = row.name;
+  const help = document.createElement('div');
+  help.className = 'setting-help';
+  help.textContent = row.help;
+  main.append(name, help);
+
+  wrap.append(key, main, settingEditor(row));
+  return wrap;
+}
+
+function settingEditor(row) {
+  const wrap = document.createElement('div');
+  wrap.className = 'setting-edit';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = row.value;
+  input.spellcheck = false;
+  input.setAttribute('aria-label', `Valor de $${row.code}`);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') input.blur();
+  });
+  input.addEventListener('change', () => applySetting(row, input));
+  wrap.appendChild(input);
+
+  if (row.unit) {
+    const unit = document.createElement('span');
+    unit.className = 'setting-unit';
+    unit.textContent = row.unit;
+    wrap.appendChild(unit);
+  }
+  return wrap;
+}
+
+async function applySetting(row, input) {
+  const next = input.value.trim();
+  if (next === row.value) return;
+  el.settingsStatus.textContent = `Aplicando $${row.code}…`;
+  input.disabled = true;
+  try {
+    await window.grbl.applySetting({ code: row.code, value: next });
+    row.value = next;
+    const parsed = Number(next);
+    if (Number.isFinite(parsed)) row.number = parsed;
+    appendLine(`$${row.code} = ${next}`, 'ok');
+    el.settingsStatus.textContent = `$${row.code} atualizado.`;
+    if (row.code === 130 || row.code === 131) applyWorkAreaFromSettings();
+  } catch (err) {
+    el.settingsStatus.textContent = `Falha ao aplicar $${row.code}: ${err.message}`;
+    input.value = row.value;
+  } finally {
+    input.disabled = false;
+  }
+}
+
+el.settingsBtn.addEventListener('click', openSettings);
+el.settingsClose.addEventListener('click', closeSettings);
+el.settingsOverlay.addEventListener('click', (e) => {
+  if (e.target === el.settingsOverlay) closeSettings();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSettings();
+});
+el.settingsRefresh.addEventListener('click', () => loadSettings());
+el.settingsFilter.addEventListener('input', renderSettings);
+for (const tab of el.settingsTabs) {
+  tab.addEventListener('click', () =>
+    setSettingsTab(tab.dataset.special ?? ''),
+  );
+}
 
 // ------------------------------------------------------- eventos do main
 
@@ -1251,14 +1558,12 @@ window.grbl.onConsole((line) => {
 });
 
 window.grbl.onStatus((s) => {
+  state.lastStatus = s;
   const cls = STATE_CLASS[s.state] ?? '';
   el.stateBadge.className = `badge ${cls}`;
   el.stateBadge.textContent = s.state;
 
-  const pos = s.mpos ?? s.wpos;
-  el.droX.textContent = pos ? pos.x.toFixed(3) : '—';
-  el.droY.textContent = pos ? pos.y.toFixed(3) : '—';
-  el.droZ.textContent = pos ? pos.z.toFixed(3) : '—';
+  updateDro();
   el.metaFeed.textContent = s.fs ? `${s.fs.feed}` : '—';
   el.metaS.textContent = s.fs ? `${s.fs.spindle}` : '—';
 
@@ -1304,21 +1609,23 @@ window.grbl.onError((err) => {
 
 // -------------------------------------------------------------------- init
 
-try {
-  const saved = localStorage.getItem('grbl-theme');
-  applyTheme(saved === 'light' ? 'light' : 'dark');
-} catch {
-  /* ignora */
+async function init() {
+  // Preferências (tema/unidade/porta/baud) — RF-CFG-5, RF-CON-3.
+  await loadPrefs();
+
+  // Travamento de proporção: o usuário decide uma vez e a escolha permanece.
+  try {
+    const savedLock = localStorage.getItem(ASPECT_LOCK_KEY);
+    if (savedLock !== null) el.imgKeepAspect.checked = savedLock === '1';
+  } catch {
+    /* ignora */
+  }
+  updateSizeHint();
+
+  setConnection('disconnected');
+  await refreshPorts();
+  applyPortPrefs();
+  maybeAutoConnect();
 }
 
-// Travamento de proporção: o usuário decide uma vez e a escolha permanece.
-try {
-  const savedLock = localStorage.getItem(ASPECT_LOCK_KEY);
-  if (savedLock !== null) el.imgKeepAspect.checked = savedLock === '1';
-} catch {
-  /* ignora */
-}
-updateSizeHint();
-
-setConnection('disconnected');
-refreshPorts();
+init();

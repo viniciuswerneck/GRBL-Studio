@@ -243,3 +243,60 @@ describe('GrblClient — watchdog', () => {
     expect(errors.some((m) => /não respondeu/.test(m))).toBe(true);
   });
 });
+
+describe('GrblClient — consultas ($$, etc.)', () => {
+  it('devolve as linhas até o "ok" (sem incluí-lo)', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+
+    const promise = client.query('$$');
+    expect(fake.written).toEqual(['$$']);
+
+    fake.feed('$0=10\n$1=25\n$32=0\n');
+    fake.feed('ok\n');
+
+    await expect(promise).resolves.toEqual(['$0=10', '$1=25', '$32=0']);
+  });
+
+  it('alterna com jobs sem misturar a captura', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+
+    const promise = client.query('$G');
+    fake.feed('[GC:G0 G54 G17 G21 G90 G94 M5 M9]\n');
+    // uma linha de job não deve entrar na consulta
+    fake.feed('ok\n');
+
+    await expect(promise).resolves.toEqual([
+      '[GC:G0 G54 G17 G21 G90 G94 M5 M9]',
+    ]);
+  });
+
+  it('rejeita em "error:N"', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const promise = client.query('$88=x');
+    fake.feed('error:3\n');
+    await expect(promise).rejects.toThrow();
+  });
+
+  it('rejeita quando a máquina não responde', async () => {
+    vi.useFakeTimers();
+    const { client } = setup({ stallMs: 4000 });
+    await client.connect(CONNECT);
+    const promise = client.query('$I');
+    vi.advanceTimersByTime(4001);
+    await expect(promise).rejects.toThrow(/não respondeu/);
+  });
+
+  it('recusa enquanto desconectado e com consulta em andamento', async () => {
+    const { fake, client } = setup();
+    await expect(client.query('$$')).rejects.toThrow(/Conecte-se/);
+
+    await client.connect(CONNECT);
+    const first = client.query('$$');
+    await expect(client.query('$I')).rejects.toThrow(/andamento/);
+    fake.feed('ok\n');
+    await expect(first).resolves.toEqual([]);
+  });
+});

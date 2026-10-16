@@ -6,6 +6,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Fase 3: configurações `$$`, consultas e preferências
+- **`GrblClient.query()`** (RF-CFG-1/2/3): envia uma linha e devolve as respostas
+  até o `ok`, preservando o *send-response*. `$$`, `$n=valor`, `$#`, `$I` e `$G`
+  passam pelo mesmo caminho; erro/alarme/timeout rejeitam a consulta.
+- **Editor de `$$`** (RF-CFG-1/2/6): modal agrupa os parâmetros por função,
+  mostra nome + ajuda contextual (`shared/grblSettings.ts`) e o espaço `$n`
+  remonta a lista. A edição de um campo reenvia só aquele `$n=valor`.
+- **Consultas especiais** (RF-CFG-3): abas exibem `$#` (offsets), `$I` (build)
+  e `$G` (estado modal) via `window.grbl.querySpecial`.
+- **Preferências** (RF-CFG-5, RF-CON-3): `PrefsStore` grava
+  `<userData>/prefs.json` (tema, unidade, porta/baud, auto-conexão). No boot a
+  UI restaura tema/unidade/porta e reconecta à última porta (`autoConnect`).
+- **Unidade mm/pol na UI** (RF-APP-3, exibição): o seletor na barra de status
+  converte o DRO (in = mm/25,4). O G-code segue em mm para não reinterpretar
+  jogs/comandos.
+- **Área de trabalho** (RF-GC-9): a leitura de `$130/$131` alimenta o aviso do
+  preview quando o caminho sai da área — inclusive ao editar esses valores.
+- Testes: `tests/grbl-settings.test.ts`; `tests/grbl-client.test.ts` cobre
+  `query()` (sucesso, erro, timeout, concorrência e desconexão).
+
 ### Added — Fase 4: overrides e preview 2D
 - **Overrides em tempo real** (RF-OVR-1…4): override de feed (0x90–0x94),
   potência/spindle (0x99–0x9d) e deslocamento rápido em 3 níveis (0x95–0x97).

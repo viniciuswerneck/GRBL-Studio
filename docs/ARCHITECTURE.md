@@ -83,7 +83,7 @@ isolados por `contextIsolation`:
 | `services/GrblClient` | Fila de envio (send-response), `ok`/`error`, tempo real, overrides, status. | ✅ |
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |
-| `services/SettingsStore` | Persistência (`electron-store`): porta, baud, tema, unidades. | ⬜ Fase 3 |
+| `services/PrefsStore` | Persistência em `<userData>/prefs.json` (ADR-6): porta, baud, tema, unidades. | ✅ |
 | `ipc.ts` (`file:save-gcode`) | Diálogo nativo e escrita do `.gcode` gerado pela UI. | ✅ |
 | `ipc.ts` (`file:open-image` / `file:open-gcode`) | Diálogos nativos de abertura; devolvem nome + bytes/texto (nunca deixam o renderer informar caminho). | ✅ |
 | `shared/fileFilters.ts` | Filtros dos diálogos e validação de extensões (funções puras). | ✅ |
@@ -164,9 +164,9 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | Feedback da serial | ✅ Eventos IPC tipados | (concluído) |
 | Comandos de tempo real | ✅ Bytes únicos corretos | (concluído) |
 | Status/alarmes | ✅ Polling `?` + parser de alarmes | (concluído) |
-| Persistência | ⬜ Nenhuma | `electron-store` (Fase 3) |
+| Persistência | ✅ `<userData>/prefs.json` (`PrefsStore`) | (concluído) |
 | Imagem → G-code | ✅ Web Worker + `shared/image/*` | Perfis de material (RF-IMG-8) ✅ |
-| Config `$$` | ⬜ Não existe | Viewer/editor (Fase 3) |
+| Config `$$` | ✅ Viewer/editor + `$#`/`$I`/`$G` | (concluído) |
 | Preview 2D | ✅ Canvas (grid + contornos) | (concluído) |
 
 ---

@@ -57,6 +57,18 @@ interface QueueItem {
   line: string;
   /** true se a linha faz parte do job (conta no progresso). */
   job: boolean;
+  /** true se a linha é uma consulta cujo corpo é capturado (`$$`, `$#`…). */
+  query?: boolean;
+}
+
+/** Consulta em andamento: acumula linhas até o `ok`/`error`. */
+interface PendingQuery {
+  lines: string[];
+  /** Só captura depois que o comando foi efetivamente enviado. */
+  active: boolean;
+  resolve: (lines: string[]) => void;
+  reject: (err: Error) => void;
+  timer: NodeJS.Timeout;
 }
 
 /** Contrato mínimo de transporte, para permitir um *fake* nos testes. */
@@ -100,6 +112,7 @@ export class GrblClient extends EventEmitter {
 
   private job: JobInfo = { state: 'idle', sent: 0, total: 0 };
   private currentItem: QueueItem | null = null;
+  private pendingQuery: PendingQuery | null = null;
 
   constructor(options: GrblClientOptions = {}) {
     super();
@@ -152,6 +165,7 @@ export class GrblClient extends EventEmitter {
   async disconnect(): Promise<void> {
     this.stopPolling();
     this.clearWatchdog();
+    this.failQuery(new Error('Conexão encerrada antes da resposta.'));
     this.queue = [];
     this.awaitingAck = false;
     this.stalled = false;
@@ -179,6 +193,38 @@ export class GrblClient extends EventEmitter {
     if (!clean) return;
     this.queue.push({ line: clean, job: false });
     this.pump();
+  }
+
+  /**
+   * Envia uma linha e devolve o corpo da resposta (linhas até o `ok`),
+   * sem incluí-las. Usado para `$$`, `$#`, `$I`, `$G` e para aplicar
+   * `$n=valor`. Rejeita se a máquina não responder dentro de `stallMs`.
+   */
+  query(line: string): Promise<string[]> {
+    const clean = line.trim();
+    return new Promise((resolve, reject) => {
+      if (!this.isConnected()) {
+        reject(new Error('Conecte-se à máquina para consultar.'));
+        return;
+      }
+      if (this.pendingQuery) {
+        reject(new Error('Já existe uma consulta em andamento.'));
+        return;
+      }
+      const timer = setTimeout(() => {
+        if (this.pendingQuery) {
+          this.pendingQuery = null;
+          reject(
+            new Error(
+              `A máquina não respondeu a "${clean}" em ${this.stallMs} ms.`,
+            ),
+          );
+        }
+      }, this.stallMs);
+      this.pendingQuery = { lines: [], active: false, resolve, reject, timer };
+      this.queue.push({ line: clean, job: false, query: true });
+      this.pump();
+    });
   }
 
   /** Inicia um job com as linhas fornecidas (streaming confiável). */
@@ -371,6 +417,16 @@ export class GrblClient extends EventEmitter {
     }
 
     const classified = classifyLine(line);
+
+    // Corpo de uma consulta (`$n=valor`, `[G54:…]`, `[VER:…]`…): acumula.
+    if (
+      this.pendingQuery?.active &&
+      classified.kind !== 'ok' &&
+      classified.kind !== 'error'
+    ) {
+      this.pendingQuery.lines.push(line.trim());
+    }
+
     this.emit('console', {
       direction: 'in' as const,
       kind: classified.kind,
@@ -393,7 +449,26 @@ export class GrblClient extends EventEmitter {
     }
   }
 
+  /** Conclui (sucesso) a consulta pendente, se o `ok` for dela. */
+  private resolveQuery(): void {
+    const query = this.pendingQuery;
+    if (!query?.active) return;
+    clearTimeout(query.timer);
+    this.pendingQuery = null;
+    query.resolve(query.lines);
+  }
+
+  /** Rejeita a consulta pendente (erro/desconexão). */
+  private failQuery(err: Error): void {
+    const query = this.pendingQuery;
+    if (!query) return;
+    clearTimeout(query.timer);
+    this.pendingQuery = null;
+    query.reject(err);
+  }
+
   private onAck(): void {
+    this.resolveQuery();
     this.clearWatchdog();
     this.awaitingAck = false;
 
@@ -408,6 +483,7 @@ export class GrblClient extends EventEmitter {
   }
 
   private onNack(message: string, code?: number): void {
+    this.failQuery(new Error(message));
     this.clearWatchdog();
     this.awaitingAck = false;
     if (this.job.state === 'running' || this.job.state === 'paused') {
@@ -417,6 +493,7 @@ export class GrblClient extends EventEmitter {
   }
 
   private onAlarm(message: string): void {
+    this.failQuery(new Error(message));
     this.clearWatchdog();
     this.awaitingAck = false;
     this.queue = [];
@@ -438,6 +515,8 @@ export class GrblClient extends EventEmitter {
 
     this.currentItem = item;
     this.awaitingAck = true;
+    // A partir daqui as respostas da consulta começam a chegar.
+    if (item.query && this.pendingQuery) this.pendingQuery.active = true;
 
     this.emit('console', {
       direction: 'out' as const,

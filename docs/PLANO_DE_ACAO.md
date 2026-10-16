@@ -81,7 +81,7 @@ LaserGRBL; a meta é paridade nos recursos essenciais + distribuição nativa Li
 | ADR-3 | Camada de protocolo | **Módulo `GrblClient` isolado e agnóstico de UI**, no main | Lógica no renderer | Testável sem hardware (GRBL simulado); evita bloquear a UI. |
 | ADR-4 | Streaming | **Send-response (`ok`) agora; character-counting depois** | Fire-and-forget (atual) | Correção primeiro; otimização depois. |
 | ADR-5 | Estado entre processos | **Eventos IPC tipados (canal por tipo)** | `invoke` genérico | Contratos claros, menos bugs. |
-| ADR-6 | Persistência | **`electron-store`** | localStorage | Acessível no main (porta/baud) e seguro. |
+| ADR-6 | Persistência | **JSON próprio em `<userData>/prefs.json`** (`PrefsStore` no main) | `electron-store`, localStorage | Acessível no main (porta/baud/tema/unidades), sem dependência extra; as versões atuais do `electron-store` são ESM-only e brigariam com o main em CommonJS. *(refinada em 16/10/2026)* |
 | ADR-7 | Processamento de imagem | **`<canvas>` no renderer + Web Worker (`src/renderer/gcode.worker.ts`) sobre funções puras em `src/shared/image/*`** | `sharp` no main; rodar na thread principal | Decodificação nativa sem módulo nativo (evita rebuild do Electron), UI/main livres durante a conversão e pipeline testável no Vitest. *(refinada em 16/10/2026)* |
 | ADR-8 | Preview 2D | **`<canvas>` 2D** (WebGL só se necessário) | SVG, Three.js | Suficiente e leve para visualização 2D de caminhos. |
 | ADR-9 | Distribuição | **`electron-builder` → AppImage + deb; Flatpak depois** | Só tarball | Instalação nativa esperada no Linux. |
@@ -237,12 +237,19 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - Ajuda contextual para settings críticos (`$20`, `$21`, `$22`, `$32`).
 
 **Tarefas**
-- [ ] RF-CFG-1/2: parse de `$$` → tabela editável → aplicar `$n=v`.
-- [ ] RF-CFG-3: `$#`, `$I`, `$G`.
-- [ ] RF-CFG-5: `electron-store` (ADR-6) + UI de preferências.
-- [ ] RF-CON-3: persistir última porta/baud e reconectar no boot.
-- [ ] RF-CFG-6: tooltips/ajuda por setting.
-- [ ] RF-APP-3: alternância mm/pol.
+- [x] RF-CFG-1/2: parse de `$$` → tabela editável → aplicar `$n=v`.
+- [x] RF-CFG-3: `$#`, `$I`, `$G`.
+- [x] RF-CFG-5: JSON próprio (`PrefsStore`, ADR-6) + UI de preferências.
+- [x] RF-CON-3: persistir última porta/baud e reconectar no boot.
+- [x] RF-CFG-6: tooltips/ajuda por setting (catálogo `shared/grblSettings.ts`).
+- [x] RF-APP-3: alternância mm/pol (exibição; G-code segue em mm).
+
+> **Nota de execução (16/10/2026):** `GrblClient.query()` envia qualquer linha e
+> devolve as respostas até o `ok`, mantendo o *send-response* (`$$`, `$#`, `$I`,
+> `$G`, `$n=v`). A tabela de `$$` agrupa por função, mostra ajuda contextual e só
+> reenvia o valor alterado. As preferências vivem em `<userData>/prefs.json`
+> (main) e a UI usa `getPrefs/setPrefs`; a unidade afeta **o DRO**, não o estado
+> modal da máquina, para não reinterpretar jogs/comandos.
 
 **Critérios de aceite**
 - Ler `$$`, alterar um valor, aplicar e reler confirma a mudança.
@@ -265,7 +272,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - [x] RF-PRV-1…5: parser de movimento (`G0/G1/G2/G3`, `G90/G91`, unidades) → canvas.
 - [x] RF-GC-6: múltiplos passes.
 - [x] RF-PRV-3: crosshair de posição ligado ao status.
-- [ ] RF-GC-9: aviso quando o caminho excede a área de trabalho (`$130/$131`).
+- [x] RF-GC-9: aviso quando o caminho excede a área de trabalho (`$130/$131`).
 
 **Critérios de aceite**
 - Override altera a velocidade da máquina durante o job e o valor aparece na UI.

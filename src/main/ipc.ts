@@ -4,6 +4,7 @@
  */
 
 import {
+  app,
   BrowserWindow,
   dialog,
   ipcMain,
@@ -19,6 +20,8 @@ import {
   IMAGE_DIALOG_FILTERS,
   imageMimeType,
 } from '../shared/fileFilters';
+import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
+import { parseSettings } from '../shared/protocol';
 import type {
   ConnectOptions,
   JogCommand,
@@ -26,9 +29,20 @@ import type {
   OpenedTextFile,
   OverrideAction,
   PortInfo,
+  Prefs,
   RapidOverrideLevel,
+  SettingApplyRequest,
+  SpecialQuery,
 } from '../shared/types';
 import { GrblClient } from './services/GrblClient';
+import { PrefsStore } from './services/PrefsStore';
+
+/** Linha de consulta de cada comando especial (RF-CFG-3). */
+const SPECIAL_LINE: Record<SpecialQuery, string> = {
+  offsets: '$#',
+  info: '$I',
+  state: '$G',
+};
 
 /** Teto de leitura dos diálogos (protege RAM no main: RNF-12). */
 const IMAGE_MAX_BYTES = 48 * 1024 * 1024;
@@ -58,6 +72,9 @@ export interface IpcContext {
 /** Registra os handlers e o encaminhamento de eventos para a janela. */
 export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
   const client = new GrblClient();
+  const prefs = new PrefsStore(
+    path.join(app.getPath('userData'), 'prefs.json'),
+  );
 
   const send = (channel: string, payload: unknown): void => {
     const win = getWindow();
@@ -167,6 +184,38 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     client.overrideRapid(level);
     return true;
   });
+
+  // ----------------------------------------------------- configurações $$
+
+  ipcMain.handle(CHANNELS.settingsRead, async () => {
+    const lines = await client.query('$$');
+    return buildSettingRows(parseSettings(lines));
+  });
+
+  ipcMain.handle(
+    CHANNELS.settingsApply,
+    async (_evt, req: SettingApplyRequest) => {
+      if (!Number.isInteger(req?.code) || req.code < 0)
+        throw new Error('Configuração inválida.');
+      const problem = validateSettingValue(req.code, String(req.value));
+      if (problem) throw new Error(problem);
+      await client.query(`$${req.code}=${String(req.value).trim()}`);
+      return true;
+    },
+  );
+
+  ipcMain.handle(CHANNELS.settingsSpecial, async (_evt, kind: SpecialQuery) => {
+    const line = SPECIAL_LINE[kind];
+    if (!line) throw new Error('Consulta desconhecida.');
+    return client.query(line);
+  });
+
+  // -------------------------------------------------------- preferências
+
+  ipcMain.handle(CHANNELS.prefsGet, () => prefs.read());
+  ipcMain.handle(CHANNELS.prefsSet, (_evt, patch: Partial<Prefs>) =>
+    prefs.updateInPlace(patch ?? {}),
+  );
 
   /**
    * Abre uma imagem para preparação (Fase 5). O caminho vem sempre do

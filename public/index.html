@@ -32,6 +32,7 @@
             <button type="button" id="refreshPorts">Atualizar</button>
           </div>
           <button type="button" id="connectBtn" class="primary">Conectar</button>
+          <button type="button" id="settingsBtn">Configurações da máquina ($$)</button>
           <div class="conn-state">
             <span id="connDot" class="dot"></span>
             <span id="connText">Desconectado</span>
@@ -251,6 +252,13 @@
             <div class="axis"><b>Z</b><span id="droZ">—</span></div>
           </div>
           <div class="meta">Feed <span id="metaFeed">—</span> · S <span id="metaS">—</span></div>
+          <label class="meta units"
+            >Unidade
+            <select id="unitsSelect" title="Unidade de exibição (RF-APP-3)">
+              <option value="mm">mm</option>
+              <option value="in">in</option>
+            </select>
+          </label>
           <div class="spacer"></div>
           <div class="meta" id="progressText">0 / 0</div>
         </div>
@@ -278,6 +286,41 @@
           />
         </div>
       </main>
+    </div>
+
+    <div class="overlay hidden" id="settingsOverlay">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settingsTitle"
+      >
+        <header class="modal-head">
+          <h3 id="settingsTitle">Configurações da máquina</h3>
+          <button type="button" id="settingsClose">Fechar</button>
+        </header>
+
+        <div class="modal-toolbar">
+          <button type="button" id="settingsRefresh" class="primary">
+            Ler $$
+          </button>
+          <input
+            type="search"
+            id="settingsFilter"
+            placeholder="Filtrar por nome ou chave…"
+          />
+          <nav class="tabs">
+            <button type="button" class="tab active" data-special="">$$</button>
+            <button type="button" class="tab" data-special="offsets">$#</button>
+            <button type="button" class="tab" data-special="info">$I</button>
+            <button type="button" class="tab" data-special="state">$G</button>
+          </nav>
+        </div>
+
+        <div id="settingsStatus" class="hint"></div>
+        <div id="settingsList" class="settings-list"></div>
+        <pre id="specialOutput" class="special-output hidden"></pre>
+      </div>
     </div>
 
     <script src="./materials.js"></script>

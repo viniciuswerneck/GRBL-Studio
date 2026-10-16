@@ -5,6 +5,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import { CHANNELS } from '../shared/channels';
+import type { SettingRow } from '../shared/grblSettings';
 import type {
   ConnectOptions,
   ConnectionState,
@@ -18,7 +19,10 @@ import type {
   OpenedTextFile,
   OverrideAction,
   PortInfo,
+  Prefs,
   RapidOverrideLevel,
+  SettingApplyRequest,
+  SpecialQuery,
 } from '../shared/types';
 
 type Unsubscribe = () => void;
@@ -60,6 +64,17 @@ const api = {
     ipcRenderer.invoke(CHANNELS.overrideSpindle, action),
   overrideRapid: (level: RapidOverrideLevel): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.overrideRapid, level),
+
+  // Configurações $$ (RF-CFG-1/2/3) e preferências (RF-CFG-5)
+  readSettings: (): Promise<SettingRow[]> =>
+    ipcRenderer.invoke(CHANNELS.settingsRead),
+  applySetting: (req: SettingApplyRequest): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.settingsApply, req),
+  querySpecial: (kind: SpecialQuery): Promise<string[]> =>
+    ipcRenderer.invoke(CHANNELS.settingsSpecial, kind),
+  getPrefs: (): Promise<Prefs> => ipcRenderer.invoke(CHANNELS.prefsGet),
+  setPrefs: (patch: Partial<Prefs>): Promise<Prefs> =>
+    ipcRenderer.invoke(CHANNELS.prefsSet, patch),
   saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
   openImage: (): Promise<OpenedImageFile | null> =>

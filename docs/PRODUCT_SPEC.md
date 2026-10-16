@@ -102,7 +102,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | :--- | :--- | :--- | :--- |
 | RF-CON-1 | Listar portas seriais disponíveis e atualizar a lista sob demanda. | Must | 🟡 |
 | RF-CON-2 | Conectar/desconectar com baud rate selecionável (9600/115200/250000…). | Must | 🟡 |
-| RF-CON-3 | Persistir última porta e baud usados. | Should | ⬜ |
+| RF-CON-3 | Persistir última porta e baud usados (e reconectar no boot). | Should | ✅ |
 | RF-CON-4 | Detectar desconexão inesperada e avisar o usuário. | Must | ⬜ |
 | RF-CON-5 | Ao conectar, ler `$I`/`$G` e exibir firmware/estado inicial. | Should | ⬜ |
 | RF-CON-6 | Reconexão automática opcional. | Could | ⬜ |
@@ -180,12 +180,12 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-CFG-1 | Ler e exibir todos os settings `$$` com descrição legível. | Must | ⬜ |
-| RF-CFG-2 | Editar e aplicar settings individualmente (`$n=valor`). | Must | ⬜ |
-| RF-CFG-3 | Ver `$#` (offsets), `$I` (build info) e `$G` (estado modal). | Should | ⬜ |
+| RF-CFG-1 | Ler e exibir todos os settings `$$` com descrição legível. | Must | ✅ |
+| RF-CFG-2 | Editar e aplicar settings individualmente (`$n=valor`). | Must | ✅ |
+| RF-CFG-3 | Ver `$#` (offsets), `$I` (build info) e `$G` (estado modal). | Should | ✅ |
 | RF-CFG-4 | Perfis de configuração (salvar/restaurar conjunto de settings). | Could | ⬜ |
-| RF-CFG-5 | Preferências do app: tema, unidades, porta/baud padrão, pasta de arquivos. | Must | ⬜ |
-| RF-CFG-6 | Ajuda contextual sobre settings críticos (`$20`, `$21`, `$22`, `$32`). | Should | ⬜ |
+| RF-CFG-5 | Preferências do app: tema, unidades, porta/baud padrão, pasta de arquivos. | Must | 🟡 |
+| RF-CFG-6 | Ajuda contextual sobre settings críticos (`$20`, `$21`, `$22`, `$32`). | Should | ✅ |
 
 ### M9 — Importação de imagens e geração de G-code
 
@@ -214,7 +214,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | :--- | :--- | :--- | :--- |
 | RF-APP-1 | Tema escuro (padrão) e claro. | Should | 🟡 |
 | RF-APP-2 | Idioma pt-BR e en (estrutura de i18n). | Should | ⬜ |
-| RF-APP-3 | Unidades mm/polegadas na UI e nos comandos. | Should | ⬜ |
+| RF-APP-3 | Unidades mm/polegadas na UI e nos comandos. | Should | 🟡 |
 | RF-APP-4 | Empacotar `.AppImage`, `.deb` e `Flatpak`. | Must | ⬜ |
 | RF-APP-5 | Instruções de permissão de porta serial no Linux (grupo `dialout`). | Must | ⬜ |
 
