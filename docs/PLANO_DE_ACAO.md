@@ -334,7 +334,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 **Tarefas**
 - [ ] RF-MAC-1/2.
-- [ ] RF-GC-7: janela de retomada e rewind de linhas.
+- [x] RF-GC-7: retomada de job (preâmbulo modal + sugestão `done − N`).
 - [ ] RF-CON-7: transporte sobre TCP (Could).
 
 **Critérios de aceite**

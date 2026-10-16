@@ -4,6 +4,8 @@ dist/
 public/gcode.worker.js
 public/materials.js
 public/preview.js
+public/resume.js
+public/macros.js
 
 # Logs e temporários
 *.log

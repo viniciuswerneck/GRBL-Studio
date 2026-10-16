@@ -6,6 +6,17 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — RF-GC-7: retomada de job interrompido
+- `shared/resume.ts` (puro, empacotado como `public/resume.js`): reconstrói o
+  estado modal vigente antes da linha escolhida (`G17`–`G19`, `G20/G21`,
+  `G90/G91`, `G90.1/G91.1`, `G93/G94`, `G54`–`G59`, `M3/M4/M5`) e devolve
+  `[M5, …modais…, …cauda…]`. `M3` é reafirmado como `M3 S0` para o laser não
+  acender parado; `suggestStart(done, N)` sugere `done − N`.
+- Card **Retomada** no painel de execução: mostra a linha interrompida, aceita a
+  linha inicial, sugere N linhas antes e reinicia o job com o preâmbulo. O
+  preview destaca o trecho pelo índice no arquivo (compensando o preâmbulo).
+- Testes: `tests/resume.test.ts` (12 casos).
+
 ### Added — Fase 3: configurações `$$`, consultas e preferências
 - **`GrblClient.query()`** (RF-CFG-1/2/3): envia uma linha e devolve as respostas
   até o `ok`, preservando o *send-response*. `$$`, `$n=valor`, `$#`, `$I` e `$G`

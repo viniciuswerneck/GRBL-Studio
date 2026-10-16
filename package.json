@@ -6,11 +6,12 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:preview",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:preview && npm run build:resume",
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js",
     "build:worker": "esbuild src/renderer/gcode.worker.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=public/gcode.worker.js",
     "build:materials": "esbuild src/shared/materials.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIALS --outfile=public/materials.js",
     "build:preview": "esbuild src/shared/preview.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_PREVIEW --outfile=public/preview.js",
+    "build:resume": "esbuild src/shared/resume.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_RESUME --outfile=public/resume.js",
     "dev": "tsc -w",
     "start": "electron .",
     "start:dev": "npm run build && electron .",

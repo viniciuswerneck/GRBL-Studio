@@ -89,6 +89,11 @@ const el = {
   settingsStatus: $('settingsStatus'),
   specialOutput: $('specialOutput'),
   settingsTabs: document.querySelectorAll('.tabs .tab'),
+  resumeLine: $('resumeLine'),
+  resumeBack: $('resumeBack'),
+  resumeSuggest: $('resumeSuggest'),
+  resumeFrom: $('resumeFrom'),
+  resumeInfo: $('resumeInfo'),
 };
 
 const state = {
@@ -103,6 +108,12 @@ const state = {
   lastStatus: null,
   /** Preferências persistidas no main (RF-CFG-5). */
   prefs: {},
+  /** Índice (no arquivo) da primeira linha do job atual — 0 no envio normal. */
+  jobStart: 0,
+  /** Linhas de preâmbulo injetadas por uma retomada (RF-GC-7). */
+  jobPreamble: 0,
+  /** Última linha confirmada pelo GRBL, mapeada para o arquivo. */
+  doneFile: 0,
 };
 
 // ------------------------------------------------------------------ console
@@ -236,6 +247,9 @@ function updateControls() {
   ]) {
     b.disabled = !conn;
   }
+
+  // Retomada (RF-GC-7): só com arquivo, conectado e nada em execução.
+  el.resumeFrom.disabled = !conn || !hasFile || running || paused;
 }
 
 // -------------------------------------------------------------------- portas
@@ -394,17 +408,73 @@ function applyJobLines(name, text) {
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0);
   state.fileName = name;
+  state.jobStart = 0;
+  state.jobPreamble = 0;
+  state.doneFile = 0;
   el.fileInfo.textContent = `${name} — ${state.lines.length} linhas`;
   // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
   setGcodePreview(String(text), name);
   updateControls();
 }
 
-el.playBtn.addEventListener('click', () => {
+/**
+ * Inicia o envio a partir de `startIndex` no arquivo. Em retomada (> 0),
+ * injeta o preâmbulo que reafirma o estado modal (RF-GC-7, `shared/resume.ts`).
+ */
+function beginJob(startIndex = 0) {
   if (!state.connected || !state.lines.length) return;
+  const total = state.lines.length;
+  const start = Math.max(0, Math.min(Math.trunc(startIndex), total));
+  const resume = window.GRBL_RESUME;
+  const program =
+    start > 0 && resume
+      ? resume.buildResume(state.lines, start)
+      : state.lines.slice(start);
+
+  state.jobStart = start;
+  state.jobPreamble = program.length - (total - start);
+  state.doneFile = start;
+
   // Preview do caminho para acompanhar a execução (RF-PRV-5).
   setGcodePreview(state.lines.join('\n'), state.fileName);
-  window.grbl.startJob(state.lines, state.fileName);
+  previewProgram.done = start;
+  window.grbl.startJob(program, state.fileName);
+}
+
+el.playBtn.addEventListener('click', () => beginJob(0));
+
+// -------------------------------------------- retomada de job (RF-GC-7)
+
+/** Linha inicial sugerida (done − reversão) para o campo de retomada. */
+function suggestedStart(done) {
+  const back = Math.max(0, Number(el.resumeBack.value) || 0);
+  if (window.GRBL_RESUME) return window.GRBL_RESUME.suggestStart(done, back);
+  return Math.max(0, done - back);
+}
+
+function updateResumeInfo() {
+  const total = state.lines.length;
+  const done = Math.min(state.doneFile, total);
+  if (done > 0 && done < total) {
+    el.resumeInfo.textContent =
+      `Interrompido na linha ${done} de ${total}. ` +
+      `Sugestão: ${suggestedStart(done)}.`;
+  } else if (total > 0 && done >= total) {
+    el.resumeInfo.textContent = `Job concluído (${total} linhas).`;
+  } else {
+    el.resumeInfo.textContent =
+      'Interrompa um job para ver o ponto de retomada.';
+  }
+}
+
+el.resumeSuggest.addEventListener('click', () => {
+  el.resumeLine.value = String(suggestedStart(state.doneFile));
+});
+
+el.resumeFrom.addEventListener('click', () => {
+  const index = Math.max(0, Number(el.resumeLine.value) || 0);
+  appendLine(`Retomando a partir da linha ${index}…`, 'ok');
+  beginJob(index);
 });
 
 el.pauseBtn.addEventListener('click', () => {
@@ -481,6 +551,9 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
 
   state.lines = gcode.split(/\r?\n/).filter((l) => l.trim().length > 0);
   state.fileName = `${baseName(image.name)}.gcode`;
+  state.jobStart = 0;
+  state.jobPreamble = 0;
+  state.doneFile = 0;
   el.fileInfo.textContent = `${state.fileName} — ${state.lines.length} linhas (gerado de ${image.name})`;
 
   imageState.stats = stats;
@@ -1594,9 +1667,14 @@ window.grbl.onProgress((p) => {
   const pct = p.total ? Math.round((p.sent / p.total) * 100) : 0;
   el.progressBar.style.width = `${pct}%`;
   el.progressText.textContent = `${p.sent} / ${p.total} (${pct}%)`;
+
+  // Mapeia o progresso do job para o índice no arquivo (retomada RF-GC-7).
+  state.doneFile = state.jobStart + Math.max(0, p.sent - state.jobPreamble);
+  updateResumeInfo();
+
   // Marca no preview o trecho já executado (RF-PRV-5).
   if (imageState.preview?.kind === 'gcode') {
-    previewProgram.done = p.sent;
+    previewProgram.done = state.doneFile;
     scheduleRenderPreview();
   }
 });

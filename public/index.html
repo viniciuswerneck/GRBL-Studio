@@ -240,6 +240,30 @@
           </div>
           <button type="button" id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
           <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
+
+          <details class="group" id="resumeGroup">
+            <summary>Retomada (RF-GC-7)</summary>
+            <div id="resumeInfo" class="hint">
+              Interrompa um job para ver o ponto de retomada. Ao continuar, o app
+              reafirma as unidades, distância, offsets e o laser antes da linha.
+            </div>
+            <div class="row">
+              <label class="field"
+                >Linha <input type="number" id="resumeLine" min="0" value="0" step="1"
+              /></label>
+              <label class="field"
+                >Voltar <input type="number" id="resumeBack" min="0" max="999" value="10" step="1"
+              /></label>
+            </div>
+            <div class="row">
+              <button type="button" id="resumeSuggest" title="Sugere done − Voltar">
+                Sugerir (N antes)
+              </button>
+              <button type="button" id="resumeFrom" class="primary" disabled>
+                ▶ Retomar daqui
+              </button>
+            </div>
+          </details>
         </section>
       </aside>
 
@@ -325,6 +349,7 @@
 
     <script src="./materials.js"></script>
     <script src="./preview.js"></script>
+    <script src="./resume.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>
