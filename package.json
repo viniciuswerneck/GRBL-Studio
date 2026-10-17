@@ -27,8 +27,8 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "package": "npm run build && electron-builder --config electron-builder.yml",
-    "package:linux": "npm run build && electron-builder --linux --config electron-builder.yml",
+    "package": "npm run build && electron-builder --publish never --config electron-builder.yml",
+    "package:linux": "npm run build && electron-builder --linux --publish never --config electron-builder.yml",
     "package:flatpak": "flatpak-builder --user --install --force-clean build-dir build/flatpak/com.grblstudio.app.yml",
     "build:adjust": "esbuild src/shared/image/adjust.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_ADJUST --outfile=public/adjust.js"
   },
