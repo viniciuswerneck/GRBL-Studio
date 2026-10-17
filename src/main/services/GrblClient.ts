@@ -146,11 +146,15 @@ export class GrblClient extends EventEmitter {
     transport.on('data', (chunk: string) => this.onData(chunk));
     transport.on('error', (err: Error) => this.emitError(err.message));
     transport.on('close', (err?: Error) => {
+      // Fechamento iniciado por nós (disconnect()): não tratar como erro.
+      const intentional = this.transport === null;
       if (this.connection !== 'disconnected') {
         this.setConnection('disconnected');
-        this.emitError(
-          err ? `Conexão encerrada: ${err.message}` : 'Conexão encerrada.',
-        );
+        if (!intentional) {
+          this.emitError(
+            err ? `Conexão encerrada: ${err.message}` : 'Conexão encerrada.',
+          );
+        }
       }
       this.stopPolling();
     });
@@ -407,7 +411,18 @@ export class GrblClient extends EventEmitter {
   private onData(chunk: string): void {
     // Remove caracteres de controle espúrios (ex.: 0x01) que alguns firmwares
     // inserem entre o status report e o 'ok', o que travava o reconhecimento.
-    const clean = chunk.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    const clean = Array.from(chunk)
+      .filter((ch) => {
+        const code = ch.charCodeAt(0);
+        return !(
+          code <= 0x08 ||
+          code === 0x0b ||
+          code === 0x0c ||
+          (code >= 0x0e && code <= 0x1f) ||
+          code === 0x7f
+        );
+      })
+      .join('');
     this.rxBuffer += clean;
     const { lines, rest } = splitLines(this.rxBuffer);
     this.rxBuffer = rest;

@@ -16,6 +16,73 @@
         <div class="brand">
           <h1>GRBL Studio</h1>
           <button type="button" id="themeBtn" title="Alternar tema">◐</button>
+          <button type="button" id="modeBtn" title="Alternar modo Básico/Avançado">Básico</button>
+        </div>
+
+        <label class="field">
+          Perfil de máquina
+          <select id="machineProfile" title="Ajustes otimizados para a máquina"></select>
+        </label>
+
+        <div class="basic-guide">
+          <div class="wizard-card">
+            <div class="hint" id="wizardTitle">Passo 1 de 6 — Conectar</div>
+            <div class="conn-state">
+              <span id="wizardDot" class="dot"></span>
+              <span id="wizardStatus" class="hint">Conecte a gravadora para começar.</span>
+            </div>
+
+            <div class="wizard-step" data-step="1">
+              <button type="button" id="guideConnect" class="primary">Conectar</button>
+            </div>
+
+            <div class="wizard-step hidden" data-step="2">
+              <button type="button" id="guideImage">Escolher imagem</button>
+              <div id="wizardImageInfo" class="hint">Nenhuma imagem carregada</div>
+            </div>
+
+            <div class="wizard-step hidden" data-step="3">
+              <div class="frame-panel hidden" id="guidePanel">
+                <label class="field">
+                  Tamanho (mm)
+                  <div class="row">
+                    <input type="number" id="guideWidth" value="50" min="0.1" step="0.1" />
+                    <input type="number" id="guideHeight" value="50" min="0.1" step="0.1" />
+                  </div>
+                </label>
+                <label class="field">
+                  Tipo
+                  <div class="row">
+                    <button type="button" id="guideTypePhoto">Foto</button>
+                    <button type="button" id="guideTypeBW">P&B</button>
+                    <button type="button" id="guideTypeVector">Contorno</button>
+                  </div>
+                </label>
+                <label class="field">
+                  Material
+                  <select id="guideMaterial"></select>
+                </label>
+              </div>
+            </div>
+
+            <div class="wizard-step hidden" data-step="4">
+              <button type="button" id="guideGenerate" class="primary">Gerar G-code</button>
+            </div>
+
+            <div class="wizard-step hidden" data-step="5">
+              <button type="button" id="guideFrame">Posicionar</button>
+            </div>
+
+            <div class="wizard-step hidden" data-step="6">
+              <button type="button" id="guideRecord" class="primary">Gravar</button>
+            </div>
+
+            <div class="row">
+              <button type="button" id="wizardBack">Voltar</button>
+              <button type="button" id="wizardNext" class="primary">Próximo</button>
+            </div>
+            <button type="button" id="guideClose" class="danger">Fechar (Modo Avançado)</button>
+          </div>
         </div>
 
         <div class="tabs sidebar-tabs">
@@ -108,7 +175,7 @@
           </div>
         </details>
 
-        <details class="card" id="cardOverrides">
+        <details class="card advanced" id="cardOverrides">
           <summary>Overrides (tempo real)</summary>
           <div class="hint">
             Ajustam a máquina em movimento. O valor ativo vem do status (`Ov:`).
@@ -216,6 +283,7 @@
               <label class="field"
                 >Módulo
                 <select id="profileModule">
+                  <option value="3W">3W (Sculpfun C1)</option>
                   <option value="5W">5W</option>
                   <option value="10W">10W</option>
                 </select>
@@ -308,7 +376,7 @@
         </div>
 
         <div class="tab-panel" data-panel="macros">
-        <details class="card" id="cardMacros">
+        <details class="card advanced" id="cardMacros">
           <summary>Macros (RF-MAC-1)</summary>
           <div id="macroButtons" class="macro-buttons"></div>
           <div id="macroHint" class="hint">

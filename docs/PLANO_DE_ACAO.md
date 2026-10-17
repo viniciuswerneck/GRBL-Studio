@@ -499,3 +499,67 @@ Uma tarefa só é considerada **pronta** quando:
 - LaserGRBL — Machine status: <https://lasergrbl.com/usage/machine-status/>
 - GRBL v1.1 Commands (wiki gnea/grbl) — comandos de tempo real e streaming.
 - Manual COMGO Z1 (transcrito): `docs/comgo_z1_lasergrbl_user_manual.md`.
+
+---
+
+## 14. Catálogo de máquinas (perfis GRBL) — planejamento
+
+Objetivo: suportar dezenas de gravadoras laser GRBL 1.1 com presets otimizados,
+sem “gerar código novo”, apenas configurando parâmetros e fluxo.
+
+### 14.1 Estrutura de perfil
+- `MachineProfile`: nome, marca, categoria, área, homing, potência, ponto (mm),
+  linhas/mm padrão, modo (M3/M4), settings GRBL, notas de foco/manutenção.
+- Categorias: Portátil, Desktop, CNC+Laser, CO₂.
+- Sempre disponível: **Genérico GRBL** (usuário define).
+
+### 14.2 Catálogo inicial (prioridade)
+Sculpfun (C1, S6, S9, S10, S30), Ortur (LM2, LM3, Aufero 1/2), AtomStack
+(A5 Pro, X7 Pro, S10/S20 Pro), TwoTrees (TS2, TS3, TT-5.5), FoxAlien
+(Masuter, Reizer), Genmitsu (Cubiko, 3018-PRO), Comgrow (Z1, ROBO), xTool
+(D1, D1 Pro), Creality (Falcon 2, CR-Laser Falcon), Wainlux (K6, K8),
+AlgoLaser (Pixi, Alpha), NEJE (Master 2/2S, A40640), Longer (Ray5, B1),
+Vevor (3018, 4040), OMTech/Monport (40W CO₂).
+
+### 14.3 Roadmap
+- **Fase 1**: estrutura + 8–10 modelos principais.
+- **Fase 2**: 20+ modelos da tabela.
+- **Fase 3**: material presets filtrados por potência.
+- **Fase 4**: contribuição da comunidade (import/export de perfis).
+
+### 14.4 Critérios de aceite
+- Selecionar modelo aplica área, ponto, linhas/mm, modo e settings.
+- Home só funciona se o perfil tiver homing.
+- Aviso de área excedida usa a área do perfil.
+- Perfis desconhecidos caem em “Genérico GRBL”.
+
+---
+
+## 15. Modo Básico (Wizard) para leigos — planejamento
+
+Objetivo: oferecer um fluxo guiado e simples para usuários iniciantes, sem
+expor controles técnicos (sliders, overrides, `$$`), mantendo o modo Avançado
+intacto.
+
+### 15.1 Fluxo do Wizard
+1. **Máquina** — selecionar perfil (ou Genérica) e conectar (status visual).
+2. **Imagem** — escolher imagem, preview grande, ajustar tamanho (proporção).
+3. **Tipo de gravação** — cartões: Foto (line-to-line), Preto e branco (dither),
+   Contorno (vetor).
+4. **Material** — grade de materiais com presets (velocidade/potência/passadas).
+5. **Posicionar e gravar** — joystick + contorno fraco + botão “Gravar”.
+
+### 15.2 O que fica oculto no Básico
+Sliders de ajuste, conversão (linhas/mm, direção, ponto, suavização), overrides,
+editor de `$$`, macros e retomada avançada. Console colapsado, mas disponível.
+
+### 15.3 Roadmap
+- **B1**: toggle “Básico / Avançado” + persistência (`prefs.mode`).
+- **B2**: wizard passos 1–3 (máquina, imagem, tipo).
+- **B3**: passos 4–5 (material, posicionamento e gravação).
+- **B4**: polimento (ícones, textos curtos, testes de usabilidade).
+
+### 15.4 Critérios de aceite
+- Leigo consegue gravar sem ver controles técnicos.
+- Modo Avançado permanece intacto.
+- Trocar de modo não perde o trabalho em andamento.

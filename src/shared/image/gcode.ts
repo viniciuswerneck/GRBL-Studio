@@ -20,7 +20,6 @@ import {
 import type { GcodeResult, GcodeStats, ImageToGcodeOptions } from './types';
 import { vectorToGcode } from './vector';
 
-const DEFAULT_GAP_MM = 1;
 /** Velocidade dos `G0` assumida só na estimativa de tempo (padrão `$25` do GRBL). */
 const TRAVEL_ESTIMATE_MMPM = 5000;
 
@@ -104,7 +103,6 @@ function emitGcode(
 ): GcodeResult {
   const g = opts.geometry;
   const e = opts.engrave;
-  const gap = opts.gapThresholdMm ?? DEFAULT_GAP_MM;
   const passes = opts.passes ?? 1;
   const cols = geom.cols;
   const halfDot = geom.halfDot;
@@ -186,19 +184,12 @@ function emitGcode(
         segments++;
         g1Mm += runLength;
         burnedMm += runLength;
-      } else if (runLength >= gap) {
-        travel(to); // trecho longo em branco: pula com G0 (laser desligado)
-        return;
       } else {
-        out.push(
-          `G1 X${f(to.x)} Y${f(to.y)}${lastS === 0 ? '' : ' S0'}${
-            e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
-          }`,
-        );
-        lastS = 0;
-        lastF = e.speedMmMin;
-        segments++;
-        g1Mm += runLength;
+        // Fundo branco (s = 0): ignora a queima e desloca com G0 (laser
+        // desligado), sem gastar tempo em G1. Funciona para trechos curtos
+        // e longos.
+        travel(to);
+        return;
       }
 
       cursor = { ...to };

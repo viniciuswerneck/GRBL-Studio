@@ -927,3 +927,72 @@ input[type="checkbox"] {
   border: 1px solid var(--stroke);
   border-radius: var(--r-md);
 }
+
+/* Modo básico: oculta seções avançadas. */
+body.basic .advanced {
+  display: none;
+}
+
+/* Guia rápido: só no modo básico. */
+.basic-guide {
+  display: none;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg-card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+body.basic .basic-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: color-mix(in srgb, #000 40%, transparent);
+  pointer-events: auto;
+}
+
+body.basic .basic-guide > * {
+  pointer-events: auto;
+}
+
+body.basic .basic-guide > * {
+  background: var(--bg-card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  box-shadow: var(--shadow-2, var(--shadow-1));
+}
+
+body.basic .basic-guide > * {
+  max-width: 420px;
+  width: 100%;
+}
+
+/* Wizard do Modo Básico. */
+.wizard-card {
+  width: min(420px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-lg, var(--r-md));
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  box-shadow: var(--shadow-2, var(--shadow-1));
+}
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wizard-step.hidden {
+  display: none;
+}

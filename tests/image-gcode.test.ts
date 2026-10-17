@@ -332,20 +332,19 @@ describe('imageToGcode', () => {
       lines(longGap.gcode).filter((l) => l.startsWith('G0')).length,
     ).toBeGreaterThanOrEqual(longGap.stats.rows * 2);
 
-    // Gap acima de qualquer linha: sobram só os deslocamentos de entrada de linha.
+    // Fundo branco é sempre ignorado como queima e percorrido com G0,
+    // independente do gapThreshold (nenhum G1 S0 é emitido).
     const shortGap = imageToGcode(
       solid(10, 10, 255, 255, 255),
       10,
       10,
       options({ gapThresholdMm: 100 }),
     );
-    expect(lines(shortGap.gcode).filter((l) => l.startsWith('G0')).length).toBe(
-      shortGap.stats.rows,
-    );
-    // ...e o restante da linha é feito com G1 no feed de gravação (S modal 0).
+    expect(
+      lines(shortGap.gcode).filter((l) => l.startsWith('G0')).length,
+    ).toBeGreaterThanOrEqual(shortGap.stats.rows * 2);
     const shortLines = lines(shortGap.gcode).filter((l) => l.startsWith('G1'));
-    expect(shortLines.length).toBeGreaterThan(0);
-    expect(all(shortGap.gcode, /S(\d+)/g).every((v) => v === 0)).toBe(true);
+    expect(shortLines.length).toBe(0);
   });
 
   it('modo M4 arma M4; modo M3 arma M3 S0', () => {

@@ -10,7 +10,7 @@ import {
 describe('perfis de material (RF-IMG-8)', () => {
   it('tem todos os campos válidos', () => {
     for (const profile of MATERIAL_PROFILES) {
-      expect(['5W', '10W']).toContain(profile.module);
+      expect(['3W', '5W', '10W']).toContain(profile.module);
       expect(['engrave', 'cut']).toContain(profile.action);
       expect(profile.material.length).toBeGreaterThan(0);
       expect(profile.powerPercent).toBeGreaterThan(0);

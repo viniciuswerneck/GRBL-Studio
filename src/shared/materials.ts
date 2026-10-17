@@ -12,7 +12,7 @@
  */
 
 /** Módulo de laser do COMGO Z1 coberto pelo manual. */
-export type LaserModule = '5W' | '10W';
+export type LaserModule = '3W' | '5W' | '10W';
 
 /** Ação executada: gravação (raster) ou corte (contorno). */
 export type ProfileAction = 'engrave' | 'cut';
@@ -38,6 +38,18 @@ export const PROFILE_MAX_S = 1000;
 
 /** Perfis do manual (5W e 10W), na ordem em que aparecem na matriz. */
 export const MATERIAL_PROFILES: readonly MaterialProfile[] = [
+  // --- 3W · Gravação (manual Sculpfun C1, §6) ---
+  p('3W', 'engrave', 'Papel kraft', 80, 3000, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Compensado', 90, 1500, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Madeira sólida', 90, 1000, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Bambu', 90, 1000, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Folha de alumínio', 80, 1500, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Cortiça', 90, 1000, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Couro', 60, 1500, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Silicagel', 80, 1000, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Feltro escuro', 60, 1500, 'Passadas: 1. M4.'),
+  p('3W', 'engrave', 'Lata (tin plate)', 80, 2500, 'Passadas: 1. M4.'),
+
   // --- 5W · Gravação (§9.1) ---
   p('5W', 'engrave', 'Tábua de madeira', 100, 2500, 'Ajustes padrão.'),
   p('5W', 'engrave', 'Bambu', 100, 2500, 'Ajustes padrão.'),

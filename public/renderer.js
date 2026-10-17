@@ -10,6 +10,7 @@ const el = {
   portList: $('portList'),
   baudList: $('baudList'),
   refreshPorts: $('refreshPorts'),
+  machineProfile: $('machineProfile'),
   connectBtn: $('connectBtn'),
   connDot: $('connDot'),
   connText: $('connText'),
@@ -42,6 +43,24 @@ const el = {
   consoleOutput: $('consoleOutput'),
   consoleInput: $('consoleInput'),
   themeBtn: $('themeBtn'),
+  modeBtn: $('modeBtn'),
+  guideConnect: $('guideConnect'),
+  guideImage: $('guideImage'),
+  guideGenerate: $('guideGenerate'),
+  guideFrame: $('guideFrame'),
+  guideRecord: $('guideRecord'),
+  guideClose: $('guideClose'),
+  guidePanel: $('guidePanel'),
+  guideWidth: $('guideWidth'),
+  guideHeight: $('guideHeight'),
+  guideTypePhoto: $('guideTypePhoto'),
+  guideTypeBW: $('guideTypeBW'),
+  guideTypeVector: $('guideTypeVector'),
+  guideMaterial: $('guideMaterial'),
+  wizardTitle: $('wizardTitle'),
+  wizardStatus: $('wizardStatus'),
+  wizardDot: $('wizardDot'),
+  wizardNext: $('wizardNext'),
   imageOpen: $('imageOpen'),
   imageReplace: $('imageReplace'),
   imageCancel: $('imageCancel'),
@@ -225,7 +244,18 @@ function setConnection(conn) {
 
   if (!state.connected && state.jobState === 'running') setJobState('idle');
   sidebar.classList.toggle('is-connected', state.connected);
+  // Após conectar, abre a aba Imagem para facilitar gerar o G-code.
+  if (state.connected) {
+    const activeTab = document.querySelector('.sidebar-tabs .tab.active');
+    if (activeTab && activeTab.dataset.tab === 'machine') {
+      const imgTab = document.querySelector(
+        '.sidebar-tabs .tab[data-tab="image"]',
+      );
+      if (imgTab) imgTab.click();
+    }
+  }
   updateWorkflow();
+  updateWizard();
   updateControls();
 }
 
@@ -259,6 +289,16 @@ function openFrameModal() {
       ? 'Máquina conectada. Posicione e desenhe o contorno para conferir.'
       : 'Conecte a máquina para posicionar e desenhar o contorno.';
   }
+  // Sincroniza potência/velocidade com os parâmetros da imagem.
+  if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
+  if (el.framePower && el.imgSmax) {
+    const pct = Math.round((Number(el.imgSmax.value) || 0) / 10);
+    el.framePower.value = String(Math.max(0, Math.min(100, pct)));
+  }
+  if (el.frameSpeedValue && el.frameSpeed)
+    el.frameSpeedValue.textContent = `${el.frameSpeed.value} mm/min`;
+  if (el.framePowerValue && el.framePower)
+    el.framePowerValue.textContent = `${el.framePower.value} %`;
   for (const b of [
     el.frameYp,
     el.frameXm,
@@ -278,9 +318,16 @@ function closeFrameModal() {
 }
 
 function frameJog(axis, sign) {
-  if (!state.connected) return;
+  if (!state.connected) {
+    appendLine('Conecte a máquina para usar o posicionamento.', 'error');
+    return;
+  }
   const step = Number(el.stepSelect ? el.stepSelect.value : 5) || 5;
   const feed = Number(el.feedSelect ? el.feedSelect.value : 1000) || 1000;
+  appendLine(
+    `Jog ${axis.toUpperCase()}${sign > 0 ? '+' : '-'} ${step} mm`,
+    'ok',
+  );
   window.grbl.jog({ [axis]: sign * step, feed });
 }
 
@@ -303,6 +350,371 @@ function drawFrameOutline() {
   for (const line of lines) window.grbl.writeLine(line);
   if (el.frameStatus)
     el.frameStatus.textContent = 'Contorno enviado (laser desligado).';
+}
+
+const MACHINE_PROFILES = [
+  {
+    id: 'generic',
+    name: 'Genérica (GRBL)',
+    module: '5W',
+    area: [0, 0],
+    homing: false,
+    spot: 0.08,
+    lines: 8,
+    mode: 'M4',
+    settings: {},
+  },
+  {
+    id: 'sculpfun-c1',
+    name: 'Sculpfun C1 (3 W)',
+    module: '3W',
+    area: [150, 130],
+    homing: false,
+    spot: 0.04,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 150, 131: 130, 22: 0, 20: 0, 32: 1 },
+  },
+  {
+    id: 'sculpfun-s6',
+    name: 'Sculpfun S6 (5,5 W)',
+    module: '5W',
+    area: [410, 420],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'sculpfun-s9',
+    name: 'Sculpfun S9 (5,5 W)',
+    module: '5W',
+    area: [410, 420],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'sculpfun-s10',
+    name: 'Sculpfun S10 (10 W)',
+    module: '10W',
+    area: [410, 420],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'sculpfun-s30',
+    name: 'Sculpfun S30 (10-20 W)',
+    module: '10W',
+    area: [410, 420],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'ortur-lm2',
+    name: 'Ortur Laser Master 2',
+    module: '5W',
+    area: [400, 430],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 430, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'ortur-lm3',
+    name: 'Ortur Laser Master 3',
+    module: '5W',
+    area: [400, 400],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'ortur-aufero2',
+    name: 'Ortur Aufero 2',
+    module: '5W',
+    area: [390, 390],
+    homing: false,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 390, 131: 390, 22: 0, 20: 0, 32: 1 },
+  },
+  {
+    id: 'atomstack-a5',
+    name: 'AtomStack A5 Pro',
+    module: '5W',
+    area: [410, 400],
+    homing: true,
+    spot: 0.06,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'atomstack-x7',
+    name: 'AtomStack X7 Pro',
+    module: '10W',
+    area: [410, 400],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 410, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'twotrees-ts2',
+    name: 'TwoTrees TS2',
+    module: '5W',
+    area: [300, 300],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 300, 131: 300, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'twotrees-ts3',
+    name: 'TwoTrees TS3',
+    module: '10W',
+    area: [300, 300],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 300, 131: 300, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'foxalien-masuter',
+    name: 'FoxAlien Masuter',
+    module: '5W',
+    area: [400, 400],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'genmitsu-cubiko',
+    name: 'Genmitsu Cubiko',
+    module: '3W',
+    area: [150, 150],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 150, 131: 150, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'genmitsu-3018',
+    name: 'Genmitsu 3018-PRO',
+    module: '5W',
+    area: [300, 180],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 300, 131: 180, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'wainlux-k6',
+    name: 'Wainlux K6 (portátil)',
+    module: '3W',
+    area: [80, 80],
+    homing: false,
+    spot: 0.03,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 80, 131: 80, 22: 0, 20: 0, 32: 1 },
+  },
+  {
+    id: 'wainlux-k8',
+    name: 'Wainlux K8 (portátil)',
+    module: '3W',
+    area: [80, 80],
+    homing: false,
+    spot: 0.03,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 80, 131: 80, 22: 0, 20: 0, 32: 1 },
+  },
+  {
+    id: 'comgrow-z1',
+    name: 'Comgrow Z1',
+    module: '5W',
+    area: [130, 150],
+    homing: false,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 130, 131: 150, 22: 0, 20: 0, 32: 1 },
+  },
+  {
+    id: 'xtool-d1',
+    name: 'xTool D1',
+    module: '10W',
+    area: [430, 390],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 430, 131: 390, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'creality-falcon2',
+    name: 'Creality Falcon 2',
+    module: '10W',
+    area: [400, 415],
+    homing: true,
+    spot: 0.1,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 415, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'neje-master2',
+    name: 'NEJE Master 2S',
+    module: '10W',
+    area: [400, 400],
+    homing: true,
+    spot: 0.05,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+  {
+    id: 'longer-ray5',
+    name: 'Longer Ray5',
+    module: '5W',
+    area: [400, 400],
+    homing: true,
+    spot: 0.08,
+    lines: 10,
+    mode: 'M4',
+    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
+  },
+];
+
+function populateMachineProfiles() {
+  if (!el.machineProfile) return;
+  const current = el.machineProfile.value;
+  el.machineProfile.innerHTML = '';
+  for (const prof of MACHINE_PROFILES) {
+    const opt = document.createElement('option');
+    opt.value = prof.id;
+    opt.textContent = prof.name;
+    el.machineProfile.appendChild(opt);
+  }
+  if (current && MACHINE_PROFILES.some((p) => p.id === current)) {
+    el.machineProfile.value = current;
+  } else {
+    el.machineProfile.value = 'sculpfun-c1';
+  }
+}
+
+function applyMachineProfile(profile) {
+  const prof =
+    MACHINE_PROFILES.find((p) => p.id === profile) || MACHINE_PROFILES[0];
+  if (!prof) return;
+
+  if (prof.area && prof.area[0] > 0 && prof.area[1] > 0) {
+    setWorkArea(prof.area[0], prof.area[1]);
+  }
+  if (el.imgDot) el.imgDot.value = String(prof.spot);
+  if (el.imgLines) el.imgLines.value = String(prof.lines);
+  if (el.imgMode) el.imgMode.value = prof.mode;
+  if (el.homeBtn) {
+    el.homeBtn.disabled = !prof.homing;
+    el.homeBtn.title = prof.homing
+      ? 'Homing da máquina (requer fim de curso)'
+      : `${prof.name}: sem homing de fábrica — use Definir origem`;
+  }
+  if (state.connected) {
+    for (const [code, value] of Object.entries(prof.settings)) {
+      window.grbl
+        .applySetting({ code: Number(code), value: String(value) })
+        .catch(() => {});
+    }
+  }
+  persistPrefs({ machineProfile: profile });
+}
+
+function updateWizard() {
+  if (!el.wizardTitle) return;
+  if (el.wizardDot) {
+    el.wizardDot.className =
+      'dot' +
+      (state.connected
+        ? ' connected'
+        : state.connection === 'connecting'
+          ? ' connecting'
+          : state.connection === 'error'
+            ? ' error'
+            : '');
+  }
+
+  const titles = [
+    'Conectar',
+    'Escolher imagem',
+    'Tamanho',
+    'Tipo de gravação',
+    'Material',
+    'Posicionar e gravar',
+  ];
+  el.wizardTitle.textContent = `Passo ${wizardStep} de 6 — ${titles[wizardStep - 1]}`;
+
+  // Mostra só o painel do passo atual.
+  document.querySelectorAll('.wizard-step').forEach((panel) => {
+    const step = Number(panel.dataset.step);
+    panel.classList.toggle('hidden', step !== wizardStep);
+  });
+
+  // Status contextual.
+  if (el.wizardStatus) {
+    if (wizardStep === 1) {
+      el.wizardStatus.textContent = state.connected
+        ? 'Conectado. Clique em Próximo.'
+        : 'Conecte a gravadora.';
+    } else if (wizardStep === 2) {
+      el.wizardStatus.textContent = imageState?.loaded
+        ? `${imageState.loaded.name} carregada. Clique em Próximo.`
+        : 'Escolha uma imagem.';
+    } else if (wizardStep === 3) {
+      el.wizardStatus.textContent = 'Defina o tamanho. Clique em Próximo.';
+    } else if (wizardStep === 4) {
+      el.wizardStatus.textContent = 'Escolha o tipo de gravação.';
+    } else if (wizardStep === 5) {
+      el.wizardStatus.textContent = 'Escolha o material.';
+    } else {
+      el.wizardStatus.textContent = 'Posicione e grave.';
+    }
+  }
+
+  if (el.wizardNext) {
+    let canNext = false;
+    if (wizardStep === 1) canNext = state.connected;
+    else if (wizardStep === 2) canNext = Boolean(imageState?.loaded);
+    else if (wizardStep === 3) canNext = true;
+    else if (wizardStep === 4) canNext = true;
+    else if (wizardStep === 5) canNext = true;
+    else canNext = false;
+    el.wizardNext.disabled = !canNext;
+    el.wizardNext.textContent = wizardStep < 6 ? 'Próximo' : 'Concluir';
+  }
+  if (el.wizardBack) el.wizardBack.disabled = wizardStep <= 1;
 }
 
 function updateWorkflow() {
@@ -408,6 +820,20 @@ async function refreshPorts() {
     opt.textContent = p.manufacturer ? `${p.path} — ${p.manufacturer}` : p.path;
     el.portList.appendChild(opt);
   }
+
+  // Seleciona automaticamente a porta que parece ser a gravadora.
+  const preferred = ports.find(
+    (p) =>
+      /\/tty(USB|ACM)\d/.test(p.path) &&
+      /artery|ch340|cp210|ftdi|prolific|arduino|usb/i.test(
+        `${p.manufacturer || ''} ${p.path}`,
+      ),
+  );
+  if (preferred) {
+    el.portList.value = preferred.path;
+  } else if (ports.length === 1) {
+    el.portList.value = ports[0].path;
+  }
 }
 
 // ------------------------------------------------------------------ conexão
@@ -421,8 +847,19 @@ function applyTransportVisibility() {
   el.tcpFields.classList.toggle('hidden', !tcp);
 }
 
+if (el.machineProfile) {
+  el.machineProfile.addEventListener('change', () =>
+    applyMachineProfile(el.machineProfile.value),
+  );
+}
+
 el.transportKind.addEventListener('change', () => {
   applyTransportVisibility();
+
+  // Modo Básico / Avançado.
+  const mode = state.prefs.mode === 'basic' ? 'basic' : 'advanced';
+  applyMode(mode);
+
   persistPrefs({
     transport: el.transportKind.value === 'tcp' ? 'tcp' : 'serial',
   });
@@ -667,6 +1104,7 @@ let gcodeWorker = null;
 let convertId = 0;
 let convertMode = 'commit';
 let autoStartAfterGenerate = false;
+let wizardStep = 1;
 
 function ensureWorker() {
   if (gcodeWorker) return gcodeWorker;
@@ -773,6 +1211,7 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
 
   // Abre o modal de posicionamento em vez de gravar imediatamente.
   openFrameModal();
+  updateWizard();
 
   if (autoStartAfterGenerate) {
     autoStartAfterGenerate = false;
@@ -932,12 +1371,15 @@ function loadImageBlob(name, blob) {
     el.imageInfo.textContent = `${name} — ${naturalW}×${naturalH}px${reduced}`;
     document.getElementById('cardImage').classList.add('has-image');
     updateWorkflow();
+    updateWizard();
     el.imageInfo.classList.remove('error');
     el.imgStats.textContent = '';
     el.imgSave.disabled = true;
     el.imgGenerate.disabled = false;
     el.imgGenerate.title = 'Converte a imagem em G-code';
     applySizeFromAspect('w');
+    if (el.guideWidth) el.guideWidth.value = el.imgWidth.value;
+    if (el.guideHeight) el.guideHeight.value = el.imgHeight.value;
     refreshImagePreview();
     scheduleGenerate();
   };
@@ -1161,6 +1603,13 @@ function applyProfile() {
   const sMax = materials.powerPercentToS(profile.powerPercent);
   el.imgSpeed.value = String(profile.speedMmMin);
   el.imgSmax.value = String(sMax);
+  if (el.frameSpeed) el.frameSpeed.value = String(profile.speedMmMin);
+  if (el.framePower)
+    el.framePower.value = String(Math.round(profile.powerPercent));
+  if (el.frameSpeedValue)
+    el.frameSpeedValue.textContent = `${profile.speedMmMin} mm/min`;
+  if (el.framePowerValue)
+    el.framePowerValue.textContent = `${Math.round(profile.powerPercent)} %`;
   el.profileHint.textContent = `${profile.powerPercent}% de potência (S-max ${sMax}) · ${profile.speedMmMin} mm/min · ${profile.notes}`;
 }
 
@@ -1765,6 +2214,12 @@ async function loadPrefs() {
   if (state.prefs.host) el.tcpHost.value = state.prefs.host;
   if (state.prefs.tcpPort) el.tcpPort.value = String(state.prefs.tcpPort);
   applyTransportVisibility();
+
+  // Perfil de máquina (catálogo).
+  populateMachineProfiles();
+  const profile = state.prefs.machineProfile || 'sculpfun-c1';
+  if (el.machineProfile) el.machineProfile.value = profile;
+  applyMachineProfile(profile);
 }
 
 /** Seleciona a última porta usada, quando ela ainda está disponível. */
@@ -2224,6 +2679,7 @@ window.grbl.onProgress((p) => {
 window.grbl.onError((err) => {
   el.stateBadge.className = 'badge alarm';
   el.stateBadge.textContent = 'Erro';
+  appendLine(`Erro: ${err.message}`, 'error');
   console.warn('GRBL:', err.message);
 });
 
@@ -2295,12 +2751,199 @@ if (el.frameStart)
     generateGcode(true);
   });
 
+// Modo Básico / Avançado.
+function applyMode(mode) {
+  const basic = mode === 'basic';
+  document.body.classList.toggle('basic', basic);
+  if (el.modeBtn) el.modeBtn.textContent = basic ? 'Básico' : 'Avançado';
+  if (basic) {
+    wizardStep = 1;
+    updateWizard();
+  }
+}
+
+if (el.modeBtn) {
+  el.modeBtn.addEventListener('click', () => {
+    const next = document.body.classList.contains('basic')
+      ? 'advanced'
+      : 'basic';
+    applyMode(next);
+    persistPrefs({ mode: next });
+  });
+}
+
+// Guia rápido (Modo Básico).
+function switchTab(name) {
+  document.querySelectorAll('.sidebar-tabs .tab').forEach((t) => {
+    t.classList.remove('active');
+  });
+  const tab = document.querySelector(`.sidebar-tabs .tab[data-tab="${name}"]`);
+  if (tab) tab.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach((panel) => {
+    panel.classList.toggle('hidden', panel.dataset.panel !== name);
+  });
+}
+
+if (el.guideConnect)
+  el.guideConnect.addEventListener('click', async () => {
+    switchTab('machine');
+    if (el.refreshPorts) await refreshPorts();
+    if (!el.portList?.value) {
+      appendLine(
+        'Nenhuma porta serial encontrada. Conecte a gravadora e tente novamente.',
+        'error',
+      );
+      return;
+    }
+    if (el.connectBtn) el.connectBtn.click();
+  });
+if (el.guideImage)
+  el.guideImage.addEventListener('click', () => {
+    switchTab('image');
+    if (!imageState.loaded && el.imageOpen) el.imageOpen.click();
+  });
+if (el.guideGenerate)
+  el.guideGenerate.addEventListener('click', () => {
+    switchTab('image');
+    if (el.imgGenerate && !el.imgGenerate.disabled) el.imgGenerate.click();
+  });
+if (el.guideFrame)
+  el.guideFrame.addEventListener('click', () => {
+    if (window.frameBounds) openFrameModal();
+  });
+if (el.guideRecord)
+  el.guideRecord.addEventListener('click', () => {
+    if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
+      if (el.frameStart) el.frameStart.click();
+    } else if (state.connected && state.lines.length) {
+      beginJob(0);
+    }
+  });
+
+if (el.guideClose)
+  el.guideClose.addEventListener('click', () => {
+    applyMode('advanced');
+    persistPrefs({ mode: 'advanced' });
+    if (el.modeBtn) el.modeBtn.textContent = 'Avançado';
+  });
+
+if (el.wizardNext) {
+  el.wizardNext.addEventListener('click', () => {
+    if (wizardStep < 5) {
+      wizardStep += 1;
+      updateWizard();
+    }
+  });
+}
+
+// Guia básico: tamanho sincroniza com a imagem.
+if (el.guideWidth && el.imgWidth) {
+  el.guideWidth.addEventListener('input', () => {
+    el.imgWidth.value = el.guideWidth.value;
+    applySizeFromAspect('w');
+    el.guideHeight.value = el.imgHeight.value;
+  });
+}
+if (el.guideHeight && el.imgHeight) {
+  el.guideHeight.addEventListener('input', () => {
+    el.imgHeight.value = el.guideHeight.value;
+    applySizeFromAspect('h');
+    el.guideWidth.value = el.imgWidth.value;
+  });
+}
+
+// Tipo de gravação.
+function setGuideType(algo) {
+  if (el.imgAlgorithm) {
+    el.imgAlgorithm.value = algo;
+    updateAlgorithmVisibility();
+  }
+  if (el.guideTypePhoto)
+    el.guideTypePhoto.classList.toggle('primary', algo === 'line');
+  if (el.guideTypeBW)
+    el.guideTypeBW.classList.toggle('primary', algo === 'dither');
+  if (el.guideTypeVector)
+    el.guideTypeVector.classList.toggle('primary', algo === 'vector');
+}
+if (el.guideTypePhoto)
+  el.guideTypePhoto.addEventListener('click', () => setGuideType('line'));
+if (el.guideTypeBW)
+  el.guideTypeBW.addEventListener('click', () => setGuideType('dither'));
+if (el.guideTypeVector)
+  el.guideTypeVector.addEventListener('click', () => setGuideType('vector'));
+setGuideType('line');
+
+// Material no guia.
+function populateGuideMaterials() {
+  if (!materials || !el.guideMaterial) return;
+  const module = el.profileModule ? el.profileModule.value : '3W';
+  const list = materials.profilesFor(module, 'engrave');
+  el.guideMaterial.replaceChildren();
+  for (const profile of list) {
+    const opt = document.createElement('option');
+    opt.value = profile.material;
+    opt.textContent = profile.material;
+    el.guideMaterial.appendChild(opt);
+  }
+  if (list.length) el.guideMaterial.value = list[0].material;
+}
+if (materials) {
+  populateGuideMaterials();
+  if (el.profileModule)
+    el.profileModule.addEventListener('change', populateGuideMaterials);
+}
+if (el.guideMaterial) {
+  el.guideMaterial.addEventListener('change', () => {
+    const module = el.profileModule ? el.profileModule.value : '3W';
+    const profile = materials.findProfile(
+      module,
+      'engrave',
+      el.guideMaterial.value,
+    );
+    if (!profile) return;
+    const sMax = materials.powerPercentToS(profile.powerPercent);
+    if (el.imgSpeed) el.imgSpeed.value = String(profile.speedMmMin);
+    if (el.imgSmax) el.imgSmax.value = String(sMax);
+    if (el.imgPasses) el.imgPasses.value = '1';
+    if (el.frameSpeed) el.frameSpeed.value = String(profile.speedMmMin);
+    if (el.framePower)
+      el.framePower.value = String(Math.round(profile.powerPercent));
+    if (el.frameSpeedValue)
+      el.frameSpeedValue.textContent = `${profile.speedMmMin} mm/min`;
+    if (el.framePowerValue)
+      el.framePowerValue.textContent = `${Math.round(profile.powerPercent)} %`;
+  });
+}
+
+if (el.wizardNext) {
+  el.wizardNext.addEventListener('click', () => {
+    if (wizardStep < 6) {
+      wizardStep += 1;
+      updateWizard();
+    } else {
+      // Concluir: fecha o guia.
+      document.body.classList.remove('basic');
+      if (el.modeBtn) el.modeBtn.textContent = 'Avançado';
+      persistPrefs({ mode: 'advanced' });
+    }
+  });
+}
+if (el.wizardBack) {
+  el.wizardBack.addEventListener('click', () => {
+    if (wizardStep > 1) {
+      wizardStep -= 1;
+      updateWizard();
+    }
+  });
+}
+
 // -------------------------------------------------------------------- init
 
 async function init() {
   // Preferências (tema/unidade/porta/baud) — RF-CFG-5, RF-CON-3.
   await loadPrefs();
   updateWorkflow();
+  updateWizard();
 
   // Macros (RF-MAC-1): preferências ou conjunto padrão.
   state.macros =
