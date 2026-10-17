@@ -3,6 +3,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import * as path from 'node:path';
 import { detectLocale, getLocale, setLocale } from '../shared/i18n';
 import { DEFAULT_THEME, isThemeId } from '../shared/themes';
@@ -197,6 +198,20 @@ app.whenReady().then(async () => {
     await log.close();
   };
   createWindow();
+
+  // Auto-update silencioso: só em produção (não em dev/smoke/E2E). Verifica no
+  // GitHub Releases; baixa em segundo plano e avisa ao usuário para reiniciar.
+  if (
+    process.env.GRBL_SMOKE_TEST !== '1' &&
+    process.env.GRBL_E2E !== '1' &&
+    !process.env.VITE_DEV_SERVER_URL
+  ) {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.checkForUpdatesAndNotify().catch(() => {
+      /* sem rede / sem release: silencioso */
+    });
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -166,6 +166,10 @@
             <button type="button" id="jogYm" title="Y−">↓</button>
             <span></span>
           </div>
+          <div class="row jog-z">
+            <button type="button" id="jogZm" title="Z−">Z−</button>
+            <button type="button" id="jogZp" title="Z+">Z+</button>
+          </div>
           <div class="row">
             <select id="stepSelect">
               <option value="0.01">0,01 mm</option>
@@ -653,6 +657,82 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="matTestOverlay">
+      <div
+        class="modal mat-test-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="matTestTitle"
+      >
+        <header class="modal-head">
+          <h3 id="matTestTitle" data-i18n="matTest.title">Grade de teste de material</h3>
+          <button
+            type="button"
+            id="matTestClose"
+            class="icon-btn"
+            data-i18n-title="nav.close"
+            data-i18n-aria="nav.close"
+          >✕</button>
+        </header>
+        <div class="modal-body">
+          <p class="mat-test-hint" data-i18n="matTest.hint">
+            Grava uma grade de quadrados, cada um com uma combinação de velocidade
+            e potência. Use-a para descobrir os parâmetros ideais para um material.
+          </p>
+          <div class="mat-test-fields">
+            <label class="field">
+              <span data-i18n="matTest.cols">Colunas (passos de velocidade)</span>
+              <input type="number" id="mtCols" min="2" max="20" value="5" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.rows">Linhas (passos de potência)</span>
+              <input type="number" id="mtRows" min="2" max="20" value="5" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.speedMin">Velocidade mínima (mm/min)</span>
+              <input type="number" id="mtSpeedMin" min="100" max="20000" step="50" value="500" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.speedMax">Velocidade máxima (mm/min)</span>
+              <input type="number" id="mtSpeedMax" min="100" max="20000" step="50" value="3000" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.powerMin">Potência mínima (%)</span>
+              <input type="number" id="mtPowerMin" min="0" max="100" value="10" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.powerMax">Potência máxima (%)</span>
+              <input type="number" id="mtPowerMax" min="0" max="100" value="100" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.cellSize">Lado da célula (mm)</span>
+              <input type="number" id="mtCellSize" min="3" max="40" step="1" value="8" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.spacing">Espaço entre células (mm)</span>
+              <input type="number" id="mtSpacing" min="0" max="20" step="1" value="2" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.passes">Passadas</span>
+              <input type="number" id="mtPasses" min="1" max="10" value="1" />
+            </label>
+            <label class="field">
+              <span data-i18n="matTest.mode">Modo do laser</span>
+              <select id="mtMode">
+                <option value="M4">M4 (dinâmico)</option>
+                <option value="M3">M3 (constante)</option>
+              </select>
+            </label>
+          </div>
+          <div id="matTestStatus" class="hint"></div>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="matTestSave" data-i18n="matTest.save">Salvar .gcode…</button>
+          <button type="button" id="matTestGenerate" class="primary" data-i18n="matTest.generate">Gerar e visualizar</button>
+        </footer>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="settingsOverlay">
       <div
         class="modal"
@@ -808,6 +888,8 @@
     <script src="./preview.js"></script>
     <script src="./resume.js"></script>
     <script src="./macros.js"></script>
+    <script src="./materialTest.js"></script>
+    <script src="./svg.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

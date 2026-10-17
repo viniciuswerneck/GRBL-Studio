@@ -2,10 +2,12 @@
 node_modules/
 dist/
 public/gcode.worker.js
+public/materialTest.js
+public/macros.js
 public/materials.js
 public/preview.js
 public/resume.js
-public/macros.js
+public/svg.js
 public/i18n.js
 
 # Logs e temporários

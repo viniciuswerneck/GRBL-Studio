@@ -211,6 +211,27 @@ export const es = {
   'frame.outline.done': 'Contorno enviado (láser muy débil).',
   'frame.generating': 'Generando G-code con los parámetros del modal…',
 
+  // ------------------------------------------------------- rejilla de prueba de material
+  'matTest.title': 'Cuadrícula de prueba de material',
+  'matTest.hint':
+    'Graba una cuadrícula de cuadrados, cada uno con una combinación distinta de ' +
+    'velocidad y potencia. Úsala para descubrir los parámetros ideales de un material.',
+  'matTest.cols': 'Columnas (pasos de velocidad)',
+  'matTest.rows': 'Filas (pasos de potencia)',
+  'matTest.speedMin': 'Velocidad mínima (mm/min)',
+  'matTest.speedMax': 'Velocidad máxima (mm/min)',
+  'matTest.powerMin': 'Potencia mínima (%)',
+  'matTest.powerMax': 'Potencia máxima (%)',
+  'matTest.cellSize': 'Lado de la celda (mm)',
+  'matTest.spacing': 'Espacio entre celdas (mm)',
+  'matTest.passes': 'Pasadas',
+  'matTest.mode': 'Modo del láser',
+  'matTest.generate': 'Generar y previsualizar',
+  'matTest.save': 'Guardar .gcode…',
+  'matTest.status.generating': 'Generando la cuadrícula de prueba…',
+  'matTest.status.done':
+    'Cuadrícula generada. Revisa la vista previa y envía o guarda.',
+
   // ------------------------------------------------- ejecución y archivo
   'run.title': 'Ejecución',
   'file.open': 'Abrir G-code…',
@@ -506,6 +527,7 @@ export const es = {
   'filter.all': 'Todos los archivos',
   'dlg.openImage': 'Abrir imagen',
   'dlg.openGcode': 'Abrir G-code',
+  'dlg.openSvg': 'Abrir SVG',
   'dlg.saveGcode': 'Guardar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',
@@ -668,8 +690,11 @@ export const es = {
   // --------------------------------------------------------- menú nativo
   'menu.file': 'Archivo',
   'menu.openGcode': 'Abrir G-code…',
+  'menu.openSvg': 'Importar SVG…',
   'menu.quit': 'Salir',
   'menu.view': 'Ver',
+  'menu.tools': 'Herramientas',
+  'menu.materialTest': 'Cuadrícula de prueba de material…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
   'menu.appearance': 'Apariencia e idioma…',

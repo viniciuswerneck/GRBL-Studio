@@ -69,6 +69,8 @@ const el = {
   jogXm: $('jogXm'),
   jogYp: $('jogYp'),
   jogYm: $('jogYm'),
+  jogZp: $('jogZp'),
+  jogZm: $('jogZm'),
   homeBtn: $('homeBtn'),
   stepSelect: $('stepSelect'),
   feedSelect: $('feedSelect'),
@@ -191,6 +193,21 @@ const el = {
   framePasses: $('framePasses'),
   framePassesMinus: $('framePassesMinus'),
   framePassesPlus: $('framePassesPlus'),
+  matTestOverlay: $('matTestOverlay'),
+  matTestClose: $('matTestClose'),
+  mtCols: $('mtCols'),
+  mtRows: $('mtRows'),
+  mtSpeedMin: $('mtSpeedMin'),
+  mtSpeedMax: $('mtSpeedMax'),
+  mtPowerMin: $('mtPowerMin'),
+  mtPowerMax: $('mtPowerMax'),
+  mtCellSize: $('mtCellSize'),
+  mtSpacing: $('mtSpacing'),
+  mtPasses: $('mtPasses'),
+  mtMode: $('mtMode'),
+  matTestStatus: $('matTestStatus'),
+  matTestSave: $('matTestSave'),
+  matTestGenerate: $('matTestGenerate'),
   settingsRefresh: $('settingsRefresh'),
   settingsFilter: $('settingsFilter'),
   settingsList: $('settingsList'),
@@ -477,6 +494,33 @@ function openFrameModal() {
  * de alarme: contorno/centro/origem enviam G-code, que ficaria na fila no meio
  * do corte (RF-STA-5).
  */
+async function openSvgImport() {
+  if (!window.GRBL_SVG) {
+    appendLine('Módulo de importação SVG não carregado.', 'error');
+    return;
+  }
+  try {
+    const file = await window.grbl.openSvg();
+    if (!file) return;
+    const gcode = window.GRBL_SVG.svgTextToGcode(file.text, {
+      feed: Number(el.imgSpeed ? el.imgSpeed.value : 1000) || 1000,
+      travelFeed: 3000,
+      scale: 1,
+      flipY: true,
+    });
+    setGcodePreview(gcode, file.name);
+    appendLine(t('file.loaded', { name: file.name, lines: gcode.split('\\n').length }), 'ok');
+    try {
+      const path = await window.grbl.saveGcode(gcode, file.name.replace(/\.svg$/i, '.gcode'));
+      if (path) appendLine(t('file.saved', { path }), 'ok');
+    } catch (err) {
+      appendLine(t('err.prefix', { msg: err.message }), 'error');
+    }
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
 function updateFrameButtons() {
   const busy = state.jobState === 'running' || state.jobState === 'paused';
   const alarm = state.grblState === 'Alarm' || state.grblState === 'Door';
@@ -499,6 +543,65 @@ function updateFrameButtons() {
 
 function closeFrameModal() {
   if (el.frameOverlay) el.frameOverlay.classList.add('hidden');
+}
+
+function openMatTestModal() {
+  if (!el.matTestOverlay) return;
+  el.matTestOverlay.classList.remove('hidden');
+  if (el.matTestStatus)
+    el.matTestStatus.textContent =
+      t('matTest.status.generating').replace('Gerando', '') || '';
+  if (el.matTestStatus) el.matTestStatus.textContent = '';
+}
+
+function closeMatTestModal() {
+  if (el.matTestOverlay) el.matTestOverlay.classList.add('hidden');
+}
+
+function readMatTestOptions() {
+  const sMax = Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
+  return {
+    cols: Math.max(2, Number(el.mtCols.value) || 5),
+    rows: Math.max(2, Number(el.mtRows.value) || 5),
+    speedMin: Math.max(1, Number(el.mtSpeedMin.value) || 500),
+    speedMax: Math.max(1, Number(el.mtSpeedMax.value) || 3000),
+    powerMin: Math.max(0, Math.min(100, Number(el.mtPowerMin.value) || 10)),
+    powerMax: Math.max(0, Math.min(100, Number(el.mtPowerMax.value) || 100)),
+    cellSize: Math.max(3, Number(el.mtCellSize.value) || 8),
+    spacing: Math.max(0, Number(el.mtSpacing.value) || 2),
+    passes: Math.max(1, Number(el.mtPasses.value) || 1),
+    mode: el.mtMode.value === 'M3' ? 'M3' : 'M4',
+    sMax,
+    travelFeed: 3000,
+  };
+}
+
+function generateMatTest() {
+  if (!window.GRBL_MATERIAL_TEST) {
+    appendLine('Módulo de teste de material não carregado.', 'error');
+    return;
+  }
+  if (el.matTestStatus)
+    el.matTestStatus.textContent = t('matTest.status.generating');
+  const opts = readMatTestOptions();
+  const result = window.GRBL_MATERIAL_TEST.generateMaterialTest(opts);
+  setGcodePreview(result.gcode, 'material-test');
+  if (el.matTestStatus) el.matTestStatus.textContent = t('matTest.status.done');
+}
+
+async function saveMatTest() {
+  if (!window.GRBL_MATERIAL_TEST) return;
+  const opts = readMatTestOptions();
+  const result = window.GRBL_MATERIAL_TEST.generateMaterialTest(opts);
+  try {
+    const path = await window.grbl.saveGcode(
+      result.gcode,
+      'material-test.gcode',
+    );
+    if (path) appendLine(t('file.saved', { path }), 'ok');
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
 }
 
 function frameJog(axis, sign) {
@@ -998,8 +1101,8 @@ function updateControls() {
         : '';
 
   // Jog/origem/macros não fazem sentido em alarme (o GRBL recusa o movimento).
-  for (const b of [el.jogXp, el.jogXm, el.jogYp, el.jogYm]) {
-    b.disabled = !conn || alarm;
+  for (const b of [el.jogXp, el.jogXm, el.jogYp, el.jogYm, el.jogZp, el.jogZm]) {
+    if (b) b.disabled = !conn || alarm;
   }
   el.homeBtn.disabled = !conn || alarm || !machineHoming();
   el.setOriginBtn.disabled = !conn || alarm;
@@ -1257,6 +1360,8 @@ bindJogButton(el.jogXp, 'x', 1);
 bindJogButton(el.jogXm, 'x', -1);
 bindJogButton(el.jogYp, 'y', 1);
 bindJogButton(el.jogYm, 'y', -1);
+bindJogButton(el.jogZp, 'z', 1);
+bindJogButton(el.jogZm, 'z', -1);
 el.homeBtn.addEventListener('click', () => window.grbl.home());
 el.setOriginBtn.addEventListener('click', () => window.grbl.setOrigin(0, 0, 0));
 el.gotoZeroBtn.addEventListener('click', () => window.grbl.gotoZero());
@@ -1298,6 +1403,7 @@ document.addEventListener('keydown', (e) => {
       el.appearanceOverlay,
       el.aboutOverlay,
       el.frameOverlay,
+      el.matTestOverlay,
     ].some(overlayOpen)
   ) {
     return;
@@ -2974,6 +3080,9 @@ function refreshTexts() {
   if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
     openFrameModal();
   }
+  if (el.matTestOverlay && !el.matTestOverlay.classList.contains('hidden')) {
+    // Re-traduz o modal (os valores dos inputs não mudam).
+  }
   renderPreview();
 }
 
@@ -3087,6 +3196,7 @@ for (const overlay of [
   el.aboutOverlay,
   el.settingsOverlay,
   el.frameOverlay,
+  el.matTestOverlay,
 ]) {
   if (!overlay) continue;
   overlay.addEventListener('click', (e) => {
@@ -3148,6 +3258,8 @@ if (window.grbl.onAction)
       window.grbl.openLogs().catch((err) => {
         appendLine(t('err.prefix', { msg: err.message }), 'error');
       });
+    else if (name === 'material-test') openMatTestModal();
+    else if (name === 'open-svg') openSvgImport();
   });
 
 // ----------------------------------------------------- unidades (RF-APP-3)
@@ -4025,6 +4137,15 @@ if (el.frameOverlay)
   el.frameOverlay.addEventListener('click', (e) => {
     if (e.target === el.frameOverlay) closeFrameModal();
   });
+if (el.matTestClose)
+  el.matTestClose.addEventListener('click', closeMatTestModal);
+if (el.matTestOverlay)
+  el.matTestOverlay.addEventListener('click', (e) => {
+    if (e.target === el.matTestOverlay) closeMatTestModal();
+  });
+if (el.matTestGenerate)
+  el.matTestGenerate.addEventListener('click', generateMatTest);
+if (el.matTestSave) el.matTestSave.addEventListener('click', saveMatTest);
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
 if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));

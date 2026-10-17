@@ -22,6 +22,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   atualização (o desenho “pulsava”). Em janelas estreitas o “Restante”
   (`≤1040 px`) e o “Para ir” (`≤980 px`) saem antes de espremer o DRO.
 
+### Added — grade de teste de material (material test grid)
+- Novo módulo puro `src/shared/materialTest.ts` + 9 testes: gera uma grade de
+  quadrados, cada um com uma combinação distinta de velocidade (F) e potência
+  (S), com zig-zague, cabeçalho com a legenda (índice → velocidade/potência)
+  e retorno à origem.
+- Modal **Ferramentas → Grade de teste de material…** (640 px, duas colunas
+  de campos) com colunas/linhas, faixas de velocidade e potência, tamanho da
+  célula, espaçamento, passadas e modo (M3/M4). **Gerar e visualizar**
+  carrega a grade no preview; **Salvar .gcode…** grava o arquivo.
+- `build:materialTest` no pipeline de build (bundle `public/materialTest.js`,
+  global `GRBL_MATERIAL_TEST`).
+
 ### Changed — modal "Posicionar a gravadora" (sem rolagem, duas colunas)
 - Diálogo ampliado (920 px) em **duas colunas**: "Mover a cabeça" (pad de jog 3×3
   + definir/ir para origem) e "Conferir a área" (desenhar contorno + marcar

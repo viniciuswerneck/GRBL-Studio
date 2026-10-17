@@ -1,5 +1,9 @@
 appId: com.grblstudio.app
 productName: GRBL Studio
+publish:
+  provider: github
+  owner: viniciuswerneck
+  repo: GRBL-Studio
 directories:
   output: release
   buildResources: build

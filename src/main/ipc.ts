@@ -28,6 +28,7 @@ import { detectLocale, setLocale, t } from '../shared/i18n';
 import {
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
+  SVG_DIALOG_FILTERS,
   imageMimeType,
 } from '../shared/fileFilters';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
@@ -372,10 +373,37 @@ export function registerIpc(
     },
   );
 
+  // --------------------------------------------------- SVG (importação vetorial)
+  ipcMain.handle(
+    CHANNELS.fileOpenSvg,
+    async (evt): Promise<OpenedTextFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: t('dlg.openSvg'),
+        buttonLabel: t('dlg.open'),
+        properties: ['openFile'],
+        filters: SVG_DIALOG_FILTERS,
+        defaultPath: await defaultDir(),
+      });
+      if (!filePath) return null;
+      rememberDir(filePath);
+
+      const info = await stat(filePath);
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
+      if (info.size > TEXT_MAX_BYTES) {
+        throw new Error(
+          t('dlg.fileTooBig', {
+            size: formatMb(info.size),
+            limit: formatMb(TEXT_MAX_BYTES),
+          }),
+        );
+      }
+      const text = await readFile(filePath, 'utf8');
+      return { path: filePath, name: path.basename(filePath), text };
+    },
+  );
+
   /**
-   * Salva o G-code preparado (Fase 5). Só grava o texto que a UI gerou —
-   * nenhum caminho vem do renderer sem passar pelo diálogo do sistema.
-   */
+   * Salva o G-code preparado (Fase 5). */
   ipcMain.handle(
     CHANNELS.fileSave,
     async (

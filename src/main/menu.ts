@@ -51,6 +51,10 @@ export function rebuildMenu(): void {
           label: t('menu.openGcode'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.openGcode),
         },
+        {
+          label: t('menu.openSvg'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.openSvg),
+        },
         { type: 'separator' },
         { label: t('menu.quit'), click: () => app.quit() },
       ],
@@ -80,6 +84,15 @@ export function rebuildMenu(): void {
         {
           label: t('menu.appearance'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.appearance),
+        },
+      ],
+    },
+    {
+      label: t('menu.tools'),
+      submenu: [
+        {
+          label: t('menu.materialTest'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.materialTest),
         },
       ],
     },

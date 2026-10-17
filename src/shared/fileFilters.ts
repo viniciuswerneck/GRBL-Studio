@@ -70,6 +70,11 @@ export const GCODE_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
+export const SVG_DIALOG_FILTERS: FileDialogFilter[] = [
+  { name: 'SVG (svg)', extensions: ['svg'] },
+  { name: 'Todos os arquivos', extensions: ['*'] },
+];
+
 const IMAGE_SET = new Set(IMAGE_EXTENSIONS.map((e) => e.toLowerCase()));
 const GCODE_SET = new Set(GCODE_EXTENSIONS.map((e) => e.toLowerCase()));
 

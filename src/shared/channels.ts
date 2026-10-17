@@ -35,6 +35,7 @@ export const CHANNELS = {
   fileSaveLog: 'file:save-log',
   fileOpenImage: 'file:open-image',
   fileOpenGcode: 'file:open-gcode',
+  fileOpenSvg: 'file:open-svg',
   macrosOpen: 'file:open-macros',
   macrosSave: 'file:save-macros',
   pickDir: 'app:pick-dir',
@@ -66,6 +67,8 @@ export const MENU_ACTIONS = {
   openImage: 'open-image',
   appearance: 'appearance',
   openLogs: 'open-logs',
+  materialTest: 'material-test',
+  openSvg: 'open-svg',
 } as const;
 
 export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

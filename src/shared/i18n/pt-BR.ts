@@ -221,6 +221,26 @@ export const ptBR = {
   'frame.outline.done': 'Contorno enviado (laser bem fraco).',
   'frame.generating': 'Gerando G-code com os parâmetros do modal…',
 
+  // ------------------------------------------------------- teste de material
+  'matTest.title': 'Grade de teste de material',
+  'matTest.hint':
+    'Grava uma grade de quadrados, cada um com uma combinação de velocidade e ' +
+    'potência. Use-a para descobrir os parâmetros ideais para um material.',
+  'matTest.cols': 'Colunas (passos de velocidade)',
+  'matTest.rows': 'Linhas (passos de potência)',
+  'matTest.speedMin': 'Velocidade mínima (mm/min)',
+  'matTest.speedMax': 'Velocidade máxima (mm/min)',
+  'matTest.powerMin': 'Potência mínima (%)',
+  'matTest.powerMax': 'Potência máxima (%)',
+  'matTest.cellSize': 'Lado da célula (mm)',
+  'matTest.spacing': 'Espaço entre células (mm)',
+  'matTest.passes': 'Passadas',
+  'matTest.mode': 'Modo do laser',
+  'matTest.generate': 'Gerar e visualizar',
+  'matTest.save': 'Salvar .gcode…',
+  'matTest.status.generating': 'Gerando a grade de teste…',
+  'matTest.status.done': 'Grade gerada. Confira no preview e envie ou salve.',
+
   // ------------------------------------------------- execução e arquivo
   'run.title': 'Execução',
   'file.open': 'Abrir G-code…',
@@ -510,6 +530,7 @@ export const ptBR = {
   'filter.all': 'Todos os arquivos',
   'dlg.openImage': 'Abrir imagem',
   'dlg.openGcode': 'Abrir G-code',
+  'dlg.openSvg': 'Abrir SVG',
   'dlg.saveGcode': 'Salvar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',
@@ -670,8 +691,11 @@ export const ptBR = {
   // --------------------------------------------------------- menu nativo
   'menu.file': 'Arquivo',
   'menu.openGcode': 'Abrir G-code…',
+  'menu.openSvg': 'Importar SVG…',
   'menu.quit': 'Sair',
   'menu.view': 'Exibir',
+  'menu.tools': 'Ferramentas',
+  'menu.materialTest': 'Grade de teste de material…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
   'menu.appearance': 'Aparência e idioma…',

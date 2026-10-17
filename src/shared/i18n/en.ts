@@ -205,6 +205,27 @@ export const en = {
   'frame.outline.done': 'Outline sent (very weak laser).',
   'frame.generating': 'Generating G-code with the dialog parameters…',
 
+  // ------------------------------------------------------- material test grid
+  'matTest.title': 'Material test grid',
+  'matTest.hint':
+    'Engraves a grid of squares, each at a different speed/power combination. ' +
+    'Use it to find the ideal parameters for a material.',
+  'matTest.cols': 'Columns (speed steps)',
+  'matTest.rows': 'Rows (power steps)',
+  'matTest.speedMin': 'Minimum speed (mm/min)',
+  'matTest.speedMax': 'Maximum speed (mm/min)',
+  'matTest.powerMin': 'Minimum power (%)',
+  'matTest.powerMax': 'Maximum power (%)',
+  'matTest.cellSize': 'Cell side (mm)',
+  'matTest.spacing': 'Cell spacing (mm)',
+  'matTest.passes': 'Passes',
+  'matTest.mode': 'Laser mode',
+  'matTest.generate': 'Generate and preview',
+  'matTest.save': 'Save .gcode…',
+  'matTest.status.generating': 'Generating the test grid…',
+  'matTest.status.done':
+    'Grid generated. Check the preview, then send or save.',
+
   // ------------------------------------------------- execução e arquivo
   'run.title': 'Run',
   'file.open': 'Open G-code…',
@@ -491,6 +512,7 @@ export const en = {
   'filter.all': 'All files',
   'dlg.openImage': 'Open image',
   'dlg.openGcode': 'Open G-code',
+  'dlg.openSvg': 'Open SVG',
   'dlg.saveGcode': 'Save G-code',
   'dlg.importMacros': 'Import macros',
   'dlg.exportMacros': 'Export macros',
@@ -647,8 +669,11 @@ export const en = {
   // --------------------------------------------------------- menu nativo
   'menu.file': 'File',
   'menu.openGcode': 'Open G-code…',
+  'menu.openSvg': 'Import SVG…',
   'menu.quit': 'Quit',
   'menu.view': 'View',
+  'menu.tools': 'Tools',
+  'menu.materialTest': 'Material test grid…',
   'menu.theme': 'Theme',
   'menu.language': 'Language',
   'menu.appearance': 'Appearance and language…',
