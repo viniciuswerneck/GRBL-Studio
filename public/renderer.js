@@ -669,10 +669,10 @@ function updateWizard() {
   const titles = [
     'Conectar',
     'Escolher imagem',
-    'Tamanho',
-    'Tipo de gravação',
-    'Material',
-    'Posicionar e gravar',
+    'Tamanho, tipo e material',
+    'Gerar G-code',
+    'Posicionar',
+    'Gravar',
   ];
   el.wizardTitle.textContent = `Passo ${wizardStep} de 6 — ${titles[wizardStep - 1]}`;
 
@@ -693,13 +693,23 @@ function updateWizard() {
         ? `${imageState.loaded.name} carregada. Clique em Próximo.`
         : 'Escolha uma imagem.';
     } else if (wizardStep === 3) {
-      el.wizardStatus.textContent = 'Defina o tamanho. Clique em Próximo.';
+      el.wizardStatus.textContent = 'Defina o tamanho, o tipo e o material.';
     } else if (wizardStep === 4) {
-      el.wizardStatus.textContent = 'Escolha o tipo de gravação.';
+      el.wizardStatus.textContent = state.lines?.length
+        ? 'G-code pronto. Clique em Próximo.'
+        : 'Clique em Gerar G-code.';
     } else if (wizardStep === 5) {
-      el.wizardStatus.textContent = 'Escolha o material.';
+      el.wizardStatus.textContent =
+        'Posicione o laser e use o contorno fraco (não queima).';
     } else {
-      el.wizardStatus.textContent = 'Posicione e grave.';
+      el.wizardStatus.textContent = 'Confira tudo e clique em Gravar.';
+    }
+
+    // Info da imagem no passo 2.
+    if (el.wizardImageInfo) {
+      el.wizardImageInfo.textContent = imageState?.loaded
+        ? imageState.loaded.name
+        : 'Nenhuma imagem carregada';
     }
   }
 
@@ -708,9 +718,8 @@ function updateWizard() {
     if (wizardStep === 1) canNext = state.connected;
     else if (wizardStep === 2) canNext = Boolean(imageState?.loaded);
     else if (wizardStep === 3) canNext = true;
-    else if (wizardStep === 4) canNext = true;
-    else if (wizardStep === 5) canNext = true;
-    else canNext = false;
+    else if (wizardStep === 4) canNext = Boolean(state.lines?.length);
+    else canNext = true;
     el.wizardNext.disabled = !canNext;
     el.wizardNext.textContent = wizardStep < 6 ? 'Próximo' : 'Concluir';
   }
@@ -2826,15 +2835,6 @@ if (el.guideClose)
     persistPrefs({ mode: 'advanced' });
     if (el.modeBtn) el.modeBtn.textContent = 'Avançado';
   });
-
-if (el.wizardNext) {
-  el.wizardNext.addEventListener('click', () => {
-    if (wizardStep < 5) {
-      wizardStep += 1;
-      updateWizard();
-    }
-  });
-}
 
 // Guia básico: tamanho sincroniza com a imagem.
 if (el.guideWidth && el.imgWidth) {

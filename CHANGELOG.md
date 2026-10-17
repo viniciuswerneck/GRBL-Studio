@@ -6,6 +6,55 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
+### Added — catálogo de máquinas (perfis GRBL)
+- `MACHINE_PROFILES` com 23 modelos (Sculpfun, Ortur, AtomStack, TwoTrees,
+  FoxAlien, Genmitsu, Comgrow, xTool, Creality, Wainlux, AlgoLaser, NEJE,
+  Longer, Vevor, OMTech) + **Genérico GRBL**: área útil, homing, potência do
+  módulo, linhas/mm, modo M3/M4 e notas de foco/manutenção.
+- Seletor **Perfil de máquina** no topo da barra lateral; a escolha persiste.
+- Selecionar o perfil ajusta área de trabalho, módulo (3W/5W/10W) e avisos.
+- Planejamento completo em `PLANO_DE_ACAO.md` §14.
+
+### Added — Modo Básico (wizard para leigos) — §15
+- Toggle **Básico / Avançado** no cabeçalho, persistido (`prefs.mode`).
+- Wizard de **6 passos** em modal que bloqueia a tela: Conectar → Escolher
+  imagem → Tamanho/tipo/material → Gerar G-code → Posicionar → Gravar.
+  Cada passo mostra só o necessário; **Próximo** só habilita quando o passo
+  foi cumprido.
+- Os campos são espelhos dos controles avançados (`imgWidth`, `imgAlgorithm`,
+  perfis de material), então o G-code gerado é idêntico ao do modo Avançado.
+- Documentação do fluxo em `docs/MODO_BASICO.md`.
+
+### Added — perfis de material 3W (Sculpfun C1)
+- `shared/materials.ts` ganhou o módulo **3W** com a matriz do manual da
+  Sculpfun C1 (§6): kraft, compensado, madeira, bambu, alumínio, cortiça,
+  couro, silicagel, feltro e lata.
+
+### Changed — G-code: fundo branco nunca vira G1
+- Trechos com `S=0` sempre viajam com `G0` (laser desligado), para trechos
+  curtos e longos — menos queima fantasma e job mais curto.
+- Removido o limiar `gapThresholdMm` (o `G0` é sempre preferível a um `G1 S0`).
+
+### Changed — protocolo p/ firmware "sujo" (Grbl 1.3a)
+- `GrblClient.onData` descarta caracteres de controle espúrios sem usar regex
+  de classe de caracteres (evita falso positivo com bytes multibyte).
+- Desconexão iniciada pelo usuário (`disconnect()`) não emite mais "Conexão
+  encerrada" como erro.
+
+### Changed — UX
+- Após conectar, a aba **Imagem** abre automaticamente (o botão *Gerar
+  G-code* fica à vista).
+- Wizard: título/status alinhados ao conteúdo real de cada passo; **Concluir**
+  habilitado no passo 6; nome da arquivo exibido no passo 2.
+
+### Fixed — wizard do Modo Básico
+- Botão **Próximo** avançava **dois passos** por clique (havia dois listeners
+  registrados para o mesmo botão).
+- Painel do passo 3 (tamanho/tipo/material) nascia com `hidden` e nunca era
+  reexibido.
+
 ## [0.2.0] - 2026-10-16
 
 ### Added — Empacotamento Linux (RF-APP-4) e permissões de porta (RF-APP-5)
