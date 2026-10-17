@@ -3,7 +3,10 @@
  * Fonte da verdade dos contratos de dados do GRBL Studio.
  */
 
+import type { Lang } from './i18n';
 import type { Macro } from './macros';
+
+export type { Lang };
 
 /** Estado reportado pelo firmware GRBL no status report. */
 export type GrblState =
@@ -196,6 +199,24 @@ export interface SettingApplyRequest {
 export type Units = 'mm' | 'in';
 
 /**
+ * Informações do aplicativo servidas ao renderer via `app:info`
+ * (RF-APP-6/7). Versão/autor/licença vêm do `main` — nunca hardcoded
+ * no renderer (AGENTS.md).
+ */
+export interface AppInfo {
+  name: string;
+  version: string;
+  author: string;
+  license: string;
+  /** Site institucional (WerneckLab). */
+  url: string;
+  /** Repositório público do projeto. */
+  repository: string;
+  /** Idioma detectado do sistema na primeira execução. */
+  defaultLang: Lang;
+}
+
+/**
  * Preferências persistidas entre sessões (RF-CFG-5, RF-CON-3).
  * Guardadas em `<userData>/prefs.json`.
  */
@@ -204,10 +225,16 @@ export interface Prefs {
   port?: string;
   /** Último baud rate selecionado. */
   baud?: number;
-  /** Tema escolhido. */
-  theme?: 'dark' | 'light';
+  /** Tema escolhido (RF-APP-1) — id de `shared/themes`. */
+  theme?: string;
   /** Unidade de exibição (DRO). */
   units?: Units;
+  /** Idioma escolhido (RF-APP-2); ausente = detectado do sistema. */
+  lang?: Lang;
+  /** Modo Básico/Avançado (RF-APP-4). */
+  mode?: 'basic' | 'advanced';
+  /** Perfil de máquina escolhido (RF-IMG-8). */
+  machineProfile?: string;
   /** Reconectar automaticamente à última porta ao abrir (padrão true). */
   autoConnect?: boolean;
   /** Macro/botões customizados (RF-MAC-1). */

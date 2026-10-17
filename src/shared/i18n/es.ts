@@ -1,0 +1,641 @@
+import type { ptBR } from './pt-BR';
+
+/**
+ * Catálogo i18n — espanhol (neutro).
+ * Declarado com `satisfies Record<keyof typeof ptBR, string>`: o compilador
+ * recusa chave faltando ou sobrando — a paridade com pt-BR é garantida por
+ * type-check (ver `tests/i18n.test.ts`).
+ */
+export const es = {
+  // ------------------------------------------------------- navegación/común
+  'nav.back': 'Atrás',
+  'nav.next': 'Siguiente',
+  'nav.close': 'Cerrar',
+  'nav.cancel': 'Cancelar',
+  'nav.import': 'Importar…',
+  'nav.export': 'Exportar…',
+
+  // -------------------------------------------------------------- modos UI
+  'mode.basic': 'Básico',
+  'mode.advanced': 'Avanzado',
+  'mode.toggle.title': 'Alternar modo Básico/Avanzado',
+  'mode.M4': 'M4 (dinámico)',
+  'mode.M3': 'M3 (constante)',
+
+  // ------------------------------------------------------ perfil de máquina
+  'profile.label': 'Perfil de máquina',
+  'profile.title': 'Ajustes optimizados para la máquina',
+  'profile.generic': 'Genérica (GRBL)',
+  'profile.module': 'Módulo',
+  'profile.action': 'Acción',
+  'profile.material.title': 'Perfil de material (RF-IMG-8)',
+  'profile.material.hint':
+    'Sugerencias del manual de la COMGO Z1 (§9). Aplicar el perfil rellena la Velocidad y la S-max más abajo — compruebe el resultado antes de grabar.',
+  'profile.material.placeholder': '— elegir material —',
+  'profile.material.choose':
+    'Elija un material para ver la recomendación del manual.',
+  'profile.material.applied':
+    '{power}% de potencia (S-max {smax}) · {speed} mm/min · {notes}',
+  'profile.material.unavailable':
+    'Perfiles no disponibles: ejecute `npm run build`.',
+  'action.engrave': 'Grabado',
+  'action.cut': 'Corte',
+
+  // -------------------------------------------------------- guía (básico)
+  'guide.close': 'Cerrar (Modo Avanzado)',
+  'guide.type.photo': 'Foto',
+  'guide.type.bw': 'B/N',
+  'guide.type.vector': 'Contorno',
+  'wizard.startHint': 'Conecte el grabador para empezar.',
+  'wizard.title': 'Paso {n} de {total} — {title}',
+  'wizard.paramsTitle': 'Tamaño, tipo y material',
+  'wizard.connected': 'Conectado. Haga clic en Siguiente.',
+  'wizard.connect': 'Conecte el grabador.',
+  'wizard.imageLoaded': '{name} cargada. Haga clic en Siguiente.',
+  'wizard.chooseImage': 'Elija una imagen.',
+  'wizard.size': 'Tamaño (mm)',
+  'wizard.defineParams': 'Defina el tamaño, el tipo y el material.',
+  'wizard.gcodeReady': 'G-code listo. Haga clic en Siguiente.',
+  'wizard.clickGenerate': 'Haga clic en Generar G-code.',
+  'wizard.positionHint':
+    'Posicione el láser y use el contorno tenue (no quema).',
+  'wizard.check': 'Compruebe todo y haga clic en Grabar.',
+  'wizard.next': 'Siguiente',
+  'wizard.finish': 'Finalizar',
+
+  // ----------------------------------------------------------- pestañas
+  'tab.machine': 'Grabadora',
+  'tab.image': 'Imagen',
+  'tab.run': 'Ejecución',
+  'tab.macros': 'Macros',
+
+  // ------------------------------------------------------------- conexión
+  'conn.title': 'Conexión',
+  'conn.transport': 'Transporte',
+  'conn.transport.title': 'Serial (USB) o WiFi/TCP (RF-CON-7)',
+  'conn.transport.serial': 'Serial (USB)',
+  'conn.transport.tcp': 'WiFi (TCP)',
+  'conn.refresh': 'Actualizar',
+  'conn.portHint':
+    'No se detectó ninguna placa USB. Conecte el grabador y haga clic en Actualizar.',
+  'conn.host': 'Host',
+  'conn.port': 'Puerto',
+  'conn.tcpHint':
+    'Ej.: ESP8266/ESP32 con firmware serial-over-TCP (Telnet 23). El GRBL 1.1 no cambia.',
+  'conn.connect': 'Conectar',
+  'conn.disconnect': 'Desconectar',
+  'conn.disconnected': 'Desconectado',
+  'conn.connecting': 'Conectando…',
+  'conn.connected': 'Conectado',
+  'conn.error': 'Error de conexión',
+  'conn.selectPort': 'Seleccione un puerto serie.',
+  'conn.notConnected': 'No conectado.',
+  'conn.connectFirst': 'Conecte la máquina para enviar',
+  'conn.settings': 'Ajustes de la máquina ($$)',
+  'port.none': 'Ningún puerto',
+
+  // ------------------------------------------------------------------ jog
+  'jog.title': 'Movimiento',
+  'jog.home.title': 'Homing de la máquina (requiere fin de carrera)',
+  'jog.home.noHoming': '{name}: sin homing de fábrica — use Definir origen',
+  'jog.setOrigin': 'Origen aquí',
+  'jog.gotoZero': 'Ir a cero',
+  'jog.unlock': 'Unlock ($X)',
+  'jog.reset': 'Reset',
+
+  // ------------------------------------------------------------- overrides
+  'ovr.title': 'Overrides (tiempo real)',
+  'ovr.hint':
+    'Ajustan la máquina en movimiento. El valor activo proviene del estado (`Ov:`).',
+  'ovr.feed': 'Feed',
+  'ovr.rapid': 'Rápido',
+  'ovr.spindle': 'Potencia',
+  'ovr.reset': 'Volver al 100%',
+
+  // ------------------------------------------------------- imagen → g-code
+  'img.title': 'Imagen → G-code',
+  'img.steps.hint':
+    'Paso 1: elija la imagen · Paso 2: genere el G-code · Paso 3: conecte y envíe.',
+  'img.choose': 'Elegir imagen',
+  'img.chooseEllipsis': 'Elegir imagen…',
+  'img.replace': 'Cambiar imagen…',
+  'img.none': 'Ninguna imagen cargada',
+  'img.dimension': 'Dimensionar (mm)',
+  'img.width': 'Ancho',
+  'img.height': 'Alto',
+  'img.offsetX': 'Offset X',
+  'img.offsetY': 'Offset Y',
+  'img.keepAspect': 'Mantener proporción',
+  'img.aspect.locked': 'Proporción bloqueada: el alto sigue al ancho.',
+  'img.aspect.free': 'Proporción libre: ancho y alto son independientes.',
+  'img.convert': 'Conversión',
+  'img.algorithm': 'Algoritmo',
+  'img.type': 'Tipo',
+  'img.material': 'Material',
+  'algo.vector': 'Vectorizar (contorno/recorte)',
+  'img.lines': 'Líneas/mm',
+  'img.direction': 'Dirección',
+  'img.dot': 'Punto (mm)',
+  'img.simplify': 'Suavizado (px)',
+  'img.algoHint':
+    'Vectorizar genera solo el contorno (recorte): el Umbral B/N define lo que se recorta, y el dibujo se convierte en líneas cerradas a potencia máxima (S-max).',
+  'img.brightness': 'Brillo',
+  'img.contrast': 'Contraste',
+  'img.threshold': 'Umbral B/N',
+  'img.invert': 'Invertir blanco y negro',
+  'img.bw': 'Blanco y negro (umbral)',
+  'img.engrave': 'Grabado',
+  'img.speed': 'Velocidad',
+  'img.passes': 'Pasadas',
+  'img.mode': 'Modo',
+  'img.generate': 'Generar G-code',
+  'img.generate.disabled': 'Elija primero una imagen',
+  'img.generate.title': 'Convierte la imagen en G-code',
+  'img.generating': 'Generando…',
+  'img.save': 'Guardar .gcode',
+  'img.save.disabled': 'Genere primero el G-code',
+  'img.save.title': 'Guarda el G-code en disco',
+  'img.previewTag': '(vista previa)',
+  'img.reduced': ' (reducida de {w}×{h})',
+  'img.statsFail': 'Fallo: {msg}',
+  'img.error.open': 'Fallo al abrir la imagen',
+  'img.error.invalid': 'Imagen no válida',
+  'img.error.invalidDetail': '{name} no indica ancho/alto.',
+  'img.error.format': 'Formato no admitido',
+  'img.error.formatDetail':
+    '{name} no pudo decodificarse. Use PNG, JPG, BMP, GIF, WebP o AVIF.',
+
+  // ------------------------------------------------------- posicionamiento
+  'frame.title': 'Posicionar la grabadora',
+  'frame.hint':
+    'Use las flechas para llevar el láser hasta el punto de origen del grabado. Después haga clic en **Dibujar contorno** para que la máquina recorra el rectángulo del área (láser apagado).',
+  'frame.setOrigin': 'Definir origen aquí',
+  'frame.origin': 'Ir al origen (0,0)',
+  'frame.outline': 'Dibujar contorno',
+  'frame.start': '▶ Grabar',
+  'frame.power': 'Potencia del contorno (%)',
+  'frame.speed': 'Velocidad de grabado (mm/min)',
+  'frame.position': 'Posicionar',
+  'frame.engrave': 'Grabar',
+  'frame.status.connected':
+    'Máquina conectada. Posicione y dibuje el contorno para comprobar.',
+  'frame.status.disconnected':
+    'Conecte la máquina para posicionar y dibujar el contorno.',
+  'frame.outline.done': 'Contorno enviado (láser apagado).',
+  'frame.generating': 'Generando G-code con los parámetros del modal…',
+
+  // ------------------------------------------------- ejecución y archivo
+  'run.title': 'Ejecución',
+  'file.open': 'Abrir G-code…',
+  'file.none': 'Ningún archivo cargado',
+  'file.loaded': 'Archivo cargado: {name} ({lines} líneas)',
+  'file.info': '{name} — {lines} líneas',
+  'file.infoGenerated': '{file} — {lines} líneas (generado de {image})',
+  'file.saved': 'G-code guardado en {path}',
+  'gcode.summary':
+    'G-code generado: {lines} líneas, {size}, {rows}×{cols} muestras, ~{time}',
+  'run.play': '▶ Iniciar',
+  'run.pause': '⏸ Pausar',
+  'run.resume': '▶ Reanudar',
+  'run.stop': '⏹ Detener / Emergencia',
+  'run.hint.noFileNoConn':
+    'Genere el G-code (Imagen → G-code) o abra un .gcode y conecte la máquina para enviar.',
+  'run.hint.noFile':
+    'Ningún G-code cargado: genere uno en «Imagen → G-code» o abra un archivo .gcode.',
+  'run.hint.readyNoConn':
+    'G-code listo ({lines} líneas). Conecte la máquina en «Serial» para enviar.',
+  'run.hint.sending': 'Enviando a la máquina…',
+  'run.hint.ready':
+    'Listo para enviar ({lines} líneas). Haga clic en ▶ Iniciar.',
+  'run.noGcode': 'Ningún G-code cargado',
+  'job.finished': 'Trabajo terminado.',
+  'job.aborted': 'Trabajo abortado: {reason}',
+
+  // ------------------------------------------------------------- reanudación
+  'resume.title': 'Reanudación (RF-GC-7)',
+  'resume.hint':
+    'Interrumpa un trabajo para ver el punto de reanudación. Al continuar, la app reafirma las unidades, la distancia, los offsets y el láser antes de la línea.',
+  'resume.line': 'Línea',
+  'resume.back': 'Atrás',
+  'resume.suggest': 'Sugerir (N antes)',
+  'resume.suggestTitle': 'Sugiere done − retroceso',
+  'resume.start': '▶ Reanudar desde aquí',
+  'resume.interrupted':
+    'Interrumpido en la línea {done} de {total}. Sugerencia: {suggestion}.',
+  'resume.done': 'Trabajo terminado ({lines} líneas).',
+  'resume.idle': 'Interrumpa un trabajo para ver el punto de reanudación.',
+  'resume.resuming': 'Reanudando desde la línea {line}…',
+
+  // --------------------------------------------------------------- macros
+  'macro.title': 'Macros (RF-MAC-1)',
+  'macro.hint':
+    'Conéctese para usar las macros. Los comandos se encolan uno a uno.',
+  'macro.manage': 'Gestionar macros (importar/exportar)',
+  'macro.add': 'Añadir',
+  'macro.reset': 'Restaurar predeterminados',
+  'macro.new': 'Nueva macro',
+  'macro.run': 'Macro: {label}',
+  'macro.notConnected': 'Conéctese a la máquina para ejecutar la macro.',
+  'macro.labelPlaceholder': 'Etiqueta',
+  'macro.remove': 'Eliminar macro',
+  'macro.gcodePlaceholder': 'G-code (una línea por comando)',
+  'macro.exported': 'Macros exportadas: {path}',
+  'macro.imported': 'Macros importadas ({count}).',
+  'macro.invalid': 'Macros no válidas: {msg}',
+  'macro.openFail': 'Fallo al abrir macros: {msg}',
+  'macro.exportFail': 'Fallo al exportar macros: {msg}',
+  'macro.def.unlock': 'Desbloquear ($X)',
+  'macro.def.home': 'Home ($H)',
+  'macro.def.report': 'Informar estado ($G)',
+  'macro.def.goto-zero': 'Ir a cero (X0 Y0)',
+  'macro.def.set-zero': 'Definir cero aquí',
+  'macro.def.laser-off': 'Láser apagado',
+  'macro.def.abs-mm': 'Absoluto en mm',
+  'macrogroup.preparacao': 'Preparación',
+  'macrogroup.origem': 'Origen',
+  'macrogroup.laser': 'Láser',
+  'macrogroup.controle': 'Control',
+  'macrogroup.outros': 'Otros',
+
+  // ------------------------------------------------------------ status/un.
+  'status.feed': 'Feed',
+  'status.units': 'Unidad',
+  'status.unitsTitle': 'Unidades de visualización (RF-APP-3)',
+  'status.error': 'Error',
+  'status.idle': 'Inactivo',
+  'status.run': 'Ejecutando',
+  'status.jog': 'Manual',
+  'status.hold': 'Pausado',
+  'status.alarm': 'Alarma',
+  'status.door': 'Puerta',
+  'status.check': 'Verificación',
+  'status.home': 'Home',
+  'status.sleep': 'Reposo',
+
+  // -------------------------------------------------------------- preview
+  'preview.hint.image': 'Cargue una imagen para preparar el archivo de grabado',
+  'preview.hint.empty':
+    'Abra un G-code o inicie un trabajo para ver el recorrido.',
+  'preview.hint.noMoves': 'Este G-code no tiene movimientos que dibujar.',
+  'preview.cut': 'Quemado',
+  'preview.rapid': 'Desplazamiento',
+  'preview.tip': 'rueda: zoom · arrastrar: mover · doble clic: ajustar',
+  'preview.warning.area':
+    '⚠ El recorrido excede el área configurada ({width}×{height} mm): {problems}.',
+  'preview.area.negative': 'coordenadas negativas',
+  'preview.area.xMax': 'X hasta {value} > $130',
+  'preview.area.yMax': 'Y hasta {value} > $131',
+
+  // -------------------------------------------------------------- consola
+  'console.placeholder':
+    'Escriba un comando GRBL y pulse Intro (ej.: $$, $G, G0 X0 Y0)',
+
+  // ------------------------------------------------- ajustes ($$)
+  'settings.open': 'Ajustes de la máquina ($$)',
+  'settings.title': 'Ajustes de la máquina',
+  'settings.read': 'Leer $$',
+  'settings.filter': 'Filtrar por nombre o clave…',
+  'settings.connectFirst': 'Conéctese a la máquina para leer los ajustes.',
+  'settings.connectQuery': 'Conéctese a la máquina para consultar.',
+  'settings.querying': 'Consultando…',
+  'settings.noResponse': 'Sin respuesta.',
+  'settings.fail': 'Fallo: {msg}',
+  'settings.reading': 'Leyendo $$…',
+  'settings.count': '{count} parámetros leídos.',
+  'settings.empty': 'La máquina no devolvió ajustes.',
+  'settings.readFail': 'Fallo al leer $$: {msg}',
+  'settings.filterEmpty': 'Ningún parámetro coincide con el filtro.',
+  'settings.groupOther': 'Otros',
+  'settings.applying': 'Aplicando {key}…',
+  'settings.updated': '{key} actualizado.',
+  'settings.applyFail': 'Fallo al aplicar {key}: {msg}',
+  'settings.value': 'Valor de {key}',
+  'settings.fallbackName': 'Ajuste {key}',
+  'settings.fallbackHelp':
+    'Parámetro del firmware sin descripción en esta app.',
+  'settings.invalid': 'Ajuste no válido.',
+  'settings.unknownQuery': 'Consulta desconocida.',
+
+  // ---------------------------------------------------------- validación
+  'validate.empty': 'Indique un valor.',
+  'validate.nan': 'Se esperaba un valor numérico.',
+  'validate.int': 'Use un número entero.',
+  'validate.min': 'Valor mínimo: {min}.',
+  'validate.max': 'Valor máximo: {max}.',
+
+  // --------------------------------------- grupos de los ajustes $$
+  'setgroup.passo-e-direcao': 'Paso y dirección',
+  'setgroup.relatorio': 'Informe',
+  'setgroup.limites': 'Límites',
+  'setgroup.homming': 'Homming',
+  'setgroup.spindle-laser': 'Spindle/Laser',
+  'setgroup.eixo-x': 'Eje X',
+  'setgroup.eixo-y': 'Eje Y',
+  'setgroup.eixo-z': 'Eje Z',
+  'setgroup.outros': 'Otros',
+
+  // ------------------------------------- nombres/ayuda de los ajustes $$
+  'set.0.name': 'Ancho del pulso de paso',
+  'set.0.help':
+    'Duración del pulso STEP (µs). Ajuste para drivers lentos; el predeterminado (10 µs) cubre la mayoría.',
+  'set.1.name': 'Retardo ocioso del paso',
+  'set.1.help':
+    'Tiempo (ms) que el motor permanece energizado tras detenerse. 255 = siempre activo; 0 = se apaga de inmediato.',
+  'set.2.name': 'Invertir pulso de paso',
+  'set.2.help':
+    'Máscara (bits) que invierte la señal del pulso. Use 0 si el eje no se mueve.',
+  'set.3.name': 'Invertir dirección',
+  'set.3.help': 'Máscara para invertir el sentido del eje (X=1, Y=2, Z=4).',
+  'set.4.name': 'Invertir enable del driver',
+  'set.4.help': 'Invierte el pin de habilitación del driver de paso.',
+  'set.5.name': 'Invertir pines de límite',
+  'set.5.help': 'Invierte la lectura de los finales de carrera.',
+  'set.6.name': 'Invertir pin de sonda',
+  'set.6.help': 'Invierte la lectura de la sonda (probe).',
+  'set.10.name': 'Máscara del informe de estado',
+  'set.10.help':
+    'Elige lo que informa el `?`. Predeterminado 3 (posición de máquina y de trabajo).',
+  'set.11.name': 'Desviación de unión',
+  'set.11.help':
+    'Controla el suavizado entre segmentos. Mayor = esquinas más anchas; predeterminado 0.010 mm.',
+  'set.12.name': 'Tolerancia de arco',
+  'set.12.help':
+    'Error máximo al aproximar arcos por segmentos. Menor = más preciso y más G-code. 0.002 mm.',
+  'set.13.name': 'Informar en pulgadas',
+  'set.13.help':
+    'Si está activo, el estado y los valores se informan en pulgadas (no cambia el G-code).',
+  'set.20.name': 'Soft limits',
+  'set.20.help':
+    'Bloquea movimientos que excederían el recorrido ($130/$131). Requiere homing previo.',
+  'set.21.name': 'Hard limits',
+  'set.21.help': 'Se detiene al activar los finales de carrera físicos.',
+  'set.22.name': 'Ciclo de homing',
+  'set.22.help':
+    'Habilita la rutina de origen (`$H`). Desactívelo si no hay finales de carrera.',
+  'set.23.name': 'Inversión de la dirección de homing',
+  'set.23.help':
+    'Invierte la dirección en que la máquina busca el final de carrera de home.',
+  'set.24.name': 'Feed del homing',
+  'set.24.help': 'Velocidad final de aproximación del homing.',
+  'set.25.name': 'Búsqueda lenta del homing',
+  'set.25.help':
+    'Velocidad de búsqueda rápida hasta la primera detección del final de carrera.',
+  'set.26.name': 'Debounce del final de carrera',
+  'set.26.help':
+    'Tiempo de estabilización del fin de carrera. Predeterminado 250 ms.',
+  'set.27.name': 'Retracción del homing',
+  'set.27.help':
+    'Distancia que retrocede tras tocar el fin de carrera del homing.',
+  'set.30.name': 'RPM máximas del spindle',
+  'set.30.help':
+    'Escala el S máximo. Use 1000 para láser en lugar de RPM; el S va de 0 a este valor.',
+  'set.31.name': 'RPM mínimas del spindle',
+  'set.31.help':
+    'Valor mínimo en que el spindle/relé se activa. En láser suele ser 0.',
+  'set.32.name': 'Modo láser',
+  'set.32.help':
+    '1 = M4 dinámico (potencia con la velocidad) y permite mover sin quemar. 0 = spindle.',
+  'set.100.name': 'Pasos/mm del eje X',
+  'set.100.help':
+    'Calibración: cuántos pasos hacen 1 mm. Motor de 200 pasos, 16 micro, 2 mm/paso → 1600.',
+  'set.101.name': 'Pasos/mm del eje Y',
+  'set.101.help': 'Calibración: cuántos pasos hacen 1 mm.',
+  'set.102.name': 'Pasos/mm del eje Z',
+  'set.102.help': 'Calibración: cuántos pasos hacen 1 mm.',
+  'set.110.name': 'Velocidad máxima X',
+  'set.110.help':
+    'Rate (mm/min) que el eje X alcanza en camino de reposo. No es el uso; es la capacidad.',
+  'set.111.name': 'Velocidad máxima Y',
+  'set.111.help': 'Rate máximo del eje Y.',
+  'set.112.name': 'Velocidad máxima Z',
+  'set.112.help': 'Rate máximo del eje Z.',
+  'set.120.name': 'Aceleración X',
+  'set.120.help':
+    'Aceleración en mm/s². Demasiado alta pierde pasos; demasiado baja deja el trabajo lento.',
+  'set.121.name': 'Aceleración Y',
+  'set.121.help': 'Aceleración en mm/s².',
+  'set.122.name': 'Aceleración Z',
+  'set.122.help': 'Aceleración en mm/s².',
+  'set.130.name': 'Recorrido máximo X',
+  'set.130.help':
+    'Longitud útil del eje X. Se usa en los límites suaves y en el aviso de área de trabajo.',
+  'set.131.name': 'Recorrido máximo Y',
+  'set.131.help':
+    'Longitud útil del eje Y. Se usa en los límites suaves y en el aviso de área de trabajo.',
+  'set.132.name': 'Recorrido máximo Z',
+  'set.132.help': 'Longitud útil del eje Z.',
+
+  // ------------------------------------------------ estadísticas y tiempo
+  'stats.format':
+    '{rows} líneas × {cols} muestras · {segments} segmentos · {size} · ~{time}',
+  'stats.contours': ' · {count} contornos',
+  'time.sec': '{s} s',
+  'time.minSec': '{m} min {r} s',
+  'time.min': '{m} min',
+
+  // --------------------------------------------------------- errores (UI)
+  'err.listPorts': 'Fallo al listar puertos: {msg}',
+  'err.connect': 'Error al conectar: {msg}',
+  'err.openFile': 'Fallo al abrir el archivo: {msg}',
+  'err.worker': 'Worker de imagen no disponible: {msg}',
+  'err.workerUnknown': 'Error en el worker de imagen: {msg}',
+  'err.generate': 'Fallo al generar G-code: {msg}',
+  'err.save': 'Fallo al guardar: {msg}',
+  'err.areaExceeded':
+    'Aviso: el recorrido excede el área de trabajo ({problems}).',
+  'err.connectForFrame': 'Conecte la máquina para usar el posicionamiento.',
+  'err.noSerialPort':
+    'No se encontró ningún puerto serie. Conecte el grabador e inténtelo de nuevo.',
+  'err.prefix': 'Error: {msg}',
+  'err.unknown': 'desconocido',
+
+  // ---------------------------------- mensajes del proceso main (cliente)
+  'client.connClosed': 'Conexión cerrada.',
+  'client.connClosedWith': 'Conexión cerrada: {msg}',
+  'client.queryClosed': 'La conexión se cerró antes de la respuesta.',
+  'client.queryNotConnected': 'Conéctese a la máquina para consultar.',
+  'client.queryBusy': 'Ya hay una consulta en curso.',
+  'client.queryTimeout': 'La máquina no respondió a "{line}" en {ms} ms.',
+  'client.notConnected': 'No conectado.',
+  'client.jobRunning': 'Ya hay un trabajo en ejecución.',
+  'client.stopped': 'Detenido por el usuario.',
+  'client.reset': 'Reset por el usuario.',
+  'client.writeFail': 'Fallo al escribir en la serie: {msg}',
+  'client.stall':
+    'La máquina no respondió en {ms} ms esperando "ok". Envío en pausa — compruebe la conexión.',
+
+  // -------------------------------------- diálogos nativos (main -> SO)
+  'filter.macros': 'Macros (JSON)',
+  'filter.all': 'Todos los archivos',
+  'dlg.openImage': 'Abrir imagen',
+  'dlg.openGcode': 'Abrir G-code',
+  'dlg.saveGcode': 'Guardar G-code',
+  'dlg.importMacros': 'Importar macros',
+  'dlg.exportMacros': 'Exportar macros',
+  'dlg.open': 'Abrir',
+  'dlg.import': 'Importar',
+  'dlg.notFile': 'La ruta elegida no es un archivo.',
+  'dlg.imageTooBig': 'Imagen demasiado grande ({size}). Límite: {limit}.',
+  'dlg.fileTooBig': 'Archivo demasiado grande ({size}). Límite: {limit}.',
+  'dlg.tooBig': 'Archivo demasiado grande ({size}).',
+  'dlg.missingContent': 'Falta el contenido del G-code.',
+  'dlg.missingMacros': 'Falta el contenido de las macros.',
+
+  // ----------------------------------------- alarmas del GRBL 1.1 (ALARM:n)
+  'alarm.1':
+    'Hard limit activado. Posición probablemente perdida — se recomienda re-homing.',
+  'alarm.2':
+    'Soft limit: el destino del movimiento excede el recorrido de la máquina. Puede desbloquearse con seguridad.',
+  'alarm.3':
+    'Reset durante el movimiento. Posición probablemente perdida — se recomienda re-homing.',
+  'alarm.4':
+    'Fallo de sonda: estado inicial inesperado antes del ciclo de sondeo.',
+  'alarm.5':
+    'Fallo de sonda: la sonda no tocó la pieza dentro del recorrido programado.',
+  'alarm.6': 'Fallo de homing: reset durante el ciclo de homing.',
+  'alarm.7': 'Fallo de homing: puerta de seguridad abierta durante el homing.',
+  'alarm.8':
+    'Fallo de homing: el final de carrera no se liberó al retroceder (aumente el pull-off/compruebe el cableado).',
+  'alarm.9':
+    'Fallo de homing: final de carrera no encontrado en la distancia de búsqueda.',
+
+  // ------------------------------------------- erros do GRBL 1.1 (error:n)
+  'error.1': 'Palabra G-code no válida: letra no encontrada.',
+  'error.2': 'Formato numérico no válido o valor ausente.',
+  'error.3': 'Comando de sistema "$" no reconocido o no admitido.',
+  'error.4': 'Valor negativo recibido donde se esperaba uno positivo.',
+  'error.5': 'El ciclo de homing no está habilitado en los ajustes ($22).',
+  'error.6': 'El tiempo mínimo del pulso de paso debe ser mayor que 3 µs.',
+  'error.7':
+    'Fallo de lectura de la EEPROM. Reset a los valores predeterminados.',
+  'error.8': 'El comando "$" solo puede usarse en estado IDLE.',
+  'error.9': 'G-code bloqueado durante estado de alarma o jog.',
+  'error.10': 'Los soft limits no pueden habilitarse sin homing habilitado.',
+  'error.11': 'Máximo de caracteres por línea excedido; la línea fue ignorada.',
+  'error.12': 'El valor de ajuste "$" excede la tasa de paso máxima admitida.',
+  'error.13': 'Puerta de seguridad abierta; estado de door iniciado.',
+  'error.14': 'Build info/startup excedió el límite de línea de la EEPROM.',
+  'error.15':
+    'El destino del jog excede el recorrido de la máquina; comando ignorado.',
+  'error.16': 'Comando de jog sin "=" o que contiene g-code prohibido.',
+  'error.17': 'El modo láser requiere salida PWM ($32=1).',
+  'error.20': 'Comando G-code no admitido o no válido.',
+  'error.21': 'Más de un comando del mismo grupo modal en la línea.',
+  'error.22': 'Feed rate no definido.',
+  'error.23': 'El comando G-code requiere un valor entero.',
+  'error.24':
+    'Dos comandos que requieren las mismas palabras de eje en la línea.',
+  'error.25': 'Palabra G-code repetida en la línea.',
+  'error.26':
+    'No se encontró ninguna palabra de eje para el comando/estado modal.',
+  'error.27': 'Número de línea (N) fuera del rango válido.',
+  'error.28': 'Faltan valores obligatorios (P/L) para el comando.',
+  'error.29': 'Sistema de coordenadas de trabajo no admitido.',
+  'error.30': 'G53 requiere un modo de movimiento (G0/G1) activo.',
+  'error.31': 'Comando enviado sin un valor P o L obligatorio.',
+  'error.32': 'Comando no admitido en esta configuración de firmware.',
+  'error.unknown': 'Error {code} (código no catalogado).',
+  'alarm.unknown': 'Alarma {code} (código no catalogado).',
+
+  // ------------------------------------------------- materiales (RF-IMG-8)
+  'mat.papel-kraft': 'Papel kraft',
+  'mat.compensado': 'Contrachapado',
+  'mat.madeira-solida': 'Madera maciza',
+  'mat.bambu': 'Bambú',
+  'mat.folha-de-aluminio': 'Lámina de aluminio',
+  'mat.cortica': 'Corcho',
+  'mat.couro': 'Cuero',
+  'mat.silicagel': 'Silicagel',
+  'mat.feltro-escuro': 'Fieltro oscuro',
+  'mat.lata-tin-plate': 'Lata (hojalata)',
+  'mat.tabua-de-madeira': 'Tabla de madera',
+  'mat.madeira-macica': 'Madera maciza',
+  'mat.vidro': 'Vidrio',
+  'mat.ceramica': 'Cerámica',
+  'mat.acrilico': 'Acrílico',
+  'mat.aco-inoxidavel': 'Acero inoxidable',
+  'mat.metal-anodizado': 'Metal anodizado',
+  'mat.tecido': 'Tela',
+  'mat.tabua-2-mm': 'Tabla 2 mm',
+  'mat.tabua-3-mm': 'Tabla 3 mm',
+  'mat.tabua-4-mm': 'Tabla 4 mm',
+  'mat.papelao': 'Cartón',
+  'mat.tabua-7-mm': 'Tabla 7 mm',
+  'mnote.passadas-1-m4': 'Pasadas: 1. M4.',
+  'mnote.ajustes-padrao': 'Ajustes predeterminados.',
+  'mnote.garanta-o-material-bem-plano-e-fixado':
+    'Asegúrese de que el material esté bien plano y sujeto.',
+  'mnote.a-superficie-deve-ser-pintada-de-preto-ou-coberta-com-papel-de-transferencia-termica':
+    'La superficie DEBE estar pintada de negro o cubierta con papel de transferencia térmica.',
+  'mnote.a-superficie-deve-receber-papel-de-transferencia-termica':
+    'La superficie DEBE llevar papel de transferencia térmica.',
+  'mnote.acrilico-transparente-exige-pintar-de-preto-a-face-inferior-superior':
+    'El acrílico transparente requiere pintar de negro la cara inferior/superior.',
+  'mnote.acrilico-transparente-exige-pintar-a-superficie-de-preto':
+    'El acrílico transparente requiere pintar la superficie de negro.',
+  'mnote.marcacao-direta': 'Marcado directo.',
+  'mnote.marcacao-direta-sobre-a-superficie-bruta':
+    'Marcado directo sobre la superficie en bruto.',
+  'mnote.remocao-direta-do-revestimento-anodizado':
+    'Eliminación directa del recubrimiento anodizado.',
+  'mnote.potencia-menor-evita-queimar-e-desfiar-as-bordas':
+    'Una potencia menor evita quemar y deshilachar los bordes.',
+  'mnote.passadas-1': 'Pasadas: 1.',
+  'mnote.reduza-um-pouco-a-distancia-focal-para-dentro-do-material':
+    'Reduzca un poco la distancia focal hacia el interior del material.',
+  'mnote.processamento-em-alta-velocidade': 'Procesamiento a alta velocidad.',
+  'mnote.potencia-muito-baixa-para-tecidos-leves':
+    'Potencia demasiado baja para telas ligeras.',
+  'mnote.ajuste-a-distancia-focal-para-dentro-do-nucleo-do-material':
+    'Ajuste la distancia focal hacia el interior del núcleo del material.',
+  'mnote.corte-limpo-em-alta-velocidade': 'Corte limpio a alta velocidad.',
+
+  // --------------------------------------------------------------- temas
+  'theme.light': 'Claro',
+  'theme.solarized-light': 'Solarized claro',
+  'theme.sand': 'Arena',
+  'theme.arctic': 'Ártico',
+  'theme.silver': 'Plata',
+  'theme.dark': 'Oscuro',
+  'theme.midnight': 'Medianoche',
+  'theme.solarized-dark': 'Solarized oscuro',
+  'theme.oled': 'OLED (negro puro)',
+  'theme.hc-black': 'Alto contraste · Negro',
+  'theme.hc-white': 'Alto contraste · Blanco',
+  'theme.group.light': 'Claros',
+  'theme.group.dark': 'Oscuros',
+  'theme.group.hc': 'Alto contraste',
+
+  // ------------------------------------------------- apariencia e idioma
+  'appearance.title': 'Apariencia e idioma',
+  'appearance.language': 'Idioma',
+  'appearance.theme': 'Tema',
+  'appearance.hint': 'El tema y el idioma se guardan en las preferencias.',
+  'lang.pt-BR': 'Português (Brasil)',
+  'lang.en': 'English',
+  'lang.es': 'Español',
+
+  // ------------------------------------------------------- acerca de / pie
+  'about.title': 'Acerca de GRBL Studio',
+  'about.description':
+    'Alternativa nativa de Linux a LaserGRBL para controlar grabadoras y cortadoras láser con firmware GRBL.',
+  'about.version': 'Versión',
+  'about.license': 'Licencia',
+  'about.author': 'Autor',
+  'about.developedBy': 'Desarrollado por',
+  'about.repository': 'Repositorio',
+  'about.visit': 'Visitar lab.werneck.dev.br',
+  'footer.by': 'Desarrollado por',
+  'footer.about': 'Acerca de',
+
+  // --------------------------------------------------------- menú nativo
+  'menu.file': 'Archivo',
+  'menu.openGcode': 'Abrir G-code…',
+  'menu.quit': 'Salir',
+  'menu.view': 'Ver',
+  'menu.theme': 'Tema',
+  'menu.language': 'Idioma',
+  'menu.help': 'Ayuda',
+  'menu.about': 'Acerca de GRBL Studio',
+  'menu.site': 'Sitio web de WerneckLab',
+} satisfies Record<keyof typeof ptBR, string>;

@@ -20,6 +20,7 @@ body {
 .app {
   display: grid;
   grid-template-columns: 300px 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100vh;
 }
 
@@ -341,7 +342,7 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  min-height: 0;
 }
 
 .statusbar {
@@ -995,4 +996,307 @@ body.basic .basic-guide > * {
 
 .wizard-step.hidden {
   display: none;
+}
+
+/* --------------------------------------------------------------- rodapé */
+/* Barra inferior fixa: nome + versão + crédito WerneckLab (RF-APP-6). */
+
+.app-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--bg-card);
+  border-top: 1px solid var(--stroke);
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+  user-select: none;
+}
+
+.footer-brand {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.footer-sep {
+  color: var(--text-disabled);
+}
+
+.footer-link,
+.text-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.footer-link:hover,
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.app-footer .spacer {
+  flex: 1;
+}
+
+.footer-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-sub);
+  font: inherit;
+  font-size: var(--fs-12);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.footer-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+/* ------------------------------------------- modal: aparência e idioma */
+
+.appearance-modal {
+  width: min(560px, 92vw);
+}
+
+.appearance-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.appearance-label {
+  display: block;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-sub);
+  margin: 0 0 var(--sp-2);
+}
+
+.lang-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.lang-btn {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  background: var(--bg-hover);
+}
+
+.lang-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 600;
+}
+
+.theme-group + .theme-group {
+  margin-top: var(--sp-3);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--sp-2);
+}
+
+.theme-swatch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-md);
+  padding: var(--sp-2);
+  font: inherit;
+  font-size: var(--fs-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-swatch-btn:hover {
+  background: var(--bg-hover);
+}
+
+.theme-swatch-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 600;
+}
+
+/* Amostra das cores do tema (--sw-* definidos por botão). */
+.theme-swatch {
+  position: relative;
+  height: 38px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--stroke-strong);
+  background: var(--sw-bg, #888);
+}
+
+.theme-swatch::before,
+.theme-swatch::after {
+  content: "";
+  position: absolute;
+  border-radius: 3px;
+}
+
+.theme-swatch::before {
+  left: 8px;
+  right: 35%;
+  top: 9px;
+  height: 6px;
+  background: var(--sw-fg, #fff);
+}
+
+.theme-swatch::after {
+  left: 8px;
+  width: 22px;
+  bottom: 8px;
+  height: 6px;
+  background: var(--sw-accent, #4cc2ff);
+}
+
+/* ------------------------------------------------------------ modal: sobre */
+
+.about-modal {
+  width: min(440px, 92vw);
+}
+
+.about-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-6) var(--sp-4);
+  text-align: center;
+}
+
+.about-logo {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.about-name {
+  margin: 0;
+  font-size: var(--fs-20);
+}
+
+.about-version {
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+}
+
+.about-desc {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+  max-width: 380px;
+}
+
+.about-meta {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: var(--sp-1) var(--sp-3);
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-12);
+  text-align: left;
+}
+
+.about-meta dt {
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.about-meta dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.about-meta .text-link:hover {
+  text-decoration: underline;
+}
+
+.about-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+/* --------------------------------- alto contraste: ajustes obrigatórios */
+/* WCAG 2.1 (estilo Windows HC): sem transparência, foco grosso 3px, sem
+   sombra. Os tokens sólidos já vêm de tokens.css; aqui corrigimos os
+   pontos do style.css que usam color-mix/rgba. */
+
+html[data-theme="hc-black"] .overlay {
+  background: #000000;
+}
+
+html[data-theme="hc-white"] .overlay {
+  background: #ffffff;
+}
+
+html[data-theme^="hc-"] .preview,
+html[data-theme^="hc-"] body.basic .basic-guide {
+  background-image: none;
+}
+
+html[data-theme="hc-black"] body.basic .basic-guide {
+  background: rgba(0, 0, 0, 0.92);
+}
+
+html[data-theme="hc-white"] body.basic .basic-guide {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme^="hc-"] .preview-warning {
+  border: 1px solid var(--danger);
+  background: var(--bg-card);
+}
+
+html[data-theme^="hc-"] .preview-legend {
+  border: 1px solid var(--stroke-strong);
+  background: var(--bg-card);
+}
+
+html[data-theme^="hc-"] .card,
+html[data-theme^="hc-"] .modal,
+html[data-theme^="hc-"] .wizard-card,
+html[data-theme^="hc-"] .sidebar {
+  box-shadow: none;
+}
+
+html[data-theme^="hc-"] select:focus-visible,
+html[data-theme^="hc-"] input:focus-visible,
+html[data-theme^="hc-"] button:focus-visible,
+html[data-theme^="hc-"] a:focus-visible {
+  box-shadow: none;
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
 }

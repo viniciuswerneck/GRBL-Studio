@@ -19,6 +19,11 @@
 - [x] IPC tipado + preload empacotado (`sandbox: true`).
 - [x] 29 testes (Vitest) + smoke test headless.
 
+**Versões 0.3.0/0.4.0** acrescentaram catálogo de máquinas, Modo Básico
+(wizard), perfis de material 3W e — na Fase 7 — **11 temas** (RF-APP-1),
+**i18n pt-BR/en/es** (RF-APP-2), barra inferior e menu **Ajuda → Sobre**
+(RF-APP-6/7). Ver `CHANGELOG.md`.
+
 ## Objetivo
 Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna e intuitiva, mantendo o core de controle GRBL funcional.
 
@@ -54,7 +59,7 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [ ] Janela de configurações
 - [ ] Grbl Settings ($$) viewer/editor
 - [ ] Preferências salvas (localStorage/electron-store)
-- [ ] Temas claro/escuro
+- [x] Temas claro/escuro (hoje: 11 temas — ver `DESIGN.md` §2.3)
 - [ ] Unidades (mm/inch)
 - [ ] Auto scroll console toggle
 

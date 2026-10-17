@@ -6,6 +6,60 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-17
+
+### Added — temas (RF-APP-1): 11 temas claro/escuro/alto contraste
+- `shared/themes.ts`: catálogo único dos **11 temas** (5 claros: `light`,
+  `solarized-light`, `sand`, `arctic`, `silver`; 4 escuros: `dark` (padrão),
+  `midnight`, `solarized-dark`, `oled`; 2 de alto contraste: `hc-black`,
+  `hc-white`), com variante, rótulo i18n e amostra para o picker.
+- `public/tokens.css` ganhou blocos `html[data-theme="…"]` que **só sobrescrevem
+  variáveis** (zero CSS duplicado). Nos temas de alto contraste as cores são
+  sólidas, o foco usa `outline: 3px` e as sombras são desligadas.
+- Modal **Aparência e idioma** (`◐` na barra superior) e menu **Exibir → Tema**;
+  a escolha persiste em `prefs.theme` (validada por `isThemeId`) e é aplicada em
+  `<html data-theme>` antes do primeiro paint.
+
+### Added — i18n (RF-APP-2): pt-BR, en e es
+- `shared/i18n/{pt-BR,en,es}.ts` (484 chaves por idioma); `en`/`es` usam
+  `satisfies Record<keyof typeof ptBR, string>` — o type-check recusa chave
+  faltando/sobrando (paridade reforçada em `tests/i18n.test.ts`).
+- Núcleo puro e compartilhado (`shared/i18n/index.ts`): `t`/`hasKey`/
+  `setLocale`/`detectLocale`/`slugify`. O `main` traduz menu nativo, diálogos e
+  as mensagens de alarme/erro reclassificadas em runtime; o renderer usa
+  `t()` + `data-i18n*` (`applyDom`).
+- Bundle `public/i18n.js` (esbuild, IIFE `GRBL_I18N`, sem dependências).
+- Idioma do SO detectado na 1ª execução (`app.getLocale()` → `detectLocale`);
+  a troca em tempo de execução atualiza a UI **e** o menu nativo, e persiste em
+  `prefs.lang`.
+
+### Added — identidade do app (RF-APP-6/7)
+- **Barra inferior** com nome, versão e crédito "Desenvolvido por WerneckLab"
+  (link para `lab.werneck.dev.br`).
+- Menu **Ajuda → Sobre**: modal com nome, versão, licença (MIT), autor e links
+  (WerneckLab/GitHub). A versão vem de `app.getVersion()` via IPC `app:info`
+  (nunca hardcoded). `shared/appInfo.ts` centraliza os metadados e a whitelist;
+  links externos abrem por `shell.openExternal` apenas para `https:` de hosts
+  na whitelist (`lab.werneck.dev.br`, `github.com`, via `isAllowedExternalUrl`);
+  a janela também nega navegação e abertura de janelas pelo renderer
+  (`will-navigate`/`setWindowOpenHandler`).
+- `main/menu.ts`: menu nativo (Exibir/Tema/Idioma/Ajuda→Sobre) reconstruído no
+  idioma e tema ativos.
+
+### Changed — documentação em 3 idiomas
+- `README.md` revisado + `README.en.md` e `README.es.md`; `PRODUCT_SPEC.md`
+  (RF-APP-1/2/3 atualizados; RF-APP-6/7 novos), `DESIGN.md` (§2.3, §6, §8),
+  `ARCHITECTURE.md` (§6.1) e `PLANO_DE_ACAO.md` (Fase 7).
+
+### Changed — build
+- `package.json`: script `build:i18n` integrado ao `build`.
+- Biome ignora os bundles gerados `public/*.js` (listados em `biome.json`);
+  `public/renderer.js` continua sendo fonte e permanece no lint. Modal **Sobre**
+  e links do rodapé usam `<button>` (a11y) em vez de `<a href="#">`.
+
+### Fixed
+- `PrefsStore.sanitize`: preserva `machineProfile` ao validar as preferências.
+
 ## [0.3.0] - 2026-10-16
 
 ### Added — catálogo de máquinas (perfis GRBL)

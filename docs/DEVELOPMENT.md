@@ -18,29 +18,30 @@ npm install
 ## Compilar
 
 ```bash
-npm run build        # tsc + empacota preload e worker de imagem (esbuild)
+npm run build        # tsc + empacota preload e os bundles do renderer (esbuild)
 npm run typecheck    # apenas verificação de tipos (tsc --noEmit)
 npm run dev          # tsc em watch (main/preload/shared)
 ```
 
-O `build` faz cinco etapas:
+O `build` faz duas coisas: `tsc` compila `src/**` para `dist/**` (main,
+preload, shared, renderer) e, em seguida, o `esbuild` empacota **cada bundle
+consumido pelo renderer em runtime** (JS puro que não importa TS):
 
-1. `tsc` compila `src/**` para `dist/**` (main, preload, shared, renderer).
-2. `esbuild` **empacota o preload** em `dist/preload/index.js`. Isso é
-   necessário porque o preload roda com `sandbox: true` e não pode usar
-   `require` relativo nem módulos Node.
-3. `esbuild` **empacota o worker de imagem** em `public/gcode.worker.js`
-   (formato iife, plataforma browser). É artefato de build — está no
-   `.gitignore`; gere com `npm run build:worker` antes de usar a conversão
-   imagem → G-code.
-4. `esbuild` **empacota os perfis de material** em `public/materials.js`
-   (iife, `global-name=GRBL_MATERIALS`) a partir de `shared/materials.ts`. O
-   renderer é JS puro (não importa TS), então consome os perfis pelo global
-   `window.GRBL_MATERIALS`. Também é artefato de build (`build:materials`).
-5. `esbuild` **empacota o parser de G-code** do preview em `public/preview.js`
-   (iife, `global-name=GRBL_PREVIEW`) a partir de `shared/preview.ts`. Mesmo
-   padrão dos perfis; expõe `window.GRBL_PREVIEW.parseGcode`. Artefato de
-   build (`build:preview`).
+| Script | Saída | Global | Fonte |
+| :--- | :--- | :--- | :--- |
+| `build:preload` | `dist/preload/index.js` | — | `src/preload/index.ts` (roda com `sandbox: true`: não pode usar `require` relativo) |
+| `build:worker` | `public/gcode.worker.js` | — | `src/renderer/gcode.worker.ts` (imagem → G-code fora da thread) |
+| `build:materials` | `public/materials.js` | `GRBL_MATERIALS` | `shared/materials.ts` (perfis de material) |
+| `build:adjust` | `public/adjust.js` | `GRBL_ADJUST` | `shared/image/adjust.ts` (ajustes de imagem) |
+| `build:preview` | `public/preview.js` | `GRBL_PREVIEW` | `shared/preview.ts` (parser do preview) |
+| `build:resume` | `public/resume.js` | `GRBL_RESUME` | `shared/resume.ts` (retomada de job) |
+| `build:macros` | `public/macros.js` | `GRBL_MACROS` | `shared/macros.ts` (macros/botões) |
+| `build:i18n` | `public/i18n.js` | `GRBL_I18N` | `shared/i18n/entry.ts` (catálogos pt-BR/en/es + `applyDom`) |
+
+Os bundles em `public/*.js` listados acima são de build (estão no `.gitignore`):
+**não edite** — altere a fonte TS e rode `npm run build` (ou o script
+`build:<nome>`). O único `.js` em `public/` que é **fonte** (editável à mão) é o
+`public/renderer.js`.
 
 ## Rodar
 

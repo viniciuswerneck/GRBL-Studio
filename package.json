@@ -1,12 +1,13 @@
 {
   "name": "grbl-studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "dist/main/index.js",
   "author": "Vinicius Werneck",
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:i18n",
+    "build:i18n": "esbuild src/shared/i18n/entry.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_I18N --outfile=public/i18n.js",
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js",
     "build:worker": "esbuild src/renderer/gcode.worker.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=public/gcode.worker.js",
     "build:materials": "esbuild src/shared/materials.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIALS --outfile=public/materials.js",

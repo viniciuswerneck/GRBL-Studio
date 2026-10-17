@@ -89,13 +89,19 @@ Regras de leveza: nada de `backdrop-filter` na janela inteira; animar só
 - TypeScript **estrito** em main, preload e renderer.
 - Protocolo/parsing = funções puras (fáceis de testar).
 - Nomes de canal IPC centralizados (`src/shared/channels.ts`) e tipados.
-- Design: use os tokens de `docs/DESIGN.md` (`tokens.css`), não valores soltos.
+- Textos de UI **nunca hardcoded**: use chaves i18n (`t('…')` ou `data-i18n`)
+  com o pt-BR como fonte da verdade (`src/shared/i18n/`); en/es mantêm paridade
+  garantida por type-check.
+- Design: use os tokens de `docs/DESIGN.md` (`tokens.css`) e os ids de tema de
+  `src/shared/themes.ts`, não valores soltos.
 - Lint/format: **Biome** — `npm run lint` (+ `lint:fix`, `format`). Ver
   `docs/DEVELOPMENT.md` §"Lint e formatação". Rode antes do commit.
 
 ## Não faça
 
-- Não edite arquivos gerados (`dist/`) — edite a fonte e recompile.
+- Não edite arquivos gerados (`dist/`, e os bundles `public/{gcode.worker,materials,adjust,preview,resume,macros,i18n}.js`)
+  — edite a fonte TS e recompile (`npm run build`). `public/renderer.js` **é fonte**
+  (editável) e não é gerado.
 - Não faça commit de segredos, `.bak` ou artefatos de build.
 - Não introduza dependência pesada de UI (frame de componentes grande) sem
   confirmar que os orçamentos de performance continuam válidos (ver ADR-11).

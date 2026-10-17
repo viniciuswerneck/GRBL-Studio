@@ -6,7 +6,17 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/package-lock.json"]
+    "includes": [
+      "**",
+      "!**/package-lock.json",
+      "!public/i18n.js",
+      "!public/materials.js",
+      "!public/macros.js",
+      "!public/preview.js",
+      "!public/resume.js",
+      "!public/adjust.js",
+      "!public/gcode.worker.js"
+    ]
   },
   "formatter": {
     "enabled": true,

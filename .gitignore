@@ -6,6 +6,7 @@ public/materials.js
 public/preview.js
 public/resume.js
 public/macros.js
+public/i18n.js
 
 # Logs e temporários
 *.log

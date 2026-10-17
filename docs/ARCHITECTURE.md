@@ -52,7 +52,8 @@ isolados por `contextIsolation`:
 - **Alvo:** TypeScript + framework leve (Svelte/React) via `electron-vite`
   (ver ADR-2 no plano).
 - **Atual:** `public/index.html` + `public/renderer.js` + `public/style.css`
-  (vanilla JS, tema escuro).
+  (vanilla JS). A aparência vem de tokens (`public/tokens.css`) com **11 temas**
+  (RF-APP-1); os textos são aplicados por i18n (`data-i18n*` → `public/i18n.js`).
 - Responsável por: interface, entrada do usuário, DRO/estado, console,
   preview 2D (canvas), formulários de configuração e importação.
 - **Abertura de arquivos** é feita por diálogos nativos no main
@@ -84,10 +85,14 @@ isolados por `contextIsolation`:
 | `services/GrblClient` | Fila de envio (send-response), `ok`/`error`, tempo real, overrides, status. | ✅ |
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |
-| `services/PrefsStore` | Persistência em `<userData>/prefs.json` (ADR-6): porta, baud, tema, unidades. | ✅ |
+| `services/PrefsStore` | Persistência em `<userData>/prefs.json` (ADR-6): porta, baud, tema, idioma, unidades, macros. | ✅ |
+| `shared/appInfo.ts` | Identidade do app (nome, autor, licença, URLs) + whitelist de links externos. | ✅ |
+| `main/menu.ts` | Menu nativo (Exibir/Tema/Idioma/Ajuda→Sobre) montado no idioma ativo. | ✅ |
 | `ipc.ts` (`file:save-gcode`) | Diálogo nativo e escrita do `.gcode` gerado pela UI. | ✅ |
 | `ipc.ts` (`file:open-image` / `file:open-gcode`) | Diálogos nativos de abertura; devolvem nome + bytes/texto (nunca deixam o renderer informar caminho). | ✅ |
 | `shared/fileFilters.ts` | Filtros dos diálogos e validação de extensões (funções puras). | ✅ |
+| `shared/i18n/*` | Catálogos pt-BR/en/es, `t()`/`detectLocale`/`slugify` (puros) e `applyDom` (renderer). | ✅ |
+| `shared/themes.ts` | Catálogo dos 11 temas (id, variante, rótulo i18n, amostra). | ✅ |
 
 ### Imagem → G-code (Fase 5)
 
@@ -151,7 +156,7 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | Status GRBL | main (polling) → renderer | Idle/Run/Hold/Alarm/Home/Jog… |
 | Posição / feed | main → renderer | MPos/WPos, FS, overrides. |
 | Arquivo + progresso | renderer (+ main no envio) | Nome, linhas, linha atual, tempo. |
-| Preferências | main (`SettingsStore`) | Porta/baud padrão, tema, unidades. |
+| Preferências | main (`PrefsStore`) | Porta/baud padrão, tema, idioma, unidades, macros. |
 
 ---
 
@@ -169,6 +174,34 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | Imagem → G-code | ✅ Web Worker + `shared/image/*` | Perfis de material (RF-IMG-8) ✅ |
 | Config `$$` | ✅ Viewer/editor + `$#`/`$I`/`$G` | (concluído) |
 | Preview 2D | ✅ Canvas (grid + contornos) | (concluído) |
+| i18n | ✅ pt-BR/en/es (`shared/i18n/*` + `public/i18n.js`) | (concluído) |
+| Temas | ✅ 11 temas (`shared/themes.ts` + `tokens.css`) | (concluído) |
+
+---
+
+## 6.1 i18n e temas (RF-APP-1/2/6/7)
+
+- **Catálogos puros** em `src/shared/i18n/{pt-BR,en,es}.ts` (chave → texto).
+  `en`/`es` são declarados com `satisfies Record<keyof typeof ptBR, string>`:
+  o type-check recusa chave faltando ou sobrando (paridade garantida em 484
+  chaves, reforçada em `tests/i18n.test.ts`).
+- **Núcleo compartilhado** (`shared/i18n/index.ts`): `t(key, params)`,
+  `hasKey`, `setLocale`/`getLocale`, `detectLocale(systemLocale)`, `slugify`.
+  É importável pelo main (menu, diálogos, mensagens de alarme) e pelo renderer.
+- **Bundle do renderer**: `shared/i18n/entry.ts` é empacotado pelo esbuild em
+  `public/i18n.js` (IIFE global `GRBL_I18N`, sem dependências). O DOM é
+  traduzido por `applyDom()` via atributos `data-i18n`, `-title`, `-placeholder`,
+  `-aria` (CSP `script-src 'self'`: nada de inline).
+- **Idioma**: `prefs.lang` (validado por `isLang`); sem preferência,
+  `detectLocale(app.getLocale())` escolhe pt-BR/en/es na 1ª execução. Trocar o
+  idioma re-traduz a UI e remonta o **menu nativo** (`rebuildMenu`).
+- **Temas**: `shared/themes.ts` é a fonte única (11 ids, variante, rótulo i18n,
+  amostra). O renderer aplica `html[data-theme]`; `tokens.css` só sobrescreve
+  variáveis por tema (§DESIGN). `prefs.theme` é validado por `isThemeId`.
+- **Identidade/links** (`shared/appInfo.ts` + IPC `app:info`): a versão vem de
+  `app.getVersion()` (nunca hardcoded no renderer) e alimenta o rodapé e o modal
+  **Sobre**. `app:open-external` só abre `https:` de hosts na whitelist
+  (`isAllowedExternalUrl`) via `shell.openExternal`.
 
 ---
 
@@ -177,6 +210,8 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 - **TypeScript estrito** em main, preload e renderer.
 - Lógica de protocolo/parsing em funções puras (fáceis de testar).
 - IPC sempre tipado; nomes de canal em um único lugar (`shared/channels.ts`).
+- Textos de UI **nunca hardcoded** no renderer/menu: sempre por chave i18n
+  (`t('…')` ou `data-i18n`), com o pt-BR como fonte da verdade das chaves.
 - Sem lógica de negócio dentro de handlers de UI.
 - Lint + format com **Biome** (`biome.json`; `npm run lint`) no CI. A stack
   ESLint + `typescript-eslint` é inviável com o TypeScript 7 (compilador

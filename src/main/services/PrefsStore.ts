@@ -8,7 +8,9 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
+import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
+import { isThemeId } from '../../shared/themes';
 import type { Prefs } from '../../shared/types';
 
 /** Filtra o que veio do disco, mantendo só chaves/tipos conhecidos. */
@@ -19,8 +21,12 @@ function sanitize(input: unknown): Prefs {
   if (typeof raw.port === 'string' && raw.port) prefs.port = raw.port;
   if (typeof raw.baud === 'number' && Number.isFinite(raw.baud))
     prefs.baud = raw.baud;
-  if (raw.theme === 'dark' || raw.theme === 'light') prefs.theme = raw.theme;
+  if (isThemeId(raw.theme)) prefs.theme = raw.theme;
   if (raw.units === 'mm' || raw.units === 'in') prefs.units = raw.units;
+  if (isLang(raw.lang)) prefs.lang = raw.lang;
+  if (raw.mode === 'basic' || raw.mode === 'advanced') prefs.mode = raw.mode;
+  if (typeof raw.machineProfile === 'string' && raw.machineProfile)
+    prefs.machineProfile = raw.machineProfile;
   if (typeof raw.autoConnect === 'boolean') prefs.autoConnect = raw.autoConnect;
   if (Array.isArray(raw.macros)) prefs.macros = sanitizeMacros(raw.macros);
   if (raw.transport === 'serial' || raw.transport === 'tcp')

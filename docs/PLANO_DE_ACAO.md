@@ -151,7 +151,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Tarefas**
 - [ ] Revisar e aprovar `PRODUCT_SPEC.md` e as ADRs (seção 3). *(pendente: você)*
 - [ ] ADR-11: decidir design system (tokens próprios vs. Fluent UI React). *(decisão sua)*
-- [x] Criar `tokens.css` base do `DESIGN.md` (cores claro/escuro, espaço, raio, sombra, motion) + tema sem "flash".
+- [x] Criar `tokens.css` base do `DESIGN.md` (cores claro/escuro, espaço, raio, sombra, motion; depois ampliado para 11 temas) + tema sem "flash".
 - [x] Remover `src/main-serial.ts.bak` (B8).
 - [x] Unificar manuais: `leia/` → `docs/` e remover duplicatas (B9): pasta `leia/` e PDF `manual laser gbrl.pdf` (idênticos) removidos; `README_MAIN.md` (índice secundário) removido.
 - [x] Definir licença **MIT** (`LICENSE`, `package.json`) e `CONTRIBUTING.md`.
@@ -233,7 +233,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Entregáveis**
 - Viewer/editor de `$$` com descrição de cada setting.
 - Telas para `$#`, `$I`, `$G`.
-- Preferências persistidas (porta, baud, tema, unidades, pastas).
+- Preferências persistidas (porta, baud, tema, idioma, unidades, pastas).
 - Ajuda contextual para settings críticos (`$20`, `$21`, `$22`, `$32`).
 
 **Tarefas**
@@ -253,7 +253,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 **Critérios de aceite**
 - Ler `$$`, alterar um valor, aplicar e reler confirma a mudança.
-- Reabrir o app restaura porta, baud, tema e unidades.
+- Reabrir o app restaura porta, baud, tema, idioma e unidades.
 
 ---
 
@@ -349,15 +349,20 @@ no nível do Windows 11**.
 
 **Entregáveis**
 - Builds `.AppImage` e `.deb`; Flatpak (Could).
-- i18n pt-BR/en; tema claro/escuro completo.
+- i18n pt-BR/en/es; 11 temas (5 claros, 4 escuros, 2 de alto contraste).
+- Barra inferior (nome · versão · WerneckLab) e menu **Ajuda → Sobre**.
 - Ícone, splash, avisos de segurança e permissões de porta serial.
 - Site/README de download e guia de primeiros passos.
 - **Checklist visual de aceite** (`DESIGN.md` §8) aprovado.
 
 **Tarefas**
 - [x] RF-APP-4: `electron-builder` (ADR-9) + AppImage/deb. *(automação de release no GitHub ainda pendente)*
-- [ ] RF-APP-2: estrutura de i18n.
+- [x] RF-APP-1: 11 temas (`shared/themes.ts` + `tokens.css`) com modal "Aparência e idioma".
+- [x] RF-APP-2: i18n pt-BR/en/es (catálogos puros + `public/i18n.js`), detecção do SO e troca em tempo de execução (UI + menu).
+- [x] RF-APP-6: barra inferior com nome, versão (`app:info`) e crédito WerneckLab (link `lab.werneck.dev.br`).
+- [x] RF-APP-7: menu Ajuda → **Sobre** (versão, licença MIT, autor, links via `shell.openExternal` com whitelist).
 - [x] RF-APP-5: documentar `dialout`/udev para `/dev/ttyUSB*` (ver `docs/DEVELOPMENT.md`).
+- [x] README em 3 idiomas (`README.md`, `README.en.md`, `README.es.md`).
 - [ ] RNF-9: log persistente de sessão.
 - [ ] Revisão de UX/acessibilidade e polish.
 - [ ] Passar o **checklist visual** completo de `DESIGN.md` §8 (aparência Win11,
@@ -365,7 +370,8 @@ no nível do Windows 11**.
 
 **Critérios de aceite**
 - `.AppImage` roda em Ubuntu 24.04 e Fedora 40 (X11 e Wayland) sem instalação.
-- App em pt-BR e en sem strings fixas.
+- App em pt-BR, en e es sem strings fixas (paridade de chaves garantida por type-check + testes).
+- Os 11 temas aplicam sem flash e persistem; os modos de alto contraste mantêm foco visível.
 
 ---
 

@@ -10,6 +10,7 @@
  */
 
 import type { ParsedSetting } from './protocol';
+import { t } from './i18n';
 
 /** Tipo de entrada sugerido para editar o valor. */
 export type SettingValueType = 'bool' | 'int' | 'float' | 'mask' | 'text';
@@ -310,6 +311,25 @@ export interface SettingRow {
   max?: number;
 }
 
+/** Chave i18n de cada grupo do catálogo (rótulo pt-BR → chave, RF-APP-2). */
+const GROUP_KEYS: Record<string, string> = {
+  'Passo e direção': 'setgroup.passo-e-direcao',
+  Relatório: 'setgroup.relatorio',
+  Limites: 'setgroup.limites',
+  Homming: 'setgroup.homming',
+  'Spindle/Laser': 'setgroup.spindle-laser',
+  'Eixo X': 'setgroup.eixo-x',
+  'Eixo Y': 'setgroup.eixo-y',
+  'Eixo Z': 'setgroup.eixo-z',
+  Outros: 'setgroup.outros',
+};
+
+/** Traduz o grupo (pt-BR do catálogo) para o idioma ativo. */
+function groupLabel(ptGroup: string): string {
+  const key = GROUP_KEYS[ptGroup];
+  return key ? t(key) : ptGroup;
+}
+
 /** Monta as linhas (ordenadas por `$`) a partir de um mapa de `$$`. */
 export function buildSettingRows(
   map: Map<number, ParsedSetting>,
@@ -322,9 +342,10 @@ export function buildSettingRows(
         code: setting.key,
         value: setting.value,
         number: setting.number,
-        name: meta?.name ?? `Configuração $${setting.key}`,
-        help: meta?.help ?? 'Parâmetro do firmware sem descrição neste app.',
-        group: meta?.group ?? 'Outros',
+        name:
+          meta?.name ?? t('settings.fallbackName', { key: `$${setting.key}` }),
+        help: meta?.help ?? t('settings.fallbackHelp'),
+        group: groupLabel(meta?.group ?? 'Outros'),
         type: meta?.type ?? (setting.number === undefined ? 'text' : 'float'),
         unit: meta?.unit,
         min: meta?.min,
@@ -339,19 +360,19 @@ export function buildSettingRows(
  */
 export function validateSettingValue(key: number, raw: string): string | null {
   const value = raw.trim();
-  if (value === '') return 'Informe um valor.';
+  if (value === '') return t('validate.empty');
   const meta = CATALOG[key];
   if (!meta) return null;
   if (meta.type === 'text') return null;
   const num = Number(value);
-  if (!Number.isFinite(num)) return 'Valor numérico esperado.';
+  if (!Number.isFinite(num)) return t('validate.nan');
   if (meta.type === 'mask' || meta.type === 'int' || meta.type === 'float') {
     if (meta.type !== 'float' && !Number.isInteger(num))
-      return 'Use um número inteiro.';
+      return t('validate.int');
   }
   if (meta.min !== undefined && num < meta.min)
-    return `Valor mínimo: ${meta.min}.`;
+    return t('validate.min', { min: meta.min });
   if (meta.max !== undefined && num > meta.max)
-    return `Valor máximo: ${meta.max}.`;
+    return t('validate.max', { max: meta.max });
   return null;
 }

@@ -4,10 +4,22 @@
 
 import { app, BrowserWindow } from 'electron';
 import * as path from 'node:path';
+import { detectLocale, getLocale, setLocale } from '../shared/i18n';
+import { DEFAULT_THEME, isThemeId } from '../shared/themes';
 import { registerIpc } from './ipc';
+import { initMenu, rebuildMenu } from './menu';
 
 let mainWindow: BrowserWindow | null = null;
 let dispose: (() => Promise<void>) | null = null;
+
+/** Lê prefs e monta o menu no idioma/tema certos (RF-APP-1/2/7). */
+function syncMenu(theme: string, lang = getLocale()): void {
+  initMenu(
+    { theme: isThemeId(theme) ? theme : DEFAULT_THEME, lang },
+    () => mainWindow,
+  );
+  rebuildMenu();
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -30,6 +42,11 @@ function createWindow(): void {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // Defesa em profundidade: o app nunca navega nem abre janelas pelo renderer
+  // (links externos só via `app:open-external`, com whitelist no main).
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', (event) => event.preventDefault());
 
   void mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
 
@@ -101,8 +118,17 @@ function installSmokeTest(win: BrowserWindow): void {
   setTimeout(() => fail('timeout carregando o renderer'), 15000);
 }
 
-app.whenReady().then(() => {
-  const { client } = registerIpc(() => mainWindow);
+app.whenReady().then(async () => {
+  const { client, prefs } = registerIpc(() => mainWindow, {
+    // Prefs mudaram (tema/idioma escolhidos na UI): reflete no menu.
+    onPrefsChanged: (stored) => syncMenu(stored.theme ?? DEFAULT_THEME),
+  });
+
+  // Idioma padrão = preferência persistida ou o do sistema (RF-APP-2).
+  const stored = await prefs.read();
+  setLocale(stored.lang ?? detectLocale(app.getLocale()));
+  syncMenu(stored.theme ?? DEFAULT_THEME);
+
   dispose = () => client.disconnect();
   createWindow();
 

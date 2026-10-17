@@ -28,6 +28,8 @@ export const CHANNELS = {
   settingsSpecial: 'grbl:settings:special',
   prefsGet: 'app:prefs:get',
   prefsSet: 'app:prefs:set',
+  appInfo: 'app:info',
+  openExternal: 'app:open-external',
   fileSave: 'file:save-gcode',
   fileOpenImage: 'file:open-image',
   fileOpenGcode: 'file:open-gcode',
@@ -41,6 +43,24 @@ export const CHANNELS = {
   evJob: 'grbl:ev:job',
   evConnection: 'grbl:ev:connection',
   evError: 'grbl:ev:error',
+  // Menu nativo do Electron -> Renderer (RF-APP-7)
+  evAbout: 'grbl:ev:about',
+  evTheme: 'grbl:ev:theme',
+  evLang: 'grbl:ev:lang',
+  evAction: 'grbl:ev:action',
 } as const;
 
 export type Channel = (typeof CHANNELS)[keyof typeof CHANNELS];
+
+/**
+ * Ações genéricas disparadas pelo menu nativo (`evAction`). Valor único
+ * compartilhado entre `main/menu.ts` (emissor) e o renderer (consumidor) —
+ * evita literais divergentes.
+ */
+export const MENU_ACTIONS = {
+  openGcode: 'open-gcode',
+  openImage: 'open-image',
+  appearance: 'appearance',
+} as const;
+
+export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

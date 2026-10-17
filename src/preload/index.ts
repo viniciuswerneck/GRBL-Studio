@@ -5,8 +5,10 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import { CHANNELS } from '../shared/channels';
+import type { MenuAction } from '../shared/channels';
 import type { SettingRow } from '../shared/grblSettings';
 import type {
+  AppInfo,
   ConnectOptions,
   ConnectionState,
   ConsoleLine,
@@ -15,6 +17,7 @@ import type {
   JogCommand,
   JobInfo,
   JobProgress,
+  Lang,
   OpenedImageFile,
   OpenedTextFile,
   OverrideAction,
@@ -75,6 +78,11 @@ const api = {
   getPrefs: (): Promise<Prefs> => ipcRenderer.invoke(CHANNELS.prefsGet),
   setPrefs: (patch: Partial<Prefs>): Promise<Prefs> =>
     ipcRenderer.invoke(CHANNELS.prefsSet, patch),
+  /** Metadados do app (versão/autor/licença/idioma padrão) — RF-APP-6/7. */
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(CHANNELS.appInfo),
+  /** Abre uma URL https de host liberado no navegador do sistema. */
+  openExternal: (url: string): Promise<boolean> =>
+    ipcRenderer.invoke(CHANNELS.openExternal, url),
   saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
   openImage: (): Promise<OpenedImageFile | null> =>
@@ -98,6 +106,14 @@ const api = {
     on(CHANNELS.evConnection, cb),
   onError: (cb: (err: ErrorPayload) => void): Unsubscribe =>
     on(CHANNELS.evError, cb),
+  // Menu nativo -> renderer (RF-APP-7)
+  onAbout: (cb: () => void): Unsubscribe => on(CHANNELS.evAbout, cb),
+  onTheme: (cb: (themeId: string) => void): Unsubscribe =>
+    on(CHANNELS.evTheme, cb),
+  onLang: (cb: (lang: Lang) => void): Unsubscribe => on(CHANNELS.evLang, cb),
+  /** Ações genéricas do menu (ex.: `open-gcode`). */
+  onAction: (cb: (action: MenuAction) => void): Unsubscribe =>
+    on(CHANNELS.evAction, cb),
 };
 
 contextBridge.exposeInMainWorld('grbl', api);

@@ -16,6 +16,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { hasKey, t } from '../../shared/i18n';
 import {
   classifyLine,
   isStatusReport,
@@ -32,6 +33,24 @@ import type {
 } from '../../shared/types';
 import { SerialTransport } from './SerialTransport';
 import { TcpTransport } from './TcpTransport';
+
+/**
+ * Descrição de alarme/erro GRBL no idioma ativo (RF-APP-2).
+ * `classifyLine` continua puro e em pt-BR (fonte/fallback); a tradução
+ * acontece aqui, no ponto em que a mensagem vira texto para o usuário.
+ */
+function describeGrbl(
+  kind: 'alarm' | 'error',
+  code: number | undefined,
+  fallback: string,
+): string {
+  if (code === undefined) return fallback;
+  const key = `${kind}.${code}`;
+  if (hasKey(key)) return t(key);
+  // Código fora do catálogo (firmware mais novo): rótulo genérico localizado.
+  const generic = `${kind}.unknown`;
+  return hasKey(generic) ? t(generic, { code }) : fallback;
+}
 
 /** Bytes de comando de tempo real do GRBL. */
 export const REALTIME = {
@@ -152,7 +171,9 @@ export class GrblClient extends EventEmitter {
         this.setConnection('disconnected');
         if (!intentional) {
           this.emitError(
-            err ? `Conexão encerrada: ${err.message}` : 'Conexão encerrada.',
+            err
+              ? t('client.connClosedWith', { msg: err.message })
+              : t('client.connClosed'),
           );
         }
       }
@@ -177,7 +198,7 @@ export class GrblClient extends EventEmitter {
   async disconnect(): Promise<void> {
     this.stopPolling();
     this.clearWatchdog();
-    this.failQuery(new Error('Conexão encerrada antes da resposta.'));
+    this.failQuery(new Error(t('client.queryClosed')));
     this.queue = [];
     this.awaitingAck = false;
     this.stalled = false;
@@ -216,11 +237,11 @@ export class GrblClient extends EventEmitter {
     const clean = line.trim();
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) {
-        reject(new Error('Conecte-se à máquina para consultar.'));
+        reject(new Error(t('client.queryNotConnected')));
         return;
       }
       if (this.pendingQuery) {
-        reject(new Error('Já existe uma consulta em andamento.'));
+        reject(new Error(t('client.queryBusy')));
         return;
       }
       const timer = setTimeout(() => {
@@ -228,7 +249,7 @@ export class GrblClient extends EventEmitter {
           this.pendingQuery = null;
           reject(
             new Error(
-              `A máquina não respondeu a "${clean}" em ${this.stallMs} ms.`,
+              t('client.queryTimeout', { line: clean, ms: this.stallMs }),
             ),
           );
         }
@@ -242,11 +263,11 @@ export class GrblClient extends EventEmitter {
   /** Inicia um job com as linhas fornecidas (streaming confiável). */
   startJob(lines: string[], name?: string): void {
     if (!this.isConnected()) {
-      this.emitError('Não conectado.');
+      this.emitError(t('client.notConnected'));
       return;
     }
     if (this.job.state === 'running') {
-      this.emitError('Já existe um job em execução.');
+      this.emitError(t('client.jobRunning'));
       return;
     }
     const items = lines
@@ -278,13 +299,13 @@ export class GrblClient extends EventEmitter {
   /** Para o job atual: soft reset (aborta) e limpa a fila. */
   stopJob(): void {
     if (this.job.state === 'idle') return;
-    this.abortJob('Interrompido pelo usuário.');
+    this.abortJob(t('client.stopped'));
     this.emitRealtime(REALTIME.softReset);
   }
 
   // Realtime
   softReset(): void {
-    this.abortJob('Reset pelo usuário.');
+    this.abortJob(t('client.reset'));
     this.emitRealtime(REALTIME.softReset);
   }
 
@@ -465,10 +486,23 @@ export class GrblClient extends EventEmitter {
         this.onAck();
         break;
       case 'error':
-        this.onNack(classified.message ?? classified.text, classified.code);
+        this.onNack(
+          describeGrbl(
+            'error',
+            classified.code,
+            classified.message ?? classified.text,
+          ),
+          classified.code,
+        );
         break;
       case 'alarm':
-        this.onAlarm(classified.message ?? classified.text);
+        this.onAlarm(
+          describeGrbl(
+            'alarm',
+            classified.code,
+            classified.message ?? classified.text,
+          ),
+        );
         break;
       default:
         break;
@@ -558,14 +592,12 @@ export class GrblClient extends EventEmitter {
     this.transport.writeLine(item.line).catch((err: Error) => {
       this.awaitingAck = false;
       this.currentItem = null;
-      this.emitError(`Falha ao escrever na serial: ${err.message}`);
+      this.emitError(t('client.writeFail', { msg: err.message }));
     });
 
     this.watchdog = setTimeout(() => {
       this.stalled = true;
-      this.emitError(
-        `A máquina não respondeu em ${this.stallMs} ms aguardando "ok". Envio pausado — verifique a conexão.`,
-      );
+      this.emitError(t('client.stall', { ms: this.stallMs }));
     }, this.stallMs);
   }
 }

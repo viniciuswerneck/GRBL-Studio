@@ -49,9 +49,21 @@ Windows — mantendo-se **rápido, leve e preciso**:
   `backdrop-filter: blur(30px)` + `saturate(150%)` **apenas nesses elementos**.
 - **Smoke** — overlay modal/escurecimento de fundo: `rgba(0,0,0,0.3)`.
 
-### 2.3 Temas
+### 2.3 Temas (RF-APP-1)
 
-| | Escuro (padrão) | Claro |
+O app traz **11 temas** em três variantes, escolhidos no modal **Aparência e
+idioma** (`◐` na barra superior) ou no menu **Exibir → Tema**. A escolha
+persiste em `prefs.theme` e é validada por `isThemeId` (`shared/themes.ts`).
+
+| Variante | Ids (`html[data-theme]`) | Notas |
+| :--- | :--- | :--- |
+| **Claro** (5) | `light`, `solarized-light`, `sand`, `arctic`, `silver` | `light` é o Fluent claro (`#F3F3F3`/`#0078D4`) |
+| **Escuro** (4) | `dark`, `midnight`, `solarized-dark`, `oled` | `dark` é o **padrão** (`#202020`/`#4CC2FF`); `oled` usa preto puro |
+| **Alto contraste** (2) | `hc-black`, `hc-white` | WCAG AAA; cores sólidas, `outline: 3px` no foco, `--shadow-*: none` |
+
+Paleta de referência do tema padrão:
+
+| | Escuro (`dark`, padrão) | Claro (`light`) |
 | :--- | :--- | :--- |
 | Fundo app | `#202020` | `#F3F3F3` |
 | Fundo card | `#2B2B2B` | `#FFFFFF` |
@@ -63,6 +75,7 @@ Windows — mantendo-se **rápido, leve e preciso**:
 
 > Adotar variáveis CSS (`--bg`, `--text`, `--accent`…) em um único arquivo
 > `tokens.css`, respeitando também o acento do sistema se detectado.
+> `data-theme` é aplicado no `<html>` antes do primeiro paint (sem flash).
 
 ### 2.4 Layout recomendado (janela 1200×800)
 
@@ -174,7 +187,10 @@ Windows — mantendo-se **rápido, leve e preciso**:
 ```
 
 - Um único arquivo `tokens.css` é a **fonte da verdade visual**.
-- Temas (claro/escuro) = troca de variáveis, zero CSS duplicado.
+- Temas = troca de variáveis, zero CSS duplicado: cada tema é um bloco
+  `html[data-theme="<id>"] { … }` que **só sobrescreve** os tokens (§2.3 —
+  11 temas). O picker lê `shared/themes.ts` (`THEMES`), a mesma fonte usada pelo
+  `PrefsStore` e pelo menu nativo.
 - Isso também é o que garante **leveza**: sem lib de UI pesada; se um framework
   de componentes for usado (ADR-2), escolher o **Fluent para React**
   (`@fluentui/react-components`) apenas se o orçamento de RAM/perf for cumprido.
@@ -199,7 +215,9 @@ Windows — mantendo-se **rápido, leve e preciso**:
 ## 8. Checklist de aceite visual
 
 - [ ] Parece um app do Windows 11 ao lado de um (cantos, sombras, acento, tipografia).
-- [ ] Temas claro/escuro trocam sem flash (aplicados antes do primeiro paint).
+- [ ] Os 11 temas trocam sem flash (aplicados antes do primeiro paint) e persistem.
+- [ ] Temas de alto contraste (`hc-black`/`hc-white`) mantêm foco visível e contraste AAA.
+- [ ] Rodapé (nome · versão · WerneckLab) e modal **Sobre** exibem a versão real do app.
 - [ ] Nenhuma animação cai abaixo de 55 fps com um job rodando.
 - [ ] DRO estável em 0,001 mm sem "piscar".
 - [ ] Escala 125 %/150 % sem texto/ícone borrado.

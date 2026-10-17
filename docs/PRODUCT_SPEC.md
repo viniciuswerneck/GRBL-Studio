@@ -52,8 +52,9 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
 3. **Paridade com o essencial do LaserGRBL** — interface, jog, overrides, status,
    preview, import de imagem raster, configuração `$$`.
 4. **Experiência moderna** — visual **estilo Windows 11 (Fluent Design 2)**:
-   cantos arredondados, cor de acento, animações suaves, tema claro/escuro,
-   atalhos de teclado, feedback claro de estado/alarme, i18n (pt-BR/en) — com
+   cantos arredondados, cor de acento, animações suaves, **11 temas** (5 claros,
+   4 escuros, 2 de alto contraste), atalhos de teclado, feedback claro de
+   estado/alarme, **i18n (pt-BR/en/es)** — com
    orçamento de performance (≤ 1,5 s de startup, ≤ 200 MB de RAM) e precisão de
    instrumento (DRO em 0,001 mm). Ver `DESIGN.md`.
 5. **Diagnóstico acessível** — console legível, mensagens de alarme com causa e
@@ -77,8 +78,9 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
 - Importação de imagens (BMP/JPG/PNG/GIF): conversão em tons de cinza,
   *line-to-line*, *dithering* e vetorização — gerando G-code.
 - Macros / botões customizados.
-- Preferências persistentes (porta, baud, tema, unidades, pastas).
-- Tema claro/escuro, unidades mm/pol.
+- Preferências persistentes (porta, baud, tema, idioma, unidades, pastas).
+- 11 temas (claro/escuro/alto contraste), unidades mm/pol, idioma pt-BR/en/es.
+- Barra inferior com nome, versão e crédito (WerneckLab) e menu **Ajuda → Sobre**.
 - Empacotamento e distribuição para Linux.
 
 ### 5.2 Fora do escopo (por ora)
@@ -212,11 +214,13 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-APP-1 | Tema escuro (padrão) e claro. | Should | 🟡 |
-| RF-APP-2 | Idioma pt-BR e en (estrutura de i18n). | Should | ⬜ |
-| RF-APP-3 | Unidades mm/polegadas na UI e nos comandos. | Should | 🟡 |
+| RF-APP-1 | **11 temas**: 5 claros, 4 escuros e 2 de alto contraste; troca pelo modal "Aparência e idioma" e pelo menu Exibir. | Should | ✅ |
+| RF-APP-2 | **i18n pt-BR, en e es** com detecção do idioma do SO na 1ª execução; troca em tempo de execução (UI + menu nativo). | Should | ✅ |
+| RF-APP-3 | Unidades mm/polegadas na UI e nos comandos. | Should | ✅ |
 | RF-APP-4 | Empacotar `.AppImage`, `.deb` e `Flatpak`. | Must | ⬜ |
 | RF-APP-5 | Instruções de permissão de porta serial no Linux (grupo `dialout`). | Must | ⬜ |
+| RF-APP-6 | **Barra inferior** com nome, versão (`app.getVersion()`) e crédito "Desenvolvido por WerneckLab" com link para `lab.werneck.dev.br`. | Should | ✅ |
+| RF-APP-7 | **Menu Ajuda → Sobre**: modal com nome, versão, licença (MIT), autor e links (WerneckLab/GitHub), abertos no navegador via `shell.openExternal` com whitelist. | Should | ✅ |
 
 ---
 

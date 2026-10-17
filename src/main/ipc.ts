@@ -9,12 +9,22 @@ import {
   dialog,
   ipcMain,
   type OpenDialogOptions,
+  shell,
   type WebContents,
 } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { SerialPort } from 'serialport';
 import { CHANNELS } from '../shared/channels';
+import {
+  APP_AUTHOR,
+  APP_LICENSE,
+  APP_NAME,
+  APP_REPOSITORY,
+  APP_URL,
+  isAllowedExternalUrl,
+} from '../shared/appInfo';
+import { detectLocale, setLocale, t } from '../shared/i18n';
 import {
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
@@ -67,10 +77,23 @@ async function pickFile(
 
 export interface IpcContext {
   client: GrblClient;
+  /** Store de preferências (o bootstrap lê `lang`/`theme` do menu). */
+  prefs: PrefsStore;
+}
+
+export interface IpcHooks {
+  /**
+   * Chamado após cada `app:prefs:set` bem-sucedido. O bootstrap usa para
+   * reconstruir o menu nativo (tema/idioma — RF-APP-1/2/7).
+   */
+  onPrefsChanged?: (prefs: Prefs) => void;
 }
 
 /** Registra os handlers e o encaminhamento de eventos para a janela. */
-export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
+export function registerIpc(
+  getWindow: () => BrowserWindow | null,
+  hooks: IpcHooks = {},
+): IpcContext {
   const client = new GrblClient();
   const prefs = new PrefsStore(
     path.join(app.getPath('userData'), 'prefs.json'),
@@ -196,7 +219,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     CHANNELS.settingsApply,
     async (_evt, req: SettingApplyRequest) => {
       if (!Number.isInteger(req?.code) || req.code < 0)
-        throw new Error('Configuração inválida.');
+        throw new Error(t('settings.invalid'));
       const problem = validateSettingValue(req.code, String(req.value));
       if (problem) throw new Error(problem);
       await client.query(`$${req.code}=${String(req.value).trim()}`);
@@ -206,16 +229,40 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
 
   ipcMain.handle(CHANNELS.settingsSpecial, async (_evt, kind: SpecialQuery) => {
     const line = SPECIAL_LINE[kind];
-    if (!line) throw new Error('Consulta desconhecida.');
+    if (!line) throw new Error(t('settings.unknownQuery'));
     return client.query(line);
   });
 
   // -------------------------------------------------------- preferências
 
   ipcMain.handle(CHANNELS.prefsGet, () => prefs.read());
-  ipcMain.handle(CHANNELS.prefsSet, (_evt, patch: Partial<Prefs>) =>
-    prefs.updateInPlace(patch ?? {}),
-  );
+  ipcMain.handle(CHANNELS.prefsSet, async (_evt, patch: Partial<Prefs>) => {
+    const next = await prefs.updateInPlace(patch ?? {});
+    // Idioma escolhido: alinha o main (menu/diálogos/mensagens) — RF-APP-2.
+    if (patch && typeof patch.lang === 'string') setLocale(next.lang ?? null);
+    if (patch && ('lang' in patch || 'theme' in patch))
+      hooks.onPrefsChanged?.(next);
+    return next;
+  });
+
+  // --------------------------------------------------- app:info / links
+  // Versão vem do Electron (package.json) — nunca hardcoded no renderer.
+
+  ipcMain.handle(CHANNELS.appInfo, () => ({
+    name: APP_NAME,
+    version: app.getVersion(),
+    author: APP_AUTHOR,
+    license: APP_LICENSE,
+    url: APP_URL,
+    repository: APP_REPOSITORY,
+    defaultLang: detectLocale(app.getLocale()),
+  }));
+
+  ipcMain.handle(CHANNELS.openExternal, async (_evt, url: unknown) => {
+    if (!isAllowedExternalUrl(url)) return false;
+    await shell.openExternal(url);
+    return true;
+  });
 
   /**
    * Abre uma imagem para preparação (Fase 5). O caminho vem sempre do
@@ -225,19 +272,21 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     CHANNELS.fileOpenImage,
     async (evt): Promise<OpenedImageFile | null> => {
       const filePath = await pickFile(evt.sender, {
-        title: 'Abrir imagem',
-        buttonLabel: 'Abrir',
+        title: t('dlg.openImage'),
+        buttonLabel: t('dlg.open'),
         properties: ['openFile'],
         filters: IMAGE_DIALOG_FILTERS,
       });
       if (!filePath) return null;
 
       const info = await stat(filePath);
-      if (!info.isFile())
-        throw new Error('O caminho escolhido não é um arquivo.');
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
       if (info.size > IMAGE_MAX_BYTES) {
         throw new Error(
-          `Imagem muito grande (${formatMb(info.size)}). Limite: ${formatMb(IMAGE_MAX_BYTES)}.`,
+          t('dlg.imageTooBig', {
+            size: formatMb(info.size),
+            limit: formatMb(IMAGE_MAX_BYTES),
+          }),
         );
       }
 
@@ -260,19 +309,21 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     CHANNELS.fileOpenGcode,
     async (evt): Promise<OpenedTextFile | null> => {
       const filePath = await pickFile(evt.sender, {
-        title: 'Abrir G-code',
-        buttonLabel: 'Abrir',
+        title: t('dlg.openGcode'),
+        buttonLabel: t('dlg.open'),
         properties: ['openFile'],
         filters: GCODE_DIALOG_FILTERS,
       });
       if (!filePath) return null;
 
       const info = await stat(filePath);
-      if (!info.isFile())
-        throw new Error('O caminho escolhido não é um arquivo.');
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
       if (info.size > TEXT_MAX_BYTES) {
         throw new Error(
-          `Arquivo muito grande (${formatMb(info.size)}). Limite: ${formatMb(TEXT_MAX_BYTES)}.`,
+          t('dlg.fileTooBig', {
+            size: formatMb(info.size),
+            limit: formatMb(TEXT_MAX_BYTES),
+          }),
         );
       }
 
@@ -292,10 +343,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
       payload: { suggestedName?: string; content?: string },
     ): Promise<string | null> => {
       if (typeof payload?.content !== 'string')
-        throw new Error('Conteúdo de G-code ausente.');
+        throw new Error(t('dlg.missingContent'));
 
       const options = {
-        title: 'Salvar G-code',
+        title: t('dlg.saveGcode'),
         defaultPath: payload.suggestedName || 'gravacao.gcode',
         filters: GCODE_DIALOG_FILTERS,
       };
@@ -316,20 +367,20 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     CHANNELS.macrosOpen,
     async (evt): Promise<OpenedTextFile | null> => {
       const filePath = await pickFile(evt.sender, {
-        title: 'Importar macros',
-        buttonLabel: 'Importar',
+        title: t('dlg.importMacros'),
+        buttonLabel: t('dlg.import'),
         properties: ['openFile'],
         filters: [
-          { name: 'Macros (JSON)', extensions: ['json', 'JSON'] },
-          { name: 'Todos os arquivos', extensions: ['*'] },
+          { name: t('filter.macros'), extensions: ['json', 'JSON'] },
+          { name: t('filter.all'), extensions: ['*'] },
         ],
       });
       if (!filePath) return null;
 
       const info = await stat(filePath);
-      if (!info.isFile()) throw new Error('O caminho escolhido não é arquivo.');
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
       if (info.size > TEXT_MAX_BYTES) {
-        throw new Error(`Arquivo grande demais (${formatMb(info.size)}).`);
+        throw new Error(t('dlg.tooBig', { size: formatMb(info.size) }));
       }
       const text = await readFile(filePath, 'utf8');
       return { path: filePath, name: path.basename(filePath), text };
@@ -339,14 +390,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
   ipcMain.handle(
     CHANNELS.macrosSave,
     async (evt, content: unknown): Promise<string | null> => {
-      if (typeof content !== 'string')
-        throw new Error('Conteúdo de macros ausente.');
+      if (typeof content !== 'string') throw new Error(t('dlg.missingMacros'));
       const options = {
-        title: 'Exportar macros',
+        title: t('dlg.exportMacros'),
         defaultPath: 'grbl-macros.json',
         filters: [
-          { name: 'Macros (JSON)', extensions: ['json'] },
-          { name: 'Todos os arquivos', extensions: ['*'] },
+          { name: t('filter.macros'), extensions: ['json'] },
+          { name: t('filter.all'), extensions: ['*'] },
         ],
       };
       const owner = BrowserWindow.fromWebContents(evt.sender);
@@ -359,5 +409,5 @@ export function registerIpc(getWindow: () => BrowserWindow | null): IpcContext {
     },
   );
 
-  return { client };
+  return { client, prefs };
 }

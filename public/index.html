@@ -15,13 +15,28 @@
       <aside class="sidebar">
         <div class="brand">
           <h1>GRBL Studio</h1>
-          <button type="button" id="themeBtn" title="Alternar tema">◐</button>
-          <button type="button" id="modeBtn" title="Alternar modo Básico/Avançado">Básico</button>
+          <button
+            type="button"
+            id="themeBtn"
+            title="Aparência e idioma"
+            data-i18n-title="appearance.title"
+          >◐</button>
+          <button
+            type="button"
+            id="modeBtn"
+            title="Alternar modo Básico/Avançado"
+            data-i18n-title="mode.toggle.title"
+            data-i18n="mode.basic"
+          >Básico</button>
         </div>
 
-        <label class="field">
+        <label class="field" data-i18n="profile.label">
           Perfil de máquina
-          <select id="machineProfile" title="Ajustes otimizados para a máquina"></select>
+          <select
+            id="machineProfile"
+            title="Ajustes otimizados para a máquina"
+            data-i18n-title="profile.title"
+          ></select>
         </label>
 
         <div class="basic-guide">
@@ -33,32 +48,32 @@
             </div>
 
             <div class="wizard-step" data-step="1">
-              <button type="button" id="guideConnect" class="primary">Conectar</button>
+              <button type="button" id="guideConnect" class="primary" data-i18n="conn.connect">Conectar</button>
             </div>
 
             <div class="wizard-step hidden" data-step="2">
-              <button type="button" id="guideImage">Escolher imagem</button>
-              <div id="wizardImageInfo" class="hint">Nenhuma imagem carregada</div>
+              <button type="button" id="guideImage" data-i18n="img.choose">Escolher imagem</button>
+              <div id="wizardImageInfo" class="hint" data-i18n="img.none">Nenhuma imagem carregada</div>
             </div>
 
             <div class="wizard-step hidden" data-step="3">
               <div class="frame-panel" id="guidePanel">
-                <label class="field">
+                <label class="field" data-i18n="wizard.size">
                   Tamanho (mm)
                   <div class="row">
                     <input type="number" id="guideWidth" value="50" min="0.1" step="0.1" />
                     <input type="number" id="guideHeight" value="50" min="0.1" step="0.1" />
                   </div>
                 </label>
-                <label class="field">
+                <label class="field" data-i18n="img.type">
                   Tipo
                   <div class="row">
-                    <button type="button" id="guideTypePhoto">Foto</button>
-                    <button type="button" id="guideTypeBW">P&B</button>
-                    <button type="button" id="guideTypeVector">Contorno</button>
+                    <button type="button" id="guideTypePhoto" data-i18n="guide.type.photo">Foto</button>
+                    <button type="button" id="guideTypeBW" data-i18n="guide.type.bw">P&amp;B</button>
+                    <button type="button" id="guideTypeVector" data-i18n="guide.type.vector">Contorno</button>
                   </div>
                 </label>
-                <label class="field">
+                <label class="field" data-i18n="img.material">
                   Material
                   <select id="guideMaterial"></select>
                 </label>
@@ -66,40 +81,40 @@
             </div>
 
             <div class="wizard-step hidden" data-step="4">
-              <button type="button" id="guideGenerate" class="primary">Gerar G-code</button>
+              <button type="button" id="guideGenerate" class="primary" data-i18n="img.generate">Gerar G-code</button>
             </div>
 
             <div class="wizard-step hidden" data-step="5">
-              <button type="button" id="guideFrame">Posicionar</button>
+              <button type="button" id="guideFrame" data-i18n="frame.position">Posicionar</button>
             </div>
 
             <div class="wizard-step hidden" data-step="6">
-              <button type="button" id="guideRecord" class="primary">Gravar</button>
+              <button type="button" id="guideRecord" class="primary" data-i18n="frame.engrave">Gravar</button>
             </div>
 
             <div class="row">
-              <button type="button" id="wizardBack">Voltar</button>
-              <button type="button" id="wizardNext" class="primary">Próximo</button>
+              <button type="button" id="wizardBack" data-i18n="nav.back">Voltar</button>
+              <button type="button" id="wizardNext" class="primary" data-i18n="wizard.next">Próximo</button>
             </div>
-            <button type="button" id="guideClose" class="danger">Fechar (Modo Avançado)</button>
+            <button type="button" id="guideClose" class="danger" data-i18n="guide.close">Fechar (Modo Avançado)</button>
           </div>
         </div>
 
         <div class="tabs sidebar-tabs">
-          <button type="button" class="tab active" data-tab="machine">Gravadora</button>
-          <button type="button" class="tab" data-tab="image">Imagem</button>
-          <button type="button" class="tab" data-tab="run">Execução</button>
-          <button type="button" class="tab" data-tab="macros">Macros</button>
+          <button type="button" class="tab active" data-tab="machine" data-i18n="tab.machine">Gravadora</button>
+          <button type="button" class="tab" data-tab="image" data-i18n="tab.image">Imagem</button>
+          <button type="button" class="tab" data-tab="run" data-i18n="tab.run">Execução</button>
+          <button type="button" class="tab" data-tab="macros" data-i18n="tab.macros">Macros</button>
         </div>
 
         <div class="tab-panel active" data-panel="machine">
         <details class="card" open id="cardConnection">
-          <summary>Conexão</summary>
-          <label class="field"
+          <summary data-i18n="conn.title">Conexão</summary>
+          <label class="field" data-i18n="conn.transport"
             >Transporte
-            <select id="transportKind" title="Serial (USB) ou WiFi/TCP (RF-CON-7)">
-              <option value="serial" selected>Serial (USB)</option>
-              <option value="tcp">WiFi (TCP)</option>
+            <select id="transportKind" title="Serial (USB) ou WiFi/TCP (RF-CON-7)" data-i18n-title="conn.transport.title">
+              <option value="serial" selected data-i18n="conn.transport.serial">Serial (USB)</option>
+              <option value="tcp" data-i18n="conn.transport.tcp">WiFi (TCP)</option>
             </select>
           </label>
           <div id="serialFields">
@@ -112,39 +127,44 @@
                 <option value="38400">38400</option>
                 <option value="9600">9600</option>
               </select>
-              <button type="button" id="refreshPorts">Atualizar</button>
+              <button type="button" id="refreshPorts" data-i18n="conn.refresh">Atualizar</button>
             </div>
-            <div id="portHint" class="hint hidden">
+            <div id="portHint" class="hint hidden" data-i18n="conn.portHint">
               Nenhuma placa USB detectada. Conecte a gravadora e clique em Atualizar.
             </div>
           </div>
           <div id="tcpFields" class="hidden">
-            <label class="field"
+            <label class="field" data-i18n="conn.host"
               >Host <input type="text" id="tcpHost" value="192.168.4.1" spellcheck="false"
             /></label>
-            <label class="field"
+            <label class="field" data-i18n="conn.port"
               >Porta <input type="number" id="tcpPort" value="23" min="1" max="65535" step="1"
             /></label>
-            <div class="hint">
+            <div class="hint" data-i18n="conn.tcpHint">
               Ex.: ESP8266/ESP32 com firmware serial-over-TCP (Telnet 23). O GRBL 1.1 não muda.
             </div>
           </div>
-          <button type="button" id="connectBtn" class="primary">Conectar</button>
-          <button type="button" id="settingsBtn">Configurações da máquina ($$)</button>
+          <button type="button" id="connectBtn" class="primary" data-i18n="conn.connect">Conectar</button>
+          <button type="button" id="settingsBtn" data-i18n="settings.open">Configurações da máquina ($$)</button>
           <div class="conn-state">
             <span id="connDot" class="dot"></span>
-            <span id="connText">Desconectado</span>
+            <span id="connText" data-i18n="conn.disconnected">Desconectado</span>
           </div>
         </details>
 
         <details class="card" open id="cardMovement">
-          <summary>Movimento</summary>
+          <summary data-i18n="jog.title">Movimento</summary>
           <div class="jog-grid">
             <span></span>
             <button type="button" id="jogYp" title="Y+">↑</button>
             <span></span>
             <button type="button" id="jogXm" title="X−">←</button>
-            <button type="button" id="homeBtn" title="Homing da máquina (requer fim de curso)">Home</button>
+            <button
+              type="button"
+              id="homeBtn"
+              title="Homing da máquina (requer fim de curso)"
+              data-i18n-title="jog.home.title"
+            >Home</button>
             <button type="button" id="jogXp" title="X+">→</button>
             <span></span>
             <button type="button" id="jogYm" title="Y−">↓</button>
@@ -166,121 +186,120 @@
             </select>
           </div>
           <div class="row">
-            <button type="button" id="setOriginBtn">Origem aqui</button>
-            <button type="button" id="gotoZeroBtn">Ir p/ zero</button>
+            <button type="button" id="setOriginBtn" data-i18n="jog.setOrigin">Origem aqui</button>
+            <button type="button" id="gotoZeroBtn" data-i18n="jog.gotoZero">Ir p/ zero</button>
           </div>
           <div class="row">
-            <button type="button" id="unlockBtn">Unlock ($X)</button>
-            <button type="button" id="resetBtn" class="danger">Reset</button>
+            <button type="button" id="unlockBtn" data-i18n="jog.unlock">Unlock ($X)</button>
+            <button type="button" id="resetBtn" class="danger" data-i18n="jog.reset">Reset</button>
           </div>
         </details>
 
         <details class="card advanced" id="cardOverrides">
-          <summary>Overrides (tempo real)</summary>
-          <div class="hint">
+          <summary data-i18n="ovr.title">Overrides (tempo real)</summary>
+          <div class="hint" data-i18n="ovr.hint">
             Ajustam a máquina em movimento. O valor ativo vem do status (`Ov:`).
           </div>
           <div class="ovr-row">
-            <span class="ovr-label">Feed</span>
+            <span class="ovr-label" data-i18n="ovr.feed">Feed</span>
             <button type="button" id="ovrFeedMinus10" title="−10%">−10</button>
             <button type="button" id="ovrFeedMinus1" title="−1%">−1</button>
             <span class="ovr-value" id="ovrFeedValue">100%</span>
             <button type="button" id="ovrFeedPlus1" title="+1%">+1</button>
             <button type="button" id="ovrFeedPlus10" title="+10%">+10</button>
-            <button type="button" id="ovrFeedReset" title="Voltar a 100%">100%</button>
+            <button type="button" id="ovrFeedReset" title="Voltar a 100%" data-i18n-title="ovr.reset">100%</button>
           </div>
           <div class="ovr-row">
-            <span class="ovr-label">Rápido</span>
+            <span class="ovr-label" data-i18n="ovr.rapid">Rápido</span>
             <button type="button" id="ovrRapidDefault">100%</button>
             <button type="button" id="ovrRapidMedium">50%</button>
             <button type="button" id="ovrRapidLow">25%</button>
             <span class="ovr-value" id="ovrRapidValue">100%</span>
           </div>
           <div class="ovr-row">
-            <span class="ovr-label">Potência</span>
+            <span class="ovr-label" data-i18n="ovr.spindle">Potência</span>
             <button type="button" id="ovrSpindleMinus10" title="−10%">−10</button>
             <button type="button" id="ovrSpindleMinus1" title="−1%">−1</button>
             <span class="ovr-value" id="ovrSpindleValue">100%</span>
             <button type="button" id="ovrSpindlePlus1" title="+1%">+1</button>
             <button type="button" id="ovrSpindlePlus10" title="+10%">+10</button>
-            <button type="button" id="ovrSpindleReset" title="Voltar a 100%">100%</button>
+            <button type="button" id="ovrSpindleReset" title="Voltar a 100%" data-i18n-title="ovr.reset">100%</button>
           </div>
         </details>
         </div>
 
         <div class="tab-panel" data-panel="image">
         <details class="card" open id="cardImage">
-          <summary>Imagem → G-code</summary>
-          <div class="hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
+          <summary data-i18n="img.title">Imagem → G-code</summary>
+          <div class="hint" data-i18n="img.steps.hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
           <div class="row">
-            <button type="button" id="imageOpen">Escolher imagem…</button>
-            <button type="button" id="imageReplace" class="hidden">Trocar imagem…</button>
-            <button type="button" id="imageCancel" class="hidden danger">Cancelar</button>
+            <button type="button" id="imageOpen" data-i18n="img.chooseEllipsis">Escolher imagem…</button>
+            <button type="button" id="imageReplace" class="hidden" data-i18n="img.replace">Trocar imagem…</button>
+            <button type="button" id="imageCancel" class="hidden danger" data-i18n="nav.cancel">Cancelar</button>
           </div>
           <div id="imageInfo" class="file-name">Nenhuma imagem carregada</div>
 
           <details class="group" open>
-            <summary>Dimensionar (mm)</summary>
+            <summary data-i18n="img.dimension">Dimensionar (mm)</summary>
             <div class="grid2">
-              <label class="field">Largura <input type="number" id="imgWidth" value="50" min="0.1" step="0.1" /></label>
-              <label class="field">Altura <input type="number" id="imgHeight" value="50" min="0.1" step="0.1" /></label>
-              <label class="field">Offset X <input type="number" id="imgOffsetX" value="0" step="0.1" /></label>
-              <label class="field">Offset Y <input type="number" id="imgOffsetY" value="0" step="0.1" /></label>
+              <label class="field" data-i18n="img.width">Largura <input type="number" id="imgWidth" value="50" min="0.1" step="0.1" /></label>
+              <label class="field" data-i18n="img.height">Altura <input type="number" id="imgHeight" value="50" min="0.1" step="0.1" /></label>
+              <label class="field" data-i18n="img.offsetX">Offset X <input type="number" id="imgOffsetX" value="0" step="0.1" /></label>
+              <label class="field" data-i18n="img.offsetY">Offset Y <input type="number" id="imgOffsetY" value="0" step="0.1" /></label>
             </div>
             <label class="check"
-              ><input type="checkbox" id="imgKeepAspect" checked /> Manter proporção</label
+              ><input type="checkbox" id="imgKeepAspect" checked /> <span data-i18n="img.keepAspect">Manter proporção</span></label
             >
-            <div id="sizeHint" class="hint">Proporção travada: a altura acompanha a largura.</div>
+            <div id="sizeHint" class="hint" data-i18n="img.aspect.locked">Proporção travada: a altura acompanha a largura.</div>
           </details>
 
           <details class="group">
-            <summary>Conversão</summary>
+            <summary data-i18n="img.convert">Conversão</summary>
             <div class="grid2">
-              <label class="field"
+              <label class="field" data-i18n="img.algorithm"
                 >Algoritmo
                 <select id="imgAlgorithm">
                   <option value="line">Line-to-line</option>
                   <option value="dither">Dithering (Floyd–Steinberg)</option>
-                  <option value="vector">Vetorizar (contorno / recorte)</option>
+                  <option value="vector" data-i18n="algo.vector">Vetorizar (contorno / recorte)</option>
                 </select>
               </label>
-              <label class="field raster-only"
+              <label class="field raster-only" data-i18n="img.lines"
                 >Linhas/mm <input type="number" id="imgLines" value="8" min="0.5" max="60" step="0.5"
               /></label>
-              <label class="field raster-only"
+              <label class="field raster-only" data-i18n="img.direction"
                 >Direção
                 <select id="imgDirection">
                   <option value="h">Horizontal</option>
                   <option value="v">Vertical</option>
                 </select>
               </label>
-              <label class="field raster-only"
+              <label class="field raster-only" data-i18n="img.dot"
                 >Ponto (mm) <input type="number" id="imgDot" value="0.08" min="0" step="0.01"
               /></label>
-              <label class="field vector-only"
+              <label class="field vector-only" data-i18n="img.simplify"
                 >Suavização (px) <input type="number" id="imgSimplify" value="0.5" min="0" step="0.1"
               /></label>
             </div>
-            <div id="algoHint" class="hint vector-only">
+            <div id="algoHint" class="hint vector-only" data-i18n="img.algoHint">
               Vetorizar gera só o contorno (recorte): o Limiar B&amp;W define o que é recortado, e o desenho vira linhas fechadas a potência máxima (S-max).
             </div>
-            <label class="field">Brilho <input type="range" id="imgBrightness" min="-1" max="1" step="0.05" value="0" /></label>
-            <label class="field">Contraste <input type="range" id="imgContrast" min="-1" max="1" step="0.05" value="0" /></label>
+            <label class="field" data-i18n="img.brightness">Brilho <input type="range" id="imgBrightness" min="-1" max="1" step="0.05" value="0" /></label>
+            <label class="field" data-i18n="img.contrast">Contraste <input type="range" id="imgContrast" min="-1" max="1" step="0.05" value="0" /></label>
             <label class="field">White clip <input type="range" id="imgWhiteClip" min="0" max="1" step="0.05" value="0" /></label>
-            <label class="field">Limiar B&amp;W <input type="range" id="imgThreshold" min="0" max="1" step="0.05" value="0.5" /></label>
-            <label class="check"><input type="checkbox" id="imgInvert" /> Inverter preto/branco</label>
-            <label class="check"><input type="checkbox" id="imgBW" /> Preto e branco (limiar)</label>
+            <label class="field" data-i18n="img.threshold">Limiar B&amp;W <input type="range" id="imgThreshold" min="0" max="1" step="0.05" value="0.5" /></label>
+            <label class="check"><input type="checkbox" id="imgInvert" /> <span data-i18n="img.invert">Inverter preto/branco</span></label>
+            <label class="check"><input type="checkbox" id="imgBW" /> <span data-i18n="img.bw">Preto e branco (limiar)</span></label>
           </details>
 
           <details class="group">
-            <summary>Perfil de material (RF-IMG-8)</summary>
-            <div class="hint">
+            <summary data-i18n="profile.material.title">Perfil de material (RF-IMG-8)</summary>
+            <div class="hint" data-i18n="profile.material.hint">
               Sugestões do manual da COMGO Z1 (§9). Aplicar o perfil preenche a
-              <b>Velocidade</b> e a <b>S-max</b> lá embaixo — confira o resultado
-              antes de gravar.
+              Velocidade e a S-max lá embaixo — confira o resultado antes de gravar.
             </div>
             <div class="grid2">
-              <label class="field"
+              <label class="field" data-i18n="profile.module"
                 >Módulo
                 <select id="profileModule">
                   <option value="3W">3W (Sculpfun C1)</option>
@@ -288,39 +307,39 @@
                   <option value="10W">10W</option>
                 </select>
               </label>
-              <label class="field"
+              <label class="field" data-i18n="profile.action"
                 >Ação
                 <select id="profileAction">
-                  <option value="engrave">Gravação</option>
-                  <option value="cut">Corte</option>
+                  <option value="engrave" data-i18n="action.engrave">Gravação</option>
+                  <option value="cut" data-i18n="action.cut">Corte</option>
                 </select>
               </label>
             </div>
-            <label class="field"
+            <label class="field" data-i18n="img.material"
               >Material
               <select id="profileMaterial">
-                <option value="">— escolher material —</option>
+                <option value="" data-i18n="profile.material.placeholder">— escolher material —</option>
               </select>
             </label>
-            <div id="profileHint" class="hint">
+            <div id="profileHint" class="hint" data-i18n="profile.material.choose">
               Escolha um material para ver a recomendação do manual.
             </div>
           </details>
 
           <details class="group" open>
-            <summary>Gravação</summary>
+            <summary data-i18n="img.engrave">Gravação</summary>
             <div class="grid2">
-              <label class="field"
+              <label class="field" data-i18n="img.speed"
                 >Velocidade <input type="number" id="imgSpeed" value="1000" min="1" step="50"
               /></label>
-              <label class="field"
+              <label class="field" data-i18n="img.passes"
                 >Passadas <input type="number" id="imgPasses" value="1" min="1" max="99" step="1"
               /></label>
-              <label class="field"
+              <label class="field" data-i18n="img.mode"
                 >Modo
                 <select id="imgMode">
-                  <option value="M4">M4 (dinâmico)</option>
-                  <option value="M3">M3 (constante)</option>
+                  <option value="M4" data-i18n="mode.M4">M4 (dinâmico)</option>
+                  <option value="M3" data-i18n="mode.M3">M3 (constante)</option>
                 </select>
               </label>
               <label class="field">S-min <input type="number" id="imgSmin" value="0" min="0" max="32767" step="1" /></label>
@@ -328,46 +347,67 @@
             </div>
           </details>
 
-          <button type="button" id="imgGenerate" class="primary" disabled title="Escolha uma imagem primeiro">
+          <button
+            type="button"
+            id="imgGenerate"
+            class="primary"
+            disabled
+            title="Escolha uma imagem primeiro"
+            data-i18n-title="img.generate.disabled"
+            data-i18n="img.generate"
+          >
             Gerar G-code
           </button>
-          <button type="button" id="imgSave" disabled title="Gere o G-code primeiro">Salvar .gcode</button>
+          <button
+            type="button"
+            id="imgSave"
+            disabled
+            title="Gere o G-code primeiro"
+            data-i18n-title="img.save.disabled"
+            data-i18n="img.save"
+          >Salvar .gcode</button>
           <div id="imgStats" class="file-name"></div>
         </details>
         </div>
 
         <div class="tab-panel" data-panel="run">
         <details class="card" open id="cardExecution">
-          <summary>Execução</summary>
-          <button type="button" id="fileOpen">Abrir G-code…</button>
-          <div id="fileInfo" class="file-name">Nenhum arquivo carregado</div>
+          <summary data-i18n="run.title">Execução</summary>
+          <button type="button" id="fileOpen" data-i18n="file.open">Abrir G-code…</button>
+          <div id="fileInfo" class="file-name" data-i18n="file.none">Nenhum arquivo carregado</div>
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
-            <button type="button" id="playBtn" disabled>▶ Iniciar</button>
-            <button type="button" id="pauseBtn" disabled>⏸ Pausar</button>
+            <button type="button" id="playBtn" disabled data-i18n="run.play">▶ Iniciar</button>
+            <button type="button" id="pauseBtn" disabled data-i18n="run.pause">⏸ Pausar</button>
           </div>
-          <button type="button" id="stopBtn" class="danger" disabled>⏹ Parar / Emergência</button>
+          <button type="button" id="stopBtn" class="danger" disabled data-i18n="run.stop">⏹ Parar / Emergência</button>
           <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
 
           <details class="group" id="resumeGroup">
-            <summary>Retomada (RF-GC-7)</summary>
-            <div id="resumeInfo" class="hint">
+            <summary data-i18n="resume.title">Retomada (RF-GC-7)</summary>
+            <div id="resumeInfo" class="hint" data-i18n="resume.hint">
               Interrompa um job para ver o ponto de retomada. Ao continuar, o app
               reafirma as unidades, distância, offsets e o laser antes da linha.
             </div>
             <div class="row">
-              <label class="field"
+              <label class="field" data-i18n="resume.line"
                 >Linha <input type="number" id="resumeLine" min="0" value="0" step="1"
               /></label>
-              <label class="field"
+              <label class="field" data-i18n="resume.back"
                 >Voltar <input type="number" id="resumeBack" min="0" max="999" value="10" step="1"
               /></label>
             </div>
             <div class="row">
-              <button type="button" id="resumeSuggest" title="Sugere done − Voltar">
+              <button
+                type="button"
+                id="resumeSuggest"
+                title="Sugere done − Voltar"
+                data-i18n-title="resume.suggestTitle"
+                data-i18n="resume.suggest"
+              >
                 Sugerir (N antes)
               </button>
-              <button type="button" id="resumeFrom" class="primary" disabled>
+              <button type="button" id="resumeFrom" class="primary" disabled data-i18n="resume.start">
                 ▶ Retomar daqui
               </button>
             </div>
@@ -377,21 +417,21 @@
 
         <div class="tab-panel" data-panel="macros">
         <details class="card advanced" id="cardMacros">
-          <summary>Macros (RF-MAC-1)</summary>
+          <summary data-i18n="macro.title">Macros (RF-MAC-1)</summary>
           <div id="macroButtons" class="macro-buttons"></div>
-          <div id="macroHint" class="hint">
+          <div id="macroHint" class="hint" data-i18n="macro.hint">
             Conecte-se para usar as macros. Os comandos são enfileirados um a um.
           </div>
           <details class="group" id="macroManage">
-            <summary>Gerenciar macros (importar/exportar)</summary>
+            <summary data-i18n="macro.manage">Gerenciar macros (importar/exportar)</summary>
             <div id="macroEditor" class="macro-editor"></div>
             <div class="row">
-              <button type="button" id="macroAdd">Adicionar</button>
-              <button type="button" id="macroReset">Restaurar padrão</button>
+              <button type="button" id="macroAdd" data-i18n="macro.add">Adicionar</button>
+              <button type="button" id="macroReset" data-i18n="macro.reset">Restaurar padrão</button>
             </div>
             <div class="row">
-              <button type="button" id="macroImport">Importar…</button>
-              <button type="button" id="macroExport">Exportar…</button>
+              <button type="button" id="macroImport" data-i18n="nav.import">Importar…</button>
+              <button type="button" id="macroExport" data-i18n="nav.export">Exportar…</button>
             </div>
           </details>
         </details>
@@ -400,16 +440,22 @@
 
       <main class="main">
         <div class="statusbar">
-          <span id="stateBadge" class="badge">Desconectado</span>
+          <span id="stateBadge" class="badge" data-i18n="conn.disconnected">Desconectado</span>
           <div class="dro">
             <div class="axis"><b>X</b><span id="droX">—</span></div>
             <div class="axis"><b>Y</b><span id="droY">—</span></div>
             <div class="axis"><b>Z</b><span id="droZ">—</span></div>
           </div>
-          <div class="meta">Feed <span id="metaFeed">—</span> · S <span id="metaS">—</span></div>
-          <label class="meta units"
+          <div class="meta">
+            <span data-i18n="status.feed">Feed</span> <span id="metaFeed">—</span> · S <span id="metaS">—</span>
+          </div>
+          <label class="meta units" data-i18n="status.units"
             >Unidade
-            <select id="unitsSelect" title="Unidade de exibição (RF-APP-3)">
+            <select
+              id="unitsSelect"
+              title="Unidade de exibição (RF-APP-3)"
+              data-i18n-title="status.unitsTitle"
+            >
               <option value="mm">mm</option>
               <option value="in">in</option>
             </select>
@@ -420,14 +466,14 @@
 
         <div class="preview">
           <canvas id="previewCanvas"></canvas>
-          <div id="previewHint" class="preview-hint">
+          <div id="previewHint" class="preview-hint" data-i18n="preview.hint.image">
             Carregue uma imagem para preparar o arquivo de gravação
           </div>
           <div id="previewWarning" class="preview-warning hidden"></div>
           <div id="previewLegend" class="preview-legend hidden">
-            <span class="lg-swatch lg-cut"></span> Queima
-            <span class="lg-swatch lg-rapid"></span> Deslocamento
-            <span class="lg-tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
+            <span class="lg-swatch lg-cut"></span> <span data-i18n="preview.cut">Queima</span>
+            <span class="lg-swatch lg-rapid"></span> <span data-i18n="preview.rapid">Deslocamento</span>
+            <span class="lg-tip" data-i18n="preview.tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
           </div>
         </div>
 
@@ -437,21 +483,32 @@
             type="text"
             id="consoleInput"
             placeholder="Digite um comando GRBL e pressione Enter (ex.: $$, $G, G0 X0 Y0)"
+            data-i18n-placeholder="console.placeholder"
             autocomplete="off"
           />
         </div>
       </main>
+
+      <footer class="app-footer">
+        <span class="footer-brand">GRBL Studio</span>
+        <span class="footer-version" id="footerVersion">—</span>
+        <span class="footer-sep">·</span>
+        <span data-i18n="footer.by">Desenvolvido por</span>
+        <button type="button" id="footerLab" class="footer-link">WerneckLab</button>
+        <span class="spacer"></span>
+        <button type="button" id="aboutBtn" class="footer-btn" data-i18n="footer.about">Sobre</button>
+      </footer>
     </div>
 
     <div class="overlay hidden" id="frameOverlay">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="frameTitle">
         <header class="modal-head">
-          <h3 id="frameTitle">Posicionar a gravadora</h3>
-          <button type="button" id="frameClose">Fechar</button>
+          <h3 id="frameTitle" data-i18n="frame.title">Posicionar a gravadora</h3>
+          <button type="button" id="frameClose" data-i18n="nav.close">Fechar</button>
         </header>
-        <div class="hint">
+        <div class="hint" data-i18n="frame.hint">
           Use as setas para levar o laser até o ponto de origem da gravação. Depois clique em
-          <b>Desenhar contorno</b> para a máquina percorrer o retângulo da área (laser desligado).
+          Desenhar contorno para a máquina percorrer o retângulo da área (laser desligado).
         </div>
         <div class="jog-grid">
           <span></span>
@@ -465,26 +522,26 @@
           <span></span>
         </div>
         <div class="row">
-          <button type="button" id="frameSetOrigin">Definir origem aqui</button>
-          <button type="button" id="frameOrigin">Ir para origem (0,0)</button>
+          <button type="button" id="frameSetOrigin" data-i18n="frame.setOrigin">Definir origem aqui</button>
+          <button type="button" id="frameOrigin" data-i18n="frame.origin">Ir para origem (0,0)</button>
         </div>
         <div class="row">
-          <button type="button" id="frameOutline" class="primary">Desenhar contorno</button>
-          <button type="button" id="frameStart" class="primary">▶ Gravar</button>
+          <button type="button" id="frameOutline" class="primary" data-i18n="frame.outline">Desenhar contorno</button>
+          <button type="button" id="frameStart" class="primary" data-i18n="frame.start">▶ Gravar</button>
         </div>
         <div class="row">
-          <button type="button" id="frameCancel" class="danger">Cancelar</button>
+          <button type="button" id="frameCancel" class="danger" data-i18n="nav.cancel">Cancelar</button>
         </div>
         <div class="frame-panel">
-          <label class="field">
+          <label class="field" data-i18n="frame.power">
             Potência do contorno (%) <span id="framePowerValue">1 %</span>
             <input type="range" id="framePower" min="0" max="100" value="1" />
           </label>
-          <label class="field">
+          <label class="field" data-i18n="frame.speed">
             Velocidade de gravação (mm/min) <span id="frameSpeedValue">1000</span>
             <input type="range" id="frameSpeed" min="100" max="5000" step="50" value="1000" />
           </label>
-          <label class="field">
+          <label class="field" data-i18n="img.passes">
             Passadas
             <div class="row">
               <button type="button" id="framePassesMinus">−</button>
@@ -505,18 +562,19 @@
         aria-labelledby="settingsTitle"
       >
         <header class="modal-head">
-          <h3 id="settingsTitle">Configurações da máquina</h3>
-          <button type="button" id="settingsClose">Fechar</button>
+          <h3 id="settingsTitle" data-i18n="settings.title">Configurações da máquina</h3>
+          <button type="button" id="settingsClose" data-i18n="nav.close">Fechar</button>
         </header>
 
         <div class="modal-toolbar">
-          <button type="button" id="settingsRefresh" class="primary">
+          <button type="button" id="settingsRefresh" class="primary" data-i18n="settings.read">
             Ler $$
           </button>
           <input
             type="search"
             id="settingsFilter"
             placeholder="Filtrar por nome ou chave…"
+            data-i18n-placeholder="settings.filter"
           />
           <nav class="tabs">
             <button type="button" class="tab active" data-special="">$$</button>
@@ -532,6 +590,70 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="appearanceOverlay">
+      <div
+        class="modal appearance-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="appearanceTitle"
+      >
+        <header class="modal-head">
+          <h3 id="appearanceTitle" data-i18n="appearance.title">Aparência e idioma</h3>
+          <button type="button" id="appearanceClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="appearance-body">
+          <div>
+            <span class="appearance-label" data-i18n="appearance.language">Idioma</span>
+            <div class="lang-row" id="langRow"></div>
+          </div>
+          <div>
+            <span class="appearance-label" data-i18n="appearance.theme">Tema</span>
+            <div id="themeGroups"></div>
+          </div>
+          <div class="hint" data-i18n="appearance.hint">Tema e idioma são salvos nas preferências.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="aboutOverlay">
+      <div
+        class="modal about-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="aboutTitle"
+      >
+        <header class="modal-head">
+          <h3 id="aboutTitle" data-i18n="about.title">Sobre o GRBL Studio</h3>
+          <button type="button" id="aboutClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="about-body">
+          <div class="about-logo">GRBL</div>
+          <h2 class="about-name">GRBL Studio</h2>
+          <p class="about-version" id="aboutVersion">—</p>
+          <p class="about-desc" data-i18n="about.description">
+            Alternativa nativa Linux ao LaserGRBL para controlar gravadoras e
+            cortadoras laser com firmware GRBL.
+          </p>
+          <dl class="about-meta">
+            <dt data-i18n="about.license">Licença</dt>
+            <dd id="aboutLicense">MIT</dd>
+            <dt data-i18n="about.author">Autor</dt>
+            <dd id="aboutAuthor">—</dd>
+            <dt data-i18n="about.developedBy">Desenvolvido por</dt>
+            <dd><button type="button" id="aboutLab" class="text-link">WerneckLab</button></dd>
+            <dt data-i18n="about.repository">Repositório</dt>
+            <dd><button type="button" id="aboutRepo" class="text-link">GitHub</button></dd>
+          </dl>
+          <div class="about-actions">
+            <button type="button" id="aboutVisit" class="primary" data-i18n="about.visit">
+              Visitar lab.werneck.dev.br
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./i18n.js"></script>
     <script src="./materials.js"></script>
     <script src="./adjust.js"></script>
     <script src="./preview.js"></script>

@@ -1,0 +1,69 @@
+# GRBL Studio
+
+[![CI](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml)
+
+[Português](README.md) · **English** · [Español](README.es.md)
+
+GRBL Studio is a modern, native Linux alternative to LaserGRBL, built with
+Electron + TypeScript to control laser engravers/cutters running **GRBL 1.1**
+firmware.
+
+## Features
+
+- **Serial connection** to GRBL (USB) and **WiFi/TCP** (ESP8266/ESP32).
+- **Send-response G-code streaming**: the next line is only sent after the `ok`
+  — it respects the GRBL buffer and won't lock up the machine.
+- Manual **JOG** (X/Y/Z), Home, Set Origin, Unlock and Reset.
+- **Console** with the machine's real responses (`ok`, `error:`, `ALARM:`,
+  `[MSG:]`).
+- **2D preview** of the toolpath (rapids × burning), zoom/pan and progress
+  highlight.
+- Real-time **overrides** (feed, power and rapid movement).
+- **`$$` settings**: viewer/editor with contextual help, plus `$#`, `$I` and
+  `$G`.
+- **Image → G-code import**: PNG/JPG/BMP/GIF/WebP/AVIF with adjustments, raster
+  (line/dither) or vector tracing (outline/cut), material profiles.
+- **Basic Mode** with a 6-step wizard for beginners; a full Advanced mode.
+- **Macros** and custom buttons, plus job resume after an interruption.
+- **11 themes** (5 light, 4 dark, 2 high contrast) and a UI in **pt-BR, en and
+  es** (auto-detects the system language on first run).
+- **Accessibility and performance**: budgets of ≤ 1.5 s startup, ≤ 200 MB RAM,
+  0.001 mm DRO (see `docs/DESIGN.md`).
+
+## Installation
+
+```bash
+cd "GRBL Studio"
+npm install
+npm run build
+npm start
+# In a container/sandbox-less environment:
+npx electron --no-sandbox .
+```
+
+On Linux, serial port access may require the `dialout` group — see
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Development
+
+- Tests: `npm test` (Vitest)
+- Lint/format: `npm run lint` (Biome)
+- Type-check: `npm run typecheck`
+- Smoke (headless): `GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .`
+- Full guide: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+
+## Documentation
+
+Full index in [`docs/README.md`](docs/README.md) (in Portuguese).
+
+- [Product Spec (requirements)](docs/PRODUCT_SPEC.md)
+- [Action Plan](docs/PLANO_DE_ACAO.md)
+- [Design / UI (Fluent · Win11)](docs/DESIGN.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development](docs/DEVELOPMENT.md)
+- [LaserGRBL comparison](docs/FEATURES_COMPARISON.md)
+- [Roadmap](docs/ROADMAP.md)
+
+## License
+
+[MIT](LICENSE) © 2026 Vinicius Werneck

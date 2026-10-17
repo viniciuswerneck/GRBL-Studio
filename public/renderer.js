@@ -6,6 +6,57 @@
 const $ = (id) => document.getElementById(id);
 const sidebar = document.querySelector('.sidebar');
 
+// ------------------------------------------------ i18n e aparência (RF-APP-1/2)
+
+// Catálogo i18n gerado por `npm run build:i18n` (public/i18n.js → GRBL_I18N).
+const I18N = window.GRBL_I18N;
+const t = (key, params) => (I18N ? I18N.t(key, params) : key);
+const hasKey = (key) => (I18N ? I18N.hasKey(key) : false);
+const slugify = (value) => (I18N ? I18N.slugify(value) : String(value));
+const THEMES = I18N ? I18N.THEMES : [];
+
+// Aplica idioma/tema do cache local antes de qualquer pintura (evita "flash").
+try {
+  const cachedLang = localStorage.getItem('grbl-lang');
+  if (cachedLang && I18N) I18N.setLocale(cachedLang);
+  const cachedTheme = localStorage.getItem('grbl-theme');
+  if (cachedTheme && THEMES.some((th) => th.id === cachedTheme)) {
+    document.documentElement.dataset.theme = cachedTheme;
+  }
+} catch {
+  /* localStorage indisponível */
+}
+
+/** Nome de máquina localizável — marcas/modelos são nomes próprios. */
+function machineName(prof) {
+  return prof && prof.id === 'generic' ? t('profile.generic') : prof.name;
+}
+
+/** Nome de material via `mat.<slug>` (o slug é estável nos 3 idiomas). */
+function materialName(name) {
+  const key = `mat.${slugify(name)}`;
+  return hasKey(key) ? t(key) : name;
+}
+
+/** Notas do manual via `mnote.<slug>`. */
+function materialNotes(notes) {
+  if (!notes) return '';
+  const key = `mnote.${slugify(notes)}`;
+  return hasKey(key) ? t(key) : notes;
+}
+
+/** Rótulo de macro padrão via `macro.def.<id>` (macros do usuário ficam como estão). */
+function macroLabel(macro) {
+  const key = `macro.def.${macro.id}`;
+  return hasKey(key) ? t(key) : macro.label;
+}
+
+/** Grupo de macro via `macrogroup.<slug>`. */
+function macroGroup(group) {
+  const key = `macrogroup.${slugify(group)}`;
+  return hasKey(key) ? t(key) : group;
+}
+
 const el = {
   portList: $('portList'),
   baudList: $('baudList'),
@@ -148,6 +199,23 @@ const el = {
   tcpFields: $('tcpFields'),
   tcpHost: $('tcpHost'),
   tcpPort: $('tcpPort'),
+  wizardBack: $('wizardBack'),
+  wizardImageInfo: $('wizardImageInfo'),
+  themeGroups: $('themeGroups'),
+  langRow: $('langRow'),
+  appearanceOverlay: $('appearanceOverlay'),
+  appearanceClose: $('appearanceClose'),
+  aboutOverlay: $('aboutOverlay'),
+  aboutClose: $('aboutClose'),
+  aboutBtn: $('aboutBtn'),
+  aboutVersion: $('aboutVersion'),
+  aboutLicense: $('aboutLicense'),
+  aboutAuthor: $('aboutAuthor'),
+  aboutLab: $('aboutLab'),
+  aboutRepo: $('aboutRepo'),
+  aboutVisit: $('aboutVisit'),
+  footerVersion: $('footerVersion'),
+  footerLab: $('footerLab'),
 };
 
 const state = {
@@ -171,6 +239,8 @@ const state = {
   jobPreamble: 0,
   /** Última linha confirmada pelo GRBL, mapeada para o arquivo. */
   doneFile: 0,
+  /** Chave/params do rótulo do arquivo atual (para repor ao trocar de idioma). */
+  fileInfoText: null,
 };
 
 // ------------------------------------------------------------------ console
@@ -229,14 +299,16 @@ function setConnection(conn) {
           ? ' error'
           : '');
   const labels = {
-    disconnected: 'Desconectado',
-    connecting: 'Conectando…',
-    connected: 'Conectado',
-    error: 'Erro de conexão',
+    disconnected: t('conn.disconnected'),
+    connecting: t('conn.connecting'),
+    connected: t('conn.connected'),
+    error: t('conn.error'),
   };
   el.connText.textContent = labels[conn] ?? conn;
   el.connectBtn.textContent =
-    state.connected || conn === 'connecting' ? 'Desconectar' : 'Conectar';
+    state.connected || conn === 'connecting'
+      ? t('conn.disconnect')
+      : t('conn.connect');
   el.connectBtn.classList.toggle(
     'primary',
     !state.connected && conn !== 'connecting',
@@ -286,8 +358,8 @@ function openFrameModal() {
   el.frameOverlay.classList.remove('hidden');
   if (el.frameStatus) {
     el.frameStatus.textContent = state.connected
-      ? 'Máquina conectada. Posicione e desenhe o contorno para conferir.'
-      : 'Conecte a máquina para posicionar e desenhar o contorno.';
+      ? t('frame.status.connected')
+      : t('frame.status.disconnected');
   }
   // Sincroniza potência/velocidade com os parâmetros da imagem.
   if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
@@ -319,7 +391,7 @@ function closeFrameModal() {
 
 function frameJog(axis, sign) {
   if (!state.connected) {
-    appendLine('Conecte a máquina para usar o posicionamento.', 'error');
+    appendLine(t('err.connectForFrame'), 'error');
     return;
   }
   const step = Number(el.stepSelect ? el.stepSelect.value : 5) || 5;
@@ -348,8 +420,7 @@ function drawFrameOutline() {
     'M5',
   ];
   for (const line of lines) window.grbl.writeLine(line);
-  if (el.frameStatus)
-    el.frameStatus.textContent = 'Contorno enviado (laser desligado).';
+  if (el.frameStatus) el.frameStatus.textContent = t('frame.outline.done');
 }
 
 const MACHINE_PROFILES = [
@@ -615,7 +686,7 @@ function populateMachineProfiles() {
   for (const prof of MACHINE_PROFILES) {
     const opt = document.createElement('option');
     opt.value = prof.id;
-    opt.textContent = prof.name;
+    opt.textContent = machineName(prof);
     el.machineProfile.appendChild(opt);
   }
   if (current && MACHINE_PROFILES.some((p) => p.id === current)) {
@@ -639,8 +710,8 @@ function applyMachineProfile(profile) {
   if (el.homeBtn) {
     el.homeBtn.disabled = !prof.homing;
     el.homeBtn.title = prof.homing
-      ? 'Homing da máquina (requer fim de curso)'
-      : `${prof.name}: sem homing de fábrica — use Definir origem`;
+      ? t('jog.home.title')
+      : t('jog.home.noHoming', { name: machineName(prof) });
   }
   if (state.connected) {
     for (const [code, value] of Object.entries(prof.settings)) {
@@ -667,14 +738,18 @@ function updateWizard() {
   }
 
   const titles = [
-    'Conectar',
-    'Escolher imagem',
-    'Tamanho, tipo e material',
-    'Gerar G-code',
-    'Posicionar',
-    'Gravar',
+    t('conn.connect'),
+    t('img.choose'),
+    t('wizard.paramsTitle'),
+    t('img.generate'),
+    t('frame.position'),
+    t('frame.engrave'),
   ];
-  el.wizardTitle.textContent = `Passo ${wizardStep} de 6 — ${titles[wizardStep - 1]}`;
+  el.wizardTitle.textContent = t('wizard.title', {
+    n: wizardStep,
+    total: 6,
+    title: titles[wizardStep - 1],
+  });
 
   // Mostra só o painel do passo atual.
   document.querySelectorAll('.wizard-step').forEach((panel) => {
@@ -686,30 +761,29 @@ function updateWizard() {
   if (el.wizardStatus) {
     if (wizardStep === 1) {
       el.wizardStatus.textContent = state.connected
-        ? 'Conectado. Clique em Próximo.'
-        : 'Conecte a gravadora.';
+        ? t('wizard.connected')
+        : t('wizard.connect');
     } else if (wizardStep === 2) {
       el.wizardStatus.textContent = imageState?.loaded
-        ? `${imageState.loaded.name} carregada. Clique em Próximo.`
-        : 'Escolha uma imagem.';
+        ? t('wizard.imageLoaded', { name: imageState.loaded.name })
+        : t('wizard.chooseImage');
     } else if (wizardStep === 3) {
-      el.wizardStatus.textContent = 'Defina o tamanho, o tipo e o material.';
+      el.wizardStatus.textContent = t('wizard.defineParams');
     } else if (wizardStep === 4) {
       el.wizardStatus.textContent = state.lines?.length
-        ? 'G-code pronto. Clique em Próximo.'
-        : 'Clique em Gerar G-code.';
+        ? t('wizard.gcodeReady')
+        : t('wizard.clickGenerate');
     } else if (wizardStep === 5) {
-      el.wizardStatus.textContent =
-        'Posicione o laser e use o contorno fraco (não queima).';
+      el.wizardStatus.textContent = t('wizard.positionHint');
     } else {
-      el.wizardStatus.textContent = 'Confira tudo e clique em Gravar.';
+      el.wizardStatus.textContent = t('wizard.check');
     }
 
     // Info da imagem no passo 2.
     if (el.wizardImageInfo) {
       el.wizardImageInfo.textContent = imageState?.loaded
         ? imageState.loaded.name
-        : 'Nenhuma imagem carregada';
+        : t('img.none');
     }
   }
 
@@ -721,7 +795,8 @@ function updateWizard() {
     else if (wizardStep === 4) canNext = Boolean(state.lines?.length);
     else canNext = true;
     el.wizardNext.disabled = !canNext;
-    el.wizardNext.textContent = wizardStep < 6 ? 'Próximo' : 'Concluir';
+    el.wizardNext.textContent =
+      wizardStep < 6 ? t('wizard.next') : t('wizard.finish');
   }
   if (el.wizardBack) el.wizardBack.disabled = wizardStep <= 1;
 }
@@ -750,32 +825,30 @@ function updateControls() {
 
   el.playBtn.disabled = !conn || !hasFile || !idle;
   el.pauseBtn.disabled = !(running || paused);
-  el.pauseBtn.textContent = paused ? '▶ Retomar' : '⏸ Pausar';
+  el.pauseBtn.textContent = paused ? t('run.resume') : t('run.pause');
   el.stopBtn.disabled = !(running || paused);
 
   // Explica por que "Iniciar" está apagado (a dúvida mais comum da UI).
   const lines = state.lines.length;
   let hint;
   if (!hasFile && !conn) {
-    hint =
-      'Gere o G-code (Imagem → G-code) ou abra um .gcode e conecte a máquina para enviar.';
+    hint = t('run.hint.noFileNoConn');
   } else if (!hasFile) {
-    hint =
-      'Nenhum G-code carregado: gere um em “Imagem → G-code” ou abra um arquivo .gcode.';
+    hint = t('run.hint.noFile');
   } else if (!conn) {
-    hint = `G-code pronto (${lines} linhas). Conecte a máquina em “Serial” para enviar.`;
+    hint = t('run.hint.readyNoConn', { lines });
   } else if (running) {
-    hint = 'Enviando para a máquina…';
+    hint = t('run.hint.sending');
   } else {
-    hint = `Pronto para enviar (${lines} linhas). Clique em ▶ Iniciar.`;
+    hint = t('run.hint.ready', { lines });
   }
   el.runHint.textContent = hint;
   el.runHint.classList.toggle('attention', hasFile && !conn);
 
   el.playBtn.title = !hasFile
-    ? 'Nenhum G-code carregado'
+    ? t('run.noGcode')
     : !conn
-      ? 'Conecte a máquina para enviar'
+      ? t('conn.connectFirst')
       : '';
 
   for (const b of [
@@ -810,7 +883,7 @@ async function refreshPorts() {
   try {
     ports = await window.grbl.listPorts();
   } catch (err) {
-    appendLine(`Falha ao listar portas: ${err.message}`, 'error');
+    appendLine(t('err.listPorts', { msg: err.message }), 'error');
     return;
   }
   // Placas laser aparecem como ttyUSB* (CH340/CP2102) ou ttyACM* (Arduino).
@@ -819,7 +892,7 @@ async function refreshPorts() {
   if (!ports.length) {
     const opt = document.createElement('option');
     opt.value = '';
-    opt.textContent = 'Nenhuma porta';
+    opt.textContent = t('port.none');
     el.portList.appendChild(opt);
     return;
   }
@@ -865,10 +938,6 @@ if (el.machineProfile) {
 el.transportKind.addEventListener('change', () => {
   applyTransportVisibility();
 
-  // Modo Básico / Avançado.
-  const mode = state.prefs.mode === 'basic' ? 'basic' : 'advanced';
-  applyMode(mode);
-
   persistPrefs({
     transport: el.transportKind.value === 'tcp' ? 'tcp' : 'serial',
   });
@@ -894,7 +963,7 @@ function connectionOptions() {
  */
 async function tryConnect(opts) {
   if (!opts) {
-    appendLine('Selecione uma porta serial.', 'error');
+    appendLine(t('conn.selectPort'), 'error');
     return;
   }
   setConnection('connecting');
@@ -909,7 +978,7 @@ async function tryConnect(opts) {
     loadSettings().catch(() => {});
   } catch (err) {
     setConnection('error');
-    appendLine(`Erro ao conectar: ${err.message}`, 'error');
+    appendLine(t('err.connect', { msg: err.message }), 'error');
   }
 }
 
@@ -997,14 +1066,14 @@ el.fileOpen.addEventListener('click', async () => {
   try {
     opened = await window.grbl.openGcode();
   } catch (err) {
-    appendLine(`Falha ao abrir o arquivo: ${err.message}`, 'error');
+    appendLine(t('err.openFile', { msg: err.message }), 'error');
     return;
   }
   if (!opened) return;
 
   applyJobLines(opened.name, opened.text);
   appendLine(
-    `Arquivo carregado: ${opened.name} (${state.lines.length} linhas)`,
+    t('file.loaded', { name: opened.name, lines: state.lines.length }),
     'ok',
   );
 });
@@ -1017,7 +1086,11 @@ function applyJobLines(name, text) {
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
-  el.fileInfo.textContent = `${name} — ${state.lines.length} linhas`;
+  state.fileInfoText = {
+    key: 'file.info',
+    params: { name, lines: state.lines.length },
+  };
+  renderFileInfo();
   sidebar.classList.add('has-gcode');
   updateWorkflow();
   // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
@@ -1064,14 +1137,15 @@ function updateResumeInfo() {
   const total = state.lines.length;
   const done = Math.min(state.doneFile, total);
   if (done > 0 && done < total) {
-    el.resumeInfo.textContent =
-      `Interrompido na linha ${done} de ${total}. ` +
-      `Sugestão: ${suggestedStart(done)}.`;
+    el.resumeInfo.textContent = t('resume.interrupted', {
+      done,
+      total,
+      suggestion: suggestedStart(done),
+    });
   } else if (total > 0 && done >= total) {
-    el.resumeInfo.textContent = `Job concluído (${total} linhas).`;
+    el.resumeInfo.textContent = t('resume.done', { lines: total });
   } else {
-    el.resumeInfo.textContent =
-      'Interrompa um job para ver o ponto de retomada.';
+    el.resumeInfo.textContent = t('resume.idle');
   }
 }
 
@@ -1081,7 +1155,7 @@ el.resumeSuggest.addEventListener('click', () => {
 
 el.resumeFrom.addEventListener('click', () => {
   const index = Math.max(0, Number(el.resumeLine.value) || 0);
-  appendLine(`Retomando a partir da linha ${index}…`, 'ok');
+  appendLine(t('resume.resuming', { line: index }), 'ok');
   beginJob(index);
 });
 
@@ -1107,6 +1181,9 @@ const imageState = {
   algorithm: null,
   busy: false,
   preview: null, // { kind: 'image' | 'grid', ... }
+  error: null, // { title, detail } — reposto na troca de idioma
+  /** `true` quando `stats` veio de uma pré-visualização (não confirmada). */
+  statsPreview: false,
 };
 
 let gcodeWorker = null;
@@ -1120,13 +1197,13 @@ function ensureWorker() {
   try {
     gcodeWorker = new Worker('./gcode.worker.js');
   } catch (err) {
-    appendLine(`Worker de imagem indisponível: ${err.message}`, 'error');
+    appendLine(t('err.worker', { msg: err.message }), 'error');
     return null;
   }
   gcodeWorker.onmessage = onConvertResult;
   gcodeWorker.onerror = (e) => {
     appendLine(
-      `Erro no worker de imagem: ${e.message || 'desconhecido'}`,
+      t('err.workerUnknown', { msg: e.message || t('err.unknown') }),
       'error',
     );
     endConvert();
@@ -1137,10 +1214,10 @@ function ensureWorker() {
 function endConvert() {
   imageState.busy = false;
   el.imgGenerate.disabled = !imageState.loaded;
-  el.imgGenerate.textContent = 'Gerar G-code';
+  el.imgGenerate.textContent = t('img.generate');
   el.imgGenerate.title = imageState.loaded
-    ? 'Converte a imagem em G-code'
-    : 'Escolha uma imagem primeiro';
+    ? t('img.generate.title')
+    : t('img.generate.disabled');
 }
 
 function onConvertResult(ev) {
@@ -1149,8 +1226,8 @@ function onConvertResult(ev) {
   endConvert();
 
   if (!msg.ok) {
-    el.imgStats.textContent = `Falha: ${msg.error}`;
-    appendLine(`Falha ao gerar G-code: ${msg.error}`, 'error');
+    el.imgStats.textContent = t('img.statsFail', { msg: msg.error });
+    appendLine(t('err.generate', { msg: msg.error }), 'error');
     return;
   }
   if (convertMode === 'preview') {
@@ -1163,7 +1240,8 @@ function onConvertResult(ev) {
 function applyPreview(stats, grid, contourPaths) {
   imageState.stats = stats;
   imageState.grid = grid;
-  el.imgStats.textContent = `${formatStats(stats)} (prévia)`;
+  imageState.statsPreview = true;
+  renderImageStats();
   imageState.preview = {
     kind: 'grid',
     grid,
@@ -1183,15 +1261,24 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
-  el.fileInfo.textContent = `${state.fileName} — ${state.lines.length} linhas (gerado de ${image.name})`;
+  state.fileInfoText = {
+    key: 'file.infoGenerated',
+    params: {
+      file: state.fileName,
+      lines: state.lines.length,
+      image: image.name,
+    },
+  };
+  renderFileInfo();
 
   imageState.stats = stats;
   imageState.grid = grid;
+  imageState.statsPreview = false;
   el.imgSave.disabled = state.lines.length === 0;
   el.imgSave.title = el.imgSave.disabled
-    ? 'Gere o G-code primeiro'
-    : 'Salva o G-code em disco';
-  el.imgStats.textContent = formatStats(stats);
+    ? t('img.save.disabled')
+    : t('img.save.title');
+  renderImageStats();
 
   imageState.preview = {
     kind: 'grid',
@@ -1204,8 +1291,13 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
   updateControls();
 
   appendLine(
-    `G-code gerado: ${state.lines.length} linhas, ${formatBytes(stats.bytes)}, ` +
-      `${stats.rows}×${stats.cols} amostras, ~${formatTime(stats.estimatedSec)}`,
+    t('gcode.summary', {
+      lines: state.lines.length,
+      size: formatBytes(stats.bytes),
+      rows: stats.rows,
+      cols: stats.cols,
+      time: formatTime(stats.estimatedSec),
+    }),
     'ok',
   );
 
@@ -1244,21 +1336,34 @@ function formatBytes(n) {
 function formatTime(sec) {
   if (!Number.isFinite(sec) || sec <= 0) return '—';
   const s = Math.round(sec);
-  if (s < 60) return `${s} s`;
+  if (s < 60) return t('time.sec', { s });
   const m = Math.floor(s / 60);
   const r = s % 60;
-  return r ? `${m} min ${r} s` : `${m} min`;
+  return r ? t('time.minSec', { m, r }) : t('time.min', { m });
 }
 
 function formatStats(stats) {
   const contours =
     typeof stats.contours === 'number' && stats.contours > 0
-      ? ` · ${stats.contours} contornos`
+      ? t('stats.contours', { count: stats.contours })
       : '';
   return (
-    `${stats.rows} linhas × ${stats.cols} amostras · ${stats.segments} segmentos · ` +
-    `${formatBytes(stats.bytes)} · ~${formatTime(stats.estimatedSec)}${contours}`
+    t('stats.format', {
+      rows: stats.rows,
+      cols: stats.cols,
+      segments: stats.segments,
+      size: formatBytes(stats.bytes),
+      time: formatTime(stats.estimatedSec),
+    }) + contours
   );
+}
+
+/** (Re)escreve as estatísticas da imagem no idioma atual (RF-APP-2). */
+function renderImageStats() {
+  if (!el.imgStats || !imageState.stats) return;
+  el.imgStats.textContent = imageState.statsPreview
+    ? `${formatStats(imageState.stats)} ${t('img.previewTag')}`
+    : formatStats(imageState.stats);
 }
 
 // --------------------------------------------------------------- importação
@@ -1268,7 +1373,7 @@ el.imageOpen.addEventListener('click', async () => {
   try {
     opened = await window.grbl.openImage();
   } catch (err) {
-    setImageError('Falha ao abrir a imagem', err.message);
+    setImageError(t('img.error.open'), err.message);
     return;
   }
   if (!opened) return;
@@ -1283,7 +1388,7 @@ async function openImageDialog() {
   try {
     opened = await window.grbl.openImage();
   } catch (err) {
-    setImageError('Falha ao abrir a imagem', err.message);
+    setImageError(t('img.error.open'), err.message);
     return;
   }
   if (!opened) return;
@@ -1310,11 +1415,12 @@ function cancelImage() {
   imageState.grid = null;
   imageState.preview = null;
   imageState.busy = false;
+  imageState.error = null;
+  imageState.statsPreview = false;
   const cardImage = document.getElementById('cardImage');
   if (cardImage) cardImage.classList.remove('has-image');
   sidebar.classList.remove('has-gcode');
-  el.imageInfo.textContent = 'Nenhuma imagem carregada';
-  el.imageInfo.classList.remove('error');
+  renderImageInfo();
   el.imgStats.textContent = '';
   el.imgGenerate.disabled = true;
   el.imgSave.disabled = true;
@@ -1323,8 +1429,8 @@ function cancelImage() {
 }
 
 function setImageError(title, detail) {
-  el.imageInfo.textContent = `${title}: ${detail}`;
-  el.imageInfo.classList.add('error');
+  imageState.error = { title, detail };
+  renderImageInfo();
   document.getElementById('cardImage').classList.remove('has-image');
   updateWorkflow();
   el.imgStats.textContent = '';
@@ -1342,7 +1448,10 @@ function loadImageBlob(name, blob) {
     const naturalH = img.naturalHeight;
     if (!naturalW || !naturalH) {
       URL.revokeObjectURL(url);
-      setImageError('Imagem inválida', `${name} não informa largura/altura.`);
+      setImageError(
+        t('img.error.invalid'),
+        t('img.error.invalidDetail', { name }),
+      );
       return;
     }
     const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(naturalW, naturalH));
@@ -1361,6 +1470,8 @@ function loadImageBlob(name, blob) {
       name,
       width: w,
       height: h,
+      naturalW,
+      naturalH,
       aspect: naturalH / naturalW,
       data: imageData.data,
     };
@@ -1373,19 +1484,15 @@ function loadImageBlob(name, blob) {
       height: h,
     };
 
-    const reduced =
-      w !== naturalW || h !== naturalH
-        ? ` (reduzida de ${naturalW}×${naturalH})`
-        : '';
-    el.imageInfo.textContent = `${name} — ${naturalW}×${naturalH}px${reduced}`;
+    imageState.error = null;
+    renderImageInfo();
     document.getElementById('cardImage').classList.add('has-image');
     updateWorkflow();
     updateWizard();
-    el.imageInfo.classList.remove('error');
     el.imgStats.textContent = '';
     el.imgSave.disabled = true;
     el.imgGenerate.disabled = false;
-    el.imgGenerate.title = 'Converte a imagem em G-code';
+    el.imgGenerate.title = t('img.generate.title');
     applySizeFromAspect('w');
     if (el.guideWidth) el.guideWidth.value = el.imgWidth.value;
     if (el.guideHeight) el.guideHeight.value = el.imgHeight.value;
@@ -1394,10 +1501,7 @@ function loadImageBlob(name, blob) {
   };
   img.onerror = () => {
     URL.revokeObjectURL(url);
-    setImageError(
-      'Formato não suportado',
-      `${name} não pôde ser decodificada. Use PNG, JPG, BMP, GIF, WebP ou AVIF.`,
-    );
+    setImageError(t('img.error.format'), t('img.error.formatDetail', { name }));
   };
   img.src = url;
 }
@@ -1489,8 +1593,8 @@ el.imgHeight.addEventListener('input', () => applySizeFromAspect('h'));
 /** Deixa explícito quando a altura está sendo derivada da largura (ou não). */
 function updateSizeHint() {
   el.sizeHint.textContent = el.imgKeepAspect.checked
-    ? 'Proporção travada: a altura acompanha a largura.'
-    : 'Proporção livre: largura e altura são independentes.';
+    ? t('img.aspect.locked')
+    : t('img.aspect.free');
 }
 
 el.imgKeepAspect.addEventListener('change', () => {
@@ -1570,29 +1674,31 @@ function readImageOptions() {
 /** Catálogo empacotado por esbuild em `public/materials.js` (fonte: shared/materials.ts). */
 const materials = window.GRBL_MATERIALS;
 
-/** Opção "vazio" no topo do select de material. */
-const MATERIAL_PLACEHOLDER = '— escolher material —';
-
 /** Preenche o select de material conforme módulo + ação escolhidos. */
 function populateMaterials() {
   if (!materials) return;
   const module = el.profileModule.value;
   const action = el.profileAction.value;
   const list = materials.profilesFor(module, action);
+  // Preserva a escolha ao repopular (ex.: troca de idioma); module/ação
+  // diferentes simplesmente não encontram o material e voltam ao placeholder.
+  const previous = el.profileMaterial.value;
 
   el.profileMaterial.replaceChildren();
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = MATERIAL_PLACEHOLDER;
+  placeholder.textContent = t('profile.material.placeholder');
   el.profileMaterial.appendChild(placeholder);
   for (const profile of list) {
     const option = document.createElement('option');
     option.value = profile.material;
-    option.textContent = profile.material;
+    option.textContent = materialName(profile.material);
     el.profileMaterial.appendChild(option);
   }
-  el.profileHint.textContent =
-    'Escolha um material para ver a recomendação do manual.';
+  if (previous && list.some((p) => p.material === previous)) {
+    el.profileMaterial.value = previous;
+  }
+  el.profileHint.textContent = t('profile.material.choose');
 }
 
 /**
@@ -1619,7 +1725,31 @@ function applyProfile() {
     el.frameSpeedValue.textContent = `${profile.speedMmMin} mm/min`;
   if (el.framePowerValue)
     el.framePowerValue.textContent = `${Math.round(profile.powerPercent)} %`;
-  el.profileHint.textContent = `${profile.powerPercent}% de potência (S-max ${sMax}) · ${profile.speedMmMin} mm/min · ${profile.notes}`;
+  renderProfileHint();
+}
+
+/**
+ * Só (re)escreve o texto de recomendação do perfil — sem tocar em
+ * velocidade/S-max (para repor o idioma sem reverter ajustes manuais).
+ */
+function renderProfileHint() {
+  const material = el.profileMaterial.value;
+  if (!materials || !material) {
+    el.profileHint.textContent = t('profile.material.choose');
+    return;
+  }
+  const profile = materials.findProfile(
+    el.profileModule.value,
+    el.profileAction.value,
+    material,
+  );
+  if (!profile) return;
+  el.profileHint.textContent = t('profile.material.applied', {
+    power: profile.powerPercent,
+    smax: materials.powerPercentToS(profile.powerPercent),
+    speed: profile.speedMmMin,
+    notes: materialNotes(profile.notes),
+  });
 }
 
 if (materials) {
@@ -1630,7 +1760,7 @@ if (materials) {
 } else {
   // Sem `public/materials.js` (build ausente): não deixa o campo parecer útil.
   el.profileMaterial.disabled = true;
-  el.profileHint.textContent = 'Perfis indisponíveis: rode `npm run build`.';
+  el.profileHint.textContent = t('profile.material.unavailable');
 }
 
 function generateGcode(commit = true) {
@@ -1645,7 +1775,7 @@ function generateGcode(commit = true) {
   imageState.algorithm = options.algorithm;
   imageState.busy = true;
   el.imgGenerate.disabled = true;
-  el.imgGenerate.textContent = 'Gerando…';
+  el.imgGenerate.textContent = t('img.generating');
 
   // Cópia própria para transferir sem tocar no buffer do preview.
   const buffer = image.data.slice().buffer;
@@ -1706,9 +1836,9 @@ el.imgSave.addEventListener('click', async () => {
       `${baseName(imageState.loaded.name)}.gcode`,
       `${state.lines.join('\n')}\n`,
     );
-    if (path) appendLine(`G-code salvo em ${path}`, 'ok');
+    if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
-    appendLine(`Falha ao salvar: ${err.message}`, 'error');
+    appendLine(t('err.save', { msg: err.message }), 'error');
   }
 });
 
@@ -1844,23 +1974,22 @@ function checkWorkArea() {
   const eps = 1e-6;
   const problems = [];
   if (bounds.xMin < -eps || bounds.yMin < -eps) {
-    problems.push('coordenadas negativas');
+    problems.push(t('preview.area.negative'));
   }
   if (bounds.xMax > wa.widthMm + eps) {
-    problems.push(`X até ${bounds.xMax.toFixed(1)} > $130`);
+    problems.push(t('preview.area.xMax', { value: bounds.xMax.toFixed(1) }));
   }
   if (bounds.yMax > wa.heightMm + eps) {
-    problems.push(`Y até ${bounds.yMax.toFixed(1)} > $131`);
+    problems.push(t('preview.area.yMax', { value: bounds.yMax.toFixed(1) }));
   }
   if (problems.length === 0) return;
-  el.previewWarning.textContent =
-    `⚠ O caminho excede a área configurada (${wa.widthMm}×${wa.heightMm} mm): ` +
-    `${problems.join(', ')}.`;
+  el.previewWarning.textContent = t('preview.warning.area', {
+    width: wa.widthMm,
+    height: wa.heightMm,
+    problems: problems.join(', '),
+  });
   el.previewWarning.classList.remove('hidden');
-  appendLine(
-    `Aviso: o caminho excede a área de trabalho (${problems.join(', ')}).`,
-    'error',
-  );
+  appendLine(t('err.areaExceeded', { problems: problems.join(', ') }), 'error');
 }
 
 function drawGcodePreview() {
@@ -1872,8 +2001,8 @@ function drawGcodePreview() {
   if (!prog || prog.moves.length === 0) {
     el.previewHint.classList.remove('hidden');
     el.previewHint.textContent = prog
-      ? 'Este G-code não tem movimentos para desenhar.'
-      : 'Abra um G-code ou inicie um job para ver o caminho.';
+      ? t('preview.hint.noMoves')
+      : t('preview.hint.empty');
     return;
   }
   el.previewHint.classList.add('hidden');
@@ -1984,8 +2113,7 @@ function renderPreview() {
 
   if (!preview) {
     el.previewHint.classList.remove('hidden');
-    el.previewHint.textContent =
-      'Carregue uma imagem para preparar o arquivo de gravação';
+    el.previewHint.textContent = t('preview.hint.image');
     const { ctx, rect } = previewContext();
     ctx.clearRect(0, 0, rect.width, rect.height);
     return;
@@ -2125,7 +2253,7 @@ el.consoleInput.addEventListener('keydown', (e) => {
   const cmd = el.consoleInput.value.trim();
   if (!cmd) return;
   if (!state.connected) {
-    appendLine('Não conectado.', 'error');
+    appendLine(t('conn.notConnected'), 'error');
     return;
   }
   window.grbl.writeLine(cmd);
@@ -2135,23 +2263,296 @@ el.consoleInput.addEventListener('keydown', (e) => {
   el.consoleInput.value = '';
 });
 
-// --------------------------------------------------------------- tema
+// ------------------------------------------------- tema, idioma e sobre (RF-APP-1/2)
 
+/** Aplica um tema (id validado) e sincroniza o picker. */
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
+  const id = THEMES.some((th) => th.id === theme) ? theme : 'dark';
+  document.documentElement.dataset.theme = id;
   try {
-    localStorage.setItem('grbl-theme', theme);
+    localStorage.setItem('grbl-theme', id);
   } catch {
     /* ignora */
   }
+  markActiveTheme();
+}
+
+/** Marca o tema ativo no grid de amostras. */
+function markActiveTheme() {
+  if (!el.themeGroups) return;
+  const active = document.documentElement.dataset.theme;
+  for (const btn of el.themeGroups.querySelectorAll('.theme-swatch-btn')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.theme === active));
+  }
+}
+
+/** Constrói o grid de temas agrupado por variante (claro/escuro/HC). */
+function buildThemePicker() {
+  if (!el.themeGroups) return;
+  el.themeGroups.replaceChildren();
+  const groups = [
+    ['light', 'theme.group.light'],
+    ['dark', 'theme.group.dark'],
+    ['hc', 'theme.group.hc'],
+  ];
+  for (const [variant, groupKey] of groups) {
+    const list = I18N ? I18N.themesByVariant(variant) : [];
+    if (!list.length) continue;
+    const section = document.createElement('div');
+    section.className = 'theme-group';
+    const label = document.createElement('span');
+    label.className = 'theme-group-label';
+    label.textContent = t(groupKey);
+    section.appendChild(label);
+    const grid = document.createElement('div');
+    grid.className = 'theme-grid';
+    for (const theme of list) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'theme-swatch-btn';
+      btn.dataset.theme = theme.id;
+      btn.title = t(theme.labelKey);
+      const swatch = document.createElement('span');
+      swatch.className = 'theme-swatch';
+      swatch.style.setProperty('--sw-bg', theme.swatch.bg);
+      swatch.style.setProperty('--sw-fg', theme.swatch.fg);
+      swatch.style.setProperty('--sw-accent', theme.swatch.accent);
+      const caption = document.createElement('span');
+      caption.className = 'theme-name';
+      caption.textContent = t(theme.labelKey);
+      btn.append(swatch, caption);
+      btn.addEventListener('click', () => {
+        applyTheme(theme.id);
+        persistPrefs({ theme: theme.id });
+      });
+      grid.appendChild(btn);
+    }
+    section.appendChild(grid);
+    el.themeGroups.appendChild(section);
+  }
+  markActiveTheme();
+}
+
+/** Marca o idioma ativo no picker. */
+function markActiveLang() {
+  if (!el.langRow || !I18N) return;
+  for (const btn of el.langRow.querySelectorAll('.lang-btn')) {
+    btn.setAttribute(
+      'aria-pressed',
+      String(btn.dataset.lang === I18N.getLocale()),
+    );
+  }
+}
+
+/** Constrói os botões de idioma (os nomes nunca são traduzidos). */
+function buildLangPicker() {
+  if (!el.langRow || !I18N) return;
+  el.langRow.replaceChildren();
+  for (const lang of I18N.LANGS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-btn';
+    btn.dataset.lang = lang;
+    btn.textContent = t(`lang.${lang}`);
+    btn.addEventListener('click', () => changeLang(lang));
+    el.langRow.appendChild(btn);
+  }
+  markActiveLang();
+}
+
+/** Troca o idioma e retraduz tudo (RF-APP-2). */
+function changeLang(lang) {
+  if (!I18N?.setLocale(lang)) return;
+  try {
+    localStorage.setItem('grbl-lang', lang);
+  } catch {
+    /* ignora */
+  }
+  document.documentElement.lang = lang;
+  I18N.applyDom();
+  refreshTexts();
+  buildThemePicker();
+  buildLangPicker();
+  persistPrefs({ lang });
+}
+
+/** (Re)desenha o rótulo do arquivo atual (abertura/geração/troca de idioma). */
+function renderFileInfo() {
+  if (!el.fileInfo) return;
+  el.fileInfo.textContent = state.fileInfoText
+    ? t(state.fileInfoText.key, state.fileInfoText.params)
+    : t('file.none');
+}
+
+/** (Re)desenha o rótulo da imagem atual (erro/limpeza/troca de idioma). */
+function renderImageInfo() {
+  if (!el.imageInfo) return;
+  if (imageState.error) {
+    el.imageInfo.textContent = `${imageState.error.title}: ${imageState.error.detail}`;
+    el.imageInfo.classList.add('error');
+    return;
+  }
+  el.imageInfo.classList.remove('error');
+  const img = imageState.loaded;
+  if (!img) {
+    el.imageInfo.textContent = t('img.none');
+    return;
+  }
+  const reduced =
+    img.width !== img.naturalW || img.height !== img.naturalH
+      ? t('img.reduced', { w: img.naturalW, h: img.naturalH })
+      : '';
+  el.imageInfo.textContent = `${img.name} — ${img.naturalW}×${img.naturalH}px${reduced}`;
+}
+
+/** Reaplica os textos dinâmicos depois de uma troca de idioma. */
+function refreshTexts() {
+  // O rótulo do modo Básico/Avançado depende do estado, não só do idioma;
+  // não reinicia o passo do wizard (só retraduz).
+  applyMode(document.body.classList.contains('basic') ? 'basic' : 'advanced', {
+    resetWizard: false,
+  });
+  setConnection(state.connection);
+  updateControls();
+  updateWizard();
+  updateSizeHint();
+  updateResumeInfo();
+  renderFileInfo();
+  renderImageInfo();
+  renderImageStats();
+  populateMachineProfiles();
+  updateProfileTexts();
+  if (materials) {
+    populateMaterials();
+    renderProfileHint();
+  }
+  populateGuideMaterials();
+  renderMacroButtons();
+  renderMacroEditor();
+  if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
+    openFrameModal();
+  }
+  renderPreview();
+}
+
+/** Atualiza o título do botão Home e o hint do perfil conforme a máquina atual. */
+function updateProfileTexts() {
+  const prof =
+    MACHINE_PROFILES.find((p) => p.id === el.machineProfile?.value) ||
+    MACHINE_PROFILES[0];
+  if (prof && el.homeBtn) {
+    el.homeBtn.title = prof.homing
+      ? t('jog.home.title')
+      : t('jog.home.noHoming', { name: machineName(prof) });
+  }
+}
+
+/** Metadados do app (preenchidos pelo IPC `app:info` — RF-APP-6/7). */
+let APP_INFO = {};
+
+/** Preenche versão/autor/links do rodapé e do modal Sobre. */
+function applyAppInfo(info) {
+  APP_INFO = { ...APP_INFO, ...(info || {}) };
+  const short = APP_INFO.version ? `v${APP_INFO.version}` : '—';
+  if (el.footerVersion) el.footerVersion.textContent = short;
+  if (el.aboutVersion) {
+    el.aboutVersion.textContent = APP_INFO.version
+      ? `${t('about.version')} ${APP_INFO.version}`
+      : '—';
+  }
+  if (el.aboutLicense) el.aboutLicense.textContent = APP_INFO.license || 'MIT';
+  if (el.aboutAuthor) el.aboutAuthor.textContent = APP_INFO.author || '—';
+}
+
+/** Abre um link externo pelo main (whitelist em `shared/appInfo.ts`). */
+async function openExternal(url) {
+  try {
+    await window.grbl.openExternal(url);
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
+function openOverlay(node) {
+  if (node) node.classList.remove('hidden');
+}
+function closeOverlay(node) {
+  if (node) node.classList.add('hidden');
 }
 
 el.themeBtn.addEventListener('click', () => {
-  const next =
-    document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-  applyTheme(next);
-  persistPrefs({ theme: next });
+  buildThemePicker();
+  buildLangPicker();
+  openOverlay(el.appearanceOverlay);
 });
+if (el.appearanceClose)
+  el.appearanceClose.addEventListener('click', () =>
+    closeOverlay(el.appearanceOverlay),
+  );
+
+if (el.aboutBtn)
+  el.aboutBtn.addEventListener('click', () => openOverlay(el.aboutOverlay));
+if (el.aboutClose)
+  el.aboutClose.addEventListener('click', () => closeOverlay(el.aboutOverlay));
+if (el.footerLab)
+  el.footerLab.addEventListener('click', (e) => {
+    e.preventDefault();
+    openExternal(APP_INFO.url || 'https://lab.werneck.dev.br/');
+  });
+if (el.aboutLab)
+  el.aboutLab.addEventListener('click', (e) => {
+    e.preventDefault();
+    openExternal(APP_INFO.url || 'https://lab.werneck.dev.br/');
+  });
+if (el.aboutRepo)
+  el.aboutRepo.addEventListener('click', (e) => {
+    e.preventDefault();
+    openExternal(
+      APP_INFO.repository || 'https://github.com/viniciuswerneck/GRBL-Studio',
+    );
+  });
+if (el.aboutVisit)
+  el.aboutVisit.addEventListener('click', () =>
+    openExternal(APP_INFO.url || 'https://lab.werneck.dev.br/'),
+  );
+
+// Fecha overlays com Esc ou clique fora do modal.
+for (const overlay of [
+  el.appearanceOverlay,
+  el.aboutOverlay,
+  el.settingsOverlay,
+  el.frameOverlay,
+]) {
+  if (!overlay) continue;
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  for (const overlay of [el.appearanceOverlay, el.aboutOverlay]) {
+    if (overlay && !overlay.classList.contains('hidden'))
+      overlay.classList.add('hidden');
+  }
+});
+
+// Eventos vindos do menu nativo (RF-APP-1/2).
+if (window.grbl.onAbout)
+  window.grbl.onAbout(() => openOverlay(el.aboutOverlay));
+if (window.grbl.onTheme)
+  window.grbl.onTheme((theme) => {
+    applyTheme(theme);
+    markActiveTheme();
+    // Persiste como o picker, para o estado sobreviver ao próximo boot.
+    persistPrefs({ theme });
+  });
+if (window.grbl.onLang) window.grbl.onLang((lang) => changeLang(lang));
+if (window.grbl.onAction)
+  window.grbl.onAction((name) => {
+    if (name === 'open-gcode') el.fileOpen.click();
+    else if (name === 'open-image') el.imageOpen.click();
+    else if (name === 'appearance') el.themeBtn.click();
+  });
 
 // ----------------------------------------------------- unidades (RF-APP-3)
 
@@ -2185,7 +2586,7 @@ async function persistPrefs(patch) {
   try {
     state.prefs = await window.grbl.setPrefs(patch);
   } catch (err) {
-    console.warn('Falha ao salvar preferências:', err);
+    console.warn(t('err.prefix', { msg: err.message }), err);
   }
 }
 
@@ -2194,14 +2595,26 @@ async function loadPrefs() {
   try {
     state.prefs = (await window.grbl.getPrefs()) || {};
   } catch (err) {
-    console.warn('Falha ao ler preferências:', err);
+    console.warn(t('err.prefix', { msg: err.message }), err);
     state.prefs = {};
   }
 
-  let theme = state.prefs.theme;
-  if (theme !== 'light' && theme !== 'dark') {
+  if (state.prefs.lang && I18N) {
+    I18N.setLocale(state.prefs.lang);
+    document.documentElement.lang = state.prefs.lang;
     try {
-      theme = localStorage.getItem('grbl-theme') === 'light' ? 'light' : 'dark';
+      localStorage.setItem('grbl-lang', state.prefs.lang);
+    } catch {
+      /* ignora */
+    }
+  }
+
+  let theme = state.prefs.theme;
+  const themeValid = THEMES.some((th) => th.id === theme);
+  if (!themeValid) {
+    try {
+      theme = localStorage.getItem('grbl-theme');
+      if (!THEMES.some((th) => th.id === theme)) theme = 'dark';
     } catch {
       theme = 'dark';
     }
@@ -2210,6 +2623,9 @@ async function loadPrefs() {
 
   state.units = state.prefs.units === 'in' ? 'in' : 'mm';
   el.unitsSelect.value = state.units;
+
+  // Modo Básico / Avançado persistido (RF-APP-2 / §15).
+  applyMode(state.prefs.mode === 'basic' ? 'basic' : 'advanced');
 
   if (state.prefs.baud) {
     const baud = String(state.prefs.baud);
@@ -2263,8 +2679,7 @@ function openSettings() {
   el.settingsOverlay.classList.remove('hidden');
   el.settingsFilter.value = '';
   if (!state.connected) {
-    el.settingsStatus.textContent =
-      'Conecte-se à máquina para ler as configurações.';
+    el.settingsStatus.textContent = t('settings.connectFirst');
     return;
   }
   if (settingsTab === '') loadSettings();
@@ -2288,7 +2703,7 @@ function setSettingsTab(mode) {
   el.settingsRefresh.classList.toggle('hidden', special);
   el.settingsStatus.textContent = '';
   if (!state.connected) {
-    el.settingsStatus.textContent = 'Conecte-se à máquina para consultar.';
+    el.settingsStatus.textContent = t('settings.connectQuery');
     return;
   }
   if (special) runSpecial(mode);
@@ -2296,30 +2711,34 @@ function setSettingsTab(mode) {
 }
 
 async function runSpecial(mode) {
-  el.settingsStatus.textContent = 'Consultando…';
+  el.settingsStatus.textContent = t('settings.querying');
   try {
     const lines = await window.grbl.querySpecial(mode);
     el.specialOutput.textContent = lines.join('\n');
-    el.settingsStatus.textContent = lines.length ? '' : 'Sem resposta.';
+    el.settingsStatus.textContent = lines.length
+      ? ''
+      : t('settings.noResponse');
   } catch (err) {
     el.specialOutput.textContent = '';
-    el.settingsStatus.textContent = `Falha: ${err.message}`;
+    el.settingsStatus.textContent = t('settings.fail', { msg: err.message });
   }
 }
 
 /** Lê `$$` do GRBL, atualiza a área de trabalho e desenha a tabela. */
 async function loadSettings() {
-  el.settingsStatus.textContent = 'Lendo $$…';
+  el.settingsStatus.textContent = t('settings.reading');
   el.settingsRefresh.disabled = true;
   try {
     settingRows = await window.grbl.readSettings();
     applyWorkAreaFromSettings();
     if (settingsTab === '') renderSettings();
     el.settingsStatus.textContent = settingRows.length
-      ? `${settingRows.length} parâmetros lidos.`
-      : 'A máquina não devolveu configurações.';
+      ? t('settings.count', { count: settingRows.length })
+      : t('settings.empty');
   } catch (err) {
-    el.settingsStatus.textContent = `Falha ao ler $$: ${err.message}`;
+    el.settingsStatus.textContent = t('settings.readFail', {
+      msg: err.message,
+    });
   } finally {
     el.settingsRefresh.disabled = false;
   }
@@ -2342,7 +2761,7 @@ function renderSettings() {
   for (const row of settingRows) {
     const haystack = `${row.name} $${row.code}`.toLowerCase();
     if (filter && !haystack.includes(filter)) continue;
-    const group = row.group || 'Outros';
+    const group = row.group || t('settings.groupOther');
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(row);
   }
@@ -2350,7 +2769,7 @@ function renderSettings() {
   if (groups.size === 0) {
     const empty = document.createElement('div');
     empty.className = 'hint';
-    empty.textContent = 'Nenhum parâmetro corresponde ao filtro.';
+    empty.textContent = t('settings.filterEmpty');
     el.settingsList.appendChild(empty);
     return;
   }
@@ -2377,10 +2796,11 @@ function settingNode(row) {
   main.className = 'setting-main';
   const name = document.createElement('div');
   name.className = 'setting-name';
-  name.textContent = row.name;
+  name.textContent =
+    row.name || t('settings.fallbackName', { key: `$${row.code}` });
   const help = document.createElement('div');
   help.className = 'setting-help';
-  help.textContent = row.help;
+  help.textContent = row.help || t('settings.fallbackHelp');
   main.append(name, help);
 
   wrap.append(key, main, settingEditor(row));
@@ -2395,7 +2815,10 @@ function settingEditor(row) {
   input.type = 'text';
   input.value = row.value;
   input.spellcheck = false;
-  input.setAttribute('aria-label', `Valor de $${row.code}`);
+  input.setAttribute(
+    'aria-label',
+    t('settings.value', { key: `$${row.code}` }),
+  );
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') input.blur();
   });
@@ -2414,7 +2837,9 @@ function settingEditor(row) {
 async function applySetting(row, input) {
   const next = input.value.trim();
   if (next === row.value) return;
-  el.settingsStatus.textContent = `Aplicando $${row.code}…`;
+  el.settingsStatus.textContent = t('settings.applying', {
+    key: `$${row.code}`,
+  });
   input.disabled = true;
   try {
     await window.grbl.applySetting({ code: row.code, value: next });
@@ -2422,10 +2847,15 @@ async function applySetting(row, input) {
     const parsed = Number(next);
     if (Number.isFinite(parsed)) row.number = parsed;
     appendLine(`$${row.code} = ${next}`, 'ok');
-    el.settingsStatus.textContent = `$${row.code} atualizado.`;
+    el.settingsStatus.textContent = t('settings.updated', {
+      key: `$${row.code}`,
+    });
     if (row.code === 130 || row.code === 131) applyWorkAreaFromSettings();
   } catch (err) {
-    el.settingsStatus.textContent = `Falha ao aplicar $${row.code}: ${err.message}`;
+    el.settingsStatus.textContent = t('settings.applyFail', {
+      key: `$${row.code}`,
+      msg: err.message,
+    });
     input.value = row.value;
   } finally {
     input.disabled = false;
@@ -2468,7 +2898,7 @@ function macroId() {
 
 function runMacro(macro) {
   if (!state.connected) {
-    appendLine('Conecte-se à máquina para executar a macro.', 'error');
+    appendLine(t('macro.notConnected'), 'error');
     return;
   }
   for (const line of MACROS.macroLines(macro)) window.grbl.writeLine(line);
@@ -2487,12 +2917,12 @@ function renderMacroButtons() {
   for (const [group, list] of groups) {
     const title = document.createElement('div');
     title.className = 'macro-group';
-    title.textContent = group;
+    title.textContent = macroGroup(group);
     el.macroButtons.appendChild(title);
     for (const macro of list) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = macro.label;
+      button.textContent = macroLabel(macro);
       button.title = macro.gcode;
       button.disabled = !state.connected;
       button.addEventListener('click', () => runMacro(macro));
@@ -2515,7 +2945,7 @@ function macroEditorNode(macro) {
   const label = document.createElement('input');
   label.type = 'text';
   label.value = macro.label;
-  label.placeholder = 'Rótulo';
+  label.placeholder = t('macro.labelPlaceholder');
   label.addEventListener('change', () => {
     macro.label = label.value.trim() || macro.label;
     label.value = macro.label;
@@ -2525,7 +2955,7 @@ function macroEditorNode(macro) {
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.textContent = '✕';
-  remove.title = 'Remover macro';
+  remove.title = t('macro.remove');
   remove.addEventListener('click', () => {
     state.macros = currentMacros().filter((m) => m.id !== macro.id);
     commitMacros();
@@ -2537,7 +2967,7 @@ function macroEditorNode(macro) {
     if (!value) continue;
     const option = document.createElement('option');
     option.value = value;
-    option.textContent = value;
+    option.textContent = macroGroup(value);
     group.appendChild(option);
   }
   group.value = macro.group;
@@ -2550,7 +2980,7 @@ function macroEditorNode(macro) {
   gcode.value = macro.gcode;
   gcode.rows = 2;
   gcode.spellcheck = false;
-  gcode.placeholder = 'G-code (uma linha por comando)';
+  gcode.placeholder = t('macro.gcodePlaceholder');
   gcode.addEventListener('change', () => {
     macro.gcode = gcode.value;
     commitMacros();
@@ -2570,7 +3000,7 @@ function renderMacroEditor() {
 el.macroAdd.addEventListener('click', () => {
   state.macros = currentMacros().concat({
     id: macroId(),
-    label: 'Nova macro',
+    label: t('macro.new'),
     gcode: 'M5',
     group: 'Outros',
   });
@@ -2587,9 +3017,9 @@ el.macroExport.addEventListener('click', async () => {
     const saved = await window.grbl.saveMacros(
       MACROS.serializeMacros(currentMacros()),
     );
-    if (saved) appendLine(`Macros exportadas: ${saved}`, 'ok');
+    if (saved) appendLine(t('macro.exported', { path: saved }), 'ok');
   } catch (err) {
-    appendLine(`Falha ao exportar macros: ${err.message}`, 'error');
+    appendLine(t('macro.exportFail', { msg: err.message }), 'error');
   }
 });
 
@@ -2598,18 +3028,18 @@ el.macroImport.addEventListener('click', async () => {
   try {
     opened = await window.grbl.openMacros();
   } catch (err) {
-    appendLine(`Falha ao abrir macros: ${err.message}`, 'error');
+    appendLine(t('macro.openFail', { msg: err.message }), 'error');
     return;
   }
   if (!opened) return;
   try {
     state.macros = MACROS.parseMacroFile(opened.text);
   } catch (err) {
-    appendLine(`Macros inválidas: ${err.message}`, 'error');
+    appendLine(t('macro.invalid', { msg: err.message }), 'error');
     return;
   }
   commitMacros();
-  appendLine(`Macros importadas (${state.macros.length}).`, 'ok');
+  appendLine(t('macro.imported', { count: state.macros.length }), 'ok');
 });
 
 // ------------------------------------------------------- eventos do main
@@ -2623,6 +3053,25 @@ const STATE_CLASS = {
   Door: 'alarm',
 };
 
+/** Chave i18n do rótulo de cada estado do GRBL (`status.state`). */
+const STATE_KEY = {
+  Idle: 'status.idle',
+  Run: 'status.run',
+  Jog: 'status.jog',
+  Hold: 'status.hold',
+  Alarm: 'status.alarm',
+  Door: 'status.door',
+  Check: 'status.check',
+  Home: 'status.home',
+  Sleep: 'status.sleep',
+};
+
+/** Rótulo traduzido do estado; mantém o texto cru se for desconhecido. */
+function stateLabel(name) {
+  const key = STATE_KEY[name];
+  return key && hasKey(key) ? t(key) : name;
+}
+
 window.grbl.onConsole((line) => {
   appendLine(
     line.direction === 'out' ? `> ${line.text}` : line.text,
@@ -2634,7 +3083,7 @@ window.grbl.onStatus((s) => {
   state.lastStatus = s;
   const cls = STATE_CLASS[s.state] ?? '';
   el.stateBadge.className = `badge ${cls}`;
-  el.stateBadge.textContent = s.state;
+  el.stateBadge.textContent = stateLabel(s.state);
 
   updateDro();
   el.metaFeed.textContent = s.fs ? `${s.fs.feed}` : '—';
@@ -2659,14 +3108,14 @@ window.grbl.onConnection((conn) => setConnection(conn));
 window.grbl.onJob((job) => {
   setJobState(job.state);
   if (job.state === 'finished') {
-    appendLine('Job concluído.', 'ok');
+    appendLine(t('job.finished'), 'ok');
     // Volta o laser para a origem XY (caso precise repetir a gravação).
     if (state.connected) window.grbl.gotoZero();
     // Reabre o modal de posicionamento para repetir se necessário.
     openFrameModal();
   }
   if (job.state === 'aborted' && job.error)
-    appendLine(`Job abortado: ${job.error}`, 'error');
+    appendLine(t('job.aborted', { reason: job.error }), 'error');
 });
 
 window.grbl.onProgress((p) => {
@@ -2687,8 +3136,8 @@ window.grbl.onProgress((p) => {
 
 window.grbl.onError((err) => {
   el.stateBadge.className = 'badge alarm';
-  el.stateBadge.textContent = 'Erro';
-  appendLine(`Erro: ${err.message}`, 'error');
+  el.stateBadge.textContent = t('status.error');
+  appendLine(t('err.prefix', { msg: err.message }), 'error');
   console.warn('GRBL:', err.message);
 });
 
@@ -2754,19 +3203,19 @@ if (el.frameStart)
     if (el.framePasses && el.imgPasses) {
       el.imgPasses.value = String(el.framePasses.value);
     }
-    if (el.frameStatus)
-      el.frameStatus.textContent = 'Gerando G-code com os parâmetros do modal…';
+    if (el.frameStatus) el.frameStatus.textContent = t('frame.generating');
     autoStartAfterGenerate = true;
     generateGcode(true);
   });
 
 // Modo Básico / Avançado.
-function applyMode(mode) {
+function applyMode(mode, { resetWizard = true } = {}) {
   const basic = mode === 'basic';
   document.body.classList.toggle('basic', basic);
-  if (el.modeBtn) el.modeBtn.textContent = basic ? 'Básico' : 'Avançado';
+  if (el.modeBtn)
+    el.modeBtn.textContent = basic ? t('mode.basic') : t('mode.advanced');
   if (basic) {
-    wizardStep = 1;
+    if (resetWizard) wizardStep = 1;
     updateWizard();
   }
 }
@@ -2798,10 +3247,7 @@ if (el.guideConnect)
     switchTab('machine');
     if (el.refreshPorts) await refreshPorts();
     if (!el.portList?.value) {
-      appendLine(
-        'Nenhuma porta serial encontrada. Conecte a gravadora e tente novamente.',
-        'error',
-      );
+      appendLine(t('err.noSerialPort'), 'error');
       return;
     }
     if (el.connectBtn) el.connectBtn.click();
@@ -2833,7 +3279,6 @@ if (el.guideClose)
   el.guideClose.addEventListener('click', () => {
     applyMode('advanced');
     persistPrefs({ mode: 'advanced' });
-    if (el.modeBtn) el.modeBtn.textContent = 'Avançado';
   });
 
 // Guia básico: tamanho sincroniza com a imagem.
@@ -2878,14 +3323,20 @@ function populateGuideMaterials() {
   if (!materials || !el.guideMaterial) return;
   const module = el.profileModule ? el.profileModule.value : '3W';
   const list = materials.profilesFor(module, 'engrave');
+  const previous = el.guideMaterial.value;
   el.guideMaterial.replaceChildren();
   for (const profile of list) {
     const opt = document.createElement('option');
     opt.value = profile.material;
-    opt.textContent = profile.material;
+    opt.textContent = materialName(profile.material);
     el.guideMaterial.appendChild(opt);
   }
-  if (list.length) el.guideMaterial.value = list[0].material;
+  // Preserva a escolha (ex.: troca de idioma); senão, primeiro da lista.
+  if (previous && list.some((p) => p.material === previous)) {
+    el.guideMaterial.value = previous;
+  } else if (list.length) {
+    el.guideMaterial.value = list[0].material;
+  }
 }
 if (materials) {
   populateGuideMaterials();
@@ -2923,7 +3374,7 @@ if (el.wizardNext) {
     } else {
       // Concluir: fecha o guia.
       document.body.classList.remove('basic');
-      if (el.modeBtn) el.modeBtn.textContent = 'Avançado';
+      if (el.modeBtn) el.modeBtn.textContent = t('mode.advanced');
       persistPrefs({ mode: 'advanced' });
     }
   });
@@ -2942,6 +3393,16 @@ if (el.wizardBack) {
 async function init() {
   // Preferências (tema/unidade/porta/baud) — RF-CFG-5, RF-CON-3.
   await loadPrefs();
+  // Identidade do app (versão/autor/licença) — RF-APP-6/7.
+  try {
+    applyAppInfo(await window.grbl.getAppInfo());
+  } catch (err) {
+    console.warn(t('err.prefix', { msg: err.message }), err);
+    applyAppInfo();
+  }
+  I18N.applyDom();
+  document.documentElement.lang = I18N.getLocale();
+  refreshTexts();
   updateWorkflow();
   updateWizard();
 

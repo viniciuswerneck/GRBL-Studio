@@ -41,7 +41,7 @@ FEATURES_COMPARISON.md  e  ROADMAP.md  ──acompanham──▶  paridade e pro
 
 ## Convenções destes documentos
 
-- **Idioma:** português (pt-BR); termos técnicos e nomes de comandos GRBL mantidos no original.
+- **Idioma:** português (pt-BR); termos técnicos e nomes de comandos GRBL mantidos no original. **A interface do aplicativo** é traduzida em pt-BR/en/es (ver `README.md`, `README.en.md` e `README.es.md`; chaves em `src/shared/i18n/`).
 - **Prioridade (MoSCoW):** `Must` (obrigatório), `Should` (importante), `Could` (desejável), `Won't` (fora do escopo atual).
 - **IDs de requisito:** `RF-<módulo>-<n>` para funcionais e `RNF-<n>` para não-funcionais.
 - **Status:** ✅ implementado · 🟡 parcial · ⬜ pendente.
