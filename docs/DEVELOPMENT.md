@@ -57,13 +57,20 @@ npx electron --no-sandbox .
 ```bash
 npm test             # Vitest (uma execução)
 npm run test:watch   # modo watch
+npm run test:coverage  # Vitest + cobertura (limiares de ≥ 80 % no protocolo)
+npm run test:e2e     # Playwright + Electron (precisa de display: xvfb-run -a)
 ```
 
 Cobertura atual:
 
 - `tests/protocol.test.ts` — parser de status, classificação de linhas, settings.
-- `tests/grbl-client.test.ts` — fila send-response, progresso, alarmes,
-  overrides, watchdog (com transporte falso).
+- `tests/grbl-client.test.ts` — fila com janela por bytes, progresso, alarmes,
+  overrides, watchdog, jog contínuo (`0x85`) e ação recomendada no alarme.
+- `tests/preview.test.ts` / `tests/preview-estimate.test.ts` — parser de
+  movimento (`G0/G1/G2/G3`, `G90/G91`, unidades) e tempo estimado (RF-GC-2/5).
+- `tests/prefs-store.test.ts` — sanitização das preferências (pasta de arquivos,
+  perfis de `$$`, histórico de alarmes).
+- `tests/session-log.test.ts` — log persistente de sessão (RNF-9).
 - `tests/serial-integration.test.ts` — integração real de `SerialTransport` com
   um par de PTYs criado por `socat` (ignorado automaticamente se não houver socat).
 - `tests/image-adjust.test.ts` — cinza/alfa, ajustes, Floyd–Steinberg.
@@ -73,6 +80,24 @@ Cobertura atual:
   furos, canto de sela, simplificação RDP, mapeamento px → mm e invariantes.
 - `tests/file-filters.test.ts` — filtros dos diálogos nativos, detecção de
   extensão (maiúsculas/minúsculas) e MIME da imagem.
+
+### Cobertura (Fase 8)
+
+`vitest.config.ts` mede a cobertura do **núcleo do protocolo**
+(`src/shared/protocol.ts` e `src/shared/preview.ts`) com limiar de **80 %** em
+linhas/funções/branches/statements. `npm run test:coverage` falha se cair abaixo.
+
+### E2E (Playwright + Electron)
+
+`e2e/` sobe o **Electron real** (sem baixar navegadores) e dirige o renderer:
+
+```bash
+xvfb-run -a npm run test:e2e      # headless
+npm run test:e2e                  # com display
+```
+
+Cada teste usa um `--user-data-dir` temporário, então não toca nas preferências
+do ambiente. Configuração em `playwright.config.ts`.
 
 ### Smoke test (headless / CI)
 
@@ -119,14 +144,21 @@ npm run format:check  # biome format .
 
 | Job | O que faz |
 | :--- | :--- |
-| **quality** | `npm ci` → `lint` (Biome) → `typecheck` → `test` (Vitest, com `socat` instalado para o teste PTY) → `build`. |
+| **quality** | `npm ci` → `lint` (Biome) → `typecheck` → `test` (Vitest, com `socat` instalado para o teste PTY) → `test:coverage` → `build`. |
 | **smoke** | `npm ci` → `build` → smoke headless do Electron sob `xvfb`. |
+| **e2e** | `npm ci` → `build` → `npm run test:e2e` (Playwright + Electron sob `xvfb`). |
+
+`.github/workflows/release.yml` publica a release do GitHub (AppImage + deb)
+quando uma tag `v*` é empurrada (`workflow_dispatch` só gera os artefatos).
 
 Rode a mesma sequência localmente antes de comitar:
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
 ```
+
+> `npm run typecheck` roda `tsc --noEmit` (em `src/`) **e** `tsc -p
+> tsconfig.test.json` (em `tests/` e `e2e/`), fechando o type-check do DoD §11.
 
 ## Emulador GRBL (testes manuais sem hardware)
 
@@ -150,7 +182,9 @@ src/
 │   ├── ipc.ts                # handlers IPC tipados
 │   └── services/
 │       ├── SerialTransport.ts  # I/O serial (serialport)
-│       └── GrblClient.ts       # protocolo: fila send-response, status, overrides
+│       ├── SessionLog.ts       # log persistente de sessão (RNF-9)
+│       ├── PrefsStore.ts       # preferências (prefs.json)
+│       └── GrblClient.ts       # protocolo: fila com janela por bytes, status, overrides
 ├── renderer/
 │   └── gcode.worker.ts       # worker: imagem -> G-code (empacotado p/ public/)
 ├── shared/
@@ -171,6 +205,7 @@ src/
     └── index.ts              # contextBridge -> window.grbl (empacotado)
 public/                       # renderer (html/css/js) + tokens.css (+ gcode.worker.js)
 tests/                        # Vitest (unit + integração)
+e2e/                          # Playwright + Electron (Fase 8)
 ```
 
 ## Adicionando funcionalidades
@@ -185,7 +220,8 @@ tests/                        # Vitest (unit + integração)
 
 - TypeScript estrito; sem `any` desnecessário.
 - Protocolo/parsing = funções puras e testadas (nunca na UI).
-- Comandos de tempo real **sem `\n`**; envio sempre send-response.
+- Comandos de tempo real **sem `\n`**; envio do job com **janela por bytes**
+  (nunca mais bytes sem `ok` que o buffer RX do GRBL).
 - Lint/format: **Biome** (`npm run lint`) — ver a seção "Lint e formatação".
 
 ## Empacotamento e release (RF-APP-4)
@@ -207,11 +243,16 @@ Notas:
 
 - `serialport` passa pelo `@electron/rebuild` usado pelo `electron-builder`; não
   é necessário comando manual.
-- O AppImage não traz ícone personalizado ainda: adicione uma imagem em
-  `build/icon.png` (256×256 ou maior) para o atalho do desktop ser vinculado
-  à janela (`desktopName`/`syncDesktopName` já configurados).
-- Flatpak fica como “Could” no plano (após v1.0), por exigir `flatpak-builder`
-  e um runtime dedicado.
+- O ícone do app vem de `docs/icone.png` → `build/icon.png` (512×512). O
+  `electron-builder` o usa para o AppImage/.deb (atalho do desktop vinculado à
+  janela por `desktopName`/`syncDesktopName`) e a janela principal o define em
+  `BrowserWindow.icon`. O splash de abertura é `public/splash.png` exibido por
+  `public/splash.html` (janela frameless de 738×401, fechada em
+  `ready-to-show`; desligado com `GRBL_SMOKE_TEST=1`/`GRBL_E2E=1`).
+- Flatpak (RF-APP-4, “Could”): esqueleto pronto em `build/flatpak/` — o manifesto
+  `com.grblstudio.app.yml` reempacota o AppImage gerado por `electron-builder`.
+  Construa com `npm run package:flatpak` (requer `flatpak-builder` e os runtimes;
+  ver `build/flatpak/README.md`). Não é construído no CI.
 
 ## Permissão de porta serial no Linux (RF-APP-5)
 

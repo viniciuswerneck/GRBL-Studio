@@ -37,7 +37,8 @@ E garanta:
 - **Segurança**: `contextIsolation: true`, `nodeIntegration: false`; toda ponte
   renderer↔main passa pelo preload com IPC tipado. Nunca exponha `ipcRenderer`.
 - **Protocolo**: comandos de tempo real são **byte único e SEM `\n`**; o envio de
-  G-code é **send-response** (nunca em massa); nada de lógica de protocolo na UI.
+  G-code usa **janela por bytes** (nunca mais bytes sem `ok` que o buffer RX do
+  GRBL — nada em massa); nada de lógica de protocolo na UI.
 - **Performance** dentro dos orçamentos RNF-11/RNF-12 (ver `AGENTS.md`).
 - **Documentação**: se o código divergir da doc, atualize a doc na mesma tarefa.
 - **Rastreabilidade**: cite o requisito que a mudança atende (`RF-…`/`RNF-…`).

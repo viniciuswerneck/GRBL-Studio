@@ -11,8 +11,9 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 ## Funcionalidades
 
 - **Conexão serial** com GRBL (USB) e **WiFi/TCP** (ESP8266/ESP32).
-- **Envio de G-code send-response**: só envia a próxima linha após o `ok` —
-  respeita o buffer do GRBL e não trava a máquina.
+- **Envio de G-code confiável**: janela com contagem de caracteres — nunca mais
+  bytes sem `ok` que o buffer do GRBL. O envio continua cheio mesmo com o PC
+  ocupado, sem travar a máquina.
 - **JOG** manual (X/Y/Z), Home, Definir origem, Unlock e Reset.
 - **Console** interativo com as respostas reais da máquina (`ok`, `error:`,
   `ALARM:`, `[MSG:]`).

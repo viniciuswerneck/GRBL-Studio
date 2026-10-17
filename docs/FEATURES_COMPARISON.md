@@ -4,7 +4,7 @@
 | Feature | LaserGRBL (C#) | GRBL Studio (Electron) | Status |
 |---|---|---|---|
 | Conexão Serial | Sim | Sim | ✅ Implementado |
-| Envio G-Code (send-response) | Sim | Sim | ✅ Implementado |
+| Envio G-Code (janela por bytes) | Sim | Sim | ✅ Implementado |
 | JOG | Sim | Sim | ✅ Implementado |
 | Console (com respostas da máquina) | Sim | Sim | ✅ Implementado |
 | Status GRBL (pos/feed) | Sim | Sim | ✅ Implementado |

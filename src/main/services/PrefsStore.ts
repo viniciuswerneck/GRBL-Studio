@@ -11,7 +11,56 @@ import * as path from 'node:path';
 import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
 import { isThemeId } from '../../shared/themes';
-import type { Prefs } from '../../shared/types';
+import type { AlarmEntry, Prefs, SettingProfile } from '../../shared/types';
+
+/** Perfis de configuração `$$` (RF-CFG-4): filtra e normaliza o que veio do disco. */
+function sanitizeSettingProfiles(input: unknown): SettingProfile[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const out: SettingProfile[] = [];
+  for (const item of input) {
+    if (!item || typeof item !== 'object') continue;
+    const rec = item as Record<string, unknown>;
+    if (typeof rec.name !== 'string' || !rec.name.trim()) continue;
+    const values: Record<string, string> = {};
+    if (rec.values && typeof rec.values === 'object') {
+      for (const [key, value] of Object.entries(
+        rec.values as Record<string, unknown>,
+      )) {
+        if (
+          /^\d+$/.test(key) &&
+          (typeof value === 'string' || typeof value === 'number')
+        ) {
+          values[key] = String(value).trim();
+        }
+      }
+    }
+    out.push({ name: rec.name.trim(), values });
+  }
+  return out;
+}
+
+/** Histórico de alarmes (RF-STA-7): mantém as últimas 100 entradas. */
+function sanitizeAlarmHistory(input: unknown): AlarmEntry[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const out: AlarmEntry[] = [];
+  for (const item of input) {
+    if (!item || typeof item !== 'object') continue;
+    const rec = item as Record<string, unknown>;
+    if (typeof rec.message !== 'string') continue;
+    const entry: AlarmEntry = {
+      ts:
+        typeof rec.ts === 'number' && Number.isFinite(rec.ts)
+          ? rec.ts
+          : Date.now(),
+      message: rec.message,
+    };
+    if (typeof rec.code === 'number' && Number.isFinite(rec.code))
+      entry.code = rec.code;
+    if (typeof rec.solution === 'string') entry.solution = rec.solution;
+    out.push(entry);
+  }
+  return out.slice(-100);
+}
 
 /** Filtra o que veio do disco, mantendo só chaves/tipos conhecidos. */
 function sanitize(input: unknown): Prefs {
@@ -39,6 +88,12 @@ function sanitize(input: unknown): Prefs {
     raw.tcpPort < 65536
   )
     prefs.tcpPort = raw.tcpPort;
+  if (typeof raw.fileDir === 'string' && raw.fileDir)
+    prefs.fileDir = raw.fileDir;
+  const profiles = sanitizeSettingProfiles(raw.settingProfiles);
+  if (profiles) prefs.settingProfiles = profiles;
+  const history = sanitizeAlarmHistory(raw.alarmHistory);
+  if (history) prefs.alarmHistory = history;
   return prefs;
 }
 

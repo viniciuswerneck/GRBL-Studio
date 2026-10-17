@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist-test",
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"]
+  },
+  "include": [
+    "tests/**/*",
+    "e2e/**/*",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
+}

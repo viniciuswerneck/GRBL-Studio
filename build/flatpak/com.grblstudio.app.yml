@@ -1,0 +1,40 @@
+# GRBL Studio — Flatpak (RF-APP-4, nível "Could").
+#
+# Reempacota o AppImage gerado pelo electron-builder. Gere-o antes com
+# `npm run package:linux` e copie para `release/GRBL-Studio.AppImage`
+# (ver build/flatpak/README.md).
+app-id: com.grblstudio.app
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '24.08'
+command: grbl-studio
+separate-locales: false
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Porta serial: /dev/ttyUSB* e /dev/ttyACM* das placas GRBL.
+  - --device=all
+  # Transporte WiFi/TCP (RF-CON-7) e links externos.
+  - --share=network
+  # Abrir/salvar G-code e imagens do usuário (RF-CFG-5).
+  - --filesystem=home
+
+modules:
+  - name: grbl-studio
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 grbl-studio.sh /app/bin/grbl-studio
+      - mkdir -p /app/grbl-studio
+      - cp GRBL-Studio.AppImage /app/grbl-studio/
+      - chmod +x /app/grbl-studio/GRBL-Studio.AppImage
+      - cd /app/grbl-studio && ./GRBL-Studio.AppImage --appimage-extract >/dev/null
+      - rm -f /app/grbl-studio/GRBL-Studio.AppImage
+    sources:
+      - type: file
+        path: grbl-studio.sh
+      - type: file
+        path: ../../release/GRBL-Studio.AppImage

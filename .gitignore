@@ -27,3 +27,13 @@ Thumbs.db
 # Artefatos de empacotamento (electron-builder)
 release/
 public/adjust.js
+
+# Cobertura e E2E (Vitest/Playwright)
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Build do Flatpak
+build-dir/
+.flatpak-builder/

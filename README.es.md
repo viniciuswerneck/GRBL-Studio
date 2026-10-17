@@ -11,8 +11,9 @@ firmware **GRBL 1.1**.
 ## Funcionalidades
 
 - **Conexión serie** con GRBL (USB) y **WiFi/TCP** (ESP8266/ESP32).
-- **Envío de G-code send-response**: la siguiente línea solo se envía tras el
-  `ok` — respeta el búfer de GRBL y no bloquea la máquina.
+- **Envío de G-code fiable**: ventana con conteo de caracteres — nunca más bytes
+  sin `ok` que el búfer de GRBL. El envío sigue lleno aunque la PC esté ocupada,
+  sin bloquear la máquina.
 - **JOG** manual (X/Y/Z), Home, Definir origen, Unlock y Reset.
 - **Consola** con las respuestas reales de la máquina (`ok`, `error:`,
   `ALARM:`, `[MSG:]`).

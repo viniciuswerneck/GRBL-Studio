@@ -82,7 +82,7 @@ isolados por `contextIsolation`:
 | `main/ipc.ts` | Handlers IPC tipados (wiring entre UI e serviços). | ✅ |
 | `services/SerialTransport` | Abrir/fechar porta, *line framing*, erros, desconexão. | ✅ |
 | `services/TcpTransport` | Transporte WiFi/serial-over-network (ESP8266) sobre TCP (RF-CON-7). | ✅ |
-| `services/GrblClient` | Fila de envio (send-response), `ok`/`error`, tempo real, overrides, status. | ✅ |
+| `services/GrblClient` | Fila de envio (janela por bytes), `ok`/`error`, tempo real, overrides, status. | ✅ |
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |
 | `services/PrefsStore` | Persistência em `<userData>/prefs.json` (ADR-6): porta, baud, tema, idioma, unidades, macros. | ✅ |
@@ -113,8 +113,11 @@ isolados por `contextIsolation`:
 
 - Biblioteca: **`serialport`**.
 - Terminador de linha: `\n`.
-- **Streaming send-response:** envia uma linha e aguarda `ok`/`error:` antes da
-  próxima (ADR-4). Otimização futura: *character-counting* com `Bf:`.
+- **Streaming com janela por bytes (contagem de caracteres):** até o tamanho do
+  buffer RX do GRBL (de `[OPT:…]`; 128 bytes por padrão) de linhas sem `ok`; cada
+  `ok` libera espaço (ADR-4). Esperar cada `ok` — send-response puro — esvaziava
+  o buffer da máquina quando o PC estava ocupado. Consultas (`$$`, `$I`) só vão
+  com a janela vazia.
 - **Comandos de tempo real** (bytes únicos, **sem `\n`**):
   `?` status · `!` feed hold · `~` resume · `0x18` reset · `0x90–0x94` override.
 - **Parser de status:** `<Estado|MPos:…|WPos:…|FS:…|Ov:…|WCO:…>` → objeto tipado.
@@ -166,7 +169,7 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 | :--- | :--- | :--- |
 | Renderer | Vanilla JS (TS + framework planejado) | TS + framework (electron-vite) |
 | Protocolo | ✅ `GrblClient` + `shared/protocol.ts` testáveis | (concluído) |
-| Envio | ✅ Fila send-response com `ok` | (concluído) |
+| Envio | ✅ Fila com janela por bytes (contagem de caracteres) + `ok` | (concluído) |
 | Feedback da serial | ✅ Eventos IPC tipados | (concluído) |
 | Comandos de tempo real | ✅ Bytes únicos corretos | (concluído) |
 | Status/alarmes | ✅ Polling `?` + parser de alarmes | (concluído) |

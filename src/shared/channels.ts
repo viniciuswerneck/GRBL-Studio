@@ -19,6 +19,7 @@ export const CHANNELS = {
   setOrigin: 'grbl:origin:set',
   gotoZero: 'grbl:goto-zero',
   jog: 'grbl:jog',
+  jogCancel: 'grbl:jog:cancel',
   overrideFeed: 'grbl:override:feed',
   overrideSpindle: 'grbl:override:spindle',
   overrideRapid: 'grbl:override:rapid',
@@ -31,10 +32,13 @@ export const CHANNELS = {
   appInfo: 'app:info',
   openExternal: 'app:open-external',
   fileSave: 'file:save-gcode',
+  fileSaveLog: 'file:save-log',
   fileOpenImage: 'file:open-image',
   fileOpenGcode: 'file:open-gcode',
   macrosOpen: 'file:open-macros',
   macrosSave: 'file:save-macros',
+  pickDir: 'app:pick-dir',
+  openLogs: 'app:open-logs',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',
@@ -61,6 +65,7 @@ export const MENU_ACTIONS = {
   openGcode: 'open-gcode',
   openImage: 'open-image',
   appearance: 'appearance',
+  openLogs: 'open-logs',
 } as const;
 
 export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

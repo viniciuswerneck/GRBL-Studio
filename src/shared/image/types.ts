@@ -63,6 +63,14 @@ export interface EngraveOptions {
   sMax: number;
   /** Modo M3 (constante) ou M4 (dinâmico). */
   mode: LaserMode;
+  /**
+   * Velocidade adaptativa nas áreas claras (RF-IMG-10): `1` = desligado.
+   * Trechos com pouca queima andam até `speedMmMin * adaptiveSpeed`; trechos
+   * escuros mantêm `speedMmMin`. Como a dose por mm é `S / feed`, o claro sai
+   * **mais claro** — compense com S-max/white clip se precisar. Acima da
+   * velocidade máxima dos eixos (`$110`/`$111`) a queima também enfraquece.
+   */
+  adaptiveSpeed?: number;
 }
 
 export interface ImageToGcodeOptions {
@@ -80,6 +88,11 @@ export interface ImageToGcodeOptions {
    * com tolerância em pixels da imagem. Padrão 0.5. Ignorado nos demais modos.
    */
   simplifyPx?: number;
+  /**
+   * Varredura em zigue-zague (ida e volta) nos modos `line`/`dither`: evita o
+   * `G0` de retorno de cada linha. Padrão `true` (RF-IMG-4).
+   */
+  bidirectional?: boolean;
   /**
    * Número de passadas (RF-GC-6). Padrão 1. Cada passada repete todo o
    * caminho de queima; entre passadas o laser é desligado e a cabeça volta

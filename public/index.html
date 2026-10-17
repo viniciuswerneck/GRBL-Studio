@@ -17,17 +17,12 @@
           <h1>GRBL Studio</h1>
           <button
             type="button"
-            id="themeBtn"
-            title="Aparência e idioma"
-            data-i18n-title="appearance.title"
-          >◐</button>
-          <button
-            type="button"
             id="modeBtn"
-            title="Alternar modo Básico/Avançado"
-            data-i18n-title="mode.toggle.title"
-            data-i18n="mode.basic"
-          >Básico</button>
+            title="Assistente — guia iniciante"
+            data-i18n-title="assistant.title"
+            data-i18n="assistant.open"
+            aria-pressed="false"
+          >Assistente</button>
         </div>
 
         <label class="field" data-i18n="profile.label">
@@ -41,6 +36,7 @@
 
         <div class="basic-guide">
           <div class="wizard-card">
+            <div class="wizard-head" data-i18n="assistant.guideTitle">Assistente — guia iniciante</div>
             <div class="hint" id="wizardTitle">Passo 1 de 6 — Conectar</div>
             <div class="conn-state">
               <span id="wizardDot" class="dot"></span>
@@ -96,7 +92,7 @@
               <button type="button" id="wizardBack" data-i18n="nav.back">Voltar</button>
               <button type="button" id="wizardNext" class="primary" data-i18n="wizard.next">Próximo</button>
             </div>
-            <button type="button" id="guideClose" class="danger" data-i18n="guide.close">Fechar (Modo Avançado)</button>
+            <button type="button" id="guideClose" class="danger" data-i18n="guide.close">Fechar assistente</button>
           </div>
         </div>
 
@@ -193,6 +189,17 @@
             <button type="button" id="unlockBtn" data-i18n="jog.unlock">Unlock ($X)</button>
             <button type="button" id="resetBtn" class="danger" data-i18n="jog.reset">Reset</button>
           </div>
+          <div class="hint" data-i18n="jog.keys.title">
+            Setas: X/Y · PageUp/PageDown: Z · Home: homing ($H)
+          </div>
+        </details>
+
+        <details class="card advanced" id="cardAlarmHistory">
+          <summary data-i18n="status.history.title">Histórico de alarmes</summary>
+          <div id="alarmHistory" class="alarm-history"></div>
+          <button type="button" id="alarmHistoryClear" data-i18n="status.history.clear">
+            Limpar histórico
+          </button>
         </details>
 
         <details class="card advanced" id="cardOverrides">
@@ -344,9 +351,20 @@
               </label>
               <label class="field">S-min <input type="number" id="imgSmin" value="0" min="0" max="32767" step="1" /></label>
               <label class="field">S-max <input type="number" id="imgSmax" value="1000" min="0" max="32767" step="1" /></label>
+              <label
+                class="field"
+                data-i18n="img.adaptive"
+                data-i18n-title="img.adaptive.title"
+                >Velocidade no claro (×)
+                <input type="number" id="imgAdaptive" value="1" min="1" max="5" step="0.5" />
+              </label>
+              <label class="check" data-i18n-title="img.bidirectional.title">
+                <input type="checkbox" id="imgBidirectional" checked />
+                <span data-i18n="img.bidirectional">Bidirecional (zigue-zague)</span>
+              </label>
             </div>
+            <div id="speedHint" class="hint"></div>
           </details>
-
           <button
             type="button"
             id="imgGenerate"
@@ -378,9 +396,7 @@
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
             <button type="button" id="playBtn" disabled data-i18n="run.play">▶ Iniciar</button>
-            <button type="button" id="pauseBtn" disabled data-i18n="run.pause">⏸ Pausar</button>
           </div>
-          <button type="button" id="stopBtn" class="danger" disabled data-i18n="run.stop">⏹ Parar / Emergência</button>
           <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
 
           <details class="group" id="resumeGroup">
@@ -449,6 +465,9 @@
           <div class="meta">
             <span data-i18n="status.feed">Feed</span> <span id="metaFeed">—</span> · S <span id="metaS">—</span>
           </div>
+          <div class="meta dtg">
+            <span data-i18n="status.dtg">Para ir</span> <span id="metaDtg">—</span>
+          </div>
           <label class="meta units" data-i18n="status.units"
             >Unidade
             <select
@@ -462,6 +481,7 @@
           </label>
           <div class="spacer"></div>
           <div class="meta" id="progressText">0 / 0</div>
+          <div class="meta" id="progressEta"></div>
         </div>
 
         <div class="preview">
@@ -473,11 +493,25 @@
           <div id="previewLegend" class="preview-legend hidden">
             <span class="lg-swatch lg-cut"></span> <span data-i18n="preview.cut">Queima</span>
             <span class="lg-swatch lg-rapid"></span> <span data-i18n="preview.rapid">Deslocamento</span>
+            <span class="lg-swatch hidden" id="lgPassSwatch"></span>
+            <span class="hidden" id="lgPass">Passada 1/1</span>
             <span class="lg-tip" data-i18n="preview.tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
           </div>
         </div>
 
         <div class="console">
+          <div class="console-toolbar">
+            <span class="spacer"></span>
+            <button type="button" id="consolePause" data-i18n="console.pause">
+              Pausar rolagem
+            </button>
+            <button type="button" id="consoleClear" data-i18n="console.clear">
+              Limpar
+            </button>
+            <button type="button" id="consoleSave" data-i18n="console.save">
+              Salvar log…
+            </button>
+          </div>
           <pre id="consoleOutput" class="console-output"></pre>
           <input
             type="text"
@@ -500,57 +534,122 @@
       </footer>
     </div>
 
+    <!-- Controles da gravação (RF-GC-8): ficam sempre à mão durante o job,
+         inclusive sobre o assistente e em qualquer aba. -->
+    <div
+      class="job-bar"
+      id="jobBar"
+      role="toolbar"
+      aria-label="Controles da gravação"
+      data-i18n-aria="run.jobbar.label"
+    >
+      <span class="job-bar-state" id="jobBarState" aria-live="polite"></span>
+      <span class="job-bar-progress" id="jobBarProgress"></span>
+      <button type="button" id="pauseBtn" disabled data-i18n="run.pause">⏸ Pausar</button>
+      <button type="button" id="resumeBtn" disabled data-i18n="run.resume">▶ Retomar</button>
+      <button
+        type="button"
+        id="stopBtn"
+        class="danger"
+        disabled
+        data-i18n="run.cancel"
+        data-i18n-title="run.cancel.title"
+      >⏹ Cancelar</button>
+    </div>
+
     <div class="overlay hidden" id="frameOverlay">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="frameTitle">
+      <div
+        class="modal frame-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="frameTitle"
+      >
         <header class="modal-head">
           <h3 id="frameTitle" data-i18n="frame.title">Posicionar a gravadora</h3>
-          <button type="button" id="frameClose" data-i18n="nav.close">Fechar</button>
+          <button
+            type="button"
+            id="frameClose"
+            class="icon-btn"
+            data-i18n-title="nav.close"
+            data-i18n-aria="nav.close"
+          >✕</button>
         </header>
-        <div class="hint" data-i18n="frame.hint">
-          Use as setas para levar o laser até o ponto de origem da gravação. Depois clique em
-          Desenhar contorno para a máquina percorrer o retângulo da área (laser desligado).
+
+        <div class="modal-body frame-body">
+          <div class="frame-cols">
+            <section class="frame-col">
+              <h4 class="frame-section" data-i18n="frame.group.move">Mover a cabeça</h4>
+              <div class="jog-grid frame-jog">
+                <span></span>
+                <button type="button" id="frameYp" title="Y+">↑</button>
+                <span></span>
+                <button type="button" id="frameXm" title="X−">←</button>
+                <button
+                  type="button"
+                  id="frameHome"
+                  data-i18n-title="frame.home.title"
+                  data-i18n-aria="frame.home.title"
+                >Home</button>
+                <button type="button" id="frameXp" title="X+">→</button>
+                <span></span>
+                <button type="button" id="frameYm" title="Y−">↓</button>
+                <span></span>
+              </div>
+              <div class="row frame-actions">
+                <button type="button" id="frameSetOrigin" data-i18n="frame.setOrigin">Definir origem aqui</button>
+                <button type="button" id="frameOrigin" data-i18n="frame.origin">Ir para origem (0,0)</button>
+              </div>
+            </section>
+
+            <section class="frame-col">
+              <h4 class="frame-section" data-i18n="frame.group.check">Conferir a área</h4>
+              <div class="row">
+                <button type="button" id="frameOutline" class="primary" data-i18n="frame.outline">Desenhar contorno</button>
+                <button
+                  type="button"
+                  id="frameCenter"
+                  data-i18n-title="frame.center.title"
+                  data-i18n="frame.center"
+                >Marcar centro</button>
+              </div>
+              <p class="frame-note" data-i18n="frame.hint">
+                Use as setas para aproximar o laser da área. “Desenhar contorno” contorna a
+                área com laser bem fraco e “Marcar centro” leva o laser até o centro da
+                imagem (laser desligado).
+              </p>
+
+              <h4 class="frame-section" data-i18n="frame.group.job">Gravação</h4>
+              <label class="frame-field" data-i18n="frame.power">
+                Potência do contorno (%)
+                <span class="frame-field-row">
+                  <input type="range" id="framePower" min="0" max="100" value="1" />
+                  <span class="frame-value" id="framePowerValue">1 %</span>
+                </span>
+              </label>
+              <label class="frame-field" data-i18n="frame.speed">
+                Velocidade de gravação (mm/min)
+                <span class="frame-field-row">
+                  <input type="range" id="frameSpeed" min="100" max="5000" step="50" value="1000" />
+                  <span class="frame-value" id="frameSpeedValue">1000 mm/min</span>
+                </span>
+              </label>
+              <label class="frame-field" data-i18n="img.passes">
+                Passadas
+                <span class="frame-stepper">
+                  <button type="button" id="framePassesMinus">−</button>
+                  <input type="number" id="framePasses" min="1" max="99" step="1" value="1" />
+                  <button type="button" id="framePassesPlus">+</button>
+                </span>
+              </label>
+            </section>
+          </div>
         </div>
-        <div class="jog-grid">
-          <span></span>
-          <button type="button" id="frameYp" title="Y+">↑</button>
-          <span></span>
-          <button type="button" id="frameXm" title="X−">←</button>
-          <button type="button" id="frameHome" title="Homing">Home</button>
-          <button type="button" id="frameXp" title="X+">→</button>
-          <span></span>
-          <button type="button" id="frameYm" title="Y−">↓</button>
-          <span></span>
-        </div>
-        <div class="row">
-          <button type="button" id="frameSetOrigin" data-i18n="frame.setOrigin">Definir origem aqui</button>
-          <button type="button" id="frameOrigin" data-i18n="frame.origin">Ir para origem (0,0)</button>
-        </div>
-        <div class="row">
-          <button type="button" id="frameOutline" class="primary" data-i18n="frame.outline">Desenhar contorno</button>
+
+        <footer class="modal-foot">
+          <span id="frameStatus" class="hint frame-status"></span>
+          <button type="button" id="frameCancel" data-i18n="nav.cancel">Cancelar</button>
           <button type="button" id="frameStart" class="primary" data-i18n="frame.start">▶ Gravar</button>
-        </div>
-        <div class="row">
-          <button type="button" id="frameCancel" class="danger" data-i18n="nav.cancel">Cancelar</button>
-        </div>
-        <div class="frame-panel">
-          <label class="field" data-i18n="frame.power">
-            Potência do contorno (%) <span id="framePowerValue">1 %</span>
-            <input type="range" id="framePower" min="0" max="100" value="1" />
-          </label>
-          <label class="field" data-i18n="frame.speed">
-            Velocidade de gravação (mm/min) <span id="frameSpeedValue">1000</span>
-            <input type="range" id="frameSpeed" min="100" max="5000" step="50" value="1000" />
-          </label>
-          <label class="field" data-i18n="img.passes">
-            Passadas
-            <div class="row">
-              <button type="button" id="framePassesMinus">−</button>
-              <input type="number" id="framePasses" min="1" max="99" step="1" value="1" />
-              <button type="button" id="framePassesPlus">+</button>
-            </div>
-          </label>
-        </div>
-        <div id="frameStatus" class="hint"></div>
+        </footer>
       </div>
     </div>
 
@@ -584,6 +683,44 @@
           </nav>
         </div>
 
+        <details class="group settings-profiles" id="settingsProfilesGroup">
+          <summary data-i18n="settings.profile.title">Perfis de configuração</summary>
+          <div class="row">
+            <input
+              type="text"
+              id="settingsProfileName"
+              placeholder="Nome do perfil"
+              data-i18n-placeholder="settings.profile.name"
+              spellcheck="false"
+            />
+            <button
+              type="button"
+              id="settingsProfileSave"
+              data-i18n-title="settings.profile.saveHint"
+              data-i18n="settings.profile.save"
+            >
+              Salvar perfil
+            </button>
+          </div>
+          <div class="row">
+            <select id="settingsProfiles"></select>
+            <button
+              type="button"
+              id="settingsProfileApply"
+              data-i18n-title="settings.profile.applyHint"
+              data-i18n="settings.profile.apply"
+            >
+              Aplicar
+            </button>
+            <button type="button" id="settingsProfileDelete" data-i18n="settings.profile.delete">
+              Remover
+            </button>
+          </div>
+          <div class="hint" data-i18n="settings.profile.hint">
+            Salve o conjunto atual de $$ e reaplique depois.
+          </div>
+        </details>
+
         <div id="settingsStatus" class="hint"></div>
         <div id="settingsList" class="settings-list"></div>
         <pre id="specialOutput" class="special-output hidden"></pre>
@@ -609,6 +746,18 @@
           <div>
             <span class="appearance-label" data-i18n="appearance.theme">Tema</span>
             <div id="themeGroups"></div>
+          </div>
+          <div>
+            <span class="appearance-label" data-i18n="prefs.fileDir">Pasta de arquivos</span>
+            <div class="row">
+              <span id="fileDirValue" class="hint">—</span>
+              <button type="button" id="fileDirChoose" data-i18n="prefs.fileDir.choose">
+                Escolher pasta…
+              </button>
+            </div>
+            <div class="hint" data-i18n="prefs.fileDir.hint">
+              Onde abrir e salvar arquivos por padrão.
+            </div>
           </div>
           <div class="hint" data-i18n="appearance.hint">Tema e idioma são salvos nas preferências.</div>
         </div>

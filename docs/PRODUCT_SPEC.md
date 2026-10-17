@@ -47,8 +47,9 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
 ## 4. Proposta de valor
 
 1. **Nativo em Linux** — Electron + TypeScript, sem camadas de compatibilidade.
-2. **Envio G-code confiável** — protocolo *send-response* com confirmação `ok`,
-   respeitando o buffer do GRBL (diferencial direto vs. MVP atual).
+2. **Envio G-code confiável** — streaming com **janela por bytes** (contagem de
+   caracteres) e confirmação `ok`, respeitando o buffer do GRBL (diferencial
+   direto vs. MVP atual).
 3. **Paridade com o essencial do LaserGRBL** — interface, jog, overrides, status,
    preview, import de imagem raster, configuração `$$`.
 4. **Experiência moderna** — visual **estilo Windows 11 (Fluent Design 2)**:
@@ -107,7 +108,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-CON-2 | Conectar/desconectar com baud rate selecionável (9600/115200/250000…). | Must | ✅ |
 | RF-CON-3 | Persistir última porta e baud usados (e reconectar no boot). | Should | ✅ |
 | RF-CON-4 | Detectar desconexão inesperada e avisar o usuário. | Must | ✅ |
-| RF-CON-5 | Ao conectar, ler `$I`/`$G` e exibir firmware/estado inicial. | Should | ⬜ |
+| RF-CON-5 | Ao conectar, ler `$I`/`$G` e exibir firmware/estado inicial. | Should | ✅ |
 | RF-CON-6 | Reconexão automática opcional. | Could | ✅ |
 | RF-CON-7 | Conexão via WiFi/serial-over-network (ESP8266). | Could | ✅ |
 
@@ -119,19 +120,19 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-CON-11 | Exibir retornos da máquina (`ok`, `error:`, `[MSG:]`, `ALARM:`). | Must | ✅ |
 | RF-CON-12 | Diferenciar visualmente comandos enviados × respostas × erros. | Should | ✅ |
 | RF-CON-13 | Histórico de comandos (setas ↑/↓). | Should | ✅ |
-| RF-CON-14 | Auto-scroll com opção de pausar/limpar log. | Should | 🟡 |
-| RF-CON-15 | Salvar/exportar log do console. | Could | ⬜ |
+| RF-CON-14 | Auto-scroll com opção de pausar/limpar log. | Should | ✅ |
+| RF-CON-15 | Salvar/exportar log do console. | Could | ✅ |
 
 ### M3 — Jog e movimento manual
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
 | RF-JOG-1 | Jog em X+, X−, Y+, Y− (e Z quando aplicável) com passo configurável. | Must | ✅ |
-| RF-JOG-2 | Jog contínuo ao manter pressionado, com parada ao soltar. | Should | ⬜ |
+| RF-JOG-2 | Jog contínuo ao manter pressionado, com parada ao soltar. | Should | ✅ |
 | RF-JOG-3 | Controle de velocidade do jog. | Should | ✅ |
 | RF-JOG-4 | Homing (`$H`) com feedback de progresso/erro. | Must | ✅ |
 | RF-JOG-5 | Definir origem atual (`G92`/zero) e ir para zero (`G90 G0 X0 Y0`). | Must | ✅ |
-| RF-JOG-6 | Atalhos de teclado para jog (setas, Home, PageUp/Down). | Should | ⬜ |
+| RF-JOG-6 | Atalhos de teclado para jog (setas, Home, PageUp/Down). | Should | ✅ |
 | RF-JOG-7 | Jog diagonal usando modo jog dedicado do GRBL (`$J=`). | Should | ✅ |
 
 ### M4 — Carregamento e execução de G-code
@@ -139,11 +140,11 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
 | RF-GC-1 | Abrir arquivos `.gcode/.nc/.tap/.txt` e imagens raster. | Must | ✅ |
-| RF-GC-2 | Exibir nome, nº de linhas, tamanho e tempo estimado. | Should | 🟡 |
+| RF-GC-2 | Exibir nome, nº de linhas, tamanho e tempo estimado. | Should | ✅ |
 | RF-GC-3 | **Streaming confiável** com confirmação `ok`/`error` e controle de buffer. | Must | ✅ |
-| RF-GC-4 | Iniciar (Play), Pausar (Feed Hold `!`), Retomar (`~`) e Parar (Reset). | Must | ✅ |
-| RF-GC-5 | Barra de progresso (linha atual / total) e tempo restante. | Must | 🟡 |
-| RF-GC-6 | Múltiplos passes (repetir programa N vezes). | Should | ✅ |
+| RF-GC-4 | Iniciar (Play), Pausar (Feed Hold `!`), Retomar (`~`) e Parar (Reset) — sempre acessíveis durante o job por uma barra flutuante. | Must | ✅ |
+| RF-GC-5 | Barra de progresso (linha atual / total) e tempo restante. | Must | ✅ |
+| RF-GC-6 | Múltiplos passes (repetir programa N vezes, marcados com `; pass N/M` para o preview colorir por passada). | Should | ✅ |
 | RF-GC-7 | Retomada de job interrompido (do início, de linha específica ou N linhas antes). | Should | ✅ |
 | RF-GC-8 | Parada de emergência que interrompe o envio e para a máquina. | Must | ✅ |
 | RF-GC-9 | Validação/aviso de linhas perigosas e limites da área de trabalho. | Could | ✅ |
@@ -153,12 +154,12 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
 | RF-STA-1 | Polling de status `?` (5–10 Hz) e exibição do estado (Idle/Run/Hold/Alarm/Home/Jog/Door…). | Must | ✅ |
-| RF-STA-2 | Exibir posição atual (MPos/WPos) e distância para ir. | Must | 🟡 |
+| RF-STA-2 | Exibir posição atual (MPos/WPos) e distância para ir. | Must | ✅ |
 | RF-STA-3 | Exibir feed real e rotação/spindle (S) atuais. | Should | ✅ |
-| RF-STA-4 | Traduzir alarmes (`ALARM:Homing fail`, `Soft limit`, `Hard limit`…) com causa e solução. | Should | 🟡 |
-| RF-STA-5 | Desabilitar comandos inválidos no estado de alarme. | Must | ⬜ |
+| RF-STA-4 | Traduzir alarmes (`ALARM:Homing fail`, `Soft limit`, `Hard limit`…) com causa e solução. | Should | ✅ |
+| RF-STA-5 | Desabilitar comandos inválidos no estado de alarme. | Must | ✅ |
 | RF-STA-6 | Botões Unlock (`$X`), Reset (soft reset) e Homing (`$H`). | Must | ✅ |
-| RF-STA-7 | Registrar histórico de eventos/alarmes da sessão. | Could | 🟡 |
+| RF-STA-7 | Registrar histórico de eventos/alarmes da sessão. | Could | ✅ |
 
 ### M6 — Overrides
 
@@ -175,9 +176,10 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | :--- | :--- | :--- | :--- |
 | RF-PRV-1 | Renderizar o caminho do G-code carregado em 2D. | Should | ✅ |
 | RF-PRV-2 | Zoom e pan (mouse + barra de rolagem). | Should | ✅ |
-| RF-PRV-3 | Indicador da posição atual da cabeça durante a execução. | Should | ✅ |
+| RF-PRV-3 | Indicador da posição atual da cabeça durante a execução (posição de trabalho — `WPos`/`MPos−WCO`). | Should | ✅ |
 | RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | ✅ |
-| RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`). | Could | ✅ |
+| RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`), colorir o trecho já gravado por passada e usar a potência `S` como intensidade (imagem aparece como será gravada). | Could | ✅ |
+| RF-PRV-6 | **Posicionar a gravadora**: desenhar o **contorno** da área (laser bem fraco) e **marcar o centro** da imagem levando a cabeça até ele (laser desligado). | Should | ✅ |
 
 ### M8 — Configuração do GRBL e preferências
 
@@ -186,8 +188,8 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-CFG-1 | Ler e exibir todos os settings `$$` com descrição legível. | Must | ✅ |
 | RF-CFG-2 | Editar e aplicar settings individualmente (`$n=valor`). | Must | ✅ |
 | RF-CFG-3 | Ver `$#` (offsets), `$I` (build info) e `$G` (estado modal). | Should | ✅ |
-| RF-CFG-4 | Perfis de configuração (salvar/restaurar conjunto de settings). | Could | ⬜ |
-| RF-CFG-5 | Preferências do app: tema, unidades, porta/baud padrão, pasta de arquivos. | Must | 🟡 |
+| RF-CFG-4 | Perfis de configuração (salvar/restaurar conjunto de settings). | Could | ✅ |
+| RF-CFG-5 | Preferências do app: tema, unidades, porta/baud padrão, pasta de arquivos. | Must | ✅ |
 | RF-CFG-6 | Ajuda contextual sobre settings críticos (`$20`, `$21`, `$22`, `$32`). | Should | ✅ |
 
 ### M9 — Importação de imagens e geração de G-code
@@ -203,6 +205,9 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-IMG-7 | Parâmetros de gravação: velocidade (mm/min), S-min/S-max, modo **M3/M4**. | Must | ✅ |
 | RF-IMG-8 | Perfis de material (potência/velocidade recomendadas; notas trazem as passadas). | Could | ✅ |
 | RF-IMG-9 | Compensar tamanho do ponto do laser (ex.: 0,08 mm da COMGO Z1). | Should | ✅ |
+| RF-IMG-10 | **Velocidade adaptativa**: passar rápido onde não há gravação e reduzir a velocidade onde há (dose = `S` ÷ velocidade). | Should | ✅ |
+| RF-IMG-11 | **Máxima velocidade na máquina real**: varredura bidirecional (zigue-zague), pulo de linhas em branco e mínimo de linhas no arquivo (mesmo `S`/`F` num só `G1`). | Should | ✅ |
+| RF-IMG-12 | Avisar quando a velocidade pedida (com a velocidade no claro) passa de `$110`/`$111` da máquina. | Could | ✅ |
 
 ### M10 — Macros e botões customizados
 

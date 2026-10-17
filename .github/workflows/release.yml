@@ -1,0 +1,57 @@
+name: Release
+
+# Publica uma release do GitHub com os artefatos Linux (AppImage + deb) quando
+# uma tag `v*` é empurrada. `workflow_dispatch` gera apenas os artefatos
+# (upload como artifact) sem criar release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Empacotar Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Qualidade (lint + tipos + testes)
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Empacotar (.AppImage + .deb)
+        run: npm run package:linux
+
+      - name: Artefatos (workflow_dispatch)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: grbl-studio-linux
+          path: |
+            release/*.AppImage
+            release/*.deb
+
+      - name: Publicar release (tags)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.AppImage
+            release/*.deb
+          generate_release_notes: true
+          fail_on_unmatched_files: true

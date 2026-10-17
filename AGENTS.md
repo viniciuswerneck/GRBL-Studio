@@ -47,9 +47,12 @@ npm test               # Vitest (unit + integração)
 
 1. **Comandos de tempo real** (`?`, `!`, `~`, `0x18`, `0x90–0x94`) são **byte
    único e NÃO levam `\n`**. Ex.: Feed Hold é `'!'`, não `'!\n'`.
-2. **Nunca envie G-code em massa.** O envio é *send-response*: só envie a próxima
-   linha após receber `ok` (ou trate `error:`). Estourar o buffer do GRBL trava a
-   máquina e queima material.
+2. **Nunca estoure o buffer do GRBL.** O envio usa uma **janela com contagem de
+   caracteres**: no máximo o tamanho do buffer RX da máquina (lido de `[OPT:…]`;
+   128 bytes por padrão) e nunca mais linhas que a profundidade do planner em
+   linhas sem `ok`, e cada `ok` libera espaço — nada de `write` em massa.
+   Consultas/comandos avulsos só vão com a janela vazia; `error:` interrompe o
+   job. Estourar o buffer trava a máquina e queima material.
 3. **`contextIsolation: true`, `nodeIntegration: false`** sempre. Toda ponte
    renderer↔main passa pelo preload (`contextBridge`), com IPC tipado. Nunca
    exponha `ipcRenderer` cru nem APIs Node ao renderer.

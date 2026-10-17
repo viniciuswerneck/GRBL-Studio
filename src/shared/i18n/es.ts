@@ -16,9 +16,9 @@ export const es = {
   'nav.export': 'Exportar…',
 
   // -------------------------------------------------------------- modos UI
-  'mode.basic': 'Básico',
-  'mode.advanced': 'Avanzado',
-  'mode.toggle.title': 'Alternar modo Básico/Avanzado',
+  'assistant.open': 'Asistente',
+  'assistant.close': 'Cerrar asistente',
+  'assistant.title': 'Asistente — guía para principiantes',
   'mode.M4': 'M4 (dinámico)',
   'mode.M3': 'M3 (constante)',
 
@@ -42,7 +42,8 @@ export const es = {
   'action.cut': 'Corte',
 
   // -------------------------------------------------------- guía (básico)
-  'guide.close': 'Cerrar (Modo Avanzado)',
+  'guide.close': 'Cerrar asistente',
+  'assistant.guideTitle': 'Asistente — guía para principiantes',
   'guide.type.photo': 'Foto',
   'guide.type.bw': 'B/N',
   'guide.type.vector': 'Contorno',
@@ -148,6 +149,25 @@ export const es = {
   'img.speed': 'Velocidad',
   'img.passes': 'Pasadas',
   'img.mode': 'Modo',
+  'img.adaptive': 'Velocidad en zonas claras (×)',
+  'img.adaptive.title':
+    'Acelera los tramos claros hasta N× la velocidad de grabado. Las zonas ' +
+    'claras salen más claras (dosis = S ÷ velocidad); compense con S-max/white ' +
+    'clip. Por encima de la velocidad máxima de los ejes ($110/$111) el grabado ' +
+    'se debilita. 1 = desactivado.',
+  'img.bidirectional': 'Bidireccional (zigzag)',
+  'img.bidirectional.title':
+    'Graba cada línea de izquierda a derecha y la siguiente de derecha a ' +
+    'izquierda, sin el G0 de retorno. Casi duplica la velocidad en imágenes ' +
+    'anchas. Desactívelo si su máquina deja la ida y la vuelta diferentes.',
+  'img.speed.limits':
+    'Velocidad máxima de los ejes ($110/$111): {x} / {y} mm/min.',
+  'img.speed.over':
+    'Pico de {peak} mm/min por encima del límite del eje ({max} mm/min): GRBL ' +
+    'limita la velocidad y el grabado se debilita. Reduzca la velocidad o la ' +
+    'velocidad en zonas claras.',
+  'img.speed.unknown':
+    'Conecte la grabadora para comparar con el límite de los ejes ($110/$111).',
   'img.generate': 'Generar G-code',
   'img.generate.disabled': 'Elija primero una imagen',
   'img.generate.title': 'Convierte la imagen en G-code',
@@ -167,13 +187,20 @@ export const es = {
 
   // ------------------------------------------------------- posicionamiento
   'frame.title': 'Posicionar la grabadora',
+  'frame.group.move': 'Mover el cabezal',
+  'frame.group.check': 'Verificar el área',
+  'frame.group.job': 'Grabado',
+  'frame.home.title': 'Home (referenciar los ejes)',
   'frame.hint':
-    'Use las flechas para llevar el láser hasta el punto de origen del grabado. Después haga clic en **Dibujar contorno** para que la máquina recorra el rectángulo del área (láser apagado).',
+    'Use las flechas para acercar el láser al área. “Dibujar contorno” recorre el área con láser muy débil y “Marcar centro” lleva el láser al centro de la imagen (láser apagado).',
   'frame.setOrigin': 'Definir origen aquí',
   'frame.origin': 'Ir al origen (0,0)',
   'frame.outline': 'Dibujar contorno',
+  'frame.center': 'Marcar centro',
+  'frame.center.title': 'Lleva el láser al centro de la imagen (láser apagado)',
+  'frame.center.done': 'Láser en el centro de la imagen (láser apagado).',
   'frame.start': '▶ Grabar',
-  'frame.power': 'Potencia del contorno (%)',
+  'frame.power': 'Potencia del grabado (%)',
   'frame.speed': 'Velocidad de grabado (mm/min)',
   'frame.position': 'Posicionar',
   'frame.engrave': 'Grabar',
@@ -181,7 +208,7 @@ export const es = {
     'Máquina conectada. Posicione y dibuje el contorno para comprobar.',
   'frame.status.disconnected':
     'Conecte la máquina para posicionar y dibujar el contorno.',
-  'frame.outline.done': 'Contorno enviado (láser apagado).',
+  'frame.outline.done': 'Contorno enviado (láser muy débil).',
   'frame.generating': 'Generando G-code con los parámetros del modal…',
 
   // ------------------------------------------------- ejecución y archivo
@@ -189,15 +216,24 @@ export const es = {
   'file.open': 'Abrir G-code…',
   'file.none': 'Ningún archivo cargado',
   'file.loaded': 'Archivo cargado: {name} ({lines} líneas)',
-  'file.info': '{name} — {lines} líneas',
-  'file.infoGenerated': '{file} — {lines} líneas (generado de {image})',
+  'file.info': '{name} — {lines} líneas · {size}',
+  'file.infoTime': '{name} — {lines} líneas · {size} · ~{time}',
+  'file.infoGenerated':
+    '{file} — {lines} líneas · {size} (generado de {image})',
+  'file.infoGeneratedTime':
+    '{file} — {lines} líneas · {size} · ~{time} (generado de {image})',
   'file.saved': 'G-code guardado en {path}',
   'gcode.summary':
     'G-code generado: {lines} líneas, {size}, {rows}×{cols} muestras, ~{time}',
   'run.play': '▶ Iniciar',
   'run.pause': '⏸ Pausar',
   'run.resume': '▶ Reanudar',
-  'run.stop': '⏹ Detener / Emergencia',
+  'run.cancel': '⏹ Cancelar',
+  'run.cancel.title':
+    'Cancela el trabajo y detiene la máquina ahora (Esc / Ctrl+X)',
+  'run.jobbar.label': 'Controles del grabado',
+  'run.state.engraving': 'Grabando…',
+  'run.state.paused': 'Pausado',
   'run.hint.noFileNoConn':
     'Genere el G-code (Imagen → G-code) o abra un .gcode y conecte la máquina para enviar.',
   'run.hint.noFile':
@@ -278,6 +314,7 @@ export const es = {
     'Abra un G-code o inicie un trabajo para ver el recorrido.',
   'preview.hint.noMoves': 'Este G-code no tiene movimientos que dibujar.',
   'preview.cut': 'Quemado',
+  'preview.pass': 'Pasada {n}/{total}',
   'preview.rapid': 'Desplazamiento',
   'preview.tip': 'rueda: zoom · arrastrar: mover · doble clic: ajustar',
   'preview.warning.area':
@@ -635,7 +672,82 @@ export const es = {
   'menu.view': 'Ver',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
+  'menu.appearance': 'Apariencia e idioma…',
   'menu.help': 'Ayuda',
   'menu.about': 'Acerca de GRBL Studio',
   'menu.site': 'Sitio web de WerneckLab',
+
+  // -------------------------------------------- consola (RF-CON-14/15)
+  'console.pause': 'Pausar desplazamiento',
+  'console.resume': 'Reanudar desplazamiento',
+  'console.clear': 'Limpiar',
+  'console.save': 'Guardar registro…',
+  'console.saved': 'Registro guardado en {path}',
+  'console.saveFail': 'Fallo al guardar el registro: {msg}',
+  'dlg.saveLog': 'Guardar registro de consola',
+  'filter.log': 'Registro (texto)',
+
+  // ------------------------------------------------ estado (RF-STA-2/4/7)
+  'status.dtg': 'Por recorrer',
+  'status.remaining': 'Restante',
+  'status.alarmHint': 'Alarma activa: use Unlock ($X) o Reset antes de mover.',
+  'status.history.title': 'Historial de alarmas',
+  'status.history.empty': 'Ninguna alarma registrada.',
+  'status.history.clear': 'Limpiar historial',
+  'alarmfix.1':
+    'Revise el final de carrera y haga homing ($H) o envíe Unlock ($X).',
+  'alarmfix.2':
+    'Envíe Unlock ($X); para proteger la máquina, active soft limits ($20) con homing ($22).',
+  'alarmfix.3':
+    'Haga homing ($H) para restablecer el origen antes de continuar.',
+  'alarmfix.4':
+    'Revise el cableado de la sonda y el estado inicial del pin antes de sondar.',
+  'alarmfix.5':
+    'Acerque la sonda al material o aumente el recorrido de sondeo.',
+  'alarmfix.6': 'Repita el homing ($H); evite reiniciar durante el ciclo.',
+  'alarmfix.7': 'Cierre la puerta de seguridad y repita el homing ($H).',
+  'alarmfix.8':
+    'Aumente el pull-off ($27) y revise el cableado del final de carrera.',
+  'alarmfix.9':
+    'Aumente la búsqueda del homing ($25) y revise el final de carrera del eje.',
+
+  // ------------------------------------------------ conexión (RF-CON-5)
+  'conn.firmware': 'Firmware: {value}',
+  'conn.stateReport': 'Estado modal: {value}',
+
+  // ------------------------------------------------------ jog (RF-JOG-2/6)
+  'jog.hold.title':
+    'Mantenga pulsado para mover continuamente; suelte para parar',
+  'jog.keys.title': 'Flechas: X/Y · PageUp/PageDown: Z · Home: homing ($H)',
+
+  // ------------------------------------ perfiles de configuración (RF-CFG-4)
+  'settings.profile.title': 'Perfiles de configuración',
+  'settings.profile.hint':
+    'Guarde el conjunto actual de $$ y reaplíquelo después.',
+  'settings.profile.name': 'Nombre del perfil',
+  'settings.profile.save': 'Guardar perfil',
+  'settings.profile.saveHint': 'Guarda los valores actuales de $$',
+  'settings.profile.apply': 'Aplicar',
+  'settings.profile.applyHint':
+    'Reescribe los valores del perfil en la máquina',
+  'settings.profile.delete': 'Eliminar',
+  'settings.profile.none': 'Ningún perfil guardado',
+  'settings.profile.saved': 'Perfil «{name}» guardado.',
+  'settings.profile.applied': 'Perfil «{name}» aplicado.',
+  'settings.profile.deleted': 'Perfil «{name}» eliminado.',
+  'settings.profile.needName': 'Indique un nombre para el perfil.',
+  'settings.profile.applyFail': 'Fallo al aplicar el perfil: {msg}',
+
+  // ---------------------------------------------- preferencias (RF-CFG-5)
+  'prefs.fileDir': 'Carpeta de archivos',
+  'prefs.fileDir.hint':
+    'Dónde abrir y guardar archivos de forma predeterminada.',
+  'prefs.fileDir.choose': 'Elegir carpeta…',
+  'prefs.fileDir.default': 'Carpeta predeterminada del sistema',
+  'prefs.fileDir.changed': 'Carpeta de archivos: {path}',
+  'dlg.pickDir': 'Elegir carpeta de archivos',
+
+  // --------------------------------------------- registros de sesión (RNF-9)
+  'menu.logs': 'Abrir carpeta de registros',
+  'logs.none': 'Todavía no hay registros.',
 } satisfies Record<keyof typeof ptBR, string>;

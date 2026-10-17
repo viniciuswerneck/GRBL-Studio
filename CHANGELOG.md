@@ -6,6 +6,217 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
+- **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior
+  gasto de CPU do app durante a gravação (medido com um raster de 270 mil
+  trechos: **~300 ms por quadro**, até 719 ms — a CPU ficava em 100 % e o envio
+  para o GRBL atrasava, travando a máquina no meio do movimento). Agora a
+  camada **estática** (área de trabalho + `G0` + queima) é pintada uma vez por
+  programa/vista/tema e o **trecho já executado é incremental** (só o que
+  terminou desde o quadro anterior): **~3 ms por quadro** (máx. 6 ms).
+- **Progresso do job no IPC a ~10 Hz** (`PROGRESS_INTERVAL_MS`): antes cada
+  `ok` (um por linha, centenas por segundo) emitia um evento de progresso ao
+  renderer. O último evento (fim/início) é sempre entregue.
+- **Barra de status com altura fixa**: progresso/DTG/restante mudam de largura
+  durante o job e a barra quebrava linha, encolhendo o preview a cada
+  atualização (o desenho “pulsava”). Em janelas estreitas o “Restante”
+  (`≤1040 px`) e o “Para ir” (`≤980 px`) saem antes de espremer o DRO.
+
+### Changed — modal "Posicionar a gravadora" (sem rolagem, duas colunas)
+- Diálogo ampliado (920 px) em **duas colunas**: "Mover a cabeça" (pad de jog 3×3
+  + definir/ir para origem) e "Conferir a área" (desenhar contorno + marcar
+  centro, dica e parâmetros de gravação). Cabe sem barra de rolagem a partir
+  de 1024×700 (medido).
+- Rodapé com a ação principal à direita (Fluent) e o status à esquerda;
+  fechar por um ícone `✕` no cabeçalho.
+- Rótulo da potência renomeado para "Potência da gravação (%)" (o valor
+  alimenta o `S-max` do job), deixando claro que o contorno continua usando
+  laser bem fraco (S=5).
+
+### Changed — envio do job em “janela” (contagem de caracteres)
+- O envio era **estritamente send-response**: a próxima linha só saía depois do
+  `ok`. Como o `ok` só chega após a ida-e-volta pelo USB-serial (latência do
+  driver + agendamento do SO), qualquer carga no PC **esvaziava o buffer do
+  GRBL** e a máquina parava no meio do movimento (queima irregular e mais lenta).
+- Agora o `GrblClient` mantém uma **janela** de linhas sem `ok` limitada em
+  **bytes pelo buffer RX da própria máquina**, lido de `[OPT:…]` na resposta do
+  `$I` (padrão 128 B) — e, além disso, nunca mais linhas que a profundidade do
+  planner. O GRBL segue no controle do fluxo, o buffer nunca estoura e o envio
+  continua cheio mesmo com a CPU ocupada.
+- O job só é dado como **concluído quando o último `ok` chega** (enviar ≠
+  executar) — e **nunca em pausa**, para o operador não perder o **Retomar**.
+- Em pausa (feed hold) o envio do job para; ao retomar, continua de onde estava.
+  O vigia de "sem resposta" também fica desligado durante a pausa: o GRBL deixa
+  de confirmar enquanto está em hold, e isso **não** é falha.
+  `cancelar`/soft reset e `ALARM:` descartam a janela (a máquina limpou a fila).
+- Consultas (`$$`, `$I`, `$G`…) continuam saindo **uma por vez e com a janela
+  vazia**, para o corpo da resposta não se misturar com os `ok` do job.
+
+### Added — mais velocidade de gravação (RF-IMG-11)
+- **Varredura bidirecional (zigue-zague)**, agora padrão (`engrave.bidirectional`
+  / caixa **Bidirecional**): a linha seguinte é gravada no sentido inverso, sem
+  o `G0` de retorno. Num raster de 60×45 mm a 10 linhas/mm o deslocamento cai de
+  28 749 mm para 8 343 mm e o tempo estimado de 10 min para 6 min.
+- **Linhas inteiras em branco são puladas** (margens da imagem) e a área de
+  gravação (`bounds`) continua sendo a da imagem — enquadramento, “marcar
+  centro” e preview não mudam.
+- **Menos linhas no arquivo**: trechos consecutivos que resultam no **mesmo `S`
+  e `F`** viram um único `G1`, e `M5`/rearme (`M4`/`M3 S0`) só são enviados
+  quando o laser **estava ligado** — o modal do GRBL sobrevive aos `G0`.
+
+### Added — aviso de velocidade acima do limite da máquina (RF-IMG-12)
+- A aba Imagem mostra o **máximo dos eixos** lido da própria máquina
+  (`$110`/`$111`) e avisa quando a velocidade pedida — já contando a
+  **velocidade no claro** — passa desse valor: acima do limite o GRBL corta a
+  velocidade e a queima enfraquece (peça mais clara).
+
+### Added — identidade visual: ícone e splash (RF-APP-4 / §13)
+- **Ícone do app**: `docs/icone.png` → `build/icon.png` (512×512), usado pelo
+  `electron-builder` no AppImage/.deb (atalho do desktop) e pela janela
+  principal (`BrowserWindow.icon`).
+- **Splash de abertura**: `docs/splash.png` → `public/splash.png`, exibido por
+  `public/splash.html` numa janela frameless 738×401 (arte + barra de
+  progresso indeterminada). Fecha em `ready-to-show`; fica desligado em
+  smoke test e E2E (`GRBL_SMOKE_TEST`/`GRBL_E2E`).
+
+### Added — “Marcar centro” ao posicionar (RF-PRV-6)
+- O modal **Posicionar a gravadora** ganhou **Marcar centro**: leva a cabeça ao
+  centro da área da imagem com `M5` + `G0` (**laser desligado**), para conferir
+  com a ponta do laser onde será o centro antes de gravar.
+- O modal passou a usar a caixa do G-code aberto quando não há imagem gerada na
+  sessão (contorno/centro também funcionam para arquivos `.gcode`).
+- Segurança (RF-STA-5): os botões que movem/enviam G-code no modal (jog, homing,
+  definir origem, ir para origem, contorno, centro e gravar) ficam desabilitados
+  durante job/pausa e em `Alarm`/`Door`.
+- O conteúdo do modal ganhou **corpo rolável** (`.modal-body`) com espaçamento:
+  em janelas baixas os botões não se sobrepõem mais e as passadas ficam
+  acessíveis por rolagem.
+
+### Changed — botão ◐ (Aparência) saiu da barra
+- Tema e idioma continuam no menu **Exibir** (submenus **Tema**/**Idioma**); o
+  modal **Aparência e idioma…** (que também guarda a pasta de arquivos) abre
+  por **Exibir → Aparência e idioma…**.
+
+### Changed — barra de controles da gravação (RF-GC-4/8)
+- **Pausar / Retomar / Cancelar** agora ficam numa **barra flutuante fixa**
+  (`#jobBar`, `body.job-active`) visível durante todo o job, em qualquer aba e
+  **sobre o Assistente** — antes os botões só existiam dentro da aba “Execução”.
+  Mostra o estado (Gravando…/Pausado) e o progresso (`linhas (%), restante`).
+  A antiga alternância Pausar/Retomar virou dois botões explícitos.
+- `Cancelar` (`run.cancel`) preserva a função de parada de emergência
+  (`Esc`/`Ctrl+X` continuam valendo).
+
+### Changed — “Modo Básico” virou **Assistente** (RF-APP-4/§15)
+- O botão no cabeçalho da barra lateral agora é **“Assistente”** (aceso enquanto
+  o guia está aberto, `aria-pressed`) e o cartão do guia tem o título
+  “Assistente — guia iniciante”. O antigo par “Básico/Avançado” sai da UI;
+  a preferência interna segue em `prefs.mode` (`basic`/`advanced`).
+- Chaves de i18n renomeadas (`mode.open/close/title` → `assistant.*`).
+
+### Fixed — preview durante a gravação (RF-PRV-3)
+- O **crosshair** (posição do laser) e o **DTG** agora usam a **posição de
+  trabalho** correta: `WPos` quando o GRBL informa, senão `MPos − WCO`. Antes,
+  quando o status vinha só com `MPos`, a cruz aparecia deslocada do desenho (o
+  `G92`/origem de trabalho era ignorado). O **DRO** passou a mostrar a mesma
+  posição, ficando consistente com o preview.
+- **`WCO` é intermitente**: com `$10=1` o GRBL manda `MPos` em quase todos os
+  relatórios e o `WCO` só de vez em quando (~10–30). O último `WCO` agora fica
+  em cache (`state.wco`, via `GRBL_PREVIEW.workPosition`) e é aplicado a todos
+  os relatórios — sem isso a cruz pulava para `MPos` entre um `WCO` e outro.
+
+### Fixed — preview de imagem virava um bloco maciço (RF-PRV-5)
+- O parser agora lê a **potência `S` modal** de cada trecho (`moves[].s`) e o
+  preview desenha a queima com **alfa/briho proporcional ao `S`** (12 níveis,
+  um stroke por nível). Antes toda linha `G1` saía na mesma cor e uma gravação
+  line-to-line aparecia como um retângulo azul; agora a imagem aparece como
+  será gravada. Vale também para arquivos gerados antes desta mudança.
+- O trecho já executado mantém a **cor por passada**, agora com a mesma
+  modulação de intensidade.
+
+### Changed — cores por passada no preview (RF-PRV-5 / RF-GC-6)
+- O trecho já gravado é desenhado **com uma cor por passada** (paleta com o
+  “ok” do tema + 6 cores). Com múltiplos passes os caminhos são os mesmos, e a
+  cor distinta evita perder a referência de onde o laser está; a passada
+  corrente fica por cima das anteriores.
+- O gerador marca cada passada com `; pass N/M` (só quando `passes > 1`) e o
+  parser (`parseGcode`) associa `moves[].pass`; a legenda mostra
+  “Passada N/M” com a cor corrente.
+
+### Added — requisitos pendentes das Fases 2/3/7 (RFs + RNF-9)
+- **RF-STA-5** (segurança): em `Alarm`/`Door`, a UI desabilita o que move
+  (jog, homing, origem, ir p/ zero, play e macros) e mantém `Unlock ($X)`/`Reset`;
+  o `runHint` mostra a ação recomendada.
+- **RF-STA-4**: cada código de alarme ganhou uma **ação recomendada** localizada
+  (`alarmfix.1`…`alarmfix.9`) exibida no console junto da causa.
+- **RF-STA-2**: novo campo **DTG** ("para ir") na barra de status — distância até
+  o fim do segmento em execução (cursor amortizado sobre o preview).
+- **RF-STA-7**: **histórico persistente de alarmes** (até 100 entradas em
+  `prefs.alarmHistory`), com card dedicado e limpeza.
+- **RF-CON-5**: ao conectar, lê `$I` e `$G` (serializado com `$$`) e mostra
+  firmware/estado modal no console.
+- **RF-CON-14/15**: barra do console com **pausar rolagem**, **limpar** e
+  **salvar log** (diálogo nativo `.log`/`.txt`).
+- **RF-GC-2/5**: tempo **estimado** no rótulo do arquivo (novo puro
+  `estimateSeconds` em `shared/preview.ts`, com `feed` por movimento) e tempo
+  **restante** no progresso do job.
+- **RF-JOG-2**: jog **contínuo** ao segurar o botão (toque = passo; ≥ 250 ms =
+  movimento até soltar, cancelado com o byte de tempo real `0x85`).
+- **RF-JOG-6**: atalhos de teclado (setas = X/Y, `Home` = homing) ignorados em
+  campos de texto e overlays.
+- **RF-CFG-4**: **perfis de configuração** — salvar/reaplicar/remover conjuntos
+  de `$$` (`prefs.settingProfiles`).
+- **RF-CFG-5**: preferência de **pasta de arquivos**, usada como `defaultPath`
+  dos diálogos (memoriza a última pasta automaticamente).
+- **RNF-9**: **log persistente de sessão** (`main/services/SessionLog.ts` →
+  `<userData>/logs/session-*.log`, escrita agrupada) + menu **Ajuda → Abrir pasta
+  de logs**.
+
+### Fixed — correções da revisão do DoD
+- **Abas de `$$`**: o seletor `#settingsOverlay .tabs .tab` não captura mais as
+  abas da sidebar — clicar em “Imagem”/“Execução” durante um job não disparava
+  mais um `$$` (que, com a gravação em curso, podia interromper o corte).
+- **Aborto por erro colateral**: `GrblClient.onNack` só aborta o job quando a
+  linha rejeitada **é do job**; um `error:` de comando avulso/consulta não
+  interrompe o corte.
+- **Classificação**: `[MSG:…]` é checado **antes** do `ok`, então um aviso que
+  contenha “ok” (ex.: `[MSG:Jog ok]`) não é confundido com um ACK (mantém o
+  envio send-response).
+- **DTG (RF-STA-2)**: usa `WPos` (coordenadas de trabalho, como o crosshair) e o
+  preview do arquivo aberto passa as linhas já filtradas, alinhando
+  `moves[].line` com `state.doneFile` — sem desvio em arquivos com linhas vazias.
+- **RF-GC-2**: o rótulo do arquivo agora inclui o **tamanho** (`file.info*`).
+- **RF-STA-7**: só erros/alarmes do GRBL (com código) entram no histórico.
+- **RF-JOG-6**: `PageUp`/`PageDown` fazem jog de Z (setas = X/Y, `Home` = homing).
+- **Acessibilidade (DESIGN §5)**: alvo de clique mínimo de 32 px; `Esc`/`Ctrl+X`
+  acionam a parada do job; `Esc` fecha overlays (um único handler, respeitando
+  campos de texto); rótulo do console re-sincroniza ao trocar de idioma.
+- **`SessionLog`**: `close()` é final (sem timer órfão nem novas linhas).
+- **Type-check** passa a cobrir `tests/` e `e2e/` (`tsconfig.test.json`).
+
+### Added — testes
+- `tests/preview-estimate.test.ts` (tempo estimado), `tests/prefs-store.test.ts`
+  (sanitização de perfis/histórico/pasta) e `tests/session-log.test.ts`.
+- `tests/grbl-client.test.ts`: `cancelJog` (`0x85`) e ação recomendada no alarme.
+- `tests/protocol.test.ts`: campos parciais do status (`F`, `Pn`, `Bf`, extra) e
+  casos de borda de `classifyLine` (cobertura do protocolo → 100 % linhas).
+- `tests/preview.test.ts`: atribuição de `moves[].pass` pela marca `; pass N`
+  (incluindo a forma entre parênteses e arquivos sem marca);
+  `tests/image-gcode.test.ts`: marcadores `; pass N/M` e invariante de `M5`
+  antes de `G0` tolerando linhas de comentário.
+
+### Added — qualidade e distribuição (Fase 7/8)
+- **Cobertura** do núcleo do protocolo (`shared/protocol.ts`, `shared/preview.ts`)
+  com limiares de **80 %** em `vitest.config.ts`; script `npm run test:coverage`.
+- **E2E Playwright + Electron** (`e2e/app.spec.ts`, `playwright.config.ts`):
+  abre o app real com `userData` temporário, valida console, modal de Aparência
+  e troca de idioma em tempo de execução; script `npm run test:e2e`.
+- **CI**: novo job `e2e` (xvfb) e passo de cobertura no job `quality`.
+- **Release automatizada**: `.github/workflows/release.yml` publica AppImage+deb
+  no GitHub Releases em tags `v*` (e só artefatos via `workflow_dispatch`).
+- **Flatpak** (RF-APP-4, “Could”): esqueleto em `build/flatpak/` (manifesto +
+  lançador `zypak-wrapper` + README) e script `npm run package:flatpak`.
+- Docs atualizadas: `DEVELOPMENT.md` (testes/cobertura/E2E/CI/Flatpak).
+
 ## [0.4.0] - 2026-10-17
 
 ### Added — temas (RF-APP-1): 11 temas claro/escuro/alto contraste

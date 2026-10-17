@@ -165,6 +165,26 @@ export type RapidOverrideLevel = 'default' | 'medium' | 'low';
 export interface ErrorPayload {
   message: string;
   code?: number;
+  /** Ação recomendada para alarmes conhecidos (RF-STA-4). */
+  solution?: string;
+}
+
+/** Entrada do histórico de alarmes/erros da sessão (RF-STA-7). */
+export interface AlarmEntry {
+  /** Timestamp (epoch ms). */
+  ts: number;
+  code?: number;
+  /** Causa (mensagem principal). */
+  message: string;
+  /** Ação recomendada (RF-STA-4), quando conhecida. */
+  solution?: string;
+}
+
+/** Perfil de configuração `$$` salvo pelo usuário (RF-CFG-4). */
+export interface SettingProfile {
+  name: string;
+  /** Mapa `código -> valor` (ex.: `{ "130": "400" }`). */
+  values: Record<string, string>;
 }
 
 /** Imagem escolhida no diálogo nativo (main -> renderer). */
@@ -231,7 +251,7 @@ export interface Prefs {
   units?: Units;
   /** Idioma escolhido (RF-APP-2); ausente = detectado do sistema. */
   lang?: Lang;
-  /** Modo Básico/Avançado (RF-APP-4). */
+  /** Assistente aberto (`basic`) ou fechado (`advanced`) — RF-APP-4. */
   mode?: 'basic' | 'advanced';
   /** Perfil de máquina escolhido (RF-IMG-8). */
   machineProfile?: string;
@@ -245,4 +265,10 @@ export interface Prefs {
   host?: string;
   /** WiFi: porta TCP padrão (RF-CON-7). */
   tcpPort?: number;
+  /** Pasta padrão dos diálogos de arquivo (RF-CFG-5). */
+  fileDir?: string;
+  /** Perfis de configuração `$$` salvos pelo usuário (RF-CFG-4). */
+  settingProfiles?: SettingProfile[];
+  /** Histórico de alarmes/erros persistido (RF-STA-7). */
+  alarmHistory?: AlarmEntry[];
 }

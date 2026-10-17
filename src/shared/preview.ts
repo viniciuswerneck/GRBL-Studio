@@ -16,11 +16,46 @@
  * execução a partir do progresso do job (RF-PRV-5).
  */
 
+import type { GrblStatus } from './types';
+
 export interface PreviewBounds {
   xMin: number;
   xMax: number;
   yMin: number;
   yMax: number;
+}
+
+/** Vetor XYZ simples (mm). */
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Offset de trabalho neutro (sem G92/G54). */
+export const ZERO_OFFSET: Vec3 = { x: 0, y: 0, z: 0 };
+
+/**
+ * Posição de trabalho (mm) a partir de um status do GRBL (RF-PRV-3).
+ *
+ * O GRBL reporta **só `MPos` ou só `WPos`** (nunca os dois) e manda o `WCO`
+ * apenas de vez em quando (~10–30 relatórios). Como `WPos = MPos − WCO`, o
+ * chamador precisa guardar o `wco` devolvido e passá-lo como `prevWco` na
+ * próxima chamada — sem esse cache, um relatório sem `WCO` daria a posição de
+ * máquina e a cruz do preview “saltaria”.
+ */
+export function workPosition(
+  status: Pick<GrblStatus, 'mpos' | 'wpos' | 'wco'>,
+  prevWco: Vec3 = ZERO_OFFSET,
+): { pos: Vec3 | null; wco: Vec3 } {
+  const wco = status.wco ?? prevWco;
+  if (status.wpos) return { pos: status.wpos, wco };
+  if (!status.mpos) return { pos: null, wco };
+  const { mpos } = status;
+  return {
+    pos: { x: mpos.x - wco.x, y: mpos.y - wco.y, z: mpos.z - wco.z },
+    wco,
+  };
 }
 
 /** Trecho reto do caminho (arcos são subdivididos em vários). */
@@ -33,6 +68,12 @@ export interface PreviewMove {
   y1: number;
   /** Índice (0-based) da linha fonte que gerou o movimento. */
   line: number;
+  /** Passada (0-based) a que o movimento pertence (RF-GC-6). */
+  pass?: number;
+  /** Feed modal vigente (mm/min) quando o movimento foi gerado (RF-GC-2/5). */
+  feed?: number;
+  /** Potência `S` modal no movimento — o preview usa como intensidade (RF-PRV-5). */
+  s?: number;
 }
 
 export interface ParsedProgram {
@@ -71,6 +112,18 @@ function stripComments(raw: string): string {
   return out.trim();
 }
 
+/** Marca de passada emitida pelo gerador (`; pass 2/3`). Lida na linha crua
+ * (antes de remover comentários) para o preview colorir cada passada — sem a
+ * marca, `pass` fica 0 (arquivo de passada única ou G-code de terceiros). */
+const PASS_MARKER = /^[;(]\s*pass\s+(\d+)/i;
+
+function passFromMarker(rawLine: string): number | null {
+  const m = PASS_MARKER.exec(rawLine.trim());
+  if (!m) return null;
+  const n = Number.parseInt(m[1]!, 10);
+  return Number.isFinite(n) && n > 0 ? n - 1 : null;
+}
+
 interface Word {
   letter: string;
   value: number;
@@ -99,6 +152,12 @@ interface Modal {
   motion: number; // 0..3 (modal; padrão G0)
   x: number;
   y: number;
+  /** Feed modal vigente (mm/min), 0 = não definido (RF-GC-2/5). */
+  feed: number;
+  /** Potência `S` modal (0..max), usada como intensidade no preview. */
+  power: number;
+  /** Passada corrente (0-based) marcada por `; pass N` (RF-GC-6). */
+  pass: number;
 }
 
 /**
@@ -154,6 +213,9 @@ function emitArc(
   a1: number,
   cw: boolean,
   line: number,
+  feed: number,
+  power: number,
+  pass: number,
   cutMm: { value: number },
   track: (x: number, y: number) => void,
 ): void {
@@ -177,7 +239,17 @@ function emitArc(
     const t = a0 + (sweep * k) / steps;
     const nx = cx + radius * Math.cos(t);
     const ny = cy + radius * Math.sin(t);
-    moves.push({ rapid: false, x0: px, y0: py, x1: nx, y1: ny, line });
+    moves.push({
+      rapid: false,
+      x0: px,
+      y0: py,
+      x1: nx,
+      y1: ny,
+      line,
+      pass,
+      feed,
+      s: power,
+    });
     cutMm.value += Math.hypot(nx - px, ny - py);
     track(nx, ny);
     px = nx;
@@ -213,9 +285,15 @@ export function parseGcode(text: string): ParsedProgram {
     motion: 0,
     x: 0,
     y: 0,
+    feed: 0,
+    power: 0,
+    pass: 0,
   };
 
   for (let line = 0; line < rawLines.length; line++) {
+    const markedPass = passFromMarker(rawLines[line]!);
+    if (markedPass !== null) st.pass = markedPass;
+
     const clean = stripComments(rawLines[line]!);
     if (clean === '' || clean === '%') continue;
 
@@ -270,6 +348,12 @@ export function parseGcode(text: string): ParsedProgram {
         case 'R':
           r = w.value;
           break;
+        case 'F':
+          st.feed = w.value * st.scale;
+          break;
+        case 'S':
+          st.power = w.value;
+          break;
         default:
           break;
       }
@@ -315,7 +399,17 @@ export function parseGcode(text: string): ParsedProgram {
 
     if (rapid || mode === 1) {
       if (tx !== x0 || ty !== y0) {
-        moves.push({ rapid, x0, y0, x1: tx, y1: ty, line });
+        moves.push({
+          rapid,
+          x0,
+          y0,
+          x1: tx,
+          y1: ty,
+          line,
+          pass: st.pass,
+          feed: st.feed,
+          s: st.power,
+        });
         const len = Math.hypot(tx - x0, ty - y0);
         if (!rapid) cutMm.value += len;
         track(x0, y0);
@@ -345,11 +439,24 @@ export function parseGcode(text: string): ParsedProgram {
           a1,
           mode === 2,
           line,
+          st.feed,
+          st.power,
+          st.pass,
           cutMm,
           track,
         );
       } else {
-        moves.push({ rapid: false, x0, y0, x1: tx, y1: ty, line });
+        moves.push({
+          rapid: false,
+          x0,
+          y0,
+          x1: tx,
+          y1: ty,
+          line,
+          pass: st.pass,
+          feed: st.feed,
+          s: st.power,
+        });
         cutMm.value += Math.hypot(tx - x0, ty - y0);
         track(x0, y0);
         track(tx, ty);
@@ -361,4 +468,38 @@ export function parseGcode(text: string): ParsedProgram {
   }
 
   return { moves, bounds, totalLines: rawLines.length, cutMm: cutMm.value };
+}
+
+/** Parâmetros do cálculo de tempo estimado (RF-GC-2/5). */
+export interface EstimateOptions {
+  /** Velocidade dos deslocamentos `G0` (mm/min). Padrão 5000. */
+  rapidSpeedMmMin?: number;
+  /** Feed usado quando o G-code não declara `F` (mm/min). Padrão 1000. */
+  defaultFeedMmMin?: number;
+}
+
+/**
+ * Tempo estimado (segundos) para percorrer o programa — soma o tempo de cada
+ * movimento respeitando o feed modal. Função pura; serve tanto para o rótulo
+ * do arquivo (RF-GC-2) quanto para o tempo restante durante o job (RF-GC-5).
+ */
+export function estimateSeconds(
+  program: ParsedProgram,
+  options: EstimateOptions = {},
+): number {
+  const rapidSpeed = options.rapidSpeedMmMin ?? 5000;
+  const fallback = options.defaultFeedMmMin ?? 1000;
+  let seconds = 0;
+  for (const move of program.moves) {
+    const length = Math.hypot(move.x1 - move.x0, move.y1 - move.y0);
+    if (!Number.isFinite(length) || length <= 0) continue;
+    let speed = move.rapid
+      ? rapidSpeed
+      : move.feed && move.feed > 0
+        ? move.feed
+        : fallback;
+    if (!Number.isFinite(speed) || speed <= 0) speed = fallback;
+    seconds += (length / speed) * 60;
+  }
+  return seconds;
 }

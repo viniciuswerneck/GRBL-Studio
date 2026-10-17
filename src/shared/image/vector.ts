@@ -110,6 +110,8 @@ function emitVector(
 
   // Uma passada por iteração (RF-GC-6). O corte repete os mesmos contornos.
   for (let pass = 0; pass < passes; pass++) {
+    // Marca a passada (RF-GC-6) para o preview colorir cada uma por vez.
+    if (passes > 1) out.push(`; pass ${pass + 1}/${passes}`);
     let lastF: number | null = null;
     let lastS = 0; // modal inicial do GRBL é S0
     let armed = false;

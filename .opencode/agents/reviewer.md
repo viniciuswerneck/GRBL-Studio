@@ -58,7 +58,8 @@ orçamentos) e `docs/ARCHITECTURE.md`.
 
 1. **Segurança de máquina** — os fluxos de emergency/pause/resume/stop continuam
    corretos? Comando de tempo real foi enviado **sem `\n`**? O envio de G-code
-   continua **send-response** (só avança após `ok`)? Nada de envio em massa.
+   respeita a **janela por bytes** (nunca mais bytes sem `ok` que o buffer RX do
+   GRBL) e não escreve em massa?
 2. **Protocolo** — parsing de status/`$$`/`error:`/`ALARM:` correto e tolerante a
    variações do relatório? Sem números mágicos fora de `src/shared/protocol.*`?
 3. **Contratos** — `contextIsolation`/`nodeIntegration` preservados? IPC tipado e

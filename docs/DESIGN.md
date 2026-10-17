@@ -51,9 +51,10 @@ Windows — mantendo-se **rápido, leve e preciso**:
 
 ### 2.3 Temas (RF-APP-1)
 
-O app traz **11 temas** em três variantes, escolhidos no modal **Aparência e
-idioma** (`◐` na barra superior) ou no menu **Exibir → Tema**. A escolha
-persiste em `prefs.theme` e é validada por `isThemeId` (`shared/themes.ts`).
+O app traz **11 temas** em três variantes, escolhidos no menu **Exibir** — no
+submenu **Tema** ou em **Aparência e idioma…** (que também traz o idioma e a
+pasta de arquivos). A escolha persiste em `prefs.theme` e é validada por
+`isThemeId` (`shared/themes.ts`).
 
 | Variante | Ids (`html[data-theme]`) | Notas |
 | :--- | :--- | :--- |
@@ -115,7 +116,7 @@ Paleta de referência do tema padrão:
 | Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) |
 | Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint |
 | Frame rate da UI durante job | ≥ 55 fps | DevTools Rendering FPS meter |
-| Render do preview (50k linhas) | ≤ 2 s | `performance.now()` no draw |
+| Render do preview (50k linhas) | ≤ 2 s no primeiro desenho; **≤ 16 ms por quadro durante o job** (camadas em cache) | `performance.now()` no draw |
 | Abertura da janela | < 3 reflows principais | DevTools Layout Shift |
 
 ### 3.2 Precisão (o que não pode errar)
@@ -140,6 +141,17 @@ Paleta de referência do tema padrão:
    *virtual scrolling* — consoles longos são a causa nº 1 de travamento).
 5. **Lazy**: carregar módulos de imagem/vetorização sob demanda.
 6. **Zero timers órfãos**; polling `?` pausado quando desconectado.
+7. **Preview em camadas** — a camada **estática** (área de trabalho + `G0` +
+   queima) é pintada uma vez por (programa, vista, tamanho, dpi, tema) e o
+   **trecho executado é incremental**; por quadro só há dois `drawImage` e o
+   crosshair. Repintar o caminho inteiro a cada status custava ~300 ms/quadro
+   num raster de 270 mil trechos e **roubava CPU do envio** (a máquina travava
+   no meio do movimento). Orçamento: **≤ 16 ms por quadro** (cache quente).
+8. **Altura da barra de status fixa** (`flex-wrap: nowrap` + `min-height`):
+   progresso/DTG/restante mudam de largura durante o job; se a barra quebrasse
+   linha, o preview (`flex: 1`) encolheria e o desenho “pulsaria”. Em janelas
+   estreitas, some o menos crítico (Restante `≤ 1040 px`, “Para ir” `≤ 980 px`)
+   antes de espremer o DRO.
 
 ---
 
@@ -203,11 +215,12 @@ Paleta de referência do tema padrão:
 | :--- | :--- | :--- |
 | **Conexão** | Porta, baud, botão Conectar, badge de estado | Card + botão acento |
 | **Jog** | Cruz X/Y/Z, passos, velocidade, Home/Set Origin/Unlock/Reset | Grade de botões 40 px, ícones Fluent |
-| **Arquivo** | Nome, linhas, tempo estimado, Play/Pause/Stop, progresso | Barra de progresso + botões âmbar/verde/vermelho |
-| **Preview** | Canvas 2D + crosshair + zoom/pan + caixa de trabalho | Fundo `#202020`, caminho corte `#4CC2FF`, rápido `#5D5D5D` |
+| **Arquivo** | Nome, linhas, tempo estimado, Play, progresso; Pausar/Retomar/Cancelar na **barra flutuante** (sempre visível no job) | Barra de progresso + botões âmbar/verde/vermelho |
+| **Preview** | Canvas 2D + crosshair (posição de trabalho) + zoom/pan + caixa de trabalho; trecho gravado colorido **por passada** e brilho proporcional ao `S` | Fundo `#202020`, caminho corte `#4CC2FF`, rápido `#5D5D5D` |
+| **Posicionar** | Jog + **Definir origem** + **Contorno** (laser bem fraco) + **Marcar centro** (laser desligado) + parâmetros (potência/velocidade/passadas) + **Gravar** | Diálogo em duas colunas (sem rolagem): “Mover a cabeça” (pad + origem) e “Conferir a área” (contorno/centro + parâmetros); rodapé com Cancelar/Gravar. |
 | **Console** | Log virtualizado (enviado / resposta / erro) com cores | Mono, scroll automático com pausa |
 | **Config** | Tabela `$$` editável + ajuda contextual | Tabela Win11 com header fixo e linhas zebra |
-| **Imagem** | Pipeline: imagem → ajustes → modo → parâmetros → gerar | Stepper estilo Win11 |
+| **Imagem** | Pipeline: imagem → ajustes → modo → parâmetros → gerar; **Bidirecional** e **Velocidade no claro (×)** no grupo Gravação; aviso quando a velocidade passa de `$110`/`$111` | Stepper estilo Win11 |
 | **Status** | Estado, DRO, feed/S, overrides, alarmes | Card direito, sticky |
 
 ---

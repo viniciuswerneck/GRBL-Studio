@@ -1,23 +1,26 @@
-# Modo Básico — Wizard para leigos
+# Assistente — guia iniciante (antigo “Modo Básico”)
 
 > Requisitos: RF-BASIC-1 (fluxo guiado), §15 de `PLANO_DE_ACAO.md`.
 > Público: usuário que nunca usou uma gravadora laser.
 
-O **Modo Básico** transforma o GRBL Studio num assistente de 6 passos.
-O modal do wizard **bloqueia a tela inteira** (`position: fixed`, `z-index: 90`):
+O **Assistente** transforma o GRBL Studio num guia de 6 passos.
+O cartão do guia **bloqueia a tela inteira** (`position: fixed`, `z-index: 90`):
 não existe "errar" clicando em controle técnico — só o passo atual é visível e
-interagível. O modo Avançado permanece intacto.
+interagível. O modo avançado permanece intacto.
 
 ## Como entrar e sair
 
 | Ação | Onde |
 | :--- | :--- |
-| Ativar o Modo Básico | botão **“Avançado”** no cabeçalho da barra lateral (vira **“Básico”**) |
-| Sair pelo rodapé do wizard | botão **“Fechar (Modo Avançado)”** |
-| Sair ao concluir | botão **“Concluir”** no passo 6 |
+| Abrir o Assistente | botão **“Assistente”** no cabeçalho da barra lateral (fica aceso enquanto o guia está aberto) |
+| Fechar pelo rodapé do guia | botão **“Fechar assistente”** |
+| Sair ao concluir | botão **“Próximo”** no passo 6 |
 
-A escolha é persistida (`prefs.mode`); ao reabrir o app, o modo é restaurado e o
-wizard volta para o **passo 1**.
+Os controles da gravação (**Pausar / Retomar / Cancelar**) aparecem numa barra
+flutuante sobre o guia enquanto o job roda, para o iniciante não ficar preso.
+
+A escolha é persistida (`prefs.mode`); ao reabrir o app, o estado é restaurado e
+o guia volta para o **passo 1**.
 
 ## Os 6 passos
 
@@ -36,33 +39,34 @@ O título sempre mostra `Passo N de 6 — <assunto>` e o rodapé tem **Voltar** 
 ### Detalhes de cada passo
 
 - **Passo 1 — Conectar.** Reabastece a lista de portas USB (`refreshPorts`) e
-  dispara o mesmo botão *Conectar* do modo Avançado. A bolinha acompanha o
+  dispara o mesmo botão *Conectar* de fora do Assistente. A bolinha acompanha o
   estado: cinza (desconectado), pulsando (conectando), verde (conectado),
   vermelha (erro).
 - **Passo 2 — Escolher imagem.** Abre o seletor de arquivo (PNG/JPG/BMP). O
   preview e o pipeline de conversão continuam rodando em `<canvas>` atrás do
   modal, então o passo 3 já mostra o resultado.
 - **Passo 3 — Tamanho, tipo e material.** Os campos são *espelhos* dos controles
-  do modo Avançado (`imgWidth`, `imgHeight`, `imgAlgorithm`, perfis de material):
+  dos controles técnicos (`imgWidth`, `imgHeight`, `imgAlgorithm`, perfis de material):
   mexer aqui muda o mesmo estado, então o G-code gerado é idêntico ao que o
   usuário avançado veria. A lista de materiais vem do módulo selecionado
   (3W = Sculpfun C1, 5W, 10W — `src/shared/materials.ts`) e aplica
   velocidade, potência (`S`) e 1 passada.
-- **Passo 4 — Gerar G-code.** Dispara a geração completa (mesmo botão do modo
-  Avançado) e só então libera o avanço. Recomenda-se conferir o preview.
+- **Passo 4 — Gerar G-code.** Dispara a geração completa (o mesmo botão de fora
+  do Assistente) e só então libera o avanço. Recomenda-se conferir o preview.
 - **Passo 5 — Posicionar.** Abre o modal de enquadramento: joystick, **Definir
   origem aqui** e **contorno fraco (S=5)**, que desenha o limite da peça sem
   queimar a superfície.
 - **Passo 6 — Gravar.** Se o modal de enquadramento estiver aberto, dispara o
-  contorno; caso contrário, inicia a gravação (`beginJob`). O modal do wizard
-  sai do caminho durante o job e reaparece ao final.
+  contorno; caso contrário, inicia a gravação (`beginJob`). O contorno é
+  desenhado com o laser fraco e então a gravação começa; os controles
+  **Pausar / Retomar / Cancelar** aparecem na barra flutuante sobre o guia.
 
-## O que fica escondido no Básico
+## O que fica escondido enquanto o Assistente está aberto
 
 Sliders de ajuste fino, parâmetros de conversão (linhas/mm, direção, ponto de
 origem, suavização), overrides em tempo real, editor de `$$`, macros, retomada
-avançada e as abas laterais — tudo continua disponível no modo Avançado, e nada
-é perdido ao trocar de modo.
+avançada e as abas laterais — tudo continua disponível ao fechar o Assistente, e
+nada é perdido ao alternar.
 
 ## Arquivos
 

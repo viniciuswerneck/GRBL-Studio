@@ -61,6 +61,8 @@ const api = {
   gotoZero: (): Promise<boolean> => ipcRenderer.invoke(CHANNELS.gotoZero),
   jog: (cmd: JogCommand): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.jog, cmd),
+  /** Cancela o jog contínuo em andamento (0x85) — RF-JOG-2. */
+  cancelJog: (): Promise<boolean> => ipcRenderer.invoke(CHANNELS.jogCancel),
   overrideFeed: (action: OverrideAction): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.overrideFeed, action),
   overrideSpindle: (action: OverrideAction): Promise<boolean> =>
@@ -93,6 +95,13 @@ const api = {
     ipcRenderer.invoke(CHANNELS.macrosOpen),
   saveMacros: (content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.macrosSave, content),
+  /** Salva o log do console em `.log`/`.txt` (RF-CON-15). */
+  saveLog: (content: string): Promise<string | null> =>
+    ipcRenderer.invoke(CHANNELS.fileSaveLog, { content }),
+  /** Abre o diálogo de escolha de pasta de arquivos (RF-CFG-5). */
+  pickDir: (): Promise<string | null> => ipcRenderer.invoke(CHANNELS.pickDir),
+  /** Abre a pasta de logs de sessão no gerenciador de arquivos (RNF-9). */
+  openLogs: (): Promise<string> => ipcRenderer.invoke(CHANNELS.openLogs),
 
   // Eventos (main -> renderer)
   onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe =>

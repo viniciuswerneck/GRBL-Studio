@@ -14,9 +14,9 @@ export const en = {
   'nav.export': 'Export…',
 
   // -------------------------------------------------------------- modos UI
-  'mode.basic': 'Basic',
-  'mode.advanced': 'Advanced',
-  'mode.toggle.title': 'Toggle Basic/Advanced mode',
+  'assistant.open': 'Assistant',
+  'assistant.close': 'Close assistant',
+  'assistant.title': 'Assistant — beginner guide',
   'mode.M4': 'M4 (dynamic)',
   'mode.M3': 'M3 (constant)',
 
@@ -39,7 +39,8 @@ export const en = {
   'action.cut': 'Cut',
 
   // -------------------------------------------------------- guia (básico)
-  'guide.close': 'Close (Advanced Mode)',
+  'guide.close': 'Close assistant',
+  'assistant.guideTitle': 'Assistant — beginner guide',
   'guide.type.photo': 'Photo',
   'guide.type.bw': 'B&W',
   'guide.type.vector': 'Outline',
@@ -145,6 +146,22 @@ export const en = {
   'img.speed': 'Speed',
   'img.passes': 'Passes',
   'img.mode': 'Mode',
+  'img.adaptive': 'Speed in light areas (×)',
+  'img.adaptive.title':
+    'Speeds up light runs up to N× the engraving speed. Light areas come out ' +
+    'lighter (dose = S ÷ speed); compensate with S-max/white clip. Above the ' +
+    'axis max rate ($110/$111) the burn weakens. 1 = off.',
+  'img.bidirectional': 'Bidirectional (zig-zag)',
+  'img.bidirectional.title':
+    'Engraves each line left-to-right and the next right-to-left, without the ' +
+    'return G0. Nearly doubles the speed on wide images. Turn it off if your ' +
+    'machine makes the two directions look different.',
+  'img.speed.limits': 'Axis max rate ($110/$111): {x} / {y} mm/min.',
+  'img.speed.over':
+    'Peak of {peak} mm/min above the axis limit ({max} mm/min): GRBL caps the ' +
+    'speed and the burn weakens. Lower the speed or the light-area speed.',
+  'img.speed.unknown':
+    'Connect the engraver to compare with the axis limit ($110/$111).',
   'img.generate': 'Generate G-code',
   'img.generate.disabled': 'Choose an image first',
   'img.generate.title': 'Converts the image to G-code',
@@ -164,13 +181,20 @@ export const en = {
 
   // ------------------------------------------------------- posicionamento
   'frame.title': 'Position the laser',
+  'frame.group.move': 'Move the head',
+  'frame.group.check': 'Check the area',
+  'frame.group.job': 'Engraving',
+  'frame.home.title': 'Home (reference the axes)',
   'frame.hint':
-    'Use the arrows to move the laser to the engraving origin. Then click **Draw outline** to have the machine travel the area rectangle (laser off).',
+    'Use the arrows to bring the laser near the area. “Draw outline” traces the area with a very weak laser and “Mark center” moves the laser to the image center (laser off).',
   'frame.setOrigin': 'Set origin here',
   'frame.origin': 'Go to origin (0,0)',
   'frame.outline': 'Draw outline',
+  'frame.center': 'Mark center',
+  'frame.center.title': 'Moves the laser to the image center (laser off)',
+  'frame.center.done': 'Laser at the image center (laser off).',
   'frame.start': '▶ Engrave',
-  'frame.power': 'Outline power (%)',
+  'frame.power': 'Engraving power (%)',
   'frame.speed': 'Engraving speed (mm/min)',
   'frame.position': 'Position',
   'frame.engrave': 'Engrave',
@@ -178,7 +202,7 @@ export const en = {
     'Machine connected. Position and draw the outline to check.',
   'frame.status.disconnected':
     'Connect the machine to position and draw the outline.',
-  'frame.outline.done': 'Outline sent (laser off).',
+  'frame.outline.done': 'Outline sent (very weak laser).',
   'frame.generating': 'Generating G-code with the dialog parameters…',
 
   // ------------------------------------------------- execução e arquivo
@@ -186,15 +210,23 @@ export const en = {
   'file.open': 'Open G-code…',
   'file.none': 'No file loaded',
   'file.loaded': 'File loaded: {name} ({lines} lines)',
-  'file.info': '{name} — {lines} lines',
-  'file.infoGenerated': '{file} — {lines} lines (generated from {image})',
+  'file.info': '{name} — {lines} lines · {size}',
+  'file.infoTime': '{name} — {lines} lines · {size} · ~{time}',
+  'file.infoGenerated':
+    '{file} — {lines} lines · {size} (generated from {image})',
+  'file.infoGeneratedTime':
+    '{file} — {lines} lines · {size} · ~{time} (generated from {image})',
   'file.saved': 'G-code saved to {path}',
   'gcode.summary':
     'G-code generated: {lines} lines, {size}, {rows}×{cols} samples, ~{time}',
   'run.play': '▶ Start',
   'run.pause': '⏸ Pause',
   'run.resume': '▶ Resume',
-  'run.stop': '⏹ Stop / Emergency',
+  'run.cancel': '⏹ Cancel',
+  'run.cancel.title': 'Cancel the job and stop the machine now (Esc / Ctrl+X)',
+  'run.jobbar.label': 'Engraving controls',
+  'run.state.engraving': 'Engraving…',
+  'run.state.paused': 'Paused',
   'run.hint.noFileNoConn':
     'Generate the G-code (Image → G-code) or open a .gcode file and connect the machine to send.',
   'run.hint.noFile':
@@ -272,6 +304,7 @@ export const en = {
   'preview.hint.empty': 'Open a G-code or start a job to see the path.',
   'preview.hint.noMoves': 'This G-code has no moves to draw.',
   'preview.cut': 'Burn',
+  'preview.pass': 'Pass {n}/{total}',
   'preview.rapid': 'Travel',
   'preview.tip': 'wheel: zoom · drag: pan · double click: fit',
   'preview.warning.area':
@@ -618,7 +651,76 @@ export const en = {
   'menu.view': 'View',
   'menu.theme': 'Theme',
   'menu.language': 'Language',
+  'menu.appearance': 'Appearance and language…',
   'menu.help': 'Help',
   'menu.about': 'About GRBL Studio',
   'menu.site': 'WerneckLab website',
+
+  // -------------------------------------------- console (RF-CON-14/15)
+  'console.pause': 'Pause scroll',
+  'console.resume': 'Resume scroll',
+  'console.clear': 'Clear',
+  'console.save': 'Save log…',
+  'console.saved': 'Log saved to {path}',
+  'console.saveFail': 'Failed to save log: {msg}',
+  'dlg.saveLog': 'Save console log',
+  'filter.log': 'Log (text)',
+
+  // ------------------------------------------------ status (RF-STA-2/4/7)
+  'status.dtg': 'To go',
+  'status.remaining': 'Remaining',
+  'status.alarmHint': 'Alarm active: use Unlock ($X) or Reset before moving.',
+  'status.history.title': 'Alarm history',
+  'status.history.empty': 'No alarm recorded.',
+  'status.history.clear': 'Clear history',
+  'alarmfix.1': 'Check the limit switch and home ($H) or send Unlock ($X).',
+  'alarmfix.2':
+    'Send Unlock ($X); to protect the machine, enable soft limits ($20) with homing ($22).',
+  'alarmfix.3': 'Home ($H) to restore the origin before continuing.',
+  'alarmfix.4':
+    'Check the probe wiring and the pin initial state before probing.',
+  'alarmfix.5':
+    'Move the probe closer to the material or increase the probing travel.',
+  'alarmfix.6': 'Repeat homing ($H); avoid resetting during the cycle.',
+  'alarmfix.7': 'Close the safety door and repeat homing ($H).',
+  'alarmfix.8':
+    'Increase the pull-off ($27) and check the limit switch wiring.',
+  'alarmfix.9':
+    'Increase the homing seek ($25) and check the axis limit switch.',
+
+  // ------------------------------------------------ conexão (RF-CON-5)
+  'conn.firmware': 'Firmware: {value}',
+  'conn.stateReport': 'Modal state: {value}',
+
+  // ------------------------------------------------------ jog (RF-JOG-2/6)
+  'jog.hold.title': 'Hold to move continuously; release to stop',
+  'jog.keys.title': 'Arrows: X/Y · PageUp/PageDown: Z · Home: homing ($H)',
+
+  // ------------------------------------ perfis de configuração (RF-CFG-4)
+  'settings.profile.title': 'Setting profiles',
+  'settings.profile.hint': 'Save the current $$ set and reapply it later.',
+  'settings.profile.name': 'Profile name',
+  'settings.profile.save': 'Save profile',
+  'settings.profile.saveHint': 'Saves the current $$ values',
+  'settings.profile.apply': 'Apply',
+  'settings.profile.applyHint': 'Writes the profile values to the machine',
+  'settings.profile.delete': 'Remove',
+  'settings.profile.none': 'No profile saved',
+  'settings.profile.saved': 'Profile “{name}” saved.',
+  'settings.profile.applied': 'Profile “{name}” applied.',
+  'settings.profile.deleted': 'Profile “{name}” removed.',
+  'settings.profile.needName': 'Enter a profile name.',
+  'settings.profile.applyFail': 'Failed to apply the profile: {msg}',
+
+  // ---------------------------------------------- preferências (RF-CFG-5)
+  'prefs.fileDir': 'Files folder',
+  'prefs.fileDir.hint': 'Where files are opened and saved by default.',
+  'prefs.fileDir.choose': 'Choose folder…',
+  'prefs.fileDir.default': 'System default folder',
+  'prefs.fileDir.changed': 'Files folder: {path}',
+  'dlg.pickDir': 'Choose files folder',
+
+  // --------------------------------------------- logs de sessão (RNF-9)
+  'menu.logs': 'Open logs folder',
+  'logs.none': 'No logs yet.',
 } satisfies Record<keyof typeof ptBR, string>;

@@ -183,6 +183,17 @@ export function classifyLine(rawLine: string): ClassifiedLine {
 
   if (isStatusReport(trimmed)) return { kind: 'status', text: trimmed };
 
+  // Mensagens do firmware (`[MSG:...]`) antes do `ok`: um aviso que contenha
+  // "ok" (ex.: `[MSG:Jog ok]`) não pode ser confundido com um ACK — isso
+  // liberaria espaço na janela de envio cedo demais (e a máquina travaria).
+  if (trimmed.startsWith('[MSG:')) {
+    const inner = trimmed
+      .replace(/^\[MSG:/i, '')
+      .replace(/\]$/, '')
+      .trim();
+    return { kind: 'message', text: trimmed, message: inner };
+  }
+
   if (/ok\b/i.test(trimmed)) return { kind: 'ok', text: trimmed };
 
   if (/^error:/i.test(trimmed)) {
@@ -209,14 +220,6 @@ export function classifyLine(rawLine: string): ClassifiedLine {
           ? (ALARM_DESCRIPTIONS[code] ?? `Alarme ${code}.`)
           : trimmed,
     };
-  }
-
-  if (trimmed.startsWith('[MSG:')) {
-    const inner = trimmed
-      .replace(/^\[MSG:/i, '')
-      .replace(/\]$/, '')
-      .trim();
-    return { kind: 'message', text: trimmed, message: inner };
   }
 
   if (trimmed.startsWith('$')) {

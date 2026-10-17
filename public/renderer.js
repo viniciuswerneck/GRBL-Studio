@@ -81,7 +81,10 @@ const el = {
   fileInfo: $('fileInfo'),
   playBtn: $('playBtn'),
   pauseBtn: $('pauseBtn'),
+  resumeBtn: $('resumeBtn'),
   stopBtn: $('stopBtn'),
+  jobBarState: $('jobBarState'),
+  jobBarProgress: $('jobBarProgress'),
   runHint: $('runHint'),
   progressBar: $('progressBar'),
   progressText: $('progressText'),
@@ -91,9 +94,15 @@ const el = {
   droZ: $('droZ'),
   metaFeed: $('metaFeed'),
   metaS: $('metaS'),
+  metaDtg: $('metaDtg'),
+  progressEta: $('progressEta'),
+  alarmHistory: $('alarmHistory'),
+  alarmHistoryClear: $('alarmHistoryClear'),
   consoleOutput: $('consoleOutput'),
   consoleInput: $('consoleInput'),
-  themeBtn: $('themeBtn'),
+  consolePause: $('consolePause'),
+  consoleClear: $('consoleClear'),
+  consoleSave: $('consoleSave'),
   modeBtn: $('modeBtn'),
   guideConnect: $('guideConnect'),
   guideImage: $('guideImage'),
@@ -138,6 +147,9 @@ const el = {
   imgMode: $('imgMode'),
   imgSmin: $('imgSmin'),
   imgSmax: $('imgSmax'),
+  imgAdaptive: $('imgAdaptive'),
+  imgBidirectional: $('imgBidirectional'),
+  speedHint: $('speedHint'),
   profileModule: $('profileModule'),
   profileAction: $('profileAction'),
   profileMaterial: $('profileMaterial'),
@@ -149,6 +161,8 @@ const el = {
   previewHint: $('previewHint'),
   previewWarning: $('previewWarning'),
   previewLegend: $('previewLegend'),
+  lgPass: $('lgPass'),
+  lgPassSwatch: $('lgPassSwatch'),
   ovrFeedValue: $('ovrFeedValue'),
   ovrRapidValue: $('ovrRapidValue'),
   ovrSpindleValue: $('ovrSpindleValue'),
@@ -166,6 +180,7 @@ const el = {
   frameOrigin: $('frameOrigin'),
   frameSetOrigin: $('frameSetOrigin'),
   frameOutline: $('frameOutline'),
+  frameCenter: $('frameCenter'),
   frameStart: $('frameStart'),
   frameCancel: $('frameCancel'),
   frameStatus: $('frameStatus'),
@@ -181,7 +196,14 @@ const el = {
   settingsList: $('settingsList'),
   settingsStatus: $('settingsStatus'),
   specialOutput: $('specialOutput'),
-  settingsTabs: document.querySelectorAll('.tabs .tab'),
+  settingsProfileName: $('settingsProfileName'),
+  settingsProfileSave: $('settingsProfileSave'),
+  settingsProfiles: $('settingsProfiles'),
+  settingsProfileApply: $('settingsProfileApply'),
+  settingsProfileDelete: $('settingsProfileDelete'),
+  fileDirValue: $('fileDirValue'),
+  fileDirChoose: $('fileDirChoose'),
+  settingsTabs: document.querySelectorAll('#settingsOverlay .tabs .tab'),
   resumeLine: $('resumeLine'),
   resumeBack: $('resumeBack'),
   resumeSuggest: $('resumeSuggest'),
@@ -241,6 +263,20 @@ const state = {
   doneFile: 0,
   /** Chave/params do rótulo do arquivo atual (para repor ao trocar de idioma). */
   fileInfoText: null,
+  /** Estado modal reportado pelo GRBL (`Idle`, `Run`, `Alarm`…) — RF-STA-5. */
+  grblState: '',
+  /** Tempo estimado (s) do arquivo atual — RF-GC-2/5. */
+  estimatedSec: 0,
+  /** Histórico de alarmes/erros da sessão — RF-STA-7. */
+  alarms: [],
+  /** Rolagem do console pausada pelo usuário — RF-CON-14. */
+  consolePaused: false,
+  /**
+   * Último `WCO` recebido (RF-PRV-3). O GRBL só manda `MPos`/`WPos` e o `WCO`
+   * vem de vez em quando (~10–30 relatórios); guardamos o último para obter
+   * `WPos = MPos − WCO` em todo relatório.
+   */
+  wco: { x: 0, y: 0, z: 0 },
 };
 
 // ------------------------------------------------------------------ console
@@ -280,14 +316,64 @@ function flushLines() {
   while (el.consoleOutput.childElementCount > MAX_LINES) {
     el.consoleOutput.removeChild(el.consoleOutput.firstChild);
   }
-  if (nearBottom) el.consoleOutput.scrollTop = el.consoleOutput.scrollHeight;
+  if (nearBottom && !state.consolePaused)
+    el.consoleOutput.scrollTop = el.consoleOutput.scrollHeight;
 }
+
+/** Alterna a rolagem automática do console (RF-CON-14). */
+function setConsolePaused(paused) {
+  state.consolePaused = paused;
+  if (el.consolePause) {
+    el.consolePause.textContent = paused
+      ? t('console.resume')
+      : t('console.pause');
+    el.consolePause.classList.toggle('active', paused);
+  }
+}
+
+if (el.consolePause)
+  el.consolePause.addEventListener('click', () =>
+    setConsolePaused(!state.consolePaused),
+  );
+
+if (el.consoleClear)
+  el.consoleClear.addEventListener('click', () => {
+    pendingLines = [];
+    el.consoleOutput.textContent = '';
+  });
+
+/** Texto do console como está na tela (RF-CON-15). */
+function consoleText() {
+  return [...el.consoleOutput.children].map((n) => n.textContent).join('\n');
+}
+
+if (el.consoleSave)
+  el.consoleSave.addEventListener('click', async () => {
+    const content = consoleText();
+    if (!content.trim()) return;
+    try {
+      const path = await window.grbl.saveLog(`${content}\n`);
+      if (path) appendLine(t('console.saved', { path }), 'ok');
+    } catch (err) {
+      appendLine(t('console.saveFail', { msg: err.message }), 'error');
+    }
+  });
 
 // ----------------------------------------------------------------- conexão
 
 function setConnection(conn) {
   state.connection = conn;
   state.connected = conn === 'connected';
+  if (!state.connected) state.grblState = '';
+  // Ao (re)conectar, o `WCO` pode ter mudado (reset/power-cycle): descarta o
+  // cache até o GRBL mandar o próximo (RF-PRV-3).
+  if (conn !== 'connected') {
+    state.wco = { x: 0, y: 0, z: 0 };
+    // Limites da máquina: outra gravadora pode ter outro `$110/$111`.
+    machineLimits.rateX = null;
+    machineLimits.rateY = null;
+    updateSpeedHint();
+  }
 
   el.connDot.className =
     'dot' +
@@ -333,6 +419,11 @@ function setConnection(conn) {
 
 function setJobState(jobState) {
   state.jobState = jobState;
+  if (jobState !== 'running' && jobState !== 'paused') {
+    if (el.metaDtg) el.metaDtg.textContent = '—';
+    if (el.progressEta) el.progressEta.textContent = '';
+    if (el.jobBarProgress) el.jobBarProgress.textContent = '';
+  }
   updateControls();
 }
 
@@ -353,7 +444,14 @@ document.querySelectorAll('.sidebar-tabs .tab').forEach((tab) => {
 let frameBounds = null;
 
 function openFrameModal() {
-  frameBounds = window.frameBounds || null;
+  // Área do job: a geometria da imagem gerada ou, para um .gcode aberto, a
+  // caixa do próprio programa — assim "Marcar centro"/"Contorno" também
+  // funcionam fora do fluxo de imagem.
+  frameBounds =
+    window.frameBounds ||
+    (previewProgram?.program?.bounds
+      ? { ...previewProgram.program.bounds }
+      : null);
   if (!el.frameOverlay) return;
   el.frameOverlay.classList.remove('hidden');
   if (el.frameStatus) {
@@ -371,18 +469,32 @@ function openFrameModal() {
     el.frameSpeedValue.textContent = `${el.frameSpeed.value} mm/min`;
   if (el.framePowerValue && el.framePower)
     el.framePowerValue.textContent = `${el.framePower.value} %`;
+  updateFrameButtons();
+}
+
+/**
+ * Habilita o que move/enquadra só com a máquina conectada, **sem job** e fora
+ * de alarme: contorno/centro/origem enviam G-code, que ficaria na fila no meio
+ * do corte (RF-STA-5).
+ */
+function updateFrameButtons() {
+  const busy = state.jobState === 'running' || state.jobState === 'paused';
+  const alarm = state.grblState === 'Alarm' || state.grblState === 'Door';
+  const enabled = state.connected && !busy && !alarm;
   for (const b of [
     el.frameYp,
     el.frameXm,
     el.frameXp,
     el.frameYm,
     el.frameHome,
+    el.frameSetOrigin,
     el.frameOrigin,
     el.frameOutline,
+    el.frameCenter,
+    el.frameStart,
   ]) {
-    if (b) b.disabled = !state.connected;
+    if (b) b.disabled = !enabled;
   }
-  if (el.frameStart) el.frameStart.disabled = !state.connected;
 }
 
 function closeFrameModal() {
@@ -406,9 +518,9 @@ function frameJog(axis, sign) {
 function drawFrameOutline() {
   if (!state.connected || !frameBounds) return;
   const b = frameBounds;
-  const sPower = 5; // contorno sempre bem fraco, independente do slider
-  // Contorno visível: laser ligado em baixa potência (S=50 ≈ 5 %) e G1,
-  // para a marca aparecer na superfície sem queimar.
+  const sPower = 5; // S=5 ≈ 0,5 % do Smax: contorno bem fraco, só para marcar
+  // Contorno visível: laser ligado em baixa potência e G1, para a marca
+  // aparecer na superfície sem queimar.
   const lines = [
     'G90',
     'M4',
@@ -421,6 +533,22 @@ function drawFrameOutline() {
   ];
   for (const line of lines) window.grbl.writeLine(line);
   if (el.frameStatus) el.frameStatus.textContent = t('frame.outline.done');
+}
+
+/**
+ * Leva o laser até o **centro da imagem** (RF-PRV-6), com o laser desligado,
+ * para o usuário ver com a ponta onde será o centro antes de gravar.
+ */
+function moveToFrameCenter() {
+  if (!state.connected || !frameBounds) return;
+  const b = frameBounds;
+  const cx = (b.xMin + b.xMax) / 2;
+  const cy = (b.yMin + b.yMax) / 2;
+  // M5 garante o laser desligado; G0 é um deslocamento puro até o centro.
+  for (const line of ['G90', 'M5', `G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`]) {
+    window.grbl.writeLine(line);
+  }
+  if (el.frameStatus) el.frameStatus.textContent = t('frame.center.done');
 }
 
 const MACHINE_PROFILES = [
@@ -822,16 +950,32 @@ function updateControls() {
     state.jobState === 'idle' ||
     state.jobState === 'finished' ||
     state.jobState === 'aborted';
+  // Em alarme/porta aberta o GRBL recusa movimento: bloqueia o que move (RF-STA-5).
+  const alarm = state.grblState === 'Alarm' || state.grblState === 'Door';
 
-  el.playBtn.disabled = !conn || !hasFile || !idle;
-  el.pauseBtn.disabled = !(running || paused);
-  el.pauseBtn.textContent = paused ? t('run.resume') : t('run.pause');
-  el.stopBtn.disabled = !(running || paused);
+  el.playBtn.disabled = !conn || !hasFile || !idle || alarm;
+  if (el.pauseBtn) el.pauseBtn.disabled = !running;
+  if (el.resumeBtn) el.resumeBtn.disabled = !paused;
+  if (el.stopBtn) el.stopBtn.disabled = !(running || paused);
+
+  // Barra de controles sempre à mão durante a gravação (RF-GC-8): fica visível
+  // em qualquer aba e sobre o assistente, para pausar/retomar/cancelar.
+  document.body.classList.toggle('job-active', running || paused);
+  updateFrameButtons();
+  if (el.jobBarState) {
+    el.jobBarState.textContent = paused
+      ? t('run.state.paused')
+      : running
+        ? t('run.state.engraving')
+        : '';
+  }
 
   // Explica por que "Iniciar" está apagado (a dúvida mais comum da UI).
   const lines = state.lines.length;
   let hint;
-  if (!hasFile && !conn) {
+  if (alarm) {
+    hint = t('status.alarmHint');
+  } else if (!hasFile && !conn) {
     hint = t('run.hint.noFileNoConn');
   } else if (!hasFile) {
     hint = t('run.hint.noFile');
@@ -843,36 +987,48 @@ function updateControls() {
     hint = t('run.hint.ready', { lines });
   }
   el.runHint.textContent = hint;
-  el.runHint.classList.toggle('attention', hasFile && !conn);
+  el.runHint.classList.toggle('attention', alarm || (hasFile && !conn));
 
-  el.playBtn.title = !hasFile
-    ? t('run.noGcode')
-    : !conn
-      ? t('conn.connectFirst')
-      : '';
+  el.playBtn.title = alarm
+    ? t('status.alarmHint')
+    : !hasFile
+      ? t('run.noGcode')
+      : !conn
+        ? t('conn.connectFirst')
+        : '';
 
-  for (const b of [
-    el.jogXp,
-    el.jogXm,
-    el.jogYp,
-    el.jogYm,
-    el.homeBtn,
-    el.unlockBtn,
-    el.resetBtn,
-    el.setOriginBtn,
-    el.gotoZeroBtn,
-  ]) {
-    b.disabled = !conn;
+  // Jog/origem/macros não fazem sentido em alarme (o GRBL recusa o movimento).
+  for (const b of [el.jogXp, el.jogXm, el.jogYp, el.jogYm]) {
+    b.disabled = !conn || alarm;
   }
+  el.homeBtn.disabled = !conn || alarm || !machineHoming();
+  el.setOriginBtn.disabled = !conn || alarm;
+  el.gotoZeroBtn.disabled = !conn || alarm;
+  // Unlock/Reset continuam disponíveis: são a saída do alarme.
+  el.unlockBtn.disabled = !conn;
+  el.resetBtn.disabled = !conn;
 
   // Retomada (RF-GC-7): só com arquivo, conectado e nada em execução.
-  el.resumeFrom.disabled = !conn || !hasFile || running || paused;
+  el.resumeFrom.disabled = !conn || !hasFile || running || paused || alarm;
 
-  // Macros (RF-MAC-1) só fazem sentido conectado.
+  // Macros (RF-MAC-1) só fazem sentido conectado e sem alarme.
   for (const button of el.macroButtons.querySelectorAll('button')) {
-    button.disabled = !conn;
+    button.disabled = !conn || alarm;
   }
   el.macroHint.classList.toggle('hidden', conn);
+}
+
+/** O perfil de máquina atual declara homing de fábrica? */
+function machineHoming() {
+  const prof =
+    MACHINE_PROFILES.find((p) => p.id === el.machineProfile?.value) ||
+    MACHINE_PROFILES[0];
+  return Boolean(prof?.homing);
+}
+
+/** O GRBL está em um estado que recusa movimento (RF-STA-5)? */
+function isAlarmState() {
+  return state.grblState === 'Alarm' || state.grblState === 'Door';
 }
 
 // -------------------------------------------------------------------- portas
@@ -975,10 +1131,31 @@ async function tryConnect(opts) {
         : { transport: 'serial', port: opts.path, baud: opts.baudRate },
     );
     // Área de trabalho para o aviso de excedente (RF-GC-9). Silencioso.
-    loadSettings().catch(() => {});
+    announceFirmware()
+      .then(() => loadSettings().catch(() => {}))
+      .catch(() => {});
   } catch (err) {
     setConnection('error');
     appendLine(t('err.connect', { msg: err.message }), 'error');
+  }
+}
+
+/**
+ * Lê `$I` (versão/opções) e `$G` (estado modal) ao conectar e mostra no
+ * console (RF-CON-5). Firmware antigo pode não responder — falha é silenciosa.
+ */
+async function announceFirmware() {
+  for (const [kind, key] of [
+    ['info', 'conn.firmware'],
+    ['state', 'conn.stateReport'],
+  ]) {
+    try {
+      const lines = await window.grbl.querySpecial(kind);
+      const value = lines.join(' | ').trim();
+      if (value) appendLine(t(key, { value }), 'message');
+    } catch {
+      /* consulta não suportada pela máquina */
+    }
   }
 }
 
@@ -993,7 +1170,7 @@ el.connectBtn.addEventListener('click', async () => {
 // ----------------------------------------------------------------------- jog
 
 function jog(axis, sign) {
-  if (!state.connected) return;
+  if (!state.connected || isAlarmState()) return;
   const step = Number(el.stepSelect.value) * sign;
   const feed = Number(el.feedSelect.value);
   const cmd = { feed };
@@ -1001,15 +1178,147 @@ function jog(axis, sign) {
   window.grbl.jog(cmd);
 }
 
-el.jogXp.addEventListener('click', () => jog('x', 1));
-el.jogXm.addEventListener('click', () => jog('x', -1));
-el.jogYp.addEventListener('click', () => jog('y', 1));
-el.jogYm.addEventListener('click', () => jog('y', -1));
+/** Distância do jog contínuo, cancelada assim que o botão é solto (RF-JOG-2). */
+const CONTINUOUS_JOG_MM = 200;
+/** Tempo (ms) que o botão precisa ficar pressionado para virar contínuo. */
+const JOG_HOLD_MS = 250;
+
+function startContinuousJog(axis, sign) {
+  if (!state.connected || isAlarmState()) return;
+  const feed = Number(el.feedSelect.value);
+  const cmd = { feed };
+  cmd[axis] = sign * CONTINUOUS_JOG_MM;
+  window.grbl.jog(cmd);
+}
+
+function stopContinuousJog() {
+  if (state.connected) window.grbl.cancelJog();
+}
+
+/**
+ * Liga um botão de jog: toque = passo; segurar (≥ `JOG_HOLD_MS`) = movimento
+ * contínuo, cancelado com `0x85` ao soltar (RF-JOG-2).
+ */
+function bindJogButton(button, axis, sign) {
+  if (!button) return;
+  let timer = null;
+  let pressed = false;
+  let continuous = false;
+
+  const cancelTimer = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  button.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !state.connected || isAlarmState()) return;
+    pressed = true;
+    continuous = false;
+    cancelTimer();
+    timer = setTimeout(() => {
+      timer = null;
+      continuous = true;
+      startContinuousJog(axis, sign);
+    }, JOG_HOLD_MS);
+  });
+
+  const release = () => {
+    cancelTimer();
+    if (continuous) {
+      continuous = false;
+      pressed = false;
+      stopContinuousJog();
+    } else if (pressed) {
+      pressed = false;
+      jog(axis, sign);
+    }
+  };
+
+  button.addEventListener('pointerup', release);
+  button.addEventListener('pointercancel', () => {
+    cancelTimer();
+    if (continuous) stopContinuousJog();
+    continuous = false;
+    pressed = false;
+  });
+  button.addEventListener('pointerleave', () => {
+    cancelTimer();
+    if (continuous) {
+      stopContinuousJog();
+      continuous = false;
+    }
+    pressed = false;
+  });
+}
+
+bindJogButton(el.jogXp, 'x', 1);
+bindJogButton(el.jogXm, 'x', -1);
+bindJogButton(el.jogYp, 'y', 1);
+bindJogButton(el.jogYm, 'y', -1);
 el.homeBtn.addEventListener('click', () => window.grbl.home());
 el.setOriginBtn.addEventListener('click', () => window.grbl.setOrigin(0, 0, 0));
 el.gotoZeroBtn.addEventListener('click', () => window.grbl.gotoZero());
 el.unlockBtn.addEventListener('click', () => window.grbl.unlock());
 el.resetBtn.addEventListener('click', () => window.grbl.reset());
+
+// ------------------------------------------- atalhos de teclado (RF-JOG-6)
+
+const JOG_KEYS = {
+  ArrowLeft: ['x', -1],
+  ArrowRight: ['x', 1],
+  ArrowUp: ['y', 1],
+  ArrowDown: ['y', -1],
+  PageUp: ['z', 1],
+  PageDown: ['z', -1],
+};
+
+function typingInField(target) {
+  if (!target?.tagName) return false;
+  const tag = target.tagName.toLowerCase();
+  return (
+    tag === 'input' ||
+    tag === 'textarea' ||
+    tag === 'select' ||
+    tag.isContentEditable === true
+  );
+}
+
+function overlayOpen(node) {
+  return Boolean(node && !node.classList.contains('hidden'));
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (typingInField(e.target)) return;
+  if (
+    [
+      el.settingsOverlay,
+      el.appearanceOverlay,
+      el.aboutOverlay,
+      el.frameOverlay,
+    ].some(overlayOpen)
+  ) {
+    return;
+  }
+  const move = JOG_KEYS[e.key];
+  if (move) {
+    if (!state.connected || isAlarmState()) return;
+    e.preventDefault();
+    jog(move[0], move[1]);
+    return;
+  }
+  if (
+    e.key === 'Home' &&
+    state.connected &&
+    !isAlarmState() &&
+    machineHoming()
+  ) {
+    e.preventDefault();
+    window.grbl.home();
+  }
+});
 
 // ---------------------------------------------------------------- overrides
 
@@ -1086,15 +1395,35 @@ function applyJobLines(name, text) {
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
-  state.fileInfoText = {
-    key: 'file.info',
-    params: { name, lines: state.lines.length },
-  };
+  // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
+  // Usa as linhas já filtradas para que o índice (`moves[].line`) fique na
+  // mesma base de `state.doneFile` (progresso do job) — RF-STA-2.
+  setGcodePreview(state.lines.join('\n'), name);
+  // Tempo estimado e tamanho do arquivo (RF-GC-2).
+  const parser = window.GRBL_PREVIEW;
+  state.estimatedSec =
+    parser && previewProgram.program
+      ? parser.estimateSeconds(previewProgram.program)
+      : 0;
+  const size = formatBytes(byteLength(String(text)));
+  state.fileInfoText =
+    state.estimatedSec > 0
+      ? {
+          key: 'file.infoTime',
+          params: {
+            name,
+            lines: state.lines.length,
+            size,
+            time: formatTime(state.estimatedSec),
+          },
+        }
+      : {
+          key: 'file.info',
+          params: { name, lines: state.lines.length, size },
+        };
   renderFileInfo();
   sidebar.classList.add('has-gcode');
   updateWorkflow();
-  // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
-  setGcodePreview(String(text), name);
   updateControls();
 }
 
@@ -1159,10 +1488,10 @@ el.resumeFrom.addEventListener('click', () => {
   beginJob(index);
 });
 
-el.pauseBtn.addEventListener('click', () => {
-  if (state.jobState === 'paused') window.grbl.resumeJob();
-  else window.grbl.pauseJob();
-});
+el.pauseBtn.addEventListener('click', () => window.grbl.pauseJob());
+
+if (el.resumeBtn)
+  el.resumeBtn.addEventListener('click', () => window.grbl.resumeJob());
 
 el.stopBtn.addEventListener('click', () => window.grbl.stopJob());
 
@@ -1261,14 +1590,31 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
-  state.fileInfoText = {
-    key: 'file.infoGenerated',
-    params: {
-      file: state.fileName,
-      lines: state.lines.length,
-      image: image.name,
-    },
-  };
+  state.estimatedSec = stats.estimatedSec || 0;
+  const size = formatBytes(
+    typeof stats.bytes === 'number' ? stats.bytes : byteLength(gcode),
+  );
+  state.fileInfoText =
+    state.estimatedSec > 0
+      ? {
+          key: 'file.infoGeneratedTime',
+          params: {
+            file: state.fileName,
+            lines: state.lines.length,
+            size,
+            image: image.name,
+            time: formatTime(state.estimatedSec),
+          },
+        }
+      : {
+          key: 'file.infoGenerated',
+          params: {
+            file: state.fileName,
+            lines: state.lines.length,
+            size,
+            image: image.name,
+          },
+        };
   renderFileInfo();
 
   imageState.stats = stats;
@@ -1331,6 +1677,15 @@ function formatBytes(n) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Tamanho em bytes UTF-8 de um texto (RF-GC-2: "tamanho" no rótulo do arquivo). */
+function byteLength(text) {
+  try {
+    return new TextEncoder().encode(text).length;
+  } catch {
+    return text.length;
+  }
 }
 
 function formatTime(sec) {
@@ -1659,9 +2014,11 @@ function readImageOptions() {
       sMin: Number(el.imgSmin.value),
       sMax: Number(el.imgSmax.value),
       mode: el.imgMode.value,
+      adaptiveSpeed: Number(el.imgAdaptive?.value) || 1,
     },
     algorithm: el.imgAlgorithm.value,
     passes: Number(el.imgPasses.value),
+    bidirectional: el.imgBidirectional?.checked ?? true,
     // Só existe no modo vetor: assim o campo vazio nunca invalida os modos raster.
     ...(el.imgAlgorithm.value === 'vector'
       ? { simplifyPx: Number(el.imgSimplify.value) }
@@ -1818,6 +2175,8 @@ const CONVERSION_CONTROLS = [
   'imgMode',
   'imgSmin',
   'imgSmax',
+  'imgAdaptive',
+  'imgBidirectional',
   'imgWidth',
   'imgHeight',
   'imgOffsetX',
@@ -1856,7 +2215,7 @@ function previewContext() {
   }
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, rect: { width: rect.width, height: rect.height } };
+  return { ctx, rect: { width: rect.width, height: rect.height }, dpr };
 }
 
 /** Caixa contida (letterbox) com margem de 10 %. */
@@ -1931,8 +2290,42 @@ const previewProgram = {
   workArea: null,
   /** Última posição (work coords) recebida no status. */
   lastPos: null,
+  /** Cursor do segmento atual para o cálculo de DTG (RF-STA-2). */
+  dtgCursor: 0,
+  /** Número de passadas do programa (RF-GC-6); 1 quando não há marca. */
+  passCount: 1,
+  /** Trechos de queima do programa (cache; evita filtrar a cada quadro). */
+  burns: [],
+  /** Maior `S` do programa (referência de brilho no preview). */
+  maxS: 0,
+  /** Muda a cada programa novo: invalida as camadas do preview. */
+  epoch: 0,
   label: '',
 };
+
+/**
+ * Paleta das passadas (RF-GC-6). Como cada passada repete o mesmo caminho,
+ * a cor do trecho já gravado muda por passada — senão perde-se a referência
+ * de onde o laser está. A primeira (passada 1) usa o "ok" do tema.
+ */
+const PASS_COLORS = [
+  '#e0b341',
+  '#d977d9',
+  '#e8843c',
+  '#59c9c0',
+  '#9a86ff',
+  '#c9d44b',
+];
+
+/** Passada (0-based) do primeiro movimento ainda não gravado. */
+function currentPass(done) {
+  const moves = previewProgram.program?.moves;
+  if (!moves) return 0;
+  for (const m of moves) {
+    if (!m.rapid && m.line >= done) return m.pass ?? 0;
+  }
+  return Math.max(0, (previewProgram.passCount ?? 1) - 1);
+}
 
 function cssColor(name, fallback) {
   const value = getComputedStyle(document.documentElement)
@@ -1949,6 +2342,20 @@ function setGcodePreview(text, label) {
   previewProgram.view = { scale: 1, tx: 0, ty: 0 };
   previewProgram.done = 0;
   previewProgram.lastPos = null;
+  previewProgram.dtgCursor = 0;
+  // Nº de passadas a partir das marcas `; pass` (RF-GC-6).
+  let maxPass = 0;
+  for (const m of previewProgram.program.moves) {
+    if (m.pass && m.pass > maxPass) maxPass = m.pass;
+  }
+  previewProgram.passCount = maxPass + 1;
+  // Cache por programa (o preview não pode repassar todos os trechos a cada
+  // quadro — ver `previewLayers`): trechos de queima, potência máxima e época.
+  previewProgram.burns = previewProgram.program.moves.filter((m) => !m.rapid);
+  let maxS = 0;
+  for (const m of previewProgram.burns) if (m.s && m.s > maxS) maxS = m.s;
+  previewProgram.maxS = maxS;
+  previewProgram.epoch = (previewProgram.epoch ?? 0) + 1;
   previewProgram.label = label || '';
   imageState.preview = { kind: 'gcode' };
   checkWorkArea();
@@ -1992,13 +2399,68 @@ function checkWorkArea() {
   appendLine(t('err.areaExceeded', { problems: problems.join(', ') }), 'error');
 }
 
+/** Mostra a passada corrente na legenda quando há mais de uma (RF-GC-6). */
+/** Último estado desenhado da legenda de passadas (evita escrita por quadro). */
+let passLegendKey = '';
+
+function updatePassLegend(done, okColor) {
+  if (!el.lgPass || !el.lgPassSwatch) return;
+  const total = previewProgram.passCount ?? 1;
+  const show = total > 1;
+  el.lgPass.classList.toggle('hidden', !show);
+  el.lgPassSwatch.classList.toggle('hidden', !show);
+  if (!show) return;
+  const pass = currentPass(done);
+  const key = `${pass}/${total}/${okColor}`;
+  if (key === passLegendKey) return;
+  passLegendKey = key;
+  const palette = [okColor, ...PASS_COLORS];
+  const idx = ((pass % palette.length) + palette.length) % palette.length;
+  el.lgPassSwatch.style.background = palette[idx];
+  el.lgPass.textContent = t('preview.pass', { n: pass + 1, total });
+}
+
+/**
+ * Camadas em cache do preview de G-code.
+ *
+ * Redesenhar o caminho inteiro a cada quadro era o maior gasto de CPU do app
+ * durante a gravação (o GRBL responde 10-20×/s e uma imagem tem centenas de
+ * milhares de trechos). CPU ocupada atrasa o reabastecimento do buffer do GRBL,
+ * que fica sem movimentos e **trava no meio da gravação**. Aqui:
+ *  - `static`: área de trabalho + `G0` + queima completa — pintada uma vez por
+ *    (programa, vista, tamanho, dpr, tema);
+ *  - `done`: trechos já executados — **incremental** (só o que terminou desde o
+ *    quadro anterior);
+ *  - por quadro: dois `drawImage` + o crosshair.
+ */
+const previewLayers = {
+  key: '',
+  static: null,
+  done: null,
+  /** Índice em `moves` do próximo trecho a pintar na camada de progresso. */
+  moveCursor: 0,
+  /** Último `done` pintado (detecta reinício do job). */
+  doneIndex: 0,
+};
+
+/** Canvas fora de tela do tamanho do preview, já na escala do `dpr`. */
+function newLayer(rect, dpr) {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(rect.width * dpr));
+  canvas.height = Math.max(1, Math.round(rect.height * dpr));
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { canvas, ctx };
+}
+
 function drawGcodePreview() {
-  const { ctx, rect } = previewContext();
+  const { ctx, rect, dpr } = previewContext();
   ctx.clearRect(0, 0, rect.width, rect.height);
   const prog = previewProgram.program;
 
   el.previewLegend.classList.remove('hidden');
   if (!prog || prog.moves.length === 0) {
+    previewLayers.key = '';
     el.previewHint.classList.remove('hidden');
     el.previewHint.textContent = prog
       ? t('preview.hint.noMoves')
@@ -2030,61 +2492,136 @@ function drawGcodePreview() {
   const dim = cssColor('--text-disabled', '#6b6b6b');
   const okColor = cssColor('--ok', '#6ccb5f');
 
-  // Área de trabalho ($130/$131) tracejada.
-  const wa = previewProgram.workArea;
-  if (wa) {
-    ctx.save();
-    ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = dim;
-    ctx.globalAlpha = 0.7;
-    ctx.strokeRect(
-      toX(0),
-      toY(wa.heightMm),
-      wa.widthMm * scale,
-      wa.heightMm * scale,
-    );
-    ctx.restore();
-  }
-
   const moves = prog.moves;
+  const wa = previewProgram.workArea;
+  const maxS = previewProgram.maxS ?? 0;
+  const POWER_LEVELS = 12;
 
-  // Deslocamentos (G0) em segundo plano.
-  ctx.strokeStyle = dim;
-  ctx.globalAlpha = 0.5;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (const m of moves) {
-    if (!m.rapid) continue;
-    ctx.moveTo(toX(m.x0), toY(m.y0));
-    ctx.lineTo(toX(m.x1), toY(m.y1));
-  }
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  // Queima/corte (G1/G2/G3).
-  ctx.strokeStyle = accent;
-  ctx.beginPath();
-  for (const m of moves) {
-    if (m.rapid) continue;
-    ctx.moveTo(toX(m.x0), toY(m.y0));
-    ctx.lineTo(toX(m.x1), toY(m.y1));
-  }
-  ctx.stroke();
-
-  // Trecho já executado (RF-PRV-5).
-  const done = previewProgram.done;
-  if (done > 0) {
-    ctx.strokeStyle = okColor;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    for (const m of moves) {
-      if (m.rapid || m.line >= done) continue;
-      ctx.moveTo(toX(m.x0), toY(m.y0));
-      ctx.lineTo(toX(m.x1), toY(m.y1));
+  /** Desenha `list` com alfa proporcional à potência (segue o `S` do gerador). */
+  const strokePower = (target, list, color, alphaMin) => {
+    if (!list || list.length === 0) return;
+    const groups = new Map();
+    for (const m of list) {
+      const t = maxS > 0 ? Math.min(1, (m.s ?? 0) / maxS) : 1;
+      const k = Math.round(t * (POWER_LEVELS - 1));
+      const arr = groups.get(k);
+      if (arr) arr.push(m);
+      else groups.set(k, [m]);
     }
-    ctx.stroke();
-    ctx.lineWidth = 1;
+    for (const [level, arr] of [...groups.entries()].sort(
+      (p, q) => p[0] - q[0],
+    )) {
+      const t = POWER_LEVELS > 1 ? level / (POWER_LEVELS - 1) : 1;
+      target.strokeStyle = color;
+      target.globalAlpha = alphaMin + (1 - alphaMin) * t;
+      target.beginPath();
+      for (const m of arr) {
+        target.moveTo(toX(m.x0), toY(m.y0));
+        target.lineTo(toX(m.x1), toY(m.y1));
+      }
+      target.stroke();
+    }
+    target.globalAlpha = 1;
+  };
+
+  // Chave da camada estática: qualquer mudança de vista/programa/tema/tamanho
+  // invalida o cache (repinta uma vez, não a cada quadro).
+  const layerKey = [
+    previewProgram.epoch ?? 0,
+    moves.length,
+    rect.width,
+    rect.height,
+    dpr,
+    scale,
+    tx,
+    ty,
+    wa ? `${wa.widthMm}x${wa.heightMm}` : '',
+    accent,
+    dim,
+  ].join('|');
+
+  if (previewLayers.key !== layerKey || !previewLayers.static) {
+    previewLayers.key = layerKey;
+    previewLayers.static = newLayer(rect, dpr);
+    previewLayers.done = newLayer(rect, dpr);
+    previewLayers.moveCursor = 0;
+    previewLayers.doneIndex = 0;
+    const g = previewLayers.static.ctx;
+
+    // Área de trabalho ($130/$131) tracejada.
+    if (wa) {
+      g.save();
+      g.setLineDash([4, 3]);
+      g.strokeStyle = dim;
+      g.globalAlpha = 0.7;
+      g.strokeRect(
+        toX(0),
+        toY(wa.heightMm),
+        wa.widthMm * scale,
+        wa.heightMm * scale,
+      );
+      g.restore();
+    }
+
+    // Deslocamentos (G0) em segundo plano.
+    g.strokeStyle = dim;
+    g.globalAlpha = 0.5;
+    g.lineWidth = 1;
+    g.beginPath();
+    for (const m of moves) {
+      if (!m.rapid) continue;
+      g.moveTo(toX(m.x0), toY(m.y0));
+      g.lineTo(toX(m.x1), toY(m.y1));
+    }
+    g.stroke();
+    g.globalAlpha = 1;
+
+    // Queima/corte (G1/G2/G3) com brilho por potência (`S`).
+    strokePower(g, prog.burns ?? moves, accent, 0.18);
   }
+
+  // Camada de progresso, colorida por passada (RF-PRV-5 / RF-GC-6) e pintada
+  // de forma incremental: cada quadro acrescenta só os trechos recém-concluídos.
+  const done = Math.max(0, previewProgram.done);
+  if (done < previewLayers.doneIndex) {
+    // Job recomeçou (retomada/passada nova): repinta do zero.
+    previewLayers.done.ctx.clearRect(0, 0, rect.width, rect.height);
+    previewLayers.moveCursor = 0;
+    previewLayers.doneIndex = 0;
+  }
+  if (done > previewLayers.doneIndex) {
+    const g = previewLayers.done.ctx;
+    const byPass = new Map();
+    let cursor = previewLayers.moveCursor;
+    while (cursor < moves.length && moves[cursor].line < done) {
+      const m = moves[cursor++];
+      if (m.rapid) continue;
+      const p = m.pass ?? 0;
+      let list = byPass.get(p);
+      if (!list) {
+        list = [];
+        byPass.set(p, list);
+      }
+      list.push(m);
+    }
+    const palette = [okColor, ...PASS_COLORS];
+    g.lineWidth = 1.5;
+    for (const p of [...byPass.keys()].sort((p, q) => p - q)) {
+      strokePower(
+        g,
+        byPass.get(p),
+        palette[((p % palette.length) + palette.length) % palette.length],
+        0.3,
+      );
+    }
+    previewLayers.moveCursor = cursor;
+    previewLayers.doneIndex = done;
+  }
+
+  // Compõe o quadro: estático + progresso, depois o crosshair da posição.
+  ctx.drawImage(previewLayers.static.canvas, 0, 0, rect.width, rect.height);
+  ctx.drawImage(previewLayers.done.canvas, 0, 0, rect.width, rect.height);
+  updatePassLegend(done, okColor);
 
   // Crosshair da posição (RF-PRV-3).
   const pos = previewProgram.lastPos;
@@ -2407,7 +2944,7 @@ function renderImageInfo() {
 
 /** Reaplica os textos dinâmicos depois de uma troca de idioma. */
 function refreshTexts() {
-  // O rótulo do modo Básico/Avançado depende do estado, não só do idioma;
+  // O rótulo do botão do assistente depende do estado, não só do idioma;
   // não reinicia o passo do wizard (só retraduz).
   applyMode(document.body.classList.contains('basic') ? 'basic' : 'advanced', {
     resetWizard: false,
@@ -2416,6 +2953,7 @@ function refreshTexts() {
   updateControls();
   updateWizard();
   updateSizeHint();
+  updateSpeedHint();
   updateResumeInfo();
   renderFileInfo();
   renderImageInfo();
@@ -2429,6 +2967,10 @@ function refreshTexts() {
   populateGuideMaterials();
   renderMacroButtons();
   renderMacroEditor();
+  setConsolePaused(state.consolePaused);
+  renderAlarmHistory();
+  renderFileDir();
+  renderProfiles();
   if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
     openFrameModal();
   }
@@ -2480,11 +3022,12 @@ function closeOverlay(node) {
   if (node) node.classList.add('hidden');
 }
 
-el.themeBtn.addEventListener('click', () => {
+function openAppearance() {
   buildThemePicker();
   buildLangPicker();
   openOverlay(el.appearanceOverlay);
-});
+}
+
 if (el.appearanceClose)
   el.appearanceClose.addEventListener('click', () =>
     closeOverlay(el.appearanceOverlay),
@@ -2516,6 +3059,28 @@ if (el.aboutVisit)
     openExternal(APP_INFO.url || 'https://lab.werneck.dev.br/'),
   );
 
+// ------------------------------------------- pasta de arquivos (RF-CFG-5)
+
+/** Mostra a pasta configurada (ou a do sistema, quando não definida). */
+function renderFileDir() {
+  if (!el.fileDirValue) return;
+  el.fileDirValue.textContent =
+    state.prefs.fileDir || t('prefs.fileDir.default');
+}
+
+if (el.fileDirChoose)
+  el.fileDirChoose.addEventListener('click', async () => {
+    try {
+      const dir = await window.grbl.pickDir();
+      if (!dir) return;
+      state.prefs.fileDir = dir;
+      renderFileDir();
+      appendLine(t('prefs.fileDir.changed', { path: dir }), 'ok');
+    } catch (err) {
+      appendLine(t('err.prefix', { msg: err.message }), 'error');
+    }
+  });
+
 // Fecha overlays com Esc ou clique fora do modal.
 for (const overlay of [
   el.appearanceOverlay,
@@ -2528,12 +3093,39 @@ for (const overlay of [
     if (e.target === overlay) overlay.classList.add('hidden');
   });
 }
+/** Para o job em execução via teclado (DESIGN §5: Esc / Ctrl+X). */
+function emergencyStopFromKeyboard(e) {
+  if (state.jobState !== 'running' && state.jobState !== 'paused') return false;
+  e.preventDefault();
+  window.grbl.stopJob();
+  return true;
+}
+
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  for (const overlay of [el.appearanceOverlay, el.aboutOverlay]) {
-    if (overlay && !overlay.classList.contains('hidden'))
-      overlay.classList.add('hidden');
+  if (typingInField(e.target)) return;
+  // Ctrl+X: parada de emergência sempre disponível durante o job.
+  if (
+    e.ctrlKey &&
+    !e.altKey &&
+    !e.metaKey &&
+    (e.key === 'x' || e.key === 'X')
+  ) {
+    emergencyStopFromKeyboard(e);
+    return;
   }
+  if (e.key !== 'Escape') return;
+  const overlays = [
+    el.appearanceOverlay,
+    el.aboutOverlay,
+    el.settingsOverlay,
+    el.frameOverlay,
+  ].filter((o) => o && !o.classList.contains('hidden'));
+  if (overlays.length) {
+    for (const overlay of overlays) overlay.classList.add('hidden');
+    return;
+  }
+  // Sem overlays abertos, Esc também para o job (botão crítico sempre acessível).
+  emergencyStopFromKeyboard(e);
 });
 
 // Eventos vindos do menu nativo (RF-APP-1/2).
@@ -2551,7 +3143,11 @@ if (window.grbl.onAction)
   window.grbl.onAction((name) => {
     if (name === 'open-gcode') el.fileOpen.click();
     else if (name === 'open-image') el.imageOpen.click();
-    else if (name === 'appearance') el.themeBtn.click();
+    else if (name === 'appearance') openAppearance();
+    else if (name === 'open-logs')
+      window.grbl.openLogs().catch((err) => {
+        appendLine(t('err.prefix', { msg: err.message }), 'error');
+      });
   });
 
 // ----------------------------------------------------- unidades (RF-APP-3)
@@ -2559,12 +3155,28 @@ if (window.grbl.onAction)
 const IN_PER_MM = 1 / 25.4;
 
 /**
+ * Posição de trabalho (WPos) em mm — o sistema em que o G-code é escrito,
+ * usado no DRO, no DTG e no crosshair do preview (RF-PRV-3).
+ *
+ * O GRBL reporta **só `MPos` ou só `WPos`** (nunca os dois) e manda o `WCO`
+ * apenas de vez em quando (~10–30 relatórios). Como `WPos = MPos − WCO`, o
+ * cache em `state.wco` é mantido pelo helper puro `GRBL_PREVIEW.workPosition`.
+ */
+function workPosition(s) {
+  if (!s) return null;
+  const api = window.GRBL_PREVIEW;
+  if (!api?.workPosition) return s.wpos ?? s.mpos ?? null;
+  const { pos, wco } = api.workPosition(s, state.wco ?? { x: 0, y: 0, z: 0 });
+  state.wco = wco;
+  return pos;
+}
+
+/**
  * Desenha o DRO na unidade escolhida. A máquina e o G-code continuam em mm;
  * "in" é só conversão de exibição, para não alterar o estado modal do GRBL.
  */
 function updateDro() {
-  const s = state.lastStatus;
-  const pos = s?.mpos ?? s?.wpos;
+  const pos = workPosition(state.lastStatus);
   const fmt = (mm) =>
     state.units === 'in' ? (mm * IN_PER_MM).toFixed(4) : mm.toFixed(3);
   el.droX.textContent = pos ? fmt(pos.x) : '—';
@@ -2624,7 +3236,7 @@ async function loadPrefs() {
   state.units = state.prefs.units === 'in' ? 'in' : 'mm';
   el.unitsSelect.value = state.units;
 
-  // Modo Básico / Avançado persistido (RF-APP-2 / §15).
+  // Assistente aberto/fechado persistido (RF-APP-2 / §15).
   applyMode(state.prefs.mode === 'basic' ? 'basic' : 'advanced');
 
   if (state.prefs.baud) {
@@ -2645,6 +3257,14 @@ async function loadPrefs() {
   const profile = state.prefs.machineProfile || 'sculpfun-c1';
   if (el.machineProfile) el.machineProfile.value = profile;
   applyMachineProfile(profile);
+
+  // Histórico de alarmes (RF-STA-7) e pasta de arquivos (RF-CFG-5).
+  state.alarms = Array.isArray(state.prefs.alarmHistory)
+    ? state.prefs.alarmHistory
+    : [];
+  renderAlarmHistory();
+  renderFileDir();
+  renderProfiles();
 }
 
 /** Seleciona a última porta usada, quando ela ainda está disponível. */
@@ -2678,6 +3298,7 @@ let settingsTab = '';
 function openSettings() {
   el.settingsOverlay.classList.remove('hidden');
   el.settingsFilter.value = '';
+  renderProfiles();
   if (!state.connected) {
     el.settingsStatus.textContent = t('settings.connectFirst');
     return;
@@ -2732,6 +3353,7 @@ async function loadSettings() {
     settingRows = await window.grbl.readSettings();
     applyWorkAreaFromSettings();
     if (settingsTab === '') renderSettings();
+    renderProfiles();
     el.settingsStatus.textContent = settingRows.length
       ? t('settings.count', { count: settingRows.length })
       : t('settings.empty');
@@ -2744,7 +3366,14 @@ async function loadSettings() {
   }
 }
 
-/** Extrai $130/$131 e alimenta o aviso de área de trabalho (RF-GC-9). */
+/**
+ * Velocidade máxima dos eixos lida da máquina (`$110`/`$111`). Acima disso o
+ * GRBL corta a velocidade e só o tempo de queima cai — a peça sai mais clara
+ * (RF-IMG-10).
+ */
+const machineLimits = { rateX: null, rateY: null };
+
+/** Extrai $130/$131 (área de trabalho) e $110/$111 (limite de velocidade). */
 function applyWorkAreaFromSettings() {
   const value = (code) => settingRows.find((r) => r.code === code)?.number;
   const width = value(130);
@@ -2752,6 +3381,45 @@ function applyWorkAreaFromSettings() {
   if (typeof width === 'number' && typeof height === 'number') {
     setWorkArea(width, height);
   }
+  const rate = (code) => {
+    const v = value(code);
+    return typeof v === 'number' && v > 0 ? v : null;
+  };
+  machineLimits.rateX = rate(110);
+  machineLimits.rateY = rate(111);
+  updateSpeedHint();
+}
+
+/** Compara a velocidade pedida (com a velocidade no claro) com $110/$111. */
+function updateSpeedHint() {
+  if (!el.speedHint) return;
+  const { rateX, rateY } = machineLimits;
+  if (rateX === null || rateY === null) {
+    el.speedHint.textContent = t('img.speed.unknown');
+    el.speedHint.classList.remove('warn');
+    return;
+  }
+  const max = Math.min(rateX, rateY);
+  const speed = Number(el.imgSpeed.value) || 0;
+  const adaptive = Math.max(1, Number(el.imgAdaptive?.value) || 1);
+  const peak = Math.round(speed * adaptive);
+  if (peak > max) {
+    el.speedHint.textContent = t('img.speed.over', {
+      peak,
+      max: Math.round(max),
+    });
+    el.speedHint.classList.add('warn');
+  } else {
+    el.speedHint.textContent = t('img.speed.limits', {
+      x: Math.round(rateX),
+      y: Math.round(rateY),
+    });
+    el.speedHint.classList.remove('warn');
+  }
+}
+
+for (const key of ['imgSpeed', 'imgAdaptive']) {
+  el[key]?.addEventListener('input', updateSpeedHint);
 }
 
 function renderSettings() {
@@ -2867,9 +3535,8 @@ el.settingsClose.addEventListener('click', closeSettings);
 el.settingsOverlay.addEventListener('click', (e) => {
   if (e.target === el.settingsOverlay) closeSettings();
 });
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeSettings();
-});
+// O fechamento por `Escape` é tratado no handler global de teclado (para
+// respeitar campos de texto e a ordem de overlays/parada de emergência).
 el.settingsRefresh.addEventListener('click', () => loadSettings());
 el.settingsFilter.addEventListener('input', renderSettings);
 for (const tab of el.settingsTabs) {
@@ -2877,6 +3544,110 @@ for (const tab of el.settingsTabs) {
     setSettingsTab(tab.dataset.special ?? ''),
   );
 }
+// ----------------------------------------- perfis de configuração (RF-CFG-4)
+
+/** Valores atuais de `$$` como mapa `código -> valor`. */
+function currentSettingValues() {
+  const values = {};
+  for (const row of settingRows) values[String(row.code)] = row.value;
+  return values;
+}
+
+/** Perfis salvos pelo usuário (nunca `undefined`). */
+function savedProfiles() {
+  return Array.isArray(state.prefs.settingProfiles)
+    ? state.prefs.settingProfiles
+    : [];
+}
+
+/** (Re)desenha o seletor de perfis salvos. */
+function renderProfiles() {
+  if (!el.settingsProfiles) return;
+  const profiles = savedProfiles();
+  const previous = el.settingsProfiles.value;
+  el.settingsProfiles.textContent = '';
+  if (!profiles.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = t('settings.profile.none');
+    el.settingsProfiles.appendChild(opt);
+  } else {
+    profiles.forEach((profile, index) => {
+      const opt = document.createElement('option');
+      opt.value = String(index);
+      opt.textContent = profile.name;
+      el.settingsProfiles.appendChild(opt);
+    });
+  }
+  if (
+    previous &&
+    [...el.settingsProfiles.options].some((o) => o.value === previous)
+  ) {
+    el.settingsProfiles.value = previous;
+  }
+  const has = profiles.length > 0;
+  if (el.settingsProfileApply) el.settingsProfileApply.disabled = !has;
+  if (el.settingsProfileDelete) el.settingsProfileDelete.disabled = !has;
+}
+
+/** Salva os valores atuais de `$$` sob um nome (RF-CFG-4). */
+function saveProfile() {
+  const name = (el.settingsProfileName?.value || '').trim();
+  if (!name) {
+    el.settingsStatus.textContent = t('settings.profile.needName');
+    return;
+  }
+  const next = [
+    ...savedProfiles().filter((p) => p.name !== name),
+    { name, values: currentSettingValues() },
+  ];
+  state.prefs.settingProfiles = next;
+  persistPrefs({ settingProfiles: next });
+  renderProfiles();
+  if (el.settingsProfileName) el.settingsProfileName.value = '';
+  el.settingsStatus.textContent = t('settings.profile.saved', { name });
+}
+
+/** Reaplica os valores de um perfil na máquina (RF-CFG-4). */
+async function applyProfileValues() {
+  const profile = savedProfiles()[Number(el.settingsProfiles.value)];
+  if (!profile) return;
+  el.settingsStatus.textContent = t('settings.querying');
+  try {
+    for (const [code, value] of Object.entries(profile.values)) {
+      await window.grbl.applySetting({ code: Number(code), value });
+    }
+    await loadSettings();
+    el.settingsStatus.textContent = t('settings.profile.applied', {
+      name: profile.name,
+    });
+  } catch (err) {
+    el.settingsStatus.textContent = t('settings.profile.applyFail', {
+      msg: err.message,
+    });
+  }
+}
+
+/** Remove o perfil selecionado (RF-CFG-4). */
+function deleteProfile() {
+  const index = Number(el.settingsProfiles.value);
+  const profile = savedProfiles()[index];
+  if (!profile) return;
+  const next = savedProfiles().filter((_, i) => i !== index);
+  state.prefs.settingProfiles = next;
+  persistPrefs({ settingProfiles: next });
+  renderProfiles();
+  el.settingsStatus.textContent = t('settings.profile.deleted', {
+    name: profile.name,
+  });
+}
+
+if (el.settingsProfileSave)
+  el.settingsProfileSave.addEventListener('click', saveProfile);
+if (el.settingsProfileApply)
+  el.settingsProfileApply.addEventListener('click', applyProfileValues);
+if (el.settingsProfileDelete)
+  el.settingsProfileDelete.addEventListener('click', deleteProfile);
 
 // ------------------------------------------------------- macros (RF-MAC)
 
@@ -3072,6 +3843,98 @@ function stateLabel(name) {
   return key && hasKey(key) ? t(key) : name;
 }
 
+/** Segmento em execução (DTG — RF-STA-2), com cursor amortizado (O(n) total). */
+function currentTarget() {
+  const prog = previewProgram.program;
+  if (!prog?.moves.length) return null;
+  const moves = prog.moves;
+  let i = previewProgram.dtgCursor || 0;
+  while (i < moves.length - 1 && moves[i + 1].line <= state.doneFile) i++;
+  previewProgram.dtgCursor = i;
+  return moves[i].line <= state.doneFile ? moves[i] : moves[0];
+}
+
+/** Distância (mm) até o fim do segmento em execução (RF-STA-2). */
+function updateDtg(s) {
+  if (!el.metaDtg) return;
+  // Alvos do G-code estão em coordenadas de trabalho (WPos), como o crosshair.
+  const pos = workPosition(s);
+  const target =
+    state.jobState === 'running' || state.jobState === 'paused'
+      ? currentTarget()
+      : null;
+  if (!pos || !target) {
+    el.metaDtg.textContent = '—';
+    return;
+  }
+  const d = Math.hypot(target.x1 - pos.x, target.y1 - pos.y);
+  el.metaDtg.textContent =
+    state.units === 'in' ? (d * IN_PER_MM).toFixed(4) : d.toFixed(3);
+}
+
+/** Tempo restante estimado (RF-GC-5) a partir do progresso do job. */
+function updateEta(p) {
+  if (!el.progressEta) return;
+  const total = state.estimatedSec;
+  if (!total || !p.total) {
+    el.progressEta.textContent = '';
+    return;
+  }
+  const fraction = Math.min(1, Math.max(0, p.sent / p.total));
+  const remaining = total * (1 - fraction);
+  el.progressEta.textContent =
+    remaining > 0.5 ? `${t('status.remaining')}: ${formatTime(remaining)}` : '';
+}
+
+/** Registra um alarme/erro no histórico da sessão (RF-STA-7). */
+function recordAlarm(err) {
+  state.alarms = [
+    ...state.alarms,
+    {
+      ts: Date.now(),
+      code: err.code,
+      message: err.message,
+      solution: err.solution,
+    },
+  ].slice(-100);
+  renderAlarmHistory();
+  persistPrefs({ alarmHistory: state.alarms });
+}
+
+/** (Re)desenha o histórico de alarmes no idioma/estado atuais. */
+function renderAlarmHistory() {
+  if (!el.alarmHistory) return;
+  el.alarmHistory.textContent = '';
+  if (!state.alarms.length) {
+    const empty = document.createElement('div');
+    empty.className = 'hint';
+    empty.textContent = t('status.history.empty');
+    el.alarmHistory.appendChild(empty);
+    return;
+  }
+  for (const entry of [...state.alarms].reverse()) {
+    const row = document.createElement('div');
+    row.className = 'alarm-entry';
+    const time = new Date(entry.ts).toLocaleTimeString();
+    const code = entry.code !== undefined ? ` [${entry.code}]` : '';
+    row.textContent = `${time}${code} ${entry.message}`;
+    if (entry.solution) {
+      const fix = document.createElement('div');
+      fix.className = 'alarm-fix';
+      fix.textContent = entry.solution;
+      row.appendChild(fix);
+    }
+    el.alarmHistory.appendChild(row);
+  }
+}
+
+if (el.alarmHistoryClear)
+  el.alarmHistoryClear.addEventListener('click', () => {
+    state.alarms = [];
+    renderAlarmHistory();
+    persistPrefs({ alarmHistory: [] });
+  });
+
 window.grbl.onConsole((line) => {
   appendLine(
     line.direction === 'out' ? `> ${line.text}` : line.text,
@@ -3081,6 +3944,10 @@ window.grbl.onConsole((line) => {
 
 window.grbl.onStatus((s) => {
   state.lastStatus = s;
+  if (s.state !== state.grblState) {
+    state.grblState = s.state;
+    updateControls();
+  }
   const cls = STATE_CLASS[s.state] ?? '';
   el.stateBadge.className = `badge ${cls}`;
   el.stateBadge.textContent = stateLabel(s.state);
@@ -3088,6 +3955,7 @@ window.grbl.onStatus((s) => {
   updateDro();
   el.metaFeed.textContent = s.fs ? `${s.fs.feed}` : '—';
   el.metaS.textContent = s.fs ? `${s.fs.spindle}` : '—';
+  updateDtg(s);
 
   if (s.ov) {
     el.ovrFeedValue.textContent = `${s.ov[0]}%`;
@@ -3096,7 +3964,7 @@ window.grbl.onStatus((s) => {
   }
 
   // Crosshair do preview segue a posição de trabalho (RF-PRV-3).
-  const work = s.wpos ?? s.mpos;
+  const work = workPosition(s);
   if (work) {
     previewProgram.lastPos = { x: work.x, y: work.y };
     if (imageState.preview?.kind === 'gcode') scheduleRenderPreview();
@@ -3122,6 +3990,9 @@ window.grbl.onProgress((p) => {
   const pct = p.total ? Math.round((p.sent / p.total) * 100) : 0;
   el.progressBar.style.width = `${pct}%`;
   el.progressText.textContent = `${p.sent} / ${p.total} (${pct}%)`;
+  if (el.jobBarProgress)
+    el.jobBarProgress.textContent = `${p.sent} / ${p.total} (${pct}%)`;
+  updateEta(p);
 
   // Mapeia o progresso do job para o índice no arquivo (retomada RF-GC-7).
   state.doneFile = state.jobStart + Math.max(0, p.sent - state.jobPreamble);
@@ -3138,6 +4009,11 @@ window.grbl.onError((err) => {
   el.stateBadge.className = 'badge alarm';
   el.stateBadge.textContent = t('status.error');
   appendLine(t('err.prefix', { msg: err.message }), 'error');
+  // Ação recomendada para alarmes conhecidos (RF-STA-4).
+  if (err.solution) appendLine(err.solution, 'message');
+  // Só alarmes/erros do GRBL (com código) entram no histórico (RF-STA-7);
+  // falhas de I/O/conexão não são alarmes.
+  if (err.code !== undefined) recordAlarm(err);
   console.warn('GRBL:', err.message);
 });
 
@@ -3163,6 +4039,7 @@ if (el.frameSetOrigin)
   );
 if (el.frameOutline)
   el.frameOutline.addEventListener('click', drawFrameOutline);
+if (el.frameCenter) el.frameCenter.addEventListener('click', moveToFrameCenter);
 if (el.framePassesMinus && el.framePasses) {
   el.framePassesMinus.addEventListener('click', () => {
     const v = Math.max(1, (Number(el.framePasses.value) || 1) - 1);
@@ -3208,12 +4085,15 @@ if (el.frameStart)
     generateGcode(true);
   });
 
-// Modo Básico / Avançado.
+// Assistente / guia iniciante (o antigo modo Básico/Avançado).
 function applyMode(mode, { resetWizard = true } = {}) {
   const basic = mode === 'basic';
   document.body.classList.toggle('basic', basic);
-  if (el.modeBtn)
-    el.modeBtn.textContent = basic ? t('mode.basic') : t('mode.advanced');
+  if (el.modeBtn) {
+    el.modeBtn.textContent = basic ? t('assistant.close') : t('assistant.open');
+    el.modeBtn.classList.toggle('active', basic);
+    el.modeBtn.setAttribute('aria-pressed', String(basic));
+  }
   if (basic) {
     if (resetWizard) wizardStep = 1;
     updateWizard();
@@ -3230,7 +4110,7 @@ if (el.modeBtn) {
   });
 }
 
-// Guia rápido (Modo Básico).
+// Guia rápido do assistente (o antigo modo Básico).
 function switchTab(name) {
   document.querySelectorAll('.sidebar-tabs .tab').forEach((t) => {
     t.classList.remove('active');
@@ -3372,9 +4252,8 @@ if (el.wizardNext) {
       wizardStep += 1;
       updateWizard();
     } else {
-      // Concluir: fecha o guia.
-      document.body.classList.remove('basic');
-      if (el.modeBtn) el.modeBtn.textContent = t('mode.advanced');
+      // Concluir: fecha o assistente e volta aos controles completos.
+      applyMode('advanced', { resetWizard: false });
       persistPrefs({ mode: 'advanced' });
     }
   });

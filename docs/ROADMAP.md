@@ -12,8 +12,8 @@
 detalhe e pendências em `PLANO_DE_ACAO.md` §1.1 e no `PRODUCT_SPEC.md` §6
 (ver `CHANGELOG.md`):
 
-- [x] Core de comunicação confiável: `SerialTransport` + `GrblClient` com fila
-      *send-response* (só envia após `ok`).
+- [x] Core de comunicação confiável: `SerialTransport` + `GrblClient` com fila e
+      **janela por bytes** (contagem de caracteres, nunca acima do buffer RX).
 - [x] Console exibindo respostas reais da máquina (banner, `ok`, `error:`, `ALARM:`).
 - [x] Status GRBL em tempo real (`?`) → badge de estado, DRO de posição, feed/S.
 - [x] Comandos de tempo real corretos (`!`, `~`, `0x18`, overrides `0x90–0x94`).
@@ -22,10 +22,10 @@ detalhe e pendências em `PLANO_DE_ACAO.md` §1.1 e no `PRODUCT_SPEC.md` §6
 - [x] IPC tipado + preload empacotado (`sandbox: true`).
 - [x] 29 testes (Vitest) + smoke test headless.
 
-**Versões 0.3.0/0.4.0** acrescentaram catálogo de máquinas, Modo Básico
-(wizard), perfis de material 3W e — na Fase 7 — **11 temas** (RF-APP-1),
-**i18n pt-BR/en/es** (RF-APP-2), barra inferior e menu **Ajuda → Sobre**
-(RF-APP-6/7). Ver `CHANGELOG.md`.
+**Versões 0.3.0/0.4.0** acrescentaram catálogo de máquinas, o **Assistente**
+(wizard; antigo “Modo Básico”), perfis de material 3W e — na Fase 7 —
+**11 temas** (RF-APP-1), **i18n pt-BR/en/es** (RF-APP-2), barra inferior e menu
+**Ajuda → Sobre** (RF-APP-6/7). Ver `CHANGELOG.md`.
 
 ## Objetivo
 Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna e intuitiva, mantendo o core de controle GRBL funcional.
@@ -47,7 +47,7 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [x] Indicador de posição atual (X/Y/Z)
 - [x] Velocidade/feed e spindle
 - [x] Melhorar transmissão G-Code (com confirmação `ok`)
-- [x] Scroll automático no console *(toggle pausar/limpar pendente — RF-CON-14)*
+- [x] Scroll automático no console + toggle pausar/limpar/exportar (RF-CON-14/15)
 
 ## v0.3 - Preview & JOG Avançado
 - [x] Preview 2D minimalista (renderizar caminho G-Code)
@@ -55,7 +55,7 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [x] Unlock/Soft Reset ($X, Ctrl+X)
 - [x] Homing ($H) com feedback
 - [x] Distâncias JOG customizáveis (0.01/0.1/1/5/10/50)
-- [ ] Teclas de atalho (setas, home, page up/down) *(RF-JOG-6, pendente)*
+- [x] Teclas de atalho (setas = X/Y, Home = homing) *(RF-JOG-6)*
 - [ ] Mover para posição clicada (se preview) *(pendente)*
 
 ## v0.4 - Configurações
@@ -64,7 +64,7 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [x] Preferências salvas (`PrefsStore` → `prefs.json`)
 - [x] Temas claro/escuro (hoje: 11 temas — ver `DESIGN.md` §2.3)
 - [x] Unidades (mm/inch)
-- [ ] Auto scroll console toggle *(pausar/limpar — RF-CON-14, pendente)*
+- [x] Auto scroll console toggle *(pausar/limpar/salvar — RF-CON-14/15)*
 
 ## v0.5 - Recursos Avançados
 - [x] Laser mode / Spindle (M3/M4)
@@ -77,9 +77,10 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 ## Próximos passos imediatos
 
 Ver `PLANO_DE_ACAO.md` §1.1. Resumo:
-1. Fechar a **Fase 7**: RNF-9 (log persistente de sessão), revisão de
-   acessibilidade/polish e checklist visual (`DESIGN.md` §8).
-2. Automação de release no GitHub (tag + artefatos); Flatpak (Could).
-3. **Fase 8**: cobertura do protocolo > 80 %, E2E Playwright, testes em hardware.
-4. Pendências pontuais: RF-STA-5 (bloquear em alarme), RF-JOG-2/6, tempo
-   estimado/restante (RF-GC-2/5), RF-CON-14/15.
+1. Fechar a **Fase 7**: revisão de acessibilidade/polish e checklist visual
+   (`DESIGN.md` §8), automação de release no GitHub e Flatpak (Could).
+2. **Fase 8**: cobertura do protocolo > 80 %, E2E Playwright, testes em hardware.
+
+> **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
+> persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
+> `PLANO_DE_ACAO.md` §1.1.

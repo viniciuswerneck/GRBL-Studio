@@ -143,3 +143,56 @@ describe('formatPosition', () => {
     expect(formatPosition(Number.NaN)).toBe('—');
   });
 });
+
+describe('parseStatusReport — campos parciais', () => {
+  it('aceita o campo F (feed sem spindle) preservando o spindle atual', () => {
+    const status = parseStatusReport('<Run|MPos:1,2,3|FS:500,255|F:800>')!;
+    expect(status.fs).toEqual({ feed: 800, spindle: 255 });
+  });
+
+  it('guarda segmentos sem ":" em extra e ignora segmentos vazios', () => {
+    const status = parseStatusReport('<Run|MPos:0,0,0|Probe|>')!;
+    expect(status.extra.Probe).toBe('');
+    expect(Object.keys(status.extra)).toEqual(['Probe']);
+  });
+
+  it('reconhece Pn/Bf e preserva chaves desconhecidas', () => {
+    const status = parseStatusReport(
+      '<Idle|MPos:0,0,0|Pn:XYZ|Bf:12,128|Foo:bar>',
+    )!;
+    expect(status.pn).toBe('XYZ');
+    expect(status.bf).toEqual({ planned: 12, rx: 128 });
+    expect(status.extra.Foo).toBe('bar');
+  });
+
+  it('cai em Unknown para estado não catálogado', () => {
+    expect(parseStatusReport('<Foo|MPos:0,0,0>')!.state).toBe('Unknown');
+  });
+});
+
+describe('classifyLine — casos de borda', () => {
+  it('mensagens do firmware com "ok" não são confundidas com ACK', () => {
+    const line = classifyLine('[MSG:Jog ok]');
+    expect(line.kind).toBe('message');
+    expect(line.message).toBe('Jog ok');
+  });
+
+  it('erro sem código numérico mantém o texto cru', () => {
+    const line = classifyLine('error:UNKNOWN');
+    expect(line.kind).toBe('error');
+    expect(line.code).toBeUndefined();
+    expect(line.message).toBe('error:UNKNOWN');
+  });
+
+  it('código de erro fora do catálogo usa rótulo genérico', () => {
+    const line = classifyLine('error:99');
+    expect(line.kind).toBe('error');
+    expect(line.code).toBe(99);
+    expect(line.message).toBe('Erro 99.');
+  });
+
+  it('descarta o CR final e classifica linha vazia como other', () => {
+    expect(classifyLine('ok\r').kind).toBe('ok');
+    expect(classifyLine('   ').kind).toBe('other');
+  });
+});

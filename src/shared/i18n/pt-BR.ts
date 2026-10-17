@@ -23,9 +23,9 @@ export const ptBR = {
   'nav.export': 'Exportar…',
 
   // -------------------------------------------------------------- modos UI
-  'mode.basic': 'Básico',
-  'mode.advanced': 'Avançado',
-  'mode.toggle.title': 'Alternar modo Básico/Avançado',
+  'assistant.open': 'Assistente',
+  'assistant.close': 'Fechar assistente',
+  'assistant.title': 'Assistente — guia iniciante',
   'mode.M4': 'M4 (dinâmico)',
   'mode.M3': 'M3 (constante)',
 
@@ -49,7 +49,8 @@ export const ptBR = {
   'action.cut': 'Corte',
 
   // -------------------------------------------------------- guia (básico)
-  'guide.close': 'Fechar (Modo Avançado)',
+  'guide.close': 'Fechar assistente',
+  'assistant.guideTitle': 'Assistente — guia iniciante',
   'guide.type.photo': 'Foto',
   'guide.type.bw': 'P&B',
   'guide.type.vector': 'Contorno',
@@ -156,6 +157,25 @@ export const ptBR = {
   'img.speed': 'Velocidade',
   'img.passes': 'Passadas',
   'img.mode': 'Modo',
+  'img.adaptive': 'Velocidade no claro (×)',
+  'img.adaptive.title':
+    'Acelera os trechos claros até N× a velocidade de gravação. O claro sai ' +
+    'mais claro (dose = S ÷ velocidade); compense com S-max/white clip. Acima ' +
+    'da velocidade máxima dos eixos ($110/$111) a queima enfraquece. 1 = ' +
+    'desligado.',
+  'img.bidirectional': 'Bidirecional (zigue-zague)',
+  'img.bidirectional.title':
+    'Grava a linha da esquerda para a direita e a seguinte da direita para a ' +
+    'esquerda, sem o G0 de retorno. Quase dobra a velocidade em imagens largas. ' +
+    'Desligue se a sua máquina deixar a ida e a volta com aparência diferente.',
+  'img.speed.limits':
+    'Velocidade máxima dos eixos ($110/$111): {x} / {y} mm/min.',
+  'img.speed.over':
+    'Pico de {peak} mm/min acima do limite do eixo ({max} mm/min): o GRBL ' +
+    'corta a velocidade e a queima enfraquece. Reduza a velocidade ou a ' +
+    'velocidade no claro.',
+  'img.speed.unknown':
+    'Conecte a gravadora para comparar com o limite dos eixos ($110/$111).',
   'img.generate': 'Gerar G-code',
   'img.generate.disabled': 'Escolha uma imagem primeiro',
   'img.generate.title': 'Converte a imagem em G-code',
@@ -175,15 +195,22 @@ export const ptBR = {
 
   // ------------------------------------------------------- posicionamento
   'frame.title': 'Posicionar a gravadora',
+  'frame.group.move': 'Mover a cabeça',
+  'frame.group.check': 'Conferir a área',
+  'frame.group.job': 'Gravação',
+  'frame.home.title': 'Home (referenciar os eixos)',
   'frame.hint':
-    'Use as setas para levar o laser até o ponto de origem da gravação. ' +
-    'Depois clique em **Desenhar contorno** para a máquina percorrer o ' +
-    'retângulo da área (laser desligado).',
+    'Use as setas para aproximar o laser da área. “Desenhar contorno” ' +
+    'contorna a área com laser bem fraco e “Marcar centro” leva o laser ' +
+    'até o centro da imagem (laser desligado).',
   'frame.setOrigin': 'Definir origem aqui',
   'frame.origin': 'Ir para origem (0,0)',
   'frame.outline': 'Desenhar contorno',
+  'frame.center': 'Marcar centro',
+  'frame.center.title': 'Leva o laser até o centro da imagem (laser desligado)',
+  'frame.center.done': 'Laser no centro da imagem (laser desligado).',
   'frame.start': '▶ Gravar',
-  'frame.power': 'Potência do contorno (%)',
+  'frame.power': 'Potência da gravação (%)',
   'frame.speed': 'Velocidade de gravação (mm/min)',
   'frame.position': 'Posicionar',
   'frame.engrave': 'Gravar',
@@ -191,7 +218,7 @@ export const ptBR = {
     'Máquina conectada. Posicione e desenhe o contorno para conferir.',
   'frame.status.disconnected':
     'Conecte a máquina para posicionar e desenhar o contorno.',
-  'frame.outline.done': 'Contorno enviado (laser desligado).',
+  'frame.outline.done': 'Contorno enviado (laser bem fraco).',
   'frame.generating': 'Gerando G-code com os parâmetros do modal…',
 
   // ------------------------------------------------- execução e arquivo
@@ -199,15 +226,23 @@ export const ptBR = {
   'file.open': 'Abrir G-code…',
   'file.none': 'Nenhum arquivo carregado',
   'file.loaded': 'Arquivo carregado: {name} ({lines} linhas)',
-  'file.info': '{name} — {lines} linhas',
-  'file.infoGenerated': '{file} — {lines} linhas (gerado de {image})',
+  'file.info': '{name} — {lines} linhas · {size}',
+  'file.infoTime': '{name} — {lines} linhas · {size} · ~{time}',
+  'file.infoGenerated': '{file} — {lines} linhas · {size} (gerado de {image})',
+  'file.infoGeneratedTime':
+    '{file} — {lines} linhas · {size} · ~{time} (gerado de {image})',
   'file.saved': 'G-code salvo em {path}',
   'gcode.summary':
     'G-code gerado: {lines} linhas, {size}, {rows}×{cols} amostras, ~{time}',
   'run.play': '▶ Iniciar',
   'run.pause': '⏸ Pausar',
   'run.resume': '▶ Retomar',
-  'run.stop': '⏹ Parar / Emergência',
+  'run.cancel': '⏹ Cancelar',
+  'run.cancel.title':
+    'Cancela a gravação e para a máquina agora (Esc / Ctrl+X)',
+  'run.jobbar.label': 'Controles da gravação',
+  'run.state.engraving': 'Gravando…',
+  'run.state.paused': 'Pausado',
   'run.hint.noFileNoConn':
     'Gere o G-code (Imagem → G-code) ou abra um .gcode e conecte a máquina para enviar.',
   'run.hint.noFile':
@@ -288,6 +323,7 @@ export const ptBR = {
   'preview.hint.empty': 'Abra um G-code ou inicie um job para ver o caminho.',
   'preview.hint.noMoves': 'Este G-code não tem movimentos para desenhar.',
   'preview.cut': 'Queima',
+  'preview.pass': 'Passada {n}/{total}',
   'preview.rapid': 'Deslocamento',
   'preview.tip': 'roda: zoom · arrastar: mover · duplo clique: ajustar',
   'preview.warning.area':
@@ -638,9 +674,79 @@ export const ptBR = {
   'menu.view': 'Exibir',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
+  'menu.appearance': 'Aparência e idioma…',
   'menu.help': 'Ajuda',
   'menu.about': 'Sobre o GRBL Studio',
   'menu.site': 'Site do WerneckLab',
+
+  // -------------------------------------------- console (RF-CON-14/15)
+  'console.pause': 'Pausar rolagem',
+  'console.resume': 'Retomar rolagem',
+  'console.clear': 'Limpar',
+  'console.save': 'Salvar log…',
+  'console.saved': 'Log salvo em {path}',
+  'console.saveFail': 'Falha ao salvar o log: {msg}',
+  'dlg.saveLog': 'Salvar log do console',
+  'filter.log': 'Log (texto)',
+
+  // ------------------------------------------------ status (RF-STA-2/4/7)
+  'status.dtg': 'Para ir',
+  'status.remaining': 'Restante',
+  'status.alarmHint': 'Alarme ativo: use Unlock ($X) ou Reset antes de mover.',
+  'status.history.title': 'Histórico de alarmes',
+  'status.history.empty': 'Nenhum alarme registrado.',
+  'status.history.clear': 'Limpar histórico',
+  'alarmfix.1':
+    'Verifique a chave de fim de curso e faça homing ($H) ou envie Unlock ($X).',
+  'alarmfix.2':
+    'Envie Unlock ($X); para proteger a máquina, habilite soft limits ($20) com homing ($22).',
+  'alarmfix.3':
+    'Faça homing ($H) para restabelecer a origem antes de continuar.',
+  'alarmfix.4':
+    'Confira a fiação da sonda e o estado inicial do pino antes de sondar.',
+  'alarmfix.5': 'Aproxime a sonda do material ou aumente o curso de sondagem.',
+  'alarmfix.6': 'Repita o homing ($H); evite resetar durante o ciclo.',
+  'alarmfix.7': 'Feche a porta de segurança e repita o homing ($H).',
+  'alarmfix.8':
+    'Aumente o pull-off ($27) e verifique a fiação do fim de curso.',
+  'alarmfix.9':
+    'Aumente a busca do homing ($25) e confira o fim de curso do eixo.',
+
+  // ------------------------------------------------ conexão (RF-CON-5)
+  'conn.firmware': 'Firmware: {value}',
+  'conn.stateReport': 'Estado modal: {value}',
+
+  // ------------------------------------------------------ jog (RF-JOG-2/6)
+  'jog.hold.title': 'Segure para mover continuamente; solte para parar',
+  'jog.keys.title': 'Setas: X/Y · PageUp/PageDown: Z · Home: homing ($H)',
+
+  // ------------------------------------ perfis de configuração (RF-CFG-4)
+  'settings.profile.title': 'Perfis de configuração',
+  'settings.profile.hint': 'Salve o conjunto atual de $$ e reaplique depois.',
+  'settings.profile.name': 'Nome do perfil',
+  'settings.profile.save': 'Salvar perfil',
+  'settings.profile.saveHint': 'Salva os valores atuais de $$',
+  'settings.profile.apply': 'Aplicar',
+  'settings.profile.applyHint': 'Reescreve os valores do perfil na máquina',
+  'settings.profile.delete': 'Remover',
+  'settings.profile.none': 'Nenhum perfil salvo',
+  'settings.profile.saved': 'Perfil “{name}” salvo.',
+  'settings.profile.applied': 'Perfil “{name}” aplicado.',
+  'settings.profile.deleted': 'Perfil “{name}” removido.',
+  'settings.profile.needName': 'Informe um nome para o perfil.',
+  'settings.profile.applyFail': 'Falha ao aplicar o perfil: {msg}',
+
+  // ---------------------------------------------- preferências (RF-CFG-5)
+  'prefs.fileDir': 'Pasta de arquivos',
+  'prefs.fileDir.hint': 'Onde abrir e salvar arquivos por padrão.',
+  'prefs.fileDir.choose': 'Escolher pasta…',
+  'prefs.fileDir.default': 'Pasta padrão do sistema',
+  'prefs.fileDir.changed': 'Pasta de arquivos: {path}',
+  'dlg.pickDir': 'Escolher pasta de arquivos',
+
+  // --------------------------------------------- logs de sessão (RNF-9)
+  'menu.logs': 'Abrir pasta de logs',
+  'logs.none': 'Ainda não há logs.',
 } as const;
 
 export type MessageKey = keyof typeof ptBR;

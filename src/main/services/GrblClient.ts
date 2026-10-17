@@ -1,10 +1,12 @@
 /**
- * GrblClient — protocolo GRBL: fila de envio confiável (send-response),
- * status em tempo real, overrides e comandos de controle.
+ * GrblClient — protocolo GRBL: fila de envio confiável com **janela por bytes**
+ * (contagem de caracteres), status em tempo real, overrides e comandos de
+ * controle.
  *
  * Invariantes (AGENTS.md):
  *  - Comandos de tempo real = byte único, sem `\n`.
- *  - Só envia a próxima linha após receber `ok`.
+ *  - Nunca mais bytes sem `ok` que o buffer RX da máquina (`[OPT:…]`, padrão
+ *    128): o GRBL continua no controle do fluxo e o buffer nunca estoura.
  *
  * Emite eventos (consumidos pela camada IPC):
  *  - `console`   (ConsoleLine)     linha enviada/recebida
@@ -52,12 +54,23 @@ function describeGrbl(
   return hasKey(generic) ? t(generic, { code }) : fallback;
 }
 
+/**
+ * Ação recomendada para um alarme conhecido (RF-STA-4), no idioma ativo.
+ * `undefined` quando o código não tem recomendação catalogada.
+ */
+function alarmSolution(code: number | undefined): string | undefined {
+  if (code === undefined) return undefined;
+  const key = `alarmfix.${code}`;
+  return hasKey(key) ? t(key) : undefined;
+}
+
 /** Bytes de comando de tempo real do GRBL. */
 export const REALTIME = {
   softReset: 0x18, // Ctrl-X
   statusReport: 0x3f, // '?'
   feedHold: 0x21, // '!'
   cycleStart: 0x7e, // '~'
+  jogCancel: 0x85, // cancela o jog em andamento (RF-JOG-2)
   overrideFeedDefault: 0x90,
   overrideFeedPlus10: 0x91,
   overrideFeedMinus10: 0x92,
@@ -125,13 +138,37 @@ export interface GrblClientOptions {
 
 const DEFAULT_STALL_MS = 8000;
 
+/**
+ * Intervalo mínimo entre eventos de progresso durante o job. `ok` chega uma vez
+ * por linha (centenas por segundo): emitir tudo saturava o IPC do renderer e
+ * atrasava o `pump()` seguinte — a máquina ficava sem movimentos na fila.
+ */
+const PROGRESS_INTERVAL_MS = 100;
+
 export class GrblClient extends EventEmitter {
   private transport: TransportLike | null = null;
   private connection: ConnectionState = 'disconnected';
 
   private rxBuffer = '';
   private queue: QueueItem[] = [];
-  private awaitingAck = false;
+  /**
+   * **Janela de envio**: linhas já escritas e ainda sem `ok` (as respostas do
+   * GRBL chegam sempre na ordem). Esperar cada `ok` antes de mandar a linha
+   * seguinte — send-response puro — deixava a máquina sem movimentos quando o
+   * PC estava ocupado: a latência do USB-serial somada ao agendamento do SO
+   * custa mais que o tempo de um trecho curto, e o buffer do GRBL esvazia.
+   *
+   * A janela é limitada em **bytes** (contagem de caracteres do GRBL), nunca
+   * mais que o buffer RX da própria máquina — então o buffer nunca estoura.
+   */
+  private inFlight: Array<{ bytes: number; item: QueueItem }> = [];
+  private inFlightBytes = 0;
+  /** Buffer RX do GRBL em bytes (vem de `[OPT:…]`; padrão do GRBL 1.1: 128). */
+  private rxBufferSize = 128;
+  /** Blocos do planner do GRBL (2º campo de `[OPT:…]`; padrão 16). */
+  private plannerBlocks = 16;
+  /** Linhas do job confirmadas por `ok` (≠ `sent`, que conta as enviadas). */
+  private jobDone = 0;
   private stalled = false;
   private watchdog: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
@@ -142,7 +179,8 @@ export class GrblClient extends EventEmitter {
   private lastStatus: GrblStatus | null = null;
 
   private job: JobInfo = { state: 'idle', sent: 0, total: 0 };
-  private currentItem: QueueItem | null = null;
+  /** Última emissão de progresso (limita o IPC a ~10 Hz — RF-GC-2). */
+  private lastProgressAt = 0;
   private pendingQuery: PendingQuery | null = null;
 
   constructor(options: GrblClientOptions = {}) {
@@ -200,7 +238,8 @@ export class GrblClient extends EventEmitter {
     this.clearWatchdog();
     this.failQuery(new Error(t('client.queryClosed')));
     this.queue = [];
-    this.awaitingAck = false;
+    this.clearInFlight();
+    this.jobDone = 0;
     this.stalled = false;
     this.rxBuffer = '';
     const transport = this.transport;
@@ -220,7 +259,7 @@ export class GrblClient extends EventEmitter {
 
   // ------------------------------------------------------------- comandos
 
-  /** Enfileira uma linha avulsa (console). Respeita send-response. */
+  /** Enfileira uma linha avulsa (console). Só vai com a janela vazia. */
   sendLine(line: string): void {
     const clean = line.trim();
     if (!clean) return;
@@ -276,9 +315,10 @@ export class GrblClient extends EventEmitter {
       .map((line) => ({ line, job: true }));
 
     this.queue = items;
+    this.jobDone = 0;
     this.job = { state: 'running', name, sent: 0, total: items.length };
     this.emitJob(this.job);
-    this.emitProgress({ sent: 0, total: items.length });
+    this.emitProgress({ sent: 0, total: items.length }, true);
     this.pump();
   }
 
@@ -286,6 +326,9 @@ export class GrblClient extends EventEmitter {
     if (this.job.state !== 'running') return;
     this.emitRealtime(REALTIME.feedHold);
     this.job = { ...this.job, state: 'paused' };
+    // Em pausa o GRBL pode parar de confirmar: o vigia fica desligado até o
+    // retomar (senão um `Feed Hold` longo viraria erro de "stall").
+    this.armWatchdog();
     this.emitJob(this.job);
   }
 
@@ -294,18 +337,25 @@ export class GrblClient extends EventEmitter {
     this.emitRealtime(REALTIME.cycleStart);
     this.job = { ...this.job, state: 'running' };
     this.emitJob(this.job);
+    // Se a pausa pegou o fim do job (todos os `ok` já chegaram), conclui agora.
+    this.checkJobFinished();
+    this.armWatchdog();
+    this.pump();
   }
 
   /** Para o job atual: soft reset (aborta) e limpa a fila. */
   stopJob(): void {
     if (this.job.state === 'idle') return;
     this.abortJob(t('client.stopped'));
+    // O soft reset descarta o buffer da máquina: nada mais será confirmado.
+    this.clearInFlight();
     this.emitRealtime(REALTIME.softReset);
   }
 
   // Realtime
   softReset(): void {
     this.abortJob(t('client.reset'));
+    this.clearInFlight();
     this.emitRealtime(REALTIME.softReset);
   }
 
@@ -334,6 +384,11 @@ export class GrblClient extends EventEmitter {
     if (cmd.z) parts.push(`Z${cmd.z}`);
     if (parts.length === 0) return;
     this.sendLine(`$J=G91 ${parts.join(' ')} F${feed}`);
+  }
+
+  /** Cancela um jog em andamento (0x85) — usado pelo jog contínuo (RF-JOG-2). */
+  cancelJog(): void {
+    this.emitRealtime(REALTIME.jogCancel);
   }
 
   overrideFeed(
@@ -403,7 +458,14 @@ export class GrblClient extends EventEmitter {
     this.emit('job', info);
   }
 
-  private emitProgress(progress: JobProgress): void {
+  private emitProgress(progress: JobProgress, force = false): void {
+    // Um `ok` por linha: emitir um evento de progresso por linha inundava o
+    // renderer com IPC durante a gravação (e o renderer precisa responder ao
+    // `ok` seguinte). O painel é para humanos — 10 Hz é mais que suficiente.
+    // `force` é usado no início e no fim do job (a barra precisa dos extremos).
+    const now = Date.now();
+    if (!force && now - this.lastProgressAt < PROGRESS_INTERVAL_MS) return;
+    this.lastProgressAt = now;
     this.emit('progress', progress);
   }
 
@@ -427,6 +489,24 @@ export class GrblClient extends EventEmitter {
       clearTimeout(this.watchdog);
       this.watchdog = null;
     }
+  }
+
+  /**
+   * (Re)arma o vigia de resposta: **um único** timer, reiniciado a cada
+   * atividade (envio ou `ok`) e desligado quando não há nada em voo. Sem isso,
+   * com a janela cheia haveria um timer por linha — e os antigos disparariam no
+   * meio de um job longo, marcando "stall" e parando o envio.
+   */
+  private armWatchdog(): void {
+    this.clearWatchdog();
+    if (!this.transport || this.inFlight.length === 0) return;
+    // Em pausa (feed hold) o GRBL deixa de confirmar — não é "stall": as linhas
+    // em voo são confirmadas quando o operador retomar. O vigia volta no resume.
+    if (this.job.state === 'paused') return;
+    this.watchdog = setTimeout(() => {
+      this.stalled = true;
+      this.emitError(t('client.stall', { ms: this.stallMs }));
+    }, this.stallMs);
   }
 
   private onData(chunk: string): void {
@@ -453,6 +533,23 @@ export class GrblClient extends EventEmitter {
   private handleLine(rawLine: string): void {
     const line = rawLine.replace(/\r$/, '');
     if (line.trim() === '') return;
+
+    // `[OPT:…]` (resposta de `$I`) traz o tamanho do **buffer RX** do GRBL e os
+    // blocos do planner — ex.: `[OPT:V,15,128]`. É o buffer RX que define a
+    // janela de envio (contagem de caracteres); sem a informação, valem os
+    // padrões do GRBL 1.1.
+    if (line.startsWith('[OPT:')) {
+      const fields = line
+        .replace(/^\[OPT:([^\]]*)\].*$/, '$1')
+        .split(',')
+        .map((v) => Number(v));
+      if (Number.isFinite(fields[1]) && fields[1] >= 2 && fields[1] <= 256) {
+        this.plannerBlocks = fields[1];
+      }
+      if (Number.isFinite(fields[2]) && fields[2] >= 32 && fields[2] <= 4096) {
+        this.rxBufferSize = fields[2];
+      }
+    }
 
     if (isStatusReport(line)) {
       const status = parseStatusReport(line);
@@ -497,6 +594,7 @@ export class GrblClient extends EventEmitter {
         break;
       case 'alarm':
         this.onAlarm(
+          classified.code,
           describeGrbl(
             'alarm',
             classified.code,
@@ -528,53 +626,134 @@ export class GrblClient extends EventEmitter {
   }
 
   private onAck(): void {
-    this.resolveQuery();
-    this.clearWatchdog();
-    this.awaitingAck = false;
+    // O `ok` corresponde sempre à linha mais antiga em voo (o GRBL responde em
+    // ordem, mesmo com a janela cheia).
+    const acked = this.inFlight.shift();
+    if (acked)
+      this.inFlightBytes = Math.max(0, this.inFlightBytes - acked.bytes);
+    if (acked?.item.query) this.resolveQuery();
+    // Reinicia o vigia conforme o que continua em voo (se a janela ainda estiver
+    // cheia, `pump()` não envia nada e o vigia precisa seguir de pé).
+    this.armWatchdog();
 
-    const current = this.currentItem;
-    if (current?.job) {
+    if (acked?.item.job) {
+      this.jobDone++;
       this.emitProgress({ sent: this.job.sent, total: this.job.total });
-      if (this.job.sent >= this.job.total) {
-        this.emitJob({ ...this.job, state: 'finished' });
-      }
+      this.checkJobFinished();
     }
     if (!this.stalled) this.pump();
   }
 
+  /**
+   * Conclui o job quando **todos** os `ok` chegaram. Enviar ≠ executar: com a
+   * janela, `sent` chega ao total antes do fim (e o `gotoZero` da UI entraria na
+   * frente dos últimos movimentos). Em pausa (feed hold) também não conclui: a
+   * máquina ainda tem movimento no buffer e o operador precisa do **Retomar**.
+   */
+  private checkJobFinished(): void {
+    if (this.jobDone < this.job.total) return;
+    if (this.job.state !== 'running') return;
+    this.emitProgress({ sent: this.job.sent, total: this.job.total }, true);
+    this.emitJob({ ...this.job, state: 'finished' });
+  }
+
   private onNack(message: string, code?: number): void {
     this.failQuery(new Error(message));
-    this.clearWatchdog();
-    this.awaitingAck = false;
-    if (this.job.state === 'running' || this.job.state === 'paused') {
+    // Só aborta quando a linha rejeitada faz parte do job. Um `error:` de um
+    // comando avulso/consulta (ex.: `$$` durante a gravação) **não** pode
+    // interromper o corte — o operador mantém o controle do job.
+    const acked = this.inFlight.shift();
+    if (acked)
+      this.inFlightBytes = Math.max(0, this.inFlightBytes - acked.bytes);
+    this.armWatchdog();
+    const failedWasJobLine = acked?.item.job === true;
+    if (
+      failedWasJobLine &&
+      (this.job.state === 'running' || this.job.state === 'paused')
+    ) {
       this.abortJob(message);
     }
     this.emit('error', { message, code });
+    // As linhas seguintes da janela ainda serão executadas (o GRBL descarta só
+    // a linha com erro); os `ok` delas continuam alimentando o envio.
+    if (!this.stalled) this.pump();
   }
 
-  private onAlarm(message: string): void {
+  private onAlarm(code: number | undefined, message: string): void {
     this.failQuery(new Error(message));
     this.clearWatchdog();
-    this.awaitingAck = false;
+    // O alarme para a máquina e descarta o que estava na fila dela.
+    this.clearInFlight();
     this.queue = [];
     if (this.job.state !== 'idle') this.abortJob(message);
-    this.emit('error', { message });
+    this.emit('error', { message, code, solution: alarmSolution(code) });
   }
 
   private abortJob(reason: string): void {
     this.queue = this.queue.filter((item) => !item.job);
-    this.awaitingAck = false;
+    this.jobDone = 0;
     this.clearWatchdog();
     this.emitJob({ ...this.job, state: 'aborted', error: reason });
   }
 
-  private pump(): void {
-    if (!this.transport || this.awaitingAck || this.stalled) return;
-    const item = this.queue.shift();
-    if (!item) return;
+  /** Esquece as linhas em voo (a máquina descartou o buffer: reset/alarme). */
+  private clearInFlight(): void {
+    this.inFlight = [];
+    this.inFlightBytes = 0;
+    this.clearWatchdog();
+  }
 
-    this.currentItem = item;
-    this.awaitingAck = true;
+  /**
+   * Orçamento da janela em bytes: o buffer RX do GRBL com uma pequena margem
+   * (o GRBL conta a linha inteira, incluindo o `\n`).
+   */
+  private sendWindow(): number {
+    return Math.max(16, this.rxBufferSize - 8);
+  }
+
+  /**
+   * Teto de linhas em voo: nunca mais que a profundidade do planner da máquina
+   * (menos uma folga). Comum no G-code do gerador, mas arquivos com linhas muito
+   * curtas (`M5`, `G0`) caberiam dezenas numa janela de 120 B — e aí um
+   * `Feed Hold` teria de esperar a fila inteira do planner drenar.
+   */
+  private lineWindow(): number {
+    return Math.max(2, Math.min(this.plannerBlocks, 16) - 1);
+  }
+
+  private pump(): void {
+    if (!this.transport || this.stalled) return;
+
+    // Reabastece a janela sem esperar cada `ok`: é isso que mantém o buffer do
+    // GRBL cheio enquanto o PC faz outra coisa. Consultas/comandos avulsos só
+    // vão com a janela vazia, para o corpo da resposta (`$$`, `$I`…) não se
+    // misturar com os `ok` do job.
+    const window = this.sendWindow();
+    const maxLines = this.lineWindow();
+    // Em pausa (feed hold) não adianta empurrar o job: o GRBL para de consumir
+    // e a fila só cresceria. `resumeJob()` reabre o envio. Comandos avulsos
+    // (jog, `$X`) continuam podendo passar.
+    const paused = this.job.state === 'paused';
+    while (this.queue.length > 0) {
+      const item = this.queue[0] as QueueItem;
+      if (item.job && paused) return;
+      if (!item.job && this.inFlight.length > 0) return;
+      const bytes = Buffer.byteLength(item.line, 'utf8') + 1; // + '\n'
+      // Sempre permite a primeira linha em voo (mesmo se for maior que a
+      // janela): senão uma linha longa travaria o envio para sempre.
+      if (item.job && this.inFlight.length > 0) {
+        if (this.inFlightBytes + bytes > window) return;
+        if (this.inFlight.length >= maxLines) return;
+      }
+      this.queue.shift();
+      this.dispatch(item, bytes);
+    }
+  }
+
+  /** Escreve uma linha e a registra na janela (o `ok` a remove). */
+  private dispatch(item: QueueItem, bytes: number): void {
+    this.inFlight.push({ bytes, item });
+    this.inFlightBytes += bytes;
     // A partir daqui as respostas da consulta começam a chegar.
     if (item.query && this.pendingQuery) this.pendingQuery.active = true;
 
@@ -585,19 +764,19 @@ export class GrblClient extends EventEmitter {
       ts: Date.now(),
     });
 
-    if (item.job) {
-      this.job = { ...this.job, sent: this.job.sent + 1 };
-    }
+    if (item.job) this.job = { ...this.job, sent: this.job.sent + 1 };
 
-    this.transport.writeLine(item.line).catch((err: Error) => {
-      this.awaitingAck = false;
-      this.currentItem = null;
+    this.transport?.writeLine(item.line).catch((err: Error) => {
+      // Falha de escrita: a linha saiu da janela (a máquina não a recebeu).
+      const idx = this.inFlight.findIndex((entry) => entry.item === item);
+      if (idx >= 0) {
+        this.inFlight.splice(idx, 1);
+        this.inFlightBytes = Math.max(0, this.inFlightBytes - bytes);
+      }
+      this.armWatchdog();
       this.emitError(t('client.writeFail', { msg: err.message }));
     });
 
-    this.watchdog = setTimeout(() => {
-      this.stalled = true;
-      this.emitError(t('client.stall', { ms: this.stallMs }));
-    }, this.stallMs);
+    this.armWatchdog();
   }
 }

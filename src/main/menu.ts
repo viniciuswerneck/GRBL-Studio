@@ -76,6 +76,11 @@ export function rebuildMenu(): void {
             click: () => send(CHANNELS.evLang, lang),
           })),
         },
+        { type: 'separator' },
+        {
+          label: t('menu.appearance'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.appearance),
+        },
       ],
     },
     {
@@ -85,6 +90,11 @@ export function rebuildMenu(): void {
           label: t('menu.site'),
           click: () => void shell.openExternal(APP_URL),
         },
+        {
+          label: t('menu.logs'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.openLogs),
+        },
+        { type: 'separator' },
         {
           label: t('menu.about'),
           click: () => send(CHANNELS.evAbout),

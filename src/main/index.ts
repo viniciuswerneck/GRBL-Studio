@@ -10,7 +10,65 @@ import { registerIpc } from './ipc';
 import { initMenu, rebuildMenu } from './menu';
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 let dispose: (() => Promise<void>) | null = null;
+let splashShown = false;
+
+/** Arte de splash (public/splash.png, 984×535) exibida a 75 % em 738×401. */
+const SPLASH = { width: 738, height: 401 };
+/** Ícone do app/janela (electron-builder também lê `build/icon.png`). */
+const APP_ICON = path.join(__dirname, '../../build/icon.png');
+
+/**
+ * Splash de abertura: janela frameless com a arte, fechada assim que a janela
+ * principal está pronta. Fica de fora de smoke test e E2E (`firstWindow`).
+ */
+function createSplash(): void {
+  if (process.env.GRBL_SMOKE_TEST === '1' || process.env.GRBL_E2E === '1')
+    return;
+  if (splashShown) return;
+  splashShown = true;
+
+  splashWindow = new BrowserWindow({
+    width: SPLASH.width,
+    height: SPLASH.height,
+    useContentSize: true,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    show: true,
+    backgroundColor: '#0d3f75',
+    icon: APP_ICON,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+  splashWindow.setMenuBarVisibility(false);
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+  void splashWindow
+    .loadFile(path.join(__dirname, '../../public/splash.html'))
+    .catch(() => {
+      /* Sem splash: a janela principal abre do mesmo jeito. */
+    });
+
+  // Nunca deixa o splash preso se o renderer principal falhar.
+  setTimeout(() => closeSplash(), 10_000);
+}
+
+function closeSplash(): void {
+  if (!splashWindow) return;
+  const win = splashWindow;
+  splashWindow = null;
+  if (!win.isDestroyed()) win.destroy();
+}
 
 /** Lê prefs e monta o menu no idioma/tema certos (RF-APP-1/2/7). */
 function syncMenu(theme: string, lang = getLocale()): void {
@@ -22,6 +80,7 @@ function syncMenu(theme: string, lang = getLocale()): void {
 }
 
 function createWindow(): void {
+  createSplash();
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -29,6 +88,7 @@ function createWindow(): void {
     minHeight: 640,
     backgroundColor: '#202020',
     title: 'GRBL Studio',
+    icon: APP_ICON,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -38,7 +98,10 @@ function createWindow(): void {
     },
   });
 
-  mainWindow.once('ready-to-show', () => mainWindow?.show());
+  mainWindow.once('ready-to-show', () => {
+    closeSplash();
+    mainWindow?.show();
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -119,7 +182,7 @@ function installSmokeTest(win: BrowserWindow): void {
 }
 
 app.whenReady().then(async () => {
-  const { client, prefs } = registerIpc(() => mainWindow, {
+  const { client, prefs, log } = registerIpc(() => mainWindow, {
     // Prefs mudaram (tema/idioma escolhidos na UI): reflete no menu.
     onPrefsChanged: (stored) => syncMenu(stored.theme ?? DEFAULT_THEME),
   });
@@ -129,7 +192,10 @@ app.whenReady().then(async () => {
   setLocale(stored.lang ?? detectLocale(app.getLocale()));
   syncMenu(stored.theme ?? DEFAULT_THEME);
 
-  dispose = () => client.disconnect();
+  dispose = async () => {
+    client.disconnect();
+    await log.close();
+  };
   createWindow();
 
   app.on('activate', () => {

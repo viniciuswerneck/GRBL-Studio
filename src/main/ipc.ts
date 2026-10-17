@@ -46,6 +46,7 @@ import type {
 } from '../shared/types';
 import { GrblClient } from './services/GrblClient';
 import { PrefsStore } from './services/PrefsStore';
+import { SessionLog } from './services/SessionLog';
 
 /** Linha de consulta de cada comando especial (RF-CFG-3). */
 const SPECIAL_LINE: Record<SpecialQuery, string> = {
@@ -79,6 +80,8 @@ export interface IpcContext {
   client: GrblClient;
   /** Store de preferências (o bootstrap lê `lang`/`theme` do menu). */
   prefs: PrefsStore;
+  /** Log persistente de sessão (RNF-9). */
+  log: SessionLog;
 }
 
 export interface IpcHooks {
@@ -98,18 +101,46 @@ export function registerIpc(
   const prefs = new PrefsStore(
     path.join(app.getPath('userData'), 'prefs.json'),
   );
+  // Log persistente de sessão (RNF-9): grava console e eventos.
+  const log = new SessionLog(app.getPath('userData'));
+  void log.init();
 
   const send = (channel: string, payload: unknown): void => {
     const win = getWindow();
     if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
   };
 
-  client.on('console', (d) => send(CHANNELS.evConsole, d));
+  /** Pasta padrão dos diálogos de arquivo (RF-CFG-5). */
+  const defaultDir = async (): Promise<string | undefined> => {
+    const p = await prefs.read();
+    return p.fileDir;
+  };
+
+  /** Memoriza a pasta do último arquivo escolhido para os próximos diálogos. */
+  const rememberDir = (filePath: string): void => {
+    void prefs
+      .updateInPlace({ fileDir: path.dirname(filePath) })
+      .catch(() => {});
+  };
+
+  client.on('console', (d) => {
+    send(CHANNELS.evConsole, d);
+    log.append(`${d.direction === 'out' ? '>>' : '<<'} ${d.text}`);
+  });
   client.on('status', (s) => send(CHANNELS.evStatus, s));
   client.on('progress', (p) => send(CHANNELS.evProgress, p));
-  client.on('job', (j) => send(CHANNELS.evJob, j));
-  client.on('connection', (c) => send(CHANNELS.evConnection, c));
-  client.on('error', (e) => send(CHANNELS.evError, e));
+  client.on('job', (j) => {
+    send(CHANNELS.evJob, j);
+    log.append(`[job] state=${j.state} sent=${j.sent} total=${j.total}`);
+  });
+  client.on('connection', (c) => {
+    send(CHANNELS.evConnection, c);
+    log.append(`[conn] ${c}`);
+  });
+  client.on('error', (e) => {
+    send(CHANNELS.evError, e);
+    log.append(`[error] ${e.message}${e.solution ? ` — ${e.solution}` : ''}`);
+  });
 
   ipcMain.handle(CHANNELS.portsList, async (): Promise<PortInfo[]> => {
     const ports = await SerialPort.list();
@@ -190,6 +221,11 @@ export function registerIpc(
 
   ipcMain.handle(CHANNELS.jog, (_evt, cmd: JogCommand) => {
     client.jog(cmd);
+    return true;
+  });
+
+  ipcMain.handle(CHANNELS.jogCancel, () => {
+    client.cancelJog();
     return true;
   });
 
@@ -276,8 +312,10 @@ export function registerIpc(
         buttonLabel: t('dlg.open'),
         properties: ['openFile'],
         filters: IMAGE_DIALOG_FILTERS,
+        defaultPath: await defaultDir(),
       });
       if (!filePath) return null;
+      rememberDir(filePath);
 
       const info = await stat(filePath);
       if (!info.isFile()) throw new Error(t('dlg.notFile'));
@@ -313,8 +351,10 @@ export function registerIpc(
         buttonLabel: t('dlg.open'),
         properties: ['openFile'],
         filters: GCODE_DIALOG_FILTERS,
+        defaultPath: await defaultDir(),
       });
       if (!filePath) return null;
+      rememberDir(filePath);
 
       const info = await stat(filePath);
       if (!info.isFile()) throw new Error(t('dlg.notFile'));
@@ -357,6 +397,7 @@ export function registerIpc(
 
       if (result.canceled || !result.filePath) return null;
       await writeFile(result.filePath, payload.content, 'utf8');
+      rememberDir(result.filePath);
       return result.filePath;
     },
   );
@@ -374,8 +415,10 @@ export function registerIpc(
           { name: t('filter.macros'), extensions: ['json', 'JSON'] },
           { name: t('filter.all'), extensions: ['*'] },
         ],
+        defaultPath: await defaultDir(),
       });
       if (!filePath) return null;
+      rememberDir(filePath);
 
       const info = await stat(filePath);
       if (!info.isFile()) throw new Error(t('dlg.notFile'));
@@ -405,9 +448,65 @@ export function registerIpc(
         : await dialog.showSaveDialog(options);
       if (result.canceled || !result.filePath) return null;
       await writeFile(result.filePath, content, 'utf8');
+      rememberDir(result.filePath);
       return result.filePath;
     },
   );
 
-  return { client, prefs };
+  // ---------------------------------------------------- log do console (RF-CON-15)
+
+  ipcMain.handle(
+    CHANNELS.fileSaveLog,
+    async (evt, payload: { content?: string }): Promise<string | null> => {
+      if (typeof payload?.content !== 'string')
+        throw new Error(t('dlg.missingContent'));
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const dir = await defaultDir();
+      const options = {
+        title: t('dlg.saveLog'),
+        defaultPath: dir
+          ? path.join(dir, `grbl-console-${stamp}.log`)
+          : `grbl-console-${stamp}.log`,
+        filters: [
+          { name: t('filter.log'), extensions: ['log', 'txt'] },
+          { name: t('filter.all'), extensions: ['*'] },
+        ],
+      };
+      const owner = BrowserWindow.fromWebContents(evt.sender);
+      const result = owner
+        ? await dialog.showSaveDialog(owner, options)
+        : await dialog.showSaveDialog(options);
+      if (result.canceled || !result.filePath) return null;
+      await writeFile(result.filePath, payload.content, 'utf8');
+      rememberDir(result.filePath);
+      return result.filePath;
+    },
+  );
+
+  // ------------------------------------------- pasta de arquivos / logs (RF-CFG-5, RNF-9)
+
+  ipcMain.handle(CHANNELS.pickDir, async (evt): Promise<string | null> => {
+    const owner = BrowserWindow.fromWebContents(evt.sender);
+    const options: OpenDialogOptions = {
+      title: t('dlg.pickDir'),
+      buttonLabel: t('dlg.open'),
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: await defaultDir(),
+    };
+    const result = owner
+      ? await dialog.showOpenDialog(owner, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || !result.filePaths.length) return null;
+    const dir = result.filePaths[0];
+    await prefs.updateInPlace({ fileDir: dir });
+    return dir;
+  });
+
+  ipcMain.handle(CHANNELS.openLogs, async (): Promise<string> => {
+    await log.init();
+    if (log.dir) await shell.openPath(log.dir);
+    return log.dir;
+  });
+
+  return { client, prefs, log };
 }

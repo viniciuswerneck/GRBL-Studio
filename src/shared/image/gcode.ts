@@ -4,7 +4,9 @@
  * Regras de segurança (AGENTS.md + DESIGN.md 3.2):
  *  - Toda posição gerada fica **dentro** da área de trabalho (validado ao final).
  *  - `S` sempre dentro de [sMin, sMax] (e abaixo de 32767, limite do GRBL).
- *  - `M5` antes de qualquer deslocamento `G0` e rearme do modo depois.
+ *  - `M5` antes de um `G0` **quando o laser estava ligado** e rearme do modo
+ *    logo depois (o modal do GRBL sobrevive aos `G0`, então deslocamentos
+ *    consecutivos custam um único `G0`).
  *  - Nunca emitir `F` em `G0` (senão a próxima gravação herdaria a feed errada).
  */
 
@@ -45,6 +47,9 @@ export function validateOptions(opts: ImageToGcodeOptions): void {
     throw new Error(`S-max acima do limite suportado pelo GRBL (${MAX_S}).`);
   if (e.mode !== 'M3' && e.mode !== 'M4')
     throw new Error('Modo de laser inválido (M3/M4).');
+  const adaptive = e.adaptiveSpeed ?? 1;
+  if (!Number.isFinite(adaptive) || adaptive < 1 || adaptive > 5)
+    throw new Error('Velocidade adaptativa inválida (use 1 a 5).');
   if (
     opts.algorithm !== 'line' &&
     opts.algorithm !== 'dither' &&
@@ -104,6 +109,7 @@ function emitGcode(
   const g = opts.geometry;
   const e = opts.engrave;
   const passes = opts.passes ?? 1;
+  const zigzag = opts.bidirectional ?? true;
   const cols = geom.cols;
   const halfDot = geom.halfDot;
   const pitch = geom.pitch;
@@ -114,6 +120,7 @@ function emitGcode(
   let g0Mm = 0;
   let burnedMm = 0;
   let segments = 0;
+  let g1Sec = 0;
   const bounds = {
     xMin: Infinity,
     xMax: -Infinity,
@@ -133,6 +140,21 @@ function emitGcode(
       ? { x: scanCoord, y: rowCoord }
       : { x: rowCoord, y: scanCoord };
 
+  // Retângulo do desenho como `bounds` inicial: linhas inteiramente brancas são
+  // puladas, mas a área de gravação (enquadramento, centro, preview) não muda.
+  for (const rc of [
+    geom.rowStart,
+    geom.rowStart + (geom.rows - 1) * geom.rowStep,
+  ]) {
+    for (const sc of [
+      geom.scanStart - halfDot,
+      geom.scanStart + (cols - 1) * pitch + halfDot,
+    ]) {
+      const corner = point(rc, sc);
+      track(corner.x, corner.y);
+    }
+  }
+
   /** S da potência de escurecimento (0..1) — sempre dentro de [sMin, sMax]. */
   const powerS = (darkness: number): number => {
     const value = e.sMin + (e.sMax - e.sMin) * darkness;
@@ -140,54 +162,97 @@ function emitGcode(
     return Math.min(e.sMax, Math.max(e.sMin, rounded));
   };
 
+  /**
+   * Feed do trecho conforme a claridade (RF-IMG-10): branco anda até
+   * `speed * adaptiveSpeed`, preto mantém a velocidade de gravação. A
+   * claridade é quantizada para o `F` mudar só em degraus (arquivo menor).
+   */
+  const adaptive = e.adaptiveSpeed ?? 1;
+  const ADAPTIVE_STEPS = 8;
+  const feedFor = (whiteness: number): number => {
+    if (adaptive <= 1) return e.speedMmMin;
+    const w = Math.max(0, Math.min(1, whiteness));
+    const q = Math.round(w * ADAPTIVE_STEPS) / ADAPTIVE_STEPS;
+    return Math.round(e.speedMmMin * (1 + q * (adaptive - 1)));
+  };
+
   // Uma passada por iteração (RF-GC-6): cada passada tem estado modal próprio,
   // recomeça da origem do arquivo e termina com `M5` (laser desligado no
   // retorno). Os totais (`g0Mm`, `g1Mm`, `segments`, `bounds`) são acumulados.
   for (let pass = 0; pass < passes; pass++) {
+    // Marca a passada (RF-GC-6) para o preview colorir cada uma por vez.
+    if (passes > 1) out.push(`; pass ${pass + 1}/${passes}`);
     let lastF: number | null = null;
     let lastS: number | null = 0; // modal inicial do GRBL é S0
-    let armed = false;
+    let laserOn = false; // último comando de queima deixou o laser ligado
+    let needArm = true; // precisa reenviar M4/M3 antes do próximo G1
     let cursor: Point = { x: g.offsetX, y: g.offsetY };
 
-    /** Deslocamento com laser desligado. */
+    /**
+     * Deslocamento com laser desligado.
+     *
+     * `M5` só é enviado se o laser estava ligado e o modo (`M4`/`M3 S0`) só é
+     * rearmado depois de um `M5`: o modal do GRBL permanece válido entre os
+     * `G0`. Assim, deslocamentos consecutivos sem queima entre eles (margem
+     * branca no fim de uma linha e no início da seguinte) custam **um único
+     * `G0`**.
+     */
     const travel = (to: Point): void => {
       const dist = Math.hypot(to.x - cursor.x, to.y - cursor.y);
       g0Mm += dist;
-      if (armed) out.push('M5');
+      if (laserOn) {
+        out.push('M5');
+        laserOn = false;
+        needArm = true;
+      }
       out.push(`G0 X${f(to.x)} Y${f(to.y)}`);
       cursor = { ...to };
       track(to.x, to.y);
 
       // Rearme: M4 é dinâmico (seguro parado); M3 precisa nascer com S0 para
       // não acender o laser antes do movimento.
-      if (e.mode === 'M4') {
-        out.push('M4');
-      } else {
-        out.push('M3 S0');
-        lastS = 0;
+      if (needArm) {
+        if (e.mode === 'M4') {
+          out.push('M4');
+        } else {
+          out.push('M3 S0');
+          lastS = 0;
+        }
+        needArm = false;
       }
-      armed = true;
     };
 
-    /** Emite um trecho [cursor -> to] com um valor de amostra fixo. */
-    const emitRun = (to: Point, value: number, runLength: number): void => {
-      const s = value < 1 ? powerS(1 - value) : 0;
+    /**
+     * S/feed de uma amostra (brancura 0..1). `s = 0` = branco, desloca com G0.
+     */
+    const shot = (value: number): { s: number; feed: number } =>
+      value < 1
+        ? { s: powerS(1 - value), feed: feedFor(value) }
+        : { s: 0, feed: 0 };
 
+    /** Emite um trecho [cursor -> to] com `S`/`F` já calculados. */
+    const emitRun = (
+      to: Point,
+      s: number,
+      feed: number,
+      runLength: number,
+    ): void => {
       if (s > 0) {
         out.push(
           `G1 X${f(to.x)} Y${f(to.y)}${s === lastS ? '' : ` S${s}`}${
-            e.speedMmMin === lastF ? '' : ` F${f(e.speedMmMin)}`
+            feed === lastF ? '' : ` F${f(feed)}`
           }`,
         );
         lastS = s;
-        lastF = e.speedMmMin;
+        lastF = feed;
+        laserOn = true;
         segments++;
         g1Mm += runLength;
         burnedMm += runLength;
+        g1Sec += (runLength / feed) * 60;
       } else {
         // Fundo branco (s = 0): ignora a queima e desloca com G0 (laser
-        // desligado), sem gastar tempo em G1. Funciona para trechos curtos
-        // e longos.
+        // desligado), sem gastar tempo em G1.
         travel(to);
         return;
       }
@@ -198,23 +263,50 @@ function emitGcode(
 
     for (let r = 0; r < geom.rows; r++) {
       const rowCoord = geom.rowStart + r * geom.rowStep;
-      // Início da linha = borda da área (centro da 1ª amostra - metade do ponto).
-      travel(point(rowCoord, geom.scanStart - halfDot));
 
-      let c = 0;
-      while (c < cols) {
-        const value = grid[r * cols + c]!;
+      // Trechos da linha: amostras consecutivas que resultam no **mesmo `S` e
+      // `F`** viram um único `G1` (o degradê contínuo não vira milhares de
+      // linhas: menos bytes, menos tempo de serial).
+      const runs: { c0: number; c1: number; s: number; feed: number }[] = [];
+      for (let c = 0; c < cols; ) {
+        const here = shot(grid[r * cols + c]!);
         let cEnd = c;
-        while (cEnd + 1 < cols && grid[r * cols + cEnd + 1] === value) cEnd++;
+        while (cEnd + 1 < cols) {
+          const next = shot(grid[r * cols + cEnd + 1]!);
+          if (next.s !== here.s || next.feed !== here.feed) break;
+          cEnd++;
+        }
+        runs.push({ c0: c, c1: cEnd, s: here.s, feed: here.feed });
+        c = cEnd + 1;
+      }
 
-        const endScan = geom.scanStart + cEnd * pitch + halfDot;
+      // Linha inteira branca (margem): nem desloca até ela.
+      if (runs.length === 1 && runs[0]!.s === 0) continue;
+
+      // Varredura em zigue-zague (ida e volta): evita o `G0` de retorno em
+      // cada linha — praticamente dobra a velocidade em imagens largas.
+      const reverse = zigzag && r % 2 === 1;
+      const scanAt = (c: number): number => geom.scanStart + c * pitch;
+      const entry = reverse ? scanAt(cols - 1) + halfDot : scanAt(0) - halfDot;
+      // Entra na linha pela borda correspondente (centro da 1ª amostra ± metade
+      // do ponto) e percorre os trechos, invertendo a ordem no retorno.
+      travel(point(rowCoord, entry));
+
+      const from = reverse ? runs.length - 1 : 0;
+      const to = reverse ? -1 : runs.length;
+      const step = reverse ? -1 : 1;
+      for (let i = from; i !== to; i += step) {
+        const run = runs[i]!;
+        const endScan = reverse
+          ? scanAt(run.c0) - halfDot
+          : scanAt(run.c1) + halfDot;
         const cursorScan = geom.direction === 'h' ? cursor.x : cursor.y;
         emitRun(
           point(rowCoord, endScan),
-          value,
+          run.s,
+          run.feed,
           Math.abs(endScan - cursorScan),
         );
-        c = cEnd + 1;
       }
     }
 
@@ -226,9 +318,7 @@ function emitGcode(
 
   const gcode = `${out.join('\n')}\n`;
   const estimatedSec =
-    (g1Mm / e.speedMmMin +
-      g0Mm / (e.travelSpeedMmMin || TRAVEL_ESTIMATE_MMPM)) *
-      60 || 0;
+    g1Sec + (g0Mm / (e.travelSpeedMmMin || TRAVEL_ESTIMATE_MMPM)) * 60 || 0;
 
   const stats: GcodeStats = {
     rows: geom.rows,

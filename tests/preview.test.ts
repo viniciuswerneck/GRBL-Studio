@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGcode } from '../src/shared/preview';
+import { parseGcode, workPosition } from '../src/shared/preview';
 
 describe('parseGcode — movimentos lineares', () => {
   it('interpreta G0 e G1 em modo absoluto (G90)', () => {
@@ -116,5 +116,88 @@ describe('parseGcode — tolerância e utilitários', () => {
     expect(p.moves.filter((m) => !m.rapid)).toHaveLength(2);
     expect(p.cutMm).toBeCloseTo(20, 9);
     expect(p.totalLines).toBe(12);
+  });
+});
+
+describe('parseGcode — passadas (RF-GC-6)', () => {
+  it('atribui cada movimento à sua passada pela marca `; pass`', () => {
+    const text = [
+      'G21',
+      'G90',
+      'M5',
+      '; pass 1/2',
+      'G0 X0 Y0',
+      'G1 X10 Y0 S1000 F1000',
+      'M5',
+      '; pass 2/2',
+      'G0 X0 Y0',
+      'G1 X10 Y0 S1000 F1000',
+      'M5',
+    ].join('\n');
+    const p = parseGcode(text);
+    const cuts = p.moves.filter((m) => !m.rapid);
+    expect(cuts).toHaveLength(2);
+    expect(cuts[0]!.pass).toBe(0);
+    expect(cuts[1]!.pass).toBe(1);
+  });
+
+  it('sem marca, tudo fica na passada 0', () => {
+    const p = parseGcode('G90 G0 X0 Y0\nG1 X10 Y0 F1000\nG1 X5 Y0');
+    expect(p.moves.every((m) => m.pass === 0)).toBe(true);
+  });
+
+  it('aceita a marca entre parênteses', () => {
+    const p = parseGcode('G90\n(pass 3)\nG1 X10 Y0 F1000');
+    expect(p.moves[0]!.pass).toBe(2);
+  });
+});
+
+describe('workPosition — WPos com cache de WCO (RF-PRV-3)', () => {
+  it('usa WPos quando o GRBL reporta a posição de trabalho', () => {
+    const r = workPosition({ wpos: { x: 1, y: 2, z: 0 } });
+    expect(r.pos).toEqual({ x: 1, y: 2, z: 0 });
+  });
+
+  it('aplica o WCO recebido (WPos = MPos − WCO)', () => {
+    const r = workPosition({
+      mpos: { x: 10, y: 4, z: 0 },
+      wco: { x: 8, y: 1, z: 0 },
+    });
+    expect(r.pos).toEqual({ x: 2, y: 3, z: 0 });
+    expect(r.wco).toEqual({ x: 8, y: 1, z: 0 });
+  });
+
+  it('mantém o último WCO nos relatórios sem WCO (não salta para MPos)', () => {
+    const first = workPosition({
+      mpos: { x: 10, y: 4, z: 0 },
+      wco: { x: 8, y: 1, z: 0 },
+    });
+    // O próximo relatório vem só com MPos: o WCO do cache continua valendo.
+    const next = workPosition({ mpos: { x: 11, y: 4, z: 0 } }, first.wco);
+    expect(next.pos).toEqual({ x: 3, y: 3, z: 0 });
+    expect(next.wco).toEqual({ x: 8, y: 1, z: 0 });
+  });
+
+  it('sem posição no status não devolve ponto', () => {
+    expect(workPosition({}).pos).toBeNull();
+  });
+});
+
+describe('parseGcode — potência `S` por trecho (RF-PRV-5)', () => {
+  it('propaga o S modal para os movimentos de queima', () => {
+    const p = parseGcode(
+      'G90\nG1 X10 Y0 S500 F1000\nG1 X20 Y0\nG1 X30 Y0 S900',
+    );
+    expect(p.moves.map((m) => m.s)).toEqual([500, 500, 900]);
+  });
+
+  it('mantém o S modal nos G0 (sem queimar)', () => {
+    const p = parseGcode('G1 X10 Y0 S300\nG0 X0 Y0');
+    expect(p.moves[1]).toMatchObject({ rapid: true, s: 300 });
+  });
+
+  it('sem S no arquivo a intensidade fica em 0', () => {
+    const p = parseGcode('G1 X10 Y0 F1000');
+    expect(p.moves[0]!.s).toBe(0);
   });
 });

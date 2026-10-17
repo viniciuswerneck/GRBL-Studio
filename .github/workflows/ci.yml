@@ -48,8 +48,35 @@ jobs:
       - name: Testes (Vitest)
         run: npm test
 
+      - name: Cobertura do protocolo (> 80 %)
+        run: npm run test:coverage
+
       - name: Build (tsc + preload + worker)
         run: npm run build
+
+  e2e:
+    name: E2E (Playwright + Electron)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: E2E (xvfb)
+        run: xvfb-run -a npm run test:e2e
+        env:
+          ELECTRON_DISABLE_SANDBOX: 1
 
   smoke:
     name: Smoke headless (Electron)

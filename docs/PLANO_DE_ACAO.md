@@ -34,32 +34,37 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | :--- | :--- | :--- |
 | 0 — Fundação e docs | ✅ | Aprovação formal do `PRODUCT_SPEC`/ADRs e decisão da ADR-11 (você) |
 | 1 — Core de comunicação | ✅ | Validar em hardware real |
-| 2 — Status, jog, execução | ✅ | RF-STA-5 (bloquear em alarme), RF-JOG-2/6, tempo restante do job (RF-GC-5), atalhos globais |
+| 2 — Status, jog, execução | ✅ | — |
 | 3 — Configuração/preferências | ✅ | — |
 | 4 — Overrides e preview | ✅ | — |
 | 5 — Imagens e G-code | ✅ | — |
 | 6 — Macros/retomada/WiFi | ✅ | — |
-| 7 — Empacotamento/i18n/polish | 🟡 | RNF-9 (log de sessão), a11y/polish, checklist visual `DESIGN.md` §8, automação de release no GitHub, Flatpak (Could), guia de primeiros passos |
-| 8 — Qualidade contínua | 🟡 | Cobertura de protocolo > 80 %, E2E Playwright, testes em hardware por release |
+| 7 — Empacotamento/i18n/polish | 🟡 | a11y/polish, checklist visual `DESIGN.md` §8, Flatpak (Could), guia de primeiros passos |
+| 8 — Qualidade contínua | 🟡 | Testes em hardware por release (manual) |
 
 **Requisitos ainda não-✅** (detalhe no `PRODUCT_SPEC.md` §6):
 
 | ID | Status | O que falta |
 | :--- | :--- | :--- |
-| RF-CON-5 | ⬜ | Ler `$I`/`$G` automaticamente ao conectar |
-| RF-CON-14 | 🟡 | Botões de pausar/limpar o log (o auto-scroll já existe) |
-| RF-CON-15 | ⬜ | Exportar/salvar o log do console |
-| RF-JOG-2 | ⬜ | Jog contínuo ao manter pressionado |
-| RF-JOG-6 | ⬜ | Atalhos de teclado para jog |
-| RF-GC-2 | 🟡 | Tempo estimado no rótulo do arquivo (nome/linhas já aparecem) |
-| RF-GC-5 | 🟡 | Tempo restante do job (a barra de progresso já existe) |
-| RF-STA-2 | 🟡 | Distância "para ir" (posição/DRO já existem) |
-| RF-STA-4 | 🟡 | "Solução recomendada" por alarme (as causas já são descritas) |
-| RF-STA-5 | ⬜ | Desabilitar comandos inválidos no estado de alarme |
-| RF-STA-7 | 🟡 | Histórico persistente de alarmes (há log em memória) |
-| RF-CFG-4 | ⬜ | Perfis de configuração (salvar/restaurar `$$`) |
-| RF-CFG-5 | 🟡 | "Pasta de arquivos" nas preferências |
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
+
+> **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,
+> RF-CFG-4/5 e RNF-9 foram **implementados** nesta data: log de sessão
+> (`SessionLog`), console com pausar/limpar/exportar, jog contínuo ao segurar +
+> atalhos (setas/Home), tempo estimado no rótulo do arquivo e restante no job,
+> distância "para ir" (DTG), bloqueio de comandos em alarme, ação recomendada por
+> alarme, perfis de `$$`, pasta de arquivos nas preferências e histórico
+> persistente de alarmes.
+
+> **Nota (17/10/2026):** RF-IMG-10 (velocidade adaptativa), **RF-IMG-11**
+> (varredura bidirecional, pulo de linhas em branco, menos linhas no arquivo) e
+> **RF-IMG-12** (aviso quando a velocidade passa de `$110`/`$111`) foram
+> implementados para **gravar o mais rápido possível com a melhor qualidade** na
+> Sculpfun C1. No mesmo dia o preview de G-code passou a usar **camadas em
+> cache** (estático + progresso incremental) e o progresso do job é emitido a
+> ~10 Hz: medido com um raster de 270 mil trechos, o custo por quadro caiu de
+> ~300 ms para ~3 ms — era esse o gasto que fazia o PC “interferir” na gravação
+> (com a CPU saturada, o buffer do GRBL ficava sem linhas e a máquina travava).
 
 > **Nota (17/10/2026):** as Fases 0–6 estão **implementadas no código**. Os
 > checkboxes da Fase 2 e vários status do `PRODUCT_SPEC.md` estavam defasados e
@@ -214,7 +219,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 **Entregáveis**
 - `SerialTransport`: abrir/fechar/erros/desconexão, leitura contínua com *line framing*.
-- `GrblClient`: fila de envio **send-response**, parse de `ok`/`error:`/`[MSG:]`.
+- `GrblClient`: fila de envio com **janela por bytes**, parse de `ok`/`error:`/`[MSG:]`.
 - Parser de status `<…>` em `src/shared/protocol.ts` (funções puras e testadas).
 - Eventos IPC tipados: `console`, `status`, `progress`, `job`, `connection`, `error`.
 - Console recebendo e exibindo respostas reais.
@@ -233,7 +238,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 **Critérios de aceite**
 - Ao conectar, o console exibe a *banner* do firmware (`Grbl 1.1f ['$' for help]`). ✅
-- Enviar um arquivo de 1000 linhas conclui sem estourar o buffer e mostra progresso. ✅ (garantido por send-response; validar em hardware)
+- Enviar um arquivo de 1000 linhas conclui sem estourar o buffer e mostra progresso. ✅ (garantido pela janela por bytes; validar em hardware)
 - Um `error:` do GRBL interrompe o job com mensagem clara. ✅ (testado)
 - Testes do parser cobrem os formatos de status documentados na seção 8 do Product Spec. ✅
 
@@ -241,7 +246,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 2 — Status, jog e controle de execução (2 semanas)
 
-**Status:** ✅ concluída (pendências menores: RF-STA-5, RF-JOG-2/6, tempo restante do job e atalhos globais)
+**Status:** ✅ concluída
 
 **Objetivo:** tornar a máquina "visível" e controlável em tempo real — com a
 **aparência Windows 11** definida em `DESIGN.md` (nav rail, cards, DRO).
@@ -256,13 +261,14 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Tarefas**
 - [x] RF-STA-1…3: status report parser → UI (badge de estado + DRO de posição).
 - [x] RF-STA-6: botões Reset/Unlock/Home.
-- [ ] RF-STA-5: desabilitar comandos inválidos no estado de alarme.
-- [x] RF-STA-4: descrições de alarme (causa). *(falta a "solução recomendada" por código)*
+- [x] RF-STA-5: desabilitar comandos inválidos no estado de alarme (jog/origem/macros/play).
+- [x] RF-STA-4: descrições de alarme (causa) + ação recomendada por código (`alarmfix.*`).
 - [x] RF-JOG-1/3/4/5/7: jog com passo/velocidade, `$J=`, set origin/go to zero e homing.
-- [ ] RF-JOG-2/6: jog contínuo ao manter pressionado e atalhos de teclado.
+- [x] RF-JOG-2/6: jog contínuo ao manter pressionado (cancela com `0x85`) e atalhos de teclado.
 - [x] RF-GC-4/8: Pause (`!`), Resume (`~`), Stop/Emergency, Soft Reset.
-- [x] RF-GC-5: barra de progresso (linha atual/total). *(tempo restante pendente)*
-- [ ] Atalhos de teclado globais.
+- [x] RF-GC-5: barra de progresso (linha atual/total) e tempo restante estimado.
+- [x] RF-STA-2: distância "para ir" (DTG) exibida na barra de status.
+- [x] Atalhos de teclado globais (setas = X/Y, Home = homing).
 
 **Critérios de aceite**
 - Durante um job, estado e posição atualizam com ≤ 200 ms de latência.
@@ -287,14 +293,16 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Tarefas**
 - [x] RF-CFG-1/2: parse de `$$` → tabela editável → aplicar `$n=v`.
 - [x] RF-CFG-3: `$#`, `$I`, `$G`.
-- [x] RF-CFG-5: JSON próprio (`PrefsStore`, ADR-6) + UI de preferências.
+- [x] RF-CFG-4: perfis de configuração (salvar/reaplicar o conjunto de `$$`).
+- [x] RF-CFG-5: JSON próprio (`PrefsStore`, ADR-6) + UI de preferências (tema, unidades, porta/baud e pasta de arquivos).
 - [x] RF-CON-3: persistir última porta/baud e reconectar no boot.
 - [x] RF-CFG-6: tooltips/ajuda por setting (catálogo `shared/grblSettings.ts`).
 - [x] RF-APP-3: alternância mm/pol (exibição; G-code segue em mm).
 
 > **Nota de execução (16/10/2026):** `GrblClient.query()` envia qualquer linha e
-> devolve as respostas até o `ok`, mantendo o *send-response* (`$$`, `$#`, `$I`,
-> `$G`, `$n=v`). A tabela de `$$` agrupa por função, mostra ajuda contextual e só
+> devolve as respostas até o `ok` (`$$`, `$#`, `$I`, `$G`, `$n=v`) — consultas só
+> saem com a janela de envio vazia, para o corpo da resposta não se misturar com
+> os `ok` do job. A tabela de `$$` agrupa por função, mostra ajuda contextual e só
 > reenvia o valor alterado. As preferências vivem em `<userData>/prefs.json`
 > (main) e a UI usa `getPrefs/setPrefs`; a unidade afeta **o DRO**, não o estado
 > modal da máquina, para não reinterpretar jogs/comandos.
@@ -398,7 +406,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 7 — Empacotamento, i18n e polimento (2 semanas)
 
-**Status:** 🟡 parcial (i18n, temas, rodapé/Sobre, AppImage/deb e README ×3 ✅; polish e automação de release pendentes)
+**Status:** 🟡 parcial (i18n, temas, rodapé/Sobre, AppImage/deb, log de sessão e README ×3 ✅; polish, automação de release e Flatpak pendentes)
 
 **Objetivo:** transformar o app em produto instalável e **visualmente
 no nível do Windows 11**.
@@ -419,10 +427,16 @@ no nível do Windows 11**.
 - [x] RF-APP-7: menu Ajuda → **Sobre** (versão, licença MIT, autor, links via `shell.openExternal` com whitelist).
 - [x] RF-APP-5: documentar `dialout`/udev para `/dev/ttyUSB*` (ver `docs/DEVELOPMENT.md`).
 - [x] README em 3 idiomas (`README.md`, `README.en.md`, `README.es.md`).
-- [ ] RNF-9: log persistente de sessão.
+- [x] RNF-9: log persistente de sessão (`main/services/SessionLog.ts` → `<userData>/logs`; menu Ajuda → Abrir pasta de logs).
+- [x] Identidade visual: ícone do app (`build/icon.png`, gerado de
+      `docs/icone.png`) e splash de abertura (`public/splash.png` +
+      `public/splash.html`, 738×401, sem splash em smoke/E2E).
 - [ ] Revisão de UX/acessibilidade e polish.
+  *(parcial: teclado/alvo de clique/`Esc`+`Ctrl+X` e paridade i18n feitos; falta a
+  revisão visual humana)*
 - [ ] Passar o **checklist visual** completo de `DESIGN.md` §8 (aparência Win11,
       DPI 125 %/150 %, RAM ≤ 200 MB, ≥ 55 fps, foco/teclado, `prefers-reduced-motion`).
+      *(`prefers-reduced-motion` e foco visível já cobertos em `tokens.css`)*
 
 **Critérios de aceite**
 - `.AppImage` roda em Ubuntu 24.04 e Fedora 40 (X11 e Wayland) sem instalação.
@@ -433,15 +447,19 @@ no nível do Windows 11**.
 
 ### Fase 8 — Qualidade contínua (transversal)
 
-**Status:** 🟡 parcial (CI ✅; cobertura/E2E/hardware pendentes)
+**Status:** 🟡 parcial (CI, cobertura do protocolo e E2E ✅; testes em hardware pendentes)
 
 **Objetivo:** garantir confiabilidade ao longo de todas as fases.
 
 **Tarefas contínuas**
-- [ ] Cobertura de testes do módulo de protocolo > 80%.
-- [ ] E2E Playwright para o fluxo conectar → carregar → enviar (com GRBL simulado).
-- [x] CI (GitHub Actions): build + lint + typecheck + testes (+ smoke headless) em cada push/PR. *(`.github/workflows/ci.yml`)*
-- [ ] Testes manuais em hardware real por release (checklist).
+- [x] Cobertura de testes do módulo de protocolo > 80 % (`npm run test:coverage`, limiares em `vitest.config.ts`).
+- [x] E2E Playwright (Electron real) para o fluxo da UI (`e2e/app.spec.ts`, job `e2e` no CI).
+- [x] CI (GitHub Actions): build + lint + typecheck + testes + cobertura + smoke + E2E em cada push/PR. *(`.github/workflows/ci.yml`)*
+- [x] Automação de release no GitHub (AppImage + deb em tags `v*`). *(`.github/workflows/release.yml`)*
+- [x] Acessibilidade por teclado: alvo mínimo de 32 px, `Esc`/`Ctrl+X` para parar,
+      `Esc` fecha overlays, atalhos documentados em tooltip (DESIGN §5).
+- [ ] Checklist visual de `DESIGN.md` §8 em hardware/DPI fracionário (revisão humana).
+- [ ] Testes manuais em hardware real por release (checklist — não automatizável).
 
 ---
 
@@ -494,7 +512,7 @@ no nível do Windows 11**.
 | :--- | :--- | :--- |
 | Unitário | Vitest | Parser de status, parse de `$$`, gerador de G-code, dithering. |
 | Integração | Vitest + `socat` + emulador GRBL | Fila de envio, `ok`/`error`, timeouts, reconexão. |
-| E2E | Playwright (Electron) | Fluxo completo com máquina simulada. |
+| E2E | Playwright (Electron) | Fluxo da UI no app real (`e2e/`, job `e2e` no CI). |
 | Hardware | Checklist manual | Gravação real, overrides, alarmes, retomada. |
 
 **Emulador GRBL sugerido:** `grbl-sim`/`grblHAL` simulado ou um *fake* Node que
@@ -507,7 +525,8 @@ responde `ok` e o formato de status — suficiente para testar o protocolo.
 - **SemVer** (`MAJOR.MINOR.PATCH`). Alpha interno até Fase 2; Beta a partir da Fase 5; v1.0 na Fase 7.
 - Branch principal + PRs; CI obrigatório.
 - `CHANGELOG.md` mantido a partir da Fase 1.
-- Artefatos de release publicados no GitHub Releases.
+- Artefatos de release publicados no GitHub Releases (automatizado em
+  `.github/workflows/release.yml` ao empurrar uma tag `v*`).
 
 ---
 
@@ -515,7 +534,7 @@ responde `ok` e o formato de status — suficiente para testar o protocolo.
 
 | Risco | Prob. | Impacto | Mitigação |
 | :--- | :--- | :--- | :--- |
-| Estouro de buffer do GRBL / travamento da máquina | Alta | Crítico | Streaming send-response na Fase 1; testes com emulador; nunca enviar em massa. |
+| Estouro de buffer do GRBL / travamento da máquina | Alta | Crítico | Envio com **janela por bytes** (contagem de caracteres) na Fase 1; testes com emulador; nunca enviar em massa. |
 | Perda de foco na correção do core (ir direto para features) | Média | Alto | Gate explícito: Fase 1 é pré-requisito das demais. |
 | Acesso a `/dev/ttyUSB*` negado no Linux | Alta | Médio | Detectar e orientar (grupo `dialout`, regra udev); empacotar instruções. |
 | Migração de UI (vanilla → framework) gerar retrabalho | Média | Médio | Migração incremental; extrair lógica de protocolo antes. |
@@ -599,10 +618,13 @@ Vevor (3018, 4040), OMTech/Monport (40W CO₂).
 
 ---
 
-## 15. Modo Básico (Wizard) para leigos — planejamento
+## 15. Assistente (wizard) para leigos — planejamento
+
+> Na UI o recurso chama-se **Assistente** (o antigo “Modo Básico”); a
+> preferência interna continua `prefs.mode` (`basic`/`advanced`).
 
 Objetivo: oferecer um fluxo guiado e simples para usuários iniciantes, sem
-expor controles técnicos (sliders, overrides, `$$`), mantendo o modo Avançado
+expor controles técnicos (sliders, overrides, `$$`), mantendo o modo avançado
 intacto.
 
 ### 15.1 Fluxo do Wizard
@@ -618,7 +640,7 @@ Sliders de ajuste, conversão (linhas/mm, direção, ponto, suavização), overr
 editor de `$$`, macros e retomada avançada. Console colapsado, mas disponível.
 
 ### 15.3 Roadmap
-- **B1**: toggle “Básico / Avançado” + persistência (`prefs.mode`).
+- **B1**: botão **Assistente** (abre/fecha) + persistência (`prefs.mode`).
 - **B2**: wizard passos 1–3 (máquina, imagem, tipo).
 - **B3**: passos 4–5 (material, posicionamento e gravação).
 - **B4**: polimento (ícones, textos curtos, testes de usabilidade).

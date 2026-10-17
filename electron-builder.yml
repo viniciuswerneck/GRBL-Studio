@@ -6,6 +6,7 @@ directories:
 files:
   - dist/**/*
   - public/**/*
+  - build/icon.png
   - package.json
   - LICENSE
   - README.md

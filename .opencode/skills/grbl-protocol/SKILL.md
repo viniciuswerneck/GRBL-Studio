@@ -20,8 +20,10 @@ overrides, alarmes ou no parser de respostas.
 1. **Tempo real = byte único, sem `\n`:**
    `?` status · `!` feed hold · `~` resume · `0x18` soft reset ·
    `0x90`–`0x94` overrides de feed.
-2. **Streaming send-response:** envie a próxima linha somente após `ok`;
-   em `error:` interrompa e reporte. Nunca `write` em laço com `setTimeout`.
+2. **Streaming com janela (contagem de caracteres):** mantenha no máximo o
+   tamanho do buffer RX do GRBL (leia de `[OPT:…]`; 128 bytes por padrão) em
+   linhas sem `ok`; em `error:` interrompa e reporte. Nunca `write` em massa nem
+   em laço com `setTimeout`.
 3. **Line framing:** acumule bytes e separe por `\n`; nunca assuma que uma
    leitura de `data` contém exatamente uma linha.
 4. **Comandos de linha** (levam `\n`): `$H`, `$X`, `$J=…`, `G92 …`, `$$`,

@@ -226,8 +226,12 @@ describe('imageToGcode', () => {
     expect(ls.at(-1)).toBe('M5'); // e no fim
 
     // Todo G0 vem logo após um M5 (nunca desloca com o laser armado).
+    // Marcas de passada (`; pass`) podem ficar no meio e são ignoradas.
     for (let i = 1; i < ls.length; i++) {
-      if (ls[i]!.startsWith('G0')) expect(ls[i - 1]).toBe('M5');
+      if (!ls[i]!.startsWith('G0')) continue;
+      let j = i - 1;
+      while (j >= 0 && ls[j]!.startsWith(';')) j--;
+      expect(ls[j]).toBe('M5');
     }
 
     // Nunca emitir F em G0 (quebraria o feed da próxima gravação).
@@ -317,34 +321,101 @@ describe('imageToGcode', () => {
     const white = imageToGcode(solid(10, 10, 255, 255, 255), 10, 10, options());
     expect(white.stats.burnedMm).toBe(0);
     expect(all(white.gcode, /S(\d+)/g).every((v) => v === 0)).toBe(true);
-    expect(white.gcode).toContain('G0 '); // pula a linha em branco
+    // Imagem toda branca não queima **nem desloca** (linhas em branco são
+    // puladas por completo).
+    expect(lines(white.gcode).some((l) => l.startsWith('G0'))).toBe(false);
+    expect(white.stats.travelMm).toBe(0);
+    // Mesmo sem movimento, a área de gravação continua a mesma (enquadramento,
+    // "marcar centro" e preview não mudam).
+    expect(white.stats.bounds).toEqual(black.stats.bounds);
+  });
+
+  it('zigue-zague grava as linhas ímpares no sentido inverso', () => {
+    const img = solid(20, 10, 0, 0, 0); // 10×10 mm, todo preto
+    const zig = imageToGcode(img, 20, 10, options());
+    const back = imageToGcode(img, 20, 10, options({ bidirectional: false }));
+
+    const xs = (gcode: string): number[] =>
+      [...gcode.matchAll(/^G1 X(-?[\d.]+)/gm)].map((m) => Number(m[1]));
+    const rows = zig.stats.rows;
+    const zigXs = xs(zig.gcode);
+    expect(zigXs.length).toBe(rows); // 1 trecho por linha
+    expect(zigXs[0]).toBeGreaterThan(9); // ida termina na borda direita
+    expect(zigXs[1]).toBeLessThan(1); // volta termina na borda esquerda
+
+    // Sem zigue-zague toda linha recomeça à esquerda (precisa do G0 de retorno).
+    expect(xs(back.gcode).every((x) => x > 9)).toBe(true);
+
+    // Mesma queima, muito menos deslocamento e mais rápido.
+    expect(zig.stats.burnedMm).toBeCloseTo(back.stats.burnedMm, 6);
+    expect(zig.stats.travelMm).toBeLessThan(back.stats.travelMm / 5);
+    expect(zig.stats.estimatedSec).toBeLessThan(back.stats.estimatedSec);
   });
 
   it('trecho branco longo vira G0; trecho curto continua no feed', () => {
-    const longGap = imageToGcode(
-      solid(10, 10, 255, 255, 255),
-      10,
-      10,
-      options(),
-    );
-    // 10 mm de branco em cada linha (gap >= 1 mm) -> desloca, além da entrada de linha.
-    expect(
-      lines(longGap.gcode).filter((l) => l.startsWith('G0')).length,
-    ).toBeGreaterThanOrEqual(longGap.stats.rows * 2);
+    // Metade esquerda preta, direita branca (10 mm): o branco é percorrido com
+    // `G0` (laser desligado), nunca queimado com `G1 S0`.
+    const w = 20;
+    const h = 10;
+    const img = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const v = x < w / 2 ? 0 : 255;
+        img[i] = v;
+        img[i + 1] = v;
+        img[i + 2] = v;
+        img[i + 3] = 255;
+      }
+    }
 
-    // Fundo branco é sempre ignorado como queima e percorrido com G0,
-    // independente do gapThreshold (nenhum G1 S0 é emitido).
-    const shortGap = imageToGcode(
-      solid(10, 10, 255, 255, 255),
-      10,
-      10,
-      options({ gapThresholdMm: 100 }),
+    const longGap = imageToGcode(img, w, h, options());
+    // Entrada na linha + travessia do trecho branco.
+    expect(lines(longGap.gcode).filter((l) => l.startsWith('G0')).length).toBe(
+      longGap.stats.rows * 2,
     );
-    expect(
-      lines(shortGap.gcode).filter((l) => l.startsWith('G0')).length,
-    ).toBeGreaterThanOrEqual(shortGap.stats.rows * 2);
+    expect(lines(longGap.gcode).some((l) => /^G1 .*S0(\s|$)/.test(l))).toBe(
+      false,
+    );
+
+    // Fundo branco é ignorado como queima, independente do gapThreshold.
+    const shortGap = imageToGcode(img, w, h, options({ gapThresholdMm: 100 }));
+    expect(lines(shortGap.gcode).filter((l) => l.startsWith('G0')).length).toBe(
+      shortGap.stats.rows * 2,
+    );
     const shortLines = lines(shortGap.gcode).filter((l) => l.startsWith('G1'));
-    expect(shortLines.length).toBe(0);
+    expect(shortLines.length).toBeGreaterThanOrEqual(shortGap.stats.rows);
+    expect(shortLines.every((l) => !/S0(\s|$)/.test(l))).toBe(true);
+  });
+
+  it('M5/rearme só quando o laser está ligado (deslocamento barato)', () => {
+    // Faixa preta central com margens brancas: cada linha tem um `G0` de
+    // entrada, um `G0` até a faixa e um `G0` depois dela — mas só **um** `M5`
+    // e um rearme por linha (o modal do GRBL sobrevive aos `G0`).
+    const w = 40;
+    const h = 20;
+    const img = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const v = x >= 10 && x < 30 ? 0 : 255;
+        img[i] = v;
+        img[i + 1] = v;
+        img[i + 2] = v;
+        img[i + 3] = 255;
+      }
+    }
+
+    const { gcode, stats } = imageToGcode(img, w, h, options());
+    const body = lines(gcode).slice(4); // G21/G90/G94/M5
+    const count = (re: RegExp): number => body.filter((l) => re.test(l)).length;
+    expect(count(/^G0 /)).toBeGreaterThanOrEqual(stats.rows * 2);
+    // Um por linha mais o `M5` final (o laser fica desligado enquanto o modal
+    // continua armado, então os `G0` seguidos não repetem `M5`/`M4`).
+    expect(count(/^M5$/)).toBeLessThanOrEqual(stats.rows + 1);
+    expect(count(/^M4$/)).toBeLessThanOrEqual(stats.rows + 1);
+    // Muito menos `M5` do que deslocamentos.
+    expect(count(/^M5$/)).toBeLessThan(count(/^G0 /) / 2);
   });
 
   it('modo M4 arma M4; modo M3 arma M3 S0', () => {
@@ -470,8 +541,18 @@ describe('passadas (RF-GC-6)', () => {
     // Invariante: todo G0 é precedido por M5 (inclusive o retorno entre passadas).
     const ls = lines(triple.gcode);
     for (let i = 1; i < ls.length; i++) {
-      if (ls[i]!.startsWith('G0')) expect(ls[i - 1]).toBe('M5');
+      if (!ls[i]!.startsWith('G0')) continue;
+      let j = i - 1;
+      while (j >= 0 && ls[j]!.startsWith(';')) j--;
+      expect(ls[j]).toBe('M5');
     }
+
+    // Cada passada é marcada para o preview colorir por cor (RF-GC-6).
+    expect(ls.filter((l) => l.startsWith('; pass'))).toEqual([
+      '; pass 1/3',
+      '; pass 2/3',
+      '; pass 3/3',
+    ]);
 
     // O retorno entre passadas entra no tempo estimado.
     expect(triple.stats.travelMm).toBeGreaterThan(single.stats.travelMm);
@@ -517,5 +598,52 @@ describe('passadas (RF-GC-6)', () => {
     expect(() => validateOptions(options({ passes: 1.5 }))).toThrow(/passadas/);
     expect(() => validateOptions(options({ passes: 100 }))).toThrow(/passadas/);
     expect(() => validateOptions(options({ passes: 99 }))).not.toThrow();
+  });
+});
+
+describe('velocidade adaptativa nas áreas claras (RF-IMG-10)', () => {
+  it('desligada (×1) mantém o feed de gravação em todos os G1', () => {
+    const { gcode } = imageToGcode(gradient(32, 8), 32, 8, options());
+    const feeds = all(gcode, /F(\d+(?:\.\d+)?)/g);
+    expect(feeds.length).toBeGreaterThan(0);
+    expect(new Set(feeds)).toEqual(new Set([1000]));
+  });
+
+  it('×3 acelera os trechos claros e mantém 1000 nos escuros', () => {
+    const { gcode } = imageToGcode(
+      gradient(32, 8),
+      32,
+      8,
+      options({ engrave: { ...options().engrave, adaptiveSpeed: 3 } }),
+    );
+    const feeds = all(gcode, /F(\d+(?:\.\d+)?)/g);
+    // Os trechos escuros ficam no feed nominal (a amostragem pode começar um
+    // tom acima do preto puro, daí a folga).
+    expect(Math.min(...feeds)).toBeGreaterThanOrEqual(1000);
+    expect(Math.min(...feeds)).toBeLessThan(1100);
+    // O branco puro vira G0; o tom quase branco chega perto de 3000 mm/min.
+    expect(Math.max(...feeds)).toBeGreaterThan(2500);
+    expect(Math.max(...feeds)).toBeLessThanOrEqual(3000);
+  });
+
+  it('reduz o tempo estimado', () => {
+    const base = imageToGcode(gradient(64, 16), 64, 16, options());
+    const fast = imageToGcode(
+      gradient(64, 16),
+      64,
+      16,
+      options({ engrave: { ...options().engrave, adaptiveSpeed: 3 } }),
+    );
+    expect(fast.stats.estimatedSec).toBeLessThan(base.stats.estimatedSec);
+  });
+
+  it('valida o fator (1 a 5)', () => {
+    for (const adaptiveSpeed of [0, 6, Number.NaN]) {
+      expect(() =>
+        validateOptions(
+          options({ engrave: { ...options().engrave, adaptiveSpeed } }),
+        ),
+      ).toThrow(/adaptativa/);
+    }
   });
 });
