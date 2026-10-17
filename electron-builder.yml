@@ -1,0 +1,27 @@
+appId: com.grblstudio.app
+productName: GRBL Studio
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - public/**/*
+  - package.json
+  - LICENSE
+  - README.md
+extraMetadata:
+  main: dist/main/index.js
+  desktopName: grbl-studio.desktop
+linux:
+  syncDesktopName: true
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  maintainer: Vinicius Werneck
+  vendor: GRBL Studio
+mac:
+  target: []
+win:
+  target: []
+

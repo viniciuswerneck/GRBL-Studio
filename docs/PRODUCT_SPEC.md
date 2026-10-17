@@ -103,19 +103,19 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | RF-CON-1 | Listar portas seriais disponíveis e atualizar a lista sob demanda. | Must | 🟡 |
 | RF-CON-2 | Conectar/desconectar com baud rate selecionável (9600/115200/250000…). | Must | 🟡 |
 | RF-CON-3 | Persistir última porta e baud usados (e reconectar no boot). | Should | ✅ |
-| RF-CON-4 | Detectar desconexão inesperada e avisar o usuário. | Must | ⬜ |
+| RF-CON-4 | Detectar desconexão inesperada e avisar o usuário. | Must | ✅ |
 | RF-CON-5 | Ao conectar, ler `$I`/`$G` e exibir firmware/estado inicial. | Should | ⬜ |
-| RF-CON-6 | Reconexão automática opcional. | Could | ⬜ |
-| RF-CON-7 | Conexão via WiFi/serial-over-network (ESP8266). | Could | ⬜ |
+| RF-CON-6 | Reconexão automática opcional. | Could | ✅ |
+| RF-CON-7 | Conexão via WiFi/serial-over-network (ESP8266). | Could | ✅ |
 
 ### M2 — Console e comandos manuais
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-CON-10 | Enviar qualquer linha de G-code/comando GRBL pelo console. | Must | 🟡 |
-| RF-CON-11 | Exibir retornos da máquina (`ok`, `error:`, `[MSG:]`, `ALARM:`). | Must | ⬜ |
+| RF-CON-10 | Enviar qualquer linha de G-code/comando GRBL pelo console. | Must | ✅ |
+| RF-CON-11 | Exibir retornos da máquina (`ok`, `error:`, `[MSG:]`, `ALARM:`). | Must | ✅ |
 | RF-CON-12 | Diferenciar visualmente comandos enviados × respostas × erros. | Should | ⬜ |
-| RF-CON-13 | Histórico de comandos (setas ↑/↓). | Should | ⬜ |
+| RF-CON-13 | Histórico de comandos (setas ↑/↓). | Should | ✅ |
 | RF-CON-14 | Auto-scroll com opção de pausar/limpar log. | Should | ⬜ |
 | RF-CON-15 | Salvar/exportar log do console. | Could | ⬜ |
 

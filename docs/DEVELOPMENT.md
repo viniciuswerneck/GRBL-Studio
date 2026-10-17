@@ -186,3 +186,55 @@ tests/                        # Vitest (unit + integração)
 - Protocolo/parsing = funções puras e testadas (nunca na UI).
 - Comandos de tempo real **sem `\n`**; envio sempre send-response.
 - Lint/format: **Biome** (`npm run lint`) — ver a seção "Lint e formatação".
+
+## Empacotamento e release (RF-APP-4)
+
+O projeto usa **`electron-builder`** (configuração em `electron-builder.yml`).
+Artefatos ficam em `release/` (no `.gitignore`).
+
+```bash
+npm run package          # build + AppImage + deb (x64)
+npm run package:linux     # mesmo, deixando claro o alvo
+```
+
+Saídas de exemplo:
+
+- `release/GRBL Studio-0.1.0.AppImage`
+- `release/grbl-studio_0.1.0_amd64.deb`
+
+Notas:
+
+- `serialport` passa pelo `@electron/rebuild` usado pelo `electron-builder`; não
+  é necessário comando manual.
+- O AppImage não traz ícone personalizado ainda: adicione uma imagem em
+  `build/icon.png` (256×256 ou maior) para o atalho do desktop ser vinculado
+  à janela (`desktopName`/`syncDesktopName` já configurados).
+- Flatpak fica como “Could” no plano (após v1.0), por exigir `flatpak-builder`
+  e um runtime dedicado.
+
+## Permissão de porta serial no Linux (RF-APP-5)
+
+Se o app não detecta `/dev/ttyUSB*` ou `/dev/ttyACM*`, ou `SerialPort.list()`
+volta vazio, normalmente é falta de permissão:
+
+```bash
+# 1. Adicionar o usuário ao grupo dialout
+sudo usermod -aG dialout $USER
+
+# 2. (Fedora/RHEL) em vez de dialout pode ser 'lock' ou 'uucp'
+sudo usermod -aG uucp,lock $USER
+
+# 3. Sair e entrar de novo (ou reboot) para a nova associação valer.
+```
+
+Se quiser liberar uma porta específica sem alterar grupos, crie uma regra udev:
+
+```bash
+# /etc/udev/rules.d/99-grbl-studio.rules
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", MODE="0666", GROUP="dialout"
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Os `idVendor`/`idProduct` de cada placa são obtidos com `lsusb`.

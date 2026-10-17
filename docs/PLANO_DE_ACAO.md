@@ -335,7 +335,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 **Tarefas**
 - [x] RF-MAC-1/2: botões por grupo, editor, import/export JSON.
 - [x] RF-GC-7: retomada de job (preâmbulo modal + sugestão `done − N`).
-- [ ] RF-CON-7: transporte sobre TCP (Could).
+- [x] RF-CON-7: transporte sobre TCP (WiFi serial-over-network).
 
 **Critérios de aceite**
 - Interromper um job e retomar "N linhas antes" funciona sem danificar a peça.
@@ -355,9 +355,9 @@ no nível do Windows 11**.
 - **Checklist visual de aceite** (`DESIGN.md` §8) aprovado.
 
 **Tarefas**
-- [ ] RF-APP-4: `electron-builder` (ADR-9) + automação de release.
+- [x] RF-APP-4: `electron-builder` (ADR-9) + AppImage/deb. *(automação de release no GitHub ainda pendente)*
 - [ ] RF-APP-2: estrutura de i18n.
-- [ ] RF-APP-5: documentar `dialout`/udev para `/dev/ttyUSB*`.
+- [x] RF-APP-5: documentar `dialout`/udev para `/dev/ttyUSB*` (ver `docs/DEVELOPMENT.md`).
 - [ ] RNF-9: log persistente de sessão.
 - [ ] Revisão de UX/acessibilidade e polish.
 - [ ] Passar o **checklist visual** completo de `DESIGN.md` §8 (aparência Win11,

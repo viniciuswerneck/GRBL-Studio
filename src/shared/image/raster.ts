@@ -23,6 +23,8 @@ export interface ScanGeometry {
   rowStart: number;
   /** Centro da primeira amostra no eixo de varredura (coluna 0). */
   scanStart: number;
+  /** Passo entre linhas (pode ser negativo para manter a linha 0 no topo da imagem). */
+  rowStep: number;
   /** Coordenada do canto da área de trabalho no eixo da linha. */
   rowOrigin: number;
   /** Coordenada do canto da área de trabalho no eixo de varredura. */
@@ -81,8 +83,11 @@ export function computeScanGeometry(g: GeometryOptions): ScanGeometry {
     halfDot,
     rows,
     cols,
-    rowStart: rowOrigin + halfDot,
+    // Linha 0 fica no TOPO da área (Y alto): a imagem não aparece de cabeça
+    // para baixo nem na prévia nem na gravação (origem da máquina é embaixo).
+    rowStart: rowOrigin + rowLength - halfDot,
     scanStart: scanOrigin + halfDot,
+    rowStep: -pitch,
     rowOrigin,
     scanOrigin,
   };
@@ -110,15 +115,20 @@ export function sampleGrid(
   const heightScale = imgHeight > 1 ? (imgHeight - 1) / g.heightMm : 0;
 
   for (let r = 0; r < geom.rows; r++) {
-    const rowCoord = geom.rowStart + r * geom.pitch;
+    const rowCoord = geom.rowStart + r * geom.rowStep;
     for (let c = 0; c < geom.cols; c++) {
       const scanCoord = geom.scanStart + c * geom.pitch;
 
-      const px = geom.direction === 'h' ? scanCoord : rowCoord;
-      const py = geom.direction === 'h' ? rowCoord : scanCoord;
+      // O eixo Y da imagem cresce para baixo, mas a máquina cresce para cima:
+      // invertemos para que a linha 0 (topo da imagem) seja gravada no topo
+      // (Y alto) e a prévia fique na orientação original.
+      const machineX = geom.direction === 'h' ? scanCoord : rowCoord;
+      const machineY = geom.direction === 'h' ? rowCoord : scanCoord;
+      const px = machineX;
+      const py = g.heightMm - (machineY - g.offsetY);
 
       const u = (px - g.offsetX) * widthScale;
-      const v = (py - g.offsetY) * heightScale;
+      const v = py * heightScale;
       grid[r * geom.cols + c] = bilinear(gray, imgWidth, imgHeight, u, v);
     }
   }

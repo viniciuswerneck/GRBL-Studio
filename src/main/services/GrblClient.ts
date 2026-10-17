@@ -31,6 +31,7 @@ import type {
   JobProgress,
 } from '../../shared/types';
 import { SerialTransport } from './SerialTransport';
+import { TcpTransport } from './TcpTransport';
 
 /** Bytes de comando de tempo real do GRBL. */
 export const REALTIME = {
@@ -86,6 +87,17 @@ export interface TransportLike {
 
 export type TransportFactory = (opts: ConnectOptions) => TransportLike;
 
+/**
+ * Transporte padrão conforme o tipo pedido (RF-CON-7). Serial usa `path`/`baud`;
+ * WiFi usa `host`/`tcpPort`. Valores ausentes caem em padrões seguros.
+ */
+export function defaultTransportFactory(opts: ConnectOptions): TransportLike {
+  if (opts.kind === 'tcp') {
+    return new TcpTransport(opts.host ?? '192.168.4.1', opts.tcpPort ?? 23);
+  }
+  return new SerialTransport(opts.path ?? '', opts.baudRate ?? 115200);
+}
+
 export interface GrblClientOptions {
   statusPollMs?: number;
   stallMs?: number;
@@ -118,9 +130,7 @@ export class GrblClient extends EventEmitter {
     super();
     this.statusPollMs = options.statusPollMs ?? 200;
     this.stallMs = options.stallMs ?? DEFAULT_STALL_MS;
-    this.transportFactory =
-      options.transportFactory ??
-      ((opts) => new SerialTransport(opts.path, opts.baudRate));
+    this.transportFactory = options.transportFactory ?? defaultTransportFactory;
     // O evento 'error' do EventEmitter lança se não houver listener. Garantimos
     // um listener padrão; a camada IPC sempre registra o seu.
     this.on('error', () => undefined);
@@ -139,9 +149,7 @@ export class GrblClient extends EventEmitter {
       if (this.connection !== 'disconnected') {
         this.setConnection('disconnected');
         this.emitError(
-          err
-            ? `Conexão serial encerrada: ${err.message}`
-            : 'Conexão serial encerrada.',
+          err ? `Conexão encerrada: ${err.message}` : 'Conexão encerrada.',
         );
       }
       this.stopPolling();
@@ -300,7 +308,7 @@ export class GrblClient extends EventEmitter {
     if (cmd.y) parts.push(`Y${cmd.y}`);
     if (cmd.z) parts.push(`Z${cmd.z}`);
     if (parts.length === 0) return;
-    this.sendLine(`$J=${parts.join(' ')} F${feed}`);
+    this.sendLine(`$J=G91 ${parts.join(' ')} F${feed}`);
   }
 
   overrideFeed(
@@ -397,7 +405,10 @@ export class GrblClient extends EventEmitter {
   }
 
   private onData(chunk: string): void {
-    this.rxBuffer += chunk;
+    // Remove caracteres de controle espúrios (ex.: 0x01) que alguns firmwares
+    // inserem entre o status report e o 'ok', o que travava o reconhecimento.
+    const clean = chunk.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    this.rxBuffer += clean;
     const { lines, rest } = splitLines(this.rxBuffer);
     this.rxBuffer = rest;
     for (const line of lines) this.handleLine(line);

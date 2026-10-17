@@ -23,6 +23,16 @@ function sanitize(input: unknown): Prefs {
   if (raw.units === 'mm' || raw.units === 'in') prefs.units = raw.units;
   if (typeof raw.autoConnect === 'boolean') prefs.autoConnect = raw.autoConnect;
   if (Array.isArray(raw.macros)) prefs.macros = sanitizeMacros(raw.macros);
+  if (raw.transport === 'serial' || raw.transport === 'tcp')
+    prefs.transport = raw.transport;
+  if (typeof raw.host === 'string' && raw.host) prefs.host = raw.host;
+  if (
+    typeof raw.tcpPort === 'number' &&
+    Number.isInteger(raw.tcpPort) &&
+    raw.tcpPort > 0 &&
+    raw.tcpPort < 65536
+  )
+    prefs.tcpPort = raw.tcpPort;
   return prefs;
 }
 

@@ -183,7 +183,7 @@ export function classifyLine(rawLine: string): ClassifiedLine {
 
   if (isStatusReport(trimmed)) return { kind: 'status', text: trimmed };
 
-  if (/^ok\b/i.test(trimmed)) return { kind: 'ok', text: trimmed };
+  if (/ok\b/i.test(trimmed)) return { kind: 'ok', text: trimmed };
 
   if (/^error:/i.test(trimmed)) {
     const code = extractCode(trimmed);
@@ -262,7 +262,11 @@ export function parseSettings(lines: string[]): Map<number, ParsedSetting> {
  * Retorna as linhas prontas e o restante (sem `\n`) para acumular.
  */
 export function splitLines(buffer: string): { lines: string[]; rest: string } {
-  const parts = buffer.split('\n');
+  // Status reports terminam em '>' e, em alguns firmwares/chunks, chegam
+  // colados ao 'ok' seguinte sem '\n'. Inserimos a quebra para não perder
+  // a confirmação (o que travava o envio com watchdog de 8 s).
+  const normalized = buffer.replace(/>(?!\n)/g, '>\n');
+  const parts = normalized.split('\n');
   const rest = parts.pop() ?? '';
   return { lines: parts, rest };
 }

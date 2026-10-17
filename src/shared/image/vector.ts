@@ -103,7 +103,9 @@ function emitVector(
   /** Canto de pixel -> mm: 0..w mapeia exatamente para a área pedida. */
   const toMm = (p: PixelPoint): Point => ({
     x: g.offsetX + (p.x / imgWidth) * g.widthMm,
-    y: g.offsetY + (p.y / imgHeight) * g.heightMm,
+    // Inverte o eixo Y: o topo da imagem (p.y = 0) vira Y alto, para a
+    // gravação não sair de cabeça para baixo (origem da máquina embaixo).
+    y: g.offsetY + (1 - p.y / imgHeight) * g.heightMm,
   });
 
   // Uma passada por iteração (RF-GC-6). O corte repete os mesmos contornos.

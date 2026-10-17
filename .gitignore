@@ -22,3 +22,7 @@ Thumbs.db
 # Editores
 .vscode/
 .idea/
+
+# Artefatos de empacotamento (electron-builder)
+release/
+public/adjust.js

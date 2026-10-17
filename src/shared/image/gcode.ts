@@ -206,7 +206,7 @@ function emitGcode(
     };
 
     for (let r = 0; r < geom.rows; r++) {
-      const rowCoord = geom.rowStart + r * pitch;
+      const rowCoord = geom.rowStart + r * geom.rowStep;
       // Início da linha = borda da área (centro da 1ª amostra - metade do ponto).
       travel(point(rowCoord, geom.scanStart - halfDot));
 

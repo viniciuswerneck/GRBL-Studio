@@ -80,6 +80,7 @@ isolados por `contextIsolation`:
 | `main/index.ts` | Bootstrap da janela e ciclo de vida do app. | ✅ |
 | `main/ipc.ts` | Handlers IPC tipados (wiring entre UI e serviços). | ✅ |
 | `services/SerialTransport` | Abrir/fechar porta, *line framing*, erros, desconexão. | ✅ |
+| `services/TcpTransport` | Transporte WiFi/serial-over-network (ESP8266) sobre TCP (RF-CON-7). | ✅ |
 | `services/GrblClient` | Fila de envio (send-response), `ok`/`error`, tempo real, overrides, status. | ✅ |
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |

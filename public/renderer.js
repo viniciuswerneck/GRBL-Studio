@@ -4,6 +4,7 @@
  */
 
 const $ = (id) => document.getElementById(id);
+const sidebar = document.querySelector('.sidebar');
 
 const el = {
   portList: $('portList'),
@@ -42,6 +43,8 @@ const el = {
   consoleInput: $('consoleInput'),
   themeBtn: $('themeBtn'),
   imageOpen: $('imageOpen'),
+  imageReplace: $('imageReplace'),
+  imageCancel: $('imageCancel'),
   imageInfo: $('imageInfo'),
   imgWidth: $('imgWidth'),
   imgHeight: $('imgHeight'),
@@ -83,6 +86,26 @@ const el = {
   settingsBtn: $('settingsBtn'),
   settingsOverlay: $('settingsOverlay'),
   settingsClose: $('settingsClose'),
+  frameOverlay: $('frameOverlay'),
+  frameClose: $('frameClose'),
+  frameYp: $('frameYp'),
+  frameXm: $('frameXm'),
+  frameXp: $('frameXp'),
+  frameYm: $('frameYm'),
+  frameHome: $('frameHome'),
+  frameOrigin: $('frameOrigin'),
+  frameSetOrigin: $('frameSetOrigin'),
+  frameOutline: $('frameOutline'),
+  frameStart: $('frameStart'),
+  frameCancel: $('frameCancel'),
+  frameStatus: $('frameStatus'),
+  framePower: $('framePower'),
+  framePowerValue: $('framePowerValue'),
+  frameSpeed: $('frameSpeed'),
+  frameSpeedValue: $('frameSpeedValue'),
+  framePasses: $('framePasses'),
+  framePassesMinus: $('framePassesMinus'),
+  framePassesPlus: $('framePassesPlus'),
   settingsRefresh: $('settingsRefresh'),
   settingsFilter: $('settingsFilter'),
   settingsList: $('settingsList'),
@@ -101,6 +124,11 @@ const el = {
   macroReset: $('macroReset'),
   macroImport: $('macroImport'),
   macroExport: $('macroExport'),
+  transportKind: $('transportKind'),
+  serialFields: $('serialFields'),
+  tcpFields: $('tcpFields'),
+  tcpHost: $('tcpHost'),
+  tcpPort: $('tcpPort'),
 };
 
 const state = {
@@ -115,6 +143,9 @@ const state = {
   lastStatus: null,
   /** Preferências persistidas no main (RF-CFG-5). */
   prefs: {},
+  /** Histórico do console (RF-CON-13). */
+  consoleHistory: [],
+  consoleHistoryIndex: -1,
   /** Índice (no arquivo) da primeira linha do job atual — 0 no envio normal. */
   jobStart: 0,
   /** Linhas de preâmbulo injetadas por uma retomada (RF-GC-7). */
@@ -193,12 +224,97 @@ function setConnection(conn) {
   );
 
   if (!state.connected && state.jobState === 'running') setJobState('idle');
+  sidebar.classList.toggle('is-connected', state.connected);
+  updateWorkflow();
   updateControls();
 }
 
 function setJobState(jobState) {
   state.jobState = jobState;
   updateControls();
+}
+
+// Abas da sidebar (Gravadora / Imagem / Execução / Macros).
+document.querySelectorAll('.sidebar-tabs .tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    const name = tab.dataset.tab;
+    document.querySelectorAll('.sidebar-tabs .tab').forEach((t) => {
+      t.classList.remove('active');
+    });
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach((panel) => {
+      panel.classList.toggle('hidden', panel.dataset.panel !== name);
+    });
+  });
+});
+
+let frameBounds = null;
+
+function openFrameModal() {
+  frameBounds = window.frameBounds || null;
+  if (!el.frameOverlay) return;
+  el.frameOverlay.classList.remove('hidden');
+  if (el.frameStatus) {
+    el.frameStatus.textContent = state.connected
+      ? 'Máquina conectada. Posicione e desenhe o contorno para conferir.'
+      : 'Conecte a máquina para posicionar e desenhar o contorno.';
+  }
+  for (const b of [
+    el.frameYp,
+    el.frameXm,
+    el.frameXp,
+    el.frameYm,
+    el.frameHome,
+    el.frameOrigin,
+    el.frameOutline,
+  ]) {
+    if (b) b.disabled = !state.connected;
+  }
+  if (el.frameStart) el.frameStart.disabled = !state.connected;
+}
+
+function closeFrameModal() {
+  if (el.frameOverlay) el.frameOverlay.classList.add('hidden');
+}
+
+function frameJog(axis, sign) {
+  if (!state.connected) return;
+  const step = Number(el.stepSelect ? el.stepSelect.value : 5) || 5;
+  const feed = Number(el.feedSelect ? el.feedSelect.value : 1000) || 1000;
+  window.grbl.jog({ [axis]: sign * step, feed });
+}
+
+function drawFrameOutline() {
+  if (!state.connected || !frameBounds) return;
+  const b = frameBounds;
+  const sPower = 5; // contorno sempre bem fraco, independente do slider
+  // Contorno visível: laser ligado em baixa potência (S=50 ≈ 5 %) e G1,
+  // para a marca aparecer na superfície sem queimar.
+  const lines = [
+    'G90',
+    'M4',
+    `G1 X${b.xMin.toFixed(3)} Y${b.yMin.toFixed(3)} S${sPower} F3000`,
+    `G1 X${b.xMax.toFixed(3)} Y${b.yMin.toFixed(3)} S${sPower}`,
+    `G1 X${b.xMax.toFixed(3)} Y${b.yMax.toFixed(3)} S${sPower}`,
+    `G1 X${b.xMin.toFixed(3)} Y${b.yMax.toFixed(3)} S${sPower}`,
+    `G1 X${b.xMin.toFixed(3)} Y${b.yMin.toFixed(3)} S${sPower}`,
+    'M5',
+  ];
+  for (const line of lines) window.grbl.writeLine(line);
+  if (el.frameStatus)
+    el.frameStatus.textContent = 'Contorno enviado (laser desligado).';
+}
+
+function updateWorkflow() {
+  // Exibição progressiva: controla classes no sidebar (ver style.css).
+  if (!sidebar) return;
+  sidebar.classList.toggle('is-connected', state.connected);
+  const hasImage = Boolean(imageState?.loaded);
+  const cardImage = document.getElementById('cardImage');
+  if (cardImage) cardImage.classList.toggle('has-image', hasImage);
+  if (el.imageCancel) el.imageCancel.classList.toggle('hidden', !hasImage);
+  const hasGcode = Array.isArray(state.lines) && state.lines.length > 0;
+  sidebar.classList.toggle('has-gcode', hasGcode);
 }
 
 function updateControls() {
@@ -298,15 +414,51 @@ async function refreshPorts() {
 
 el.refreshPorts.addEventListener('click', refreshPorts);
 
+/** Mostra os campos do transporte escolhido (RF-CON-7). */
+function applyTransportVisibility() {
+  const tcp = el.transportKind.value === 'tcp';
+  el.serialFields.classList.toggle('hidden', tcp);
+  el.tcpFields.classList.toggle('hidden', !tcp);
+}
+
+el.transportKind.addEventListener('change', () => {
+  applyTransportVisibility();
+  persistPrefs({
+    transport: el.transportKind.value === 'tcp' ? 'tcp' : 'serial',
+  });
+});
+
+/** Opções de conexão conforme o transporte; `null` se faltar dado. */
+function connectionOptions() {
+  if (el.transportKind.value === 'tcp') {
+    return {
+      kind: 'tcp',
+      host: el.tcpHost.value.trim() || '192.168.4.1',
+      tcpPort: Number(el.tcpPort.value) || 23,
+    };
+  }
+  const path = el.portList.value;
+  if (!path) return null;
+  return { kind: 'serial', path, baudRate: Number(el.baudList.value) };
+}
+
 /**
- * Conecta à porta e, ao dar certo, guarda a última porta/baud (RF-CON-3)
- * e lê `$130/$131` para o aviso de área de trabalho (RF-GC-9).
+ * Conecta e, ao dar certo, guarda o último transporte (RF-CON-3) e lê
+ * `$130/$131` para o aviso de área de trabalho (RF-GC-9).
  */
-async function tryConnect(path, baudRate) {
+async function tryConnect(opts) {
+  if (!opts) {
+    appendLine('Selecione uma porta serial.', 'error');
+    return;
+  }
   setConnection('connecting');
   try {
-    await window.grbl.connect({ path, baudRate });
-    persistPrefs({ port: path, baud: baudRate });
+    await window.grbl.connect(opts);
+    persistPrefs(
+      opts.kind === 'tcp'
+        ? { transport: 'tcp', host: opts.host, tcpPort: opts.tcpPort }
+        : { transport: 'serial', port: opts.path, baud: opts.baudRate },
+    );
     // Área de trabalho para o aviso de excedente (RF-GC-9). Silencioso.
     loadSettings().catch(() => {});
   } catch (err) {
@@ -320,12 +472,7 @@ el.connectBtn.addEventListener('click', async () => {
     await window.grbl.disconnect();
     return;
   }
-  const path = el.portList.value;
-  if (!path) {
-    appendLine('Selecione uma porta serial.', 'error');
-    return;
-  }
-  await tryConnect(path, Number(el.baudList.value));
+  await tryConnect(connectionOptions());
 });
 
 // ----------------------------------------------------------------------- jog
@@ -425,6 +572,8 @@ function applyJobLines(name, text) {
   state.jobPreamble = 0;
   state.doneFile = 0;
   el.fileInfo.textContent = `${name} — ${state.lines.length} linhas`;
+  sidebar.classList.add('has-gcode');
+  updateWorkflow();
   // Arquivo aberto: pré-visualiza o caminho real do G-code (RF-PRV-1).
   setGcodePreview(String(text), name);
   updateControls();
@@ -516,6 +665,8 @@ const imageState = {
 
 let gcodeWorker = null;
 let convertId = 0;
+let convertMode = 'commit';
+let autoStartAfterGenerate = false;
 
 function ensureWorker() {
   if (gcodeWorker) return gcodeWorker;
@@ -555,7 +706,25 @@ function onConvertResult(ev) {
     appendLine(`Falha ao gerar G-code: ${msg.error}`, 'error');
     return;
   }
-  applyGenerated(msg.gcode, msg.stats, msg.grid, msg.contourPaths);
+  if (convertMode === 'preview') {
+    applyPreview(msg.stats, msg.grid, msg.contourPaths);
+  } else {
+    applyGenerated(msg.gcode, msg.stats, msg.grid, msg.contourPaths);
+  }
+}
+
+function applyPreview(stats, grid, contourPaths) {
+  imageState.stats = stats;
+  imageState.grid = grid;
+  el.imgStats.textContent = `${formatStats(stats)} (prévia)`;
+  imageState.preview = {
+    kind: 'grid',
+    grid,
+    rows: stats.rows,
+    cols: stats.cols,
+    contours: contourPaths,
+  };
+  renderPreview();
 }
 
 function applyGenerated(gcode, stats, grid, contourPaths) {
@@ -592,6 +761,26 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
       `${stats.rows}×${stats.cols} amostras, ~${formatTime(stats.estimatedSec)}`,
     'ok',
   );
+
+  // Guarda a área de gravação para o modal de posicionamento (moldura).
+  const opts = readImageOptions();
+  window.frameBounds = {
+    xMin: opts.geometry.offsetX,
+    yMin: opts.geometry.offsetY,
+    xMax: opts.geometry.offsetX + opts.geometry.widthMm,
+    yMax: opts.geometry.offsetY + opts.geometry.heightMm,
+  };
+
+  // Abre o modal de posicionamento em vez de gravar imediatamente.
+  openFrameModal();
+
+  if (autoStartAfterGenerate) {
+    autoStartAfterGenerate = false;
+    setTimeout(() => {
+      closeFrameModal();
+      if (state.connected) beginJob(0);
+    }, 50);
+  }
 }
 
 function baseName(name) {
@@ -641,6 +830,24 @@ el.imageOpen.addEventListener('click', async () => {
   );
 });
 
+async function openImageDialog() {
+  let opened;
+  try {
+    opened = await window.grbl.openImage();
+  } catch (err) {
+    setImageError('Falha ao abrir a imagem', err.message);
+    return;
+  }
+  if (!opened) return;
+  loadImageBlob(
+    opened.name,
+    new Blob([toBytes(opened.data)], { type: opened.mime }),
+  );
+}
+
+el.imageReplace.addEventListener('click', openImageDialog);
+el.imageCancel.addEventListener('click', cancelImage);
+
 /** Normaliza o retorno do IPC (Uint8Array/Buffer/ArrayBuffer) para bytes. */
 function toBytes(data) {
   if (data instanceof Uint8Array) return data;
@@ -649,9 +856,29 @@ function toBytes(data) {
   return new Uint8Array(data);
 }
 
+function cancelImage() {
+  imageState.loaded = null;
+  imageState.stats = null;
+  imageState.grid = null;
+  imageState.preview = null;
+  imageState.busy = false;
+  const cardImage = document.getElementById('cardImage');
+  if (cardImage) cardImage.classList.remove('has-image');
+  sidebar.classList.remove('has-gcode');
+  el.imageInfo.textContent = 'Nenhuma imagem carregada';
+  el.imageInfo.classList.remove('error');
+  el.imgStats.textContent = '';
+  el.imgGenerate.disabled = true;
+  el.imgSave.disabled = true;
+  updateWorkflow();
+  renderPreview();
+}
+
 function setImageError(title, detail) {
   el.imageInfo.textContent = `${title}: ${detail}`;
   el.imageInfo.classList.add('error');
+  document.getElementById('cardImage').classList.remove('has-image');
+  updateWorkflow();
   el.imgStats.textContent = '';
   el.imgSave.disabled = true;
   el.imgGenerate.disabled = true;
@@ -703,13 +930,16 @@ function loadImageBlob(name, blob) {
         ? ` (reduzida de ${naturalW}×${naturalH})`
         : '';
     el.imageInfo.textContent = `${name} — ${naturalW}×${naturalH}px${reduced}`;
+    document.getElementById('cardImage').classList.add('has-image');
+    updateWorkflow();
     el.imageInfo.classList.remove('error');
     el.imgStats.textContent = '';
     el.imgSave.disabled = true;
     el.imgGenerate.disabled = false;
     el.imgGenerate.title = 'Converte a imagem em G-code';
     applySizeFromAspect('w');
-    renderPreview();
+    refreshImagePreview();
+    scheduleGenerate();
   };
   img.onerror = () => {
     URL.revokeObjectURL(url);
@@ -719,6 +949,57 @@ function loadImageBlob(name, blob) {
     );
   };
   img.src = url;
+}
+
+/** Reaplica os ajustes (brilho, contraste, …) no preview da imagem (RF-IMG-2). */
+function refreshImagePreview() {
+  const image = imageState.loaded;
+  if (!image) {
+    renderPreview();
+    return;
+  }
+  const adjust = window.GRBL_ADJUST;
+  if (!adjust) {
+    renderPreview();
+    return;
+  }
+  try {
+    adjust.validateAdjust({
+      brightness: Number(el.imgBrightness.value),
+      contrast: Number(el.imgContrast.value),
+      whiteClip: Number(el.imgWhiteClip.value),
+      invert: el.imgInvert.checked,
+      blackWhite: el.imgBW.checked,
+      bwThreshold: Number(el.imgThreshold.value),
+    });
+  } catch {
+    renderPreview();
+    return;
+  }
+  const gray = adjust.toGrayscale(image.data, image.width, image.height);
+  const adjusted = adjust.applyAdjust(gray, {
+    brightness: Number(el.imgBrightness.value),
+    contrast: Number(el.imgContrast.value),
+    whiteClip: Number(el.imgWhiteClip.value),
+    invert: el.imgInvert.checked,
+    blackWhite: el.imgBW.checked,
+    bwThreshold: Number(el.imgThreshold.value),
+  });
+  const rgba = new Uint8ClampedArray(image.width * image.height * 4);
+  for (let i = 0; i < adjusted.length; i++) {
+    const g = Math.round(adjusted[i] * 255);
+    rgba[i * 4] = g;
+    rgba[i * 4 + 1] = g;
+    rgba[i * 4 + 2] = g;
+    rgba[i * 4 + 3] = 255;
+  }
+  imageState.preview = {
+    kind: 'image',
+    data: rgba,
+    width: image.width,
+    height: image.height,
+  };
+  renderPreview();
 }
 
 /** Formata mm com no máximo 3 decimais (mesma precisão do G-code/DRO). */
@@ -787,6 +1068,16 @@ function updateAlgorithmVisibility() {
 
 el.imgAlgorithm.addEventListener('change', updateAlgorithmVisibility);
 updateAlgorithmVisibility();
+
+// Ajustes ao vivo no preview (RF-IMG-2).
+['imgBrightness', 'imgContrast', 'imgWhiteClip', 'imgThreshold'].forEach(
+  (key) => {
+    el[key].addEventListener('input', refreshImagePreview);
+  },
+);
+['imgInvert', 'imgBW'].forEach((key) => {
+  el[key].addEventListener('change', refreshImagePreview);
+});
 
 function readImageOptions() {
   return {
@@ -884,7 +1175,8 @@ if (materials) {
   el.profileHint.textContent = 'Perfis indisponíveis: rode `npm run build`.';
 }
 
-el.imgGenerate.addEventListener('click', () => {
+function generateGcode(commit = true) {
+  convertMode = commit ? 'commit' : 'preview';
   const image = imageState.loaded;
   if (!image || imageState.busy) return;
 
@@ -910,6 +1202,43 @@ el.imgGenerate.addEventListener('click', () => {
     },
     [buffer],
   );
+}
+
+el.imgGenerate.addEventListener('click', () => generateGcode(true));
+
+// Regenera automaticamente quando os parâmetros de conversão mudam
+// (algoritmo, linhas/mm, direção, ponto, suavização, passes, velocidade,
+// S-min/S-max, modo, dimensões, offset) — evita "não afetou a imagem".
+let generateTimer = null;
+function scheduleGenerate() {
+  if (!imageState.loaded || imageState.busy) return;
+  if (generateTimer) clearTimeout(generateTimer);
+  generateTimer = setTimeout(() => {
+    generateTimer = null;
+    generateGcode(false);
+  }, 250);
+}
+
+const CONVERSION_CONTROLS = [
+  'imgAlgorithm',
+  'imgLines',
+  'imgDirection',
+  'imgDot',
+  'imgSimplify',
+  'imgPasses',
+  'imgSpeed',
+  'imgMode',
+  'imgSmin',
+  'imgSmax',
+  'imgWidth',
+  'imgHeight',
+  'imgOffsetX',
+  'imgOffsetY',
+];
+CONVERSION_CONTROLS.forEach((key) => {
+  const node = el[key];
+  if (!node) return;
+  node.addEventListener('change', scheduleGenerate);
 });
 
 el.imgSave.addEventListener('click', async () => {
@@ -1317,6 +1646,23 @@ function scheduleRenderPreview() {
 // ----------------------------------------------------------------- console
 
 el.consoleInput.addEventListener('keydown', (e) => {
+  // Histórico de comandos (RF-CON-13).
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    const history = state.consoleHistory;
+    if (history.length === 0) return;
+    e.preventDefault();
+    if (e.key === 'ArrowUp') {
+      if (state.consoleHistoryIndex < history.length - 1)
+        state.consoleHistoryIndex += 1;
+    } else {
+      if (state.consoleHistoryIndex > -1) state.consoleHistoryIndex -= 1;
+    }
+    el.consoleInput.value =
+      state.consoleHistoryIndex >= 0
+        ? history[history.length - 1 - state.consoleHistoryIndex]
+        : '';
+    return;
+  }
   if (e.key !== 'Enter') return;
   const cmd = el.consoleInput.value.trim();
   if (!cmd) return;
@@ -1325,6 +1671,9 @@ el.consoleInput.addEventListener('keydown', (e) => {
     return;
   }
   window.grbl.writeLine(cmd);
+  state.consoleHistory.push(cmd);
+  if (state.consoleHistory.length > 100) state.consoleHistory.shift();
+  state.consoleHistoryIndex = -1;
   el.consoleInput.value = '';
 });
 
@@ -1410,6 +1759,12 @@ async function loadPrefs() {
       el.baudList.value = baud;
     }
   }
+
+  // Transporte e credenciais WiFi (RF-CON-7).
+  el.transportKind.value = state.prefs.transport === 'tcp' ? 'tcp' : 'serial';
+  if (state.prefs.host) el.tcpHost.value = state.prefs.host;
+  if (state.prefs.tcpPort) el.tcpPort.value = String(state.prefs.tcpPort);
+  applyTransportVisibility();
 }
 
 /** Seleciona a última porta usada, quando ela ainda está disponível. */
@@ -1421,12 +1776,16 @@ function applyPortPrefs() {
   }
 }
 
-/** Reconecta à última porta no boot, salvo se o usuário desligou (RF-CON-3). */
+/** Reconecta ao último transporte no boot, salvo se desligado (RF-CON-3). */
 function maybeAutoConnect() {
   if (state.prefs.autoConnect === false) return;
+  if (state.prefs.transport === 'tcp') {
+    tryConnect(connectionOptions());
+    return;
+  }
   const path = state.prefs.port;
   if (!path || el.portList.value !== path) return;
-  tryConnect(path, Number(el.baudList.value));
+  tryConnect(connectionOptions());
 }
 
 // -------------------------------------------- configurações da máquina ($$)
@@ -1835,7 +2194,13 @@ window.grbl.onConnection((conn) => setConnection(conn));
 
 window.grbl.onJob((job) => {
   setJobState(job.state);
-  if (job.state === 'finished') appendLine('Job concluído.', 'ok');
+  if (job.state === 'finished') {
+    appendLine('Job concluído.', 'ok');
+    // Volta o laser para a origem XY (caso precise repetir a gravação).
+    if (state.connected) window.grbl.gotoZero();
+    // Reabre o modal de posicionamento para repetir se necessário.
+    openFrameModal();
+  }
   if (job.state === 'aborted' && job.error)
     appendLine(`Job abortado: ${job.error}`, 'error');
 });
@@ -1862,11 +2227,80 @@ window.grbl.onError((err) => {
   console.warn('GRBL:', err.message);
 });
 
+// -------------------------------------------------------------------- frame modal
+
+if (el.frameClose) el.frameClose.addEventListener('click', closeFrameModal);
+if (el.frameCancel) el.frameCancel.addEventListener('click', closeFrameModal);
+if (el.frameOverlay)
+  el.frameOverlay.addEventListener('click', (e) => {
+    if (e.target === el.frameOverlay) closeFrameModal();
+  });
+if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
+if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
+if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));
+if (el.frameYm) el.frameYm.addEventListener('click', () => frameJog('y', -1));
+if (el.frameHome)
+  el.frameHome.addEventListener('click', () => window.grbl.home());
+if (el.frameOrigin)
+  el.frameOrigin.addEventListener('click', () => window.grbl.gotoZero());
+if (el.frameSetOrigin)
+  el.frameSetOrigin.addEventListener('click', () =>
+    window.grbl.setOrigin(0, 0, 0),
+  );
+if (el.frameOutline)
+  el.frameOutline.addEventListener('click', drawFrameOutline);
+if (el.framePassesMinus && el.framePasses) {
+  el.framePassesMinus.addEventListener('click', () => {
+    const v = Math.max(1, (Number(el.framePasses.value) || 1) - 1);
+    el.framePasses.value = String(v);
+  });
+}
+if (el.framePassesPlus && el.framePasses) {
+  el.framePassesPlus.addEventListener('click', () => {
+    const v = Math.min(99, (Number(el.framePasses.value) || 1) + 1);
+    el.framePasses.value = String(v);
+  });
+}
+
+if (el.frameSpeed && el.frameSpeedValue) {
+  const updateSpeedLabel = () => {
+    el.frameSpeedValue.textContent = `${el.frameSpeed.value} mm/min`;
+  };
+  el.frameSpeed.addEventListener('input', updateSpeedLabel);
+  updateSpeedLabel();
+}
+
+if (el.framePower && el.framePowerValue) {
+  const updatePowerLabel = () => {
+    el.framePowerValue.textContent = `${el.framePower.value} %`;
+  };
+  el.framePower.addEventListener('input', updatePowerLabel);
+  updatePowerLabel();
+}
+if (el.frameStart)
+  el.frameStart.addEventListener('click', () => {
+    if (el.framePower && el.imgSmax) {
+      const pct = Math.max(0, Math.min(100, Number(el.framePower.value) || 0));
+      el.imgSmax.value = String(Math.round(pct * 10));
+    }
+    if (el.frameSpeed && el.imgSpeed) {
+      el.imgSpeed.value = String(el.frameSpeed.value);
+    }
+    if (el.framePasses && el.imgPasses) {
+      el.imgPasses.value = String(el.framePasses.value);
+    }
+    if (el.frameStatus)
+      el.frameStatus.textContent = 'Gerando G-code com os parâmetros do modal…';
+    autoStartAfterGenerate = true;
+    generateGcode(true);
+  });
+
 // -------------------------------------------------------------------- init
 
 async function init() {
   // Preferências (tema/unidade/porta/baud) — RF-CFG-5, RF-CON-3.
   await loadPrefs();
+  updateWorkflow();
 
   // Macros (RF-MAC-1): preferências ou conjunto padrão.
   state.macros =

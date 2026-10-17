@@ -69,6 +69,7 @@ describe('parseStatusReport', () => {
 describe('classifyLine', () => {
   it('classifica ok, error, alarm, message, setting, welcome', () => {
     expect(classifyLine('ok').kind).toBe('ok');
+    expect(classifyLine('@ok').kind).toBe('ok');
     expect(classifyLine('ok\r')).toEqual({ kind: 'ok', text: 'ok' });
 
     const err = classifyLine('error:9');

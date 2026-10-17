@@ -122,9 +122,20 @@ export interface JogCommand {
   useDollarJog?: boolean;
 }
 
+/** Tipo de transporte da conexão. */
+export type TransportKind = 'serial' | 'tcp';
+
 export interface ConnectOptions {
-  path: string;
-  baudRate: number;
+  /** Tipo de transporte (padrão: `serial`). */
+  kind?: TransportKind;
+  /** Serial: caminho da porta (ex.: `/dev/ttyUSB0`). */
+  path?: string;
+  /** Serial: baud rate. */
+  baudRate?: number;
+  /** WiFi/ESP8266: host (ex.: `192.168.4.1`). */
+  host?: string;
+  /** WiFi/ESP8266: porta TCP (ex.: `23`). */
+  tcpPort?: number;
 }
 
 /** Porta serial exposta à UI. */
@@ -201,4 +212,10 @@ export interface Prefs {
   autoConnect?: boolean;
   /** Macro/botões customizados (RF-MAC-1). */
   macros?: Macro[];
+  /** Transporte escolhido (RF-CON-7). */
+  transport?: TransportKind;
+  /** WiFi: host padrão (RF-CON-7). */
+  host?: string;
+  /** WiFi: porta TCP padrão (RF-CON-7). */
+  tcpPort?: number;
 }

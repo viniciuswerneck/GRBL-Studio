@@ -91,16 +91,18 @@ describe('computeScanGeometry', () => {
 
     // Início exatamente na borda (centro - metade do ponto).
     expect(geom.scanStart - geom.halfDot).toBeCloseTo(0, 9);
-    expect(geom.rowStart - geom.halfDot).toBeCloseTo(0, 9);
+    // Linha 0 fica no topo: borda superior = rowStart + halfDot.
+    expect(geom.rowStart + geom.halfDot).toBeCloseTo(20, 9);
 
     // Fim (último centro + metade do ponto) nunca passa da borda.
     const lastScan =
       geom.scanStart + (geom.cols - 1) * geom.pitch + geom.halfDot;
-    const lastRow = geom.rowStart + (geom.rows - 1) * geom.pitch + geom.halfDot;
+    const lastRow = geom.rowStart + (geom.rows - 1) * geom.rowStep;
     expect(lastScan).toBeLessThanOrEqual(10 + 1e-9);
-    expect(lastRow).toBeLessThanOrEqual(20 + 1e-9);
+    expect(lastRow - geom.halfDot).toBeGreaterThanOrEqual(-1e-9);
+    expect(lastRow - geom.halfDot).toBeLessThanOrEqual(0.5 + 1e-9);
     expect(lastScan).toBeGreaterThan(9.5);
-    expect(lastRow).toBeGreaterThan(19.5);
+    expect(lastRow + geom.halfDot).toBeLessThan(1.0);
   });
 
   it('ponto 0 usa a área inteira e direção v troca os eixos', () => {

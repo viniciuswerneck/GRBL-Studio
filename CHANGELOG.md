@@ -6,6 +6,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-16
+
+### Added — Empacotamento Linux (RF-APP-4) e permissões de porta (RF-APP-5)
+- `electron-builder.yml` + scripts `package`/`package:linux`: gera
+  `release/GRBL Studio-0.1.0.AppImage` e `release/grbl-studio_0.1.0_amd64.deb`,
+  com rebuild automático de `serialport` (`@electron/rebuild`).
+- `docs/DEVELOPMENT.md`: instruções de build/release e de permissão de porta
+  serial no Linux (grupo `dialout`, udev) para RF-APP-5.
+- `release/` incluído no `.gitignore`.
+
+### Added — RF-CON-7: conexão WiFi (TCP)
+- `services/TcpTransport.ts`: transporte sobre `node:net` para ESP8266/ESP32 com
+  firmware serial-over-TCP (Telnet 23), com a mesma interface do
+  `SerialTransport` (`data`/`open`/`close`/`error`, `writeLine` com `\n` e
+  `writeRealtime` sem `\n`).
+- `ConnectOptions` ganhou `kind: 'serial' | 'tcp'` + `host`/`tcpPort`;
+  `GrblClient` escolhe o transporte por `defaultTransportFactory`.
+- UI: seletor de transporte no card **Conexão** (Serial/WiFi) com campos de
+  host/porta; a escolha e as credenciais persistem em `prefs.json`.
+- Testes: `tests/tcp-transport.test.ts` (servidor TCP local).
+
 ### Added — RF-MAC-1/2: macros e botões customizados
 - `shared/macros.ts` (puro, empacotado como `public/macros.js`): modelo de
   macro (`id`, `label`, `gcode`, `group`), conjunto padrão, `macroLines`,

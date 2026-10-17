@@ -209,7 +209,7 @@ describe('imageToGcode (vector)', () => {
       expect(v).toBeGreaterThanOrEqual(2 - 1e-9);
       expect(v).toBeLessThanOrEqual(6 + 1e-9);
     }
-    expect(gcode).toContain('G0 X1 Y2'); // canto exato do retângulo
+    expect(gcode).toContain('G0 X1 Y6'); // canto exato do retângulo (topo apos flip)
     expect(gcode).toContain('G1 X9 Y6');
   });
 
