@@ -1,7 +1,7 @@
 # GRBL Studio — Plano de Ação
 
 - **Versão:** 1.0
-- **Última atualização:** 2026-10-16
+- **Última atualização:** 2026-10-17
 - **Documento relacionado:** [PRODUCT_SPEC.md](PRODUCT_SPEC.md) (o *quê*) · [ARCHITECTURE.md](ARCHITECTURE.md) (o *como*)
 
 Este é o plano canônico de execução do projeto. Ele parte de uma **auditoria do
@@ -23,6 +23,48 @@ não recebe respostas da serial e comandos de tempo real estão sendo enviados c
 de comunicação/protocolo** (Fase 1). Só então construir status, overrides,
 preview, configuração e importação de imagens. O produto de referência é o
 LaserGRBL; a meta é paridade nos recursos essenciais + distribuição nativa Linux.
+
+---
+
+## 1.1 Status de execução (2026-10-17)
+
+Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
+
+| Fase | Status | Pendências |
+| :--- | :--- | :--- |
+| 0 — Fundação e docs | ✅ | Aprovação formal do `PRODUCT_SPEC`/ADRs e decisão da ADR-11 (você) |
+| 1 — Core de comunicação | ✅ | Validar em hardware real |
+| 2 — Status, jog, execução | ✅ | RF-STA-5 (bloquear em alarme), RF-JOG-2/6, tempo restante do job (RF-GC-5), atalhos globais |
+| 3 — Configuração/preferências | ✅ | — |
+| 4 — Overrides e preview | ✅ | — |
+| 5 — Imagens e G-code | ✅ | — |
+| 6 — Macros/retomada/WiFi | ✅ | — |
+| 7 — Empacotamento/i18n/polish | 🟡 | RNF-9 (log de sessão), a11y/polish, checklist visual `DESIGN.md` §8, automação de release no GitHub, Flatpak (Could), guia de primeiros passos |
+| 8 — Qualidade contínua | 🟡 | Cobertura de protocolo > 80 %, E2E Playwright, testes em hardware por release |
+
+**Requisitos ainda não-✅** (detalhe no `PRODUCT_SPEC.md` §6):
+
+| ID | Status | O que falta |
+| :--- | :--- | :--- |
+| RF-CON-5 | ⬜ | Ler `$I`/`$G` automaticamente ao conectar |
+| RF-CON-14 | 🟡 | Botões de pausar/limpar o log (o auto-scroll já existe) |
+| RF-CON-15 | ⬜ | Exportar/salvar o log do console |
+| RF-JOG-2 | ⬜ | Jog contínuo ao manter pressionado |
+| RF-JOG-6 | ⬜ | Atalhos de teclado para jog |
+| RF-GC-2 | 🟡 | Tempo estimado no rótulo do arquivo (nome/linhas já aparecem) |
+| RF-GC-5 | 🟡 | Tempo restante do job (a barra de progresso já existe) |
+| RF-STA-2 | 🟡 | Distância "para ir" (posição/DRO já existem) |
+| RF-STA-4 | 🟡 | "Solução recomendada" por alarme (as causas já são descritas) |
+| RF-STA-5 | ⬜ | Desabilitar comandos inválidos no estado de alarme |
+| RF-STA-7 | 🟡 | Histórico persistente de alarmes (há log em memória) |
+| RF-CFG-4 | ⬜ | Perfis de configuração (salvar/restaurar `$$`) |
+| RF-CFG-5 | 🟡 | "Pasta de arquivos" nas preferências |
+| RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
+
+> **Nota (17/10/2026):** as Fases 0–6 estão **implementadas no código**. Os
+> checkboxes da Fase 2 e vários status do `PRODUCT_SPEC.md` estavam defasados e
+> foram **reconciliados com o código** nesta data — a partir de agora, marque-os
+> apenas quando o requisito for de fato atendido.
 
 ---
 
@@ -139,7 +181,7 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 0 — Fundação e documentação (1 semana)
 
-**Status:** 🟢 concluída (a revisão/aprovação do `PRODUCT_SPEC` e a decisão da ADR-11 seguem com você)
+**Status:** ✅ concluída (pendente: sua revisão/aprovação do `PRODUCT_SPEC`/ADRs e a decisão da ADR-11)
 
 **Objetivo:** fixar o contrato do produto e limpar o terreno.
 
@@ -199,6 +241,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 2 — Status, jog e controle de execução (2 semanas)
 
+**Status:** ✅ concluída (pendências menores: RF-STA-5, RF-JOG-2/6, tempo restante do job e atalhos globais)
+
 **Objetivo:** tornar a máquina "visível" e controlável em tempo real — com a
 **aparência Windows 11** definida em `DESIGN.md` (nav rail, cards, DRO).
 
@@ -210,12 +254,14 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 - Play/Pause/Resume/Stop com estados corretos e botões habilitados/desabilitados.
 
 **Tarefas**
-- [ ] RF-STA-1…3: status report parser → UI (badge de estado + DRO de posição).
-- [ ] RF-STA-5/6: desabilitar comandos inválidos em alarme; botões Reset/Unlock/Home.
-- [ ] RF-STA-4: tabela de alarmes com causa + solução (baseada no manual da COMGO).
-- [ ] RF-JOG-1…7: jog com passo/velocidade/atalhos e `$J=`.
-- [ ] RF-GC-4/8: Pause (`!`), Resume (`~`), Stop/Emergency, Soft Reset.
-- [ ] RF-GC-5: barra de progresso e tempo restante.
+- [x] RF-STA-1…3: status report parser → UI (badge de estado + DRO de posição).
+- [x] RF-STA-6: botões Reset/Unlock/Home.
+- [ ] RF-STA-5: desabilitar comandos inválidos no estado de alarme.
+- [x] RF-STA-4: descrições de alarme (causa). *(falta a "solução recomendada" por código)*
+- [x] RF-JOG-1/3/4/5/7: jog com passo/velocidade, `$J=`, set origin/go to zero e homing.
+- [ ] RF-JOG-2/6: jog contínuo ao manter pressionado e atalhos de teclado.
+- [x] RF-GC-4/8: Pause (`!`), Resume (`~`), Stop/Emergency, Soft Reset.
+- [x] RF-GC-5: barra de progresso (linha atual/total). *(tempo restante pendente)*
 - [ ] Atalhos de teclado globais.
 
 **Critérios de aceite**
@@ -227,6 +273,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 ---
 
 ### Fase 3 — Configuração do GRBL e preferências (1,5 semana)
+
+**Status:** ✅ concluída
 
 **Objetivo:** permitir ajustar a máquina sem decorar comandos.
 
@@ -259,6 +307,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 4 — Overrides e preview 2D (2 semanas)
 
+**Status:** ✅ concluída
+
 **Objetivo:** dar controle fino e confiança visual ao operador.
 
 **Entregáveis**
@@ -281,6 +331,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 ---
 
 ### Fase 5 — Importação de imagens e geração de G-code (3 semanas)
+
+**Status:** ✅ concluída
 
 **Objetivo:** entregar o diferencial de "imagem → gravação" do LaserGRBL.
 
@@ -325,6 +377,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 
 ### Fase 6 — Macros, retomada de job e WiFi (1,5 semana)
 
+**Status:** ✅ concluída
+
 **Objetivo:** produtividade e recursos avançados.
 
 **Entregáveis**
@@ -343,6 +397,8 @@ aceite**. Estimativas em *dev-semanas* (1 dev; ajustar conforme equipe).
 ---
 
 ### Fase 7 — Empacotamento, i18n e polimento (2 semanas)
+
+**Status:** 🟡 parcial (i18n, temas, rodapé/Sobre, AppImage/deb e README ×3 ✅; polish e automação de release pendentes)
 
 **Objetivo:** transformar o app em produto instalável e **visualmente
 no nível do Windows 11**.
@@ -376,6 +432,8 @@ no nível do Windows 11**.
 ---
 
 ### Fase 8 — Qualidade contínua (transversal)
+
+**Status:** 🟡 parcial (CI ✅; cobertura/E2E/hardware pendentes)
 
 **Objetivo:** garantir confiabilidade ao longo de todas as fases.
 

@@ -1,13 +1,16 @@
 # GRBL Studio - Roadmap
 
 > **Nota:** o plano canônico de execução agora é o
-> [PLANO_DE_ACAO.md](PLANO_DE_ACAO.md); os requisitos estão em
+> [PLANO_DE_ACAO.md](PLANO_DE_ACAO.md) — veja a **§1.1 Status de execução** para
+> o estado atual e o que falta; os requisitos estão em
 > [PRODUCT_SPEC.md](PRODUCT_SPEC.md). Este arquivo é mantido como resumo
 > histórico por versão.
 
-## Estado da implementação (2026-10-16)
+## Estado da implementação (2026-10-17)
 
-**Fase 0 e Fase 1 concluídas** (ver `CHANGELOG.md`):
+**Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
+detalhe e pendências em `PLANO_DE_ACAO.md` §1.1 e no `PRODUCT_SPEC.md` §6
+(ver `CHANGELOG.md`):
 
 - [x] Core de comunicação confiável: `SerialTransport` + `GrblClient` com fila
       *send-response* (só envia após `ok`).
@@ -37,43 +40,46 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [x] Botão parar
 
 ## v0.2 - Melhoria UX
-- [ ] Persistir última porta conectada
-- [ ] Seleção de baud rate (9600/115200/250000)
-- [ ] Histórico de comandos no console
-- [ ] Status GRBL em tempo real (idle/run/hold/alarm)
-- [ ] Indicador de posição atual (X/Y/Z)
-- [ ] Velocidade/feed e spindle
-- [ ] Melhorar transmissão G-Code (com confirmação `ok`)
-- [ ] Scroll automático no console
+- [x] Persistir última porta conectada
+- [x] Seleção de baud rate (9600/115200/250000)
+- [x] Histórico de comandos no console
+- [x] Status GRBL em tempo real (idle/run/hold/alarm)
+- [x] Indicador de posição atual (X/Y/Z)
+- [x] Velocidade/feed e spindle
+- [x] Melhorar transmissão G-Code (com confirmação `ok`)
+- [x] Scroll automático no console *(toggle pausar/limpar pendente — RF-CON-14)*
 
 ## v0.3 - Preview & JOG Avançado
-- [ ] Preview 2D minimalista (renderizar caminho G-Code)
-- [ ] Zero/Set Origin (G92)
-- [ ] Unlock/Soft Reset ($X, Ctrl+X)
-- [ ] Homing ($H) com feedback
-- [ ] Distâncias JOG customizáveis (0.01/0.1/1/5/10/50)
-- [ ] Teclas de atalho (setas, home, page up/down)
-- [ ] Mover para posição clicada (se preview)
+- [x] Preview 2D minimalista (renderizar caminho G-Code)
+- [x] Zero/Set Origin (G92)
+- [x] Unlock/Soft Reset ($X, Ctrl+X)
+- [x] Homing ($H) com feedback
+- [x] Distâncias JOG customizáveis (0.01/0.1/1/5/10/50)
+- [ ] Teclas de atalho (setas, home, page up/down) *(RF-JOG-6, pendente)*
+- [ ] Mover para posição clicada (se preview) *(pendente)*
 
 ## v0.4 - Configurações
-- [ ] Janela de configurações
-- [ ] Grbl Settings ($$) viewer/editor
-- [ ] Preferências salvas (localStorage/electron-store)
+- [x] Janela de configurações
+- [x] Grbl Settings ($$) viewer/editor
+- [x] Preferências salvas (`PrefsStore` → `prefs.json`)
 - [x] Temas claro/escuro (hoje: 11 temas — ver `DESIGN.md` §2.3)
-- [ ] Unidades (mm/inch)
-- [ ] Auto scroll console toggle
+- [x] Unidades (mm/inch)
+- [ ] Auto scroll console toggle *(pausar/limpar — RF-CON-14, pendente)*
 
 ## v0.5 - Recursos Avançados
-- [ ] Laser mode / Spindle
-- [ ] Probe (sonda)
-- [ ] Job resume
-- [ ] Macros personalizáveis
-- [ ] Camera overlay (futuro)
-- [ ] Gerador de formas simples (retângulo/círculo/texto) - opcional
+- [x] Laser mode / Spindle (M3/M4)
+- [ ] Probe (sonda) *(fora de escopo)*
+- [x] Job resume
+- [x] Macros personalizáveis
+- [ ] Camera overlay *(fora de escopo / futuro)*
+- [ ] Gerador de formas simples (retângulo/círculo/texto) *(opcional)*
 
 ## Próximos passos imediatos
-1. Implementar leitura de status GRBL via `?` (polling)
-2. Mostrar posição X/Y/Z atual
-3. Implementar queue handling (grbl serial buffer)
-4. Adicionar leitura de `ok`/`error` para transmissão confiável
-5. Persistir configurações
+
+Ver `PLANO_DE_ACAO.md` §1.1. Resumo:
+1. Fechar a **Fase 7**: RNF-9 (log persistente de sessão), revisão de
+   acessibilidade/polish e checklist visual (`DESIGN.md` §8).
+2. Automação de release no GitHub (tag + artefatos); Flatpak (Could).
+3. **Fase 8**: cobertura do protocolo > 80 %, E2E Playwright, testes em hardware.
+4. Pendências pontuais: RF-STA-5 (bloquear em alarme), RF-JOG-2/6, tempo
+   estimado/restante (RF-GC-2/5), RF-CON-14/15.

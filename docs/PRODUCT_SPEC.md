@@ -2,7 +2,7 @@
 
 - **Versão do documento:** 1.0
 - **Status:** rascunho para revisão
-- **Última atualização:** 2026-10-16
+- **Última atualização:** 2026-10-17
 - **Fontes:** documentação oficial do LaserGRBL (Usage), manual da COMGO Z1 (transcrito em `docs/comgo_z1_lasergrbl_user_manual.md`), especificação do protocolo GRBL v1.1.
 
 ---
@@ -96,14 +96,15 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
 
 ## 6. Requisitos funcionais
 
-Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
+Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
+(✅ implementado · 🟡 parcial · ⬜ pendente).
 
 ### M1 — Conexão e transporte
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-CON-1 | Listar portas seriais disponíveis e atualizar a lista sob demanda. | Must | 🟡 |
-| RF-CON-2 | Conectar/desconectar com baud rate selecionável (9600/115200/250000…). | Must | 🟡 |
+| RF-CON-1 | Listar portas seriais disponíveis e atualizar a lista sob demanda. | Must | ✅ |
+| RF-CON-2 | Conectar/desconectar com baud rate selecionável (9600/115200/250000…). | Must | ✅ |
 | RF-CON-3 | Persistir última porta e baud usados (e reconectar no boot). | Should | ✅ |
 | RF-CON-4 | Detectar desconexão inesperada e avisar o usuário. | Must | ✅ |
 | RF-CON-5 | Ao conectar, ler `$I`/`$G` e exibir firmware/estado inicial. | Should | ⬜ |
@@ -116,48 +117,48 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | :--- | :--- | :--- | :--- |
 | RF-CON-10 | Enviar qualquer linha de G-code/comando GRBL pelo console. | Must | ✅ |
 | RF-CON-11 | Exibir retornos da máquina (`ok`, `error:`, `[MSG:]`, `ALARM:`). | Must | ✅ |
-| RF-CON-12 | Diferenciar visualmente comandos enviados × respostas × erros. | Should | ⬜ |
+| RF-CON-12 | Diferenciar visualmente comandos enviados × respostas × erros. | Should | ✅ |
 | RF-CON-13 | Histórico de comandos (setas ↑/↓). | Should | ✅ |
-| RF-CON-14 | Auto-scroll com opção de pausar/limpar log. | Should | ⬜ |
+| RF-CON-14 | Auto-scroll com opção de pausar/limpar log. | Should | 🟡 |
 | RF-CON-15 | Salvar/exportar log do console. | Could | ⬜ |
 
 ### M3 — Jog e movimento manual
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-JOG-1 | Jog em X+, X−, Y+, Y− (e Z quando aplicável) com passo configurável. | Must | 🟡 |
+| RF-JOG-1 | Jog em X+, X−, Y+, Y− (e Z quando aplicável) com passo configurável. | Must | ✅ |
 | RF-JOG-2 | Jog contínuo ao manter pressionado, com parada ao soltar. | Should | ⬜ |
-| RF-JOG-3 | Controle de velocidade do jog. | Should | ⬜ |
-| RF-JOG-4 | Homing (`$H`) com feedback de progresso/erro. | Must | 🟡 |
-| RF-JOG-5 | Definir origem atual (`G92`/zero) e ir para zero (`G90 G0 X0 Y0`). | Must | ⬜ |
+| RF-JOG-3 | Controle de velocidade do jog. | Should | ✅ |
+| RF-JOG-4 | Homing (`$H`) com feedback de progresso/erro. | Must | ✅ |
+| RF-JOG-5 | Definir origem atual (`G92`/zero) e ir para zero (`G90 G0 X0 Y0`). | Must | ✅ |
 | RF-JOG-6 | Atalhos de teclado para jog (setas, Home, PageUp/Down). | Should | ⬜ |
-| RF-JOG-7 | Jog diagonal usando modo jog dedicado do GRBL (`$J=`). | Should | ⬜ |
+| RF-JOG-7 | Jog diagonal usando modo jog dedicado do GRBL (`$J=`). | Should | ✅ |
 
 ### M4 — Carregamento e execução de G-code
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-GC-1 | Abrir arquivos `.gcode/.nc/.tap/.txt` e imagens raster. | Must | 🟡 |
-| RF-GC-2 | Exibir nome, nº de linhas, tamanho e tempo estimado. | Should | ⬜ |
-| RF-GC-3 | **Streaming confiável** com confirmação `ok`/`error` e controle de buffer. | Must | ⬜ |
-| RF-GC-4 | Iniciar (Play), Pausar (Feed Hold `!`), Retomar (`~`) e Parar (Reset). | Must | 🟡 |
-| RF-GC-5 | Barra de progresso (linha atual / total) e tempo restante. | Must | ⬜ |
+| RF-GC-1 | Abrir arquivos `.gcode/.nc/.tap/.txt` e imagens raster. | Must | ✅ |
+| RF-GC-2 | Exibir nome, nº de linhas, tamanho e tempo estimado. | Should | 🟡 |
+| RF-GC-3 | **Streaming confiável** com confirmação `ok`/`error` e controle de buffer. | Must | ✅ |
+| RF-GC-4 | Iniciar (Play), Pausar (Feed Hold `!`), Retomar (`~`) e Parar (Reset). | Must | ✅ |
+| RF-GC-5 | Barra de progresso (linha atual / total) e tempo restante. | Must | 🟡 |
 | RF-GC-6 | Múltiplos passes (repetir programa N vezes). | Should | ✅ |
 | RF-GC-7 | Retomada de job interrompido (do início, de linha específica ou N linhas antes). | Should | ✅ |
-| RF-GC-8 | Parada de emergência que interrompe o envio e para a máquina. | Must | 🟡 |
-| RF-GC-9 | Validação/aviso de linhas perigosas e limites da área de trabalho. | Could | ⬜ |
+| RF-GC-8 | Parada de emergência que interrompe o envio e para a máquina. | Must | ✅ |
+| RF-GC-9 | Validação/aviso de linhas perigosas e limites da área de trabalho. | Could | ✅ |
 
 ### M5 — Status, alarmes e segurança
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-STA-1 | Polling de status `?` (5–10 Hz) e exibição do estado (Idle/Run/Hold/Alarm/Home/Jog/Door…). | Must | ⬜ |
-| RF-STA-2 | Exibir posição atual (MPos/WPos) e distância para ir. | Must | ⬜ |
-| RF-STA-3 | Exibir feed real e rotação/spindle (S) atuais. | Should | ⬜ |
-| RF-STA-4 | Traduzir alarmes (`ALARM:Homing fail`, `Soft limit`, `Hard limit`…) com causa e solução. | Should | ⬜ |
+| RF-STA-1 | Polling de status `?` (5–10 Hz) e exibição do estado (Idle/Run/Hold/Alarm/Home/Jog/Door…). | Must | ✅ |
+| RF-STA-2 | Exibir posição atual (MPos/WPos) e distância para ir. | Must | 🟡 |
+| RF-STA-3 | Exibir feed real e rotação/spindle (S) atuais. | Should | ✅ |
+| RF-STA-4 | Traduzir alarmes (`ALARM:Homing fail`, `Soft limit`, `Hard limit`…) com causa e solução. | Should | 🟡 |
 | RF-STA-5 | Desabilitar comandos inválidos no estado de alarme. | Must | ⬜ |
-| RF-STA-6 | Botões Unlock (`$X`), Reset (soft reset) e Homing (`$H`). | Must | 🟡 |
-| RF-STA-7 | Registrar histórico de eventos/alarmes da sessão. | Could | ⬜ |
+| RF-STA-6 | Botões Unlock (`$X`), Reset (soft reset) e Homing (`$H`). | Must | ✅ |
+| RF-STA-7 | Registrar histórico de eventos/alarmes da sessão. | Could | 🟡 |
 
 ### M6 — Overrides
 
@@ -175,7 +176,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | RF-PRV-1 | Renderizar o caminho do G-code carregado em 2D. | Should | ✅ |
 | RF-PRV-2 | Zoom e pan (mouse + barra de rolagem). | Should | ✅ |
 | RF-PRV-3 | Indicador da posição atual da cabeça durante a execução. | Should | ✅ |
-| RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | 🟡 |
+| RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | ✅ |
 | RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`). | Could | ✅ |
 
 ### M8 — Configuração do GRBL e preferências
@@ -217,8 +218,8 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual.
 | RF-APP-1 | **11 temas**: 5 claros, 4 escuros e 2 de alto contraste; troca pelo modal "Aparência e idioma" e pelo menu Exibir. | Should | ✅ |
 | RF-APP-2 | **i18n pt-BR, en e es** com detecção do idioma do SO na 1ª execução; troca em tempo de execução (UI + menu nativo). | Should | ✅ |
 | RF-APP-3 | Unidades mm/polegadas na UI e nos comandos. | Should | ✅ |
-| RF-APP-4 | Empacotar `.AppImage`, `.deb` e `Flatpak`. | Must | ⬜ |
-| RF-APP-5 | Instruções de permissão de porta serial no Linux (grupo `dialout`). | Must | ⬜ |
+| RF-APP-4 | Empacotar `.AppImage`, `.deb` e `Flatpak`. | Must | 🟡 |
+| RF-APP-5 | Instruções de permissão de porta serial no Linux (grupo `dialout`). | Must | ✅ |
 | RF-APP-6 | **Barra inferior** com nome, versão (`app.getVersion()`) e crédito "Desenvolvido por WerneckLab" com link para `lab.werneck.dev.br`. | Should | ✅ |
 | RF-APP-7 | **Menu Ajuda → Sobre**: modal com nome, versão, licença (MIT), autor e links (WerneckLab/GitHub), abertos no navegador via `shell.openExternal` com whitelist. | Should | ✅ |
 
