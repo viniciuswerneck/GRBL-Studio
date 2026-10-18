@@ -228,6 +228,23 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-APP-6 | **Barra inferior** com nome, versão (`app.getVersion()`) e crédito "Desenvolvido por WerneckLab" com link para `lab.werneck.dev.br`. | Should | ✅ |
 | RF-APP-7 | **Menu Ajuda → Sobre**: modal com nome, versão, licença (MIT), autor e links (WerneckLab/GitHub), abertos no navegador via `shell.openExternal` com whitelist. | Should | ✅ |
 
+### M12 — Geradores de símbolos (QR Code e código de barras)
+
+> Disponíveis em **Ferramentas**; o G-code gerado entra no pipeline normal
+> (preview/Play/Salvar). Plano completo: [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+
+| ID | Requisito | Prioridade | Status |
+| :--- | :--- | :--- | :--- |
+| RF-SYM-1 | Gerar **QR Code** a partir de texto/URL, com nível de correção (L/M/Q/H) e seleção automática de versão (1–40). | Must | ⬜ |
+| RF-SYM-2 | Gerar **código de barras 1D** (Code 128, EAN-13, EAN-8, UPC-A, Code 39) com dígito verificador e zonas de silêncio conforme a norma. | Must | ⬜ |
+| RF-SYM-3 | **Dimensionar em mm** (tamanho do módulo / X-dimension e altura das barras) e **posicionar** o símbolo na área de trabalho. | Must | ⬜ |
+| RF-SYM-4 | **Parâmetros de gravação** (velocidade, potência, passadas, modo M3/M4) e **pré-visualização** antes de gravar. | Should | ⬜ |
+| RF-SYM-5 | **Avisos de legibilidade**: módulo/X-dimension pequenos para o spot do laser, quiet zone reduzida e símbolo fora da área de trabalho — com causa e ação. | Should | ⬜ |
+| RF-SYM-6 | **Texto legível (HRI)** sob o código de barras, opcional. | Could | ⬜ |
+| RF-SYM-7 | Simbologias adicionais: 1D (ITF-14, Codabar, Code 93) e 2D (Data Matrix, PDF417, Aztec). | Could | ⬜ |
+| RF-SYM-8 | **Salvar `.gcode`** ou enviar direto para a área de execução (preview + Play), sem IPC novo. | Should | ⬜ |
+| RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ⬜ |
+
 ---
 
 ## 7. Requisitos não-funcionais
@@ -309,6 +326,7 @@ Campos: `MPos` (posição máquina), `WPos` (posição de trabalho), `FS` (feed/
 | Raster import (grayscale, line-to-line, dithering, vectorize, target options) | ✅ | Paridade |
 | Configuração (`$$`) | ✅ | Paridade |
 | Machine status e alarmes | ✅ | Paridade |
+| Geradores de **QR Code** / **código de barras** (RF-SYM-*) | ❌ (não possui) | Beyond (2 ferramentas dedicadas, integradas ao preview/gravação) |
 | Distribuição | Windows (Mono no Linux) | Nativa: AppImage/deb/Flatpak |
 
 ---
@@ -326,6 +344,9 @@ Campos: `MPos` (posição máquina), `WPos` (posição de trabalho), `FS` (feed/
 6. O app roda no Ubuntu 24.04 e Fedora 40, em X11 e Wayland, a partir de um
    `.AppImage` sem instalação.
 7. Um job interrompido pode ser retomado a partir de uma linha escolhida.
+8. O usuário gera um **QR Code** e um **código de barras (Code 128)** pelo menu
+   Ferramentas, vê o preview, grava na peça e ambos são lidos por um aplicativo
+   leitor de celular (RF-SYM-1/2/5).
 
 ---
 

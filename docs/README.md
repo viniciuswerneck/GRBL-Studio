@@ -15,6 +15,8 @@ rodam firmware GRBL.
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Setup de ambiente, build, execução, testes e convenções de código. |
 | [FEATURES_COMPARISON.md](FEATURES_COMPARISON.md) | Matriz de paridade de funcionalidades com o LaserGRBL. |
 | [ROADMAP.md](ROADMAP.md) | Roadmap histórico por versão (resumo de alto nível). |
+| [PLANO_PREMIUM.md](PLANO_PREMIUM.md) | Plano para superar LaserGRBL/LightBurn (fases P1–P4, aparência premium). |
+| [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) | **Planejamento** das ferramentas de geração de **QR Code** e **código de barras** (fases S1–S3, RF-SYM-*). |
 | [../CHANGELOG.md](../CHANGELOG.md) | Registro de mudanças por versão. |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Como contribuir (setup, DoD, estilo, testes). |
 | [../LICENSE](../LICENSE) | Licença do projeto (MIT). |

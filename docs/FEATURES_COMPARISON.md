@@ -39,6 +39,18 @@
 | Perfis de material | Sim | Sim (COMGO Z1: 3W/5W/10W) | ✅ |
 | Grade de teste de material | Não | Sim | ✅ (superior) |
 
+## Ferramentas de geração (RF-SYM-*)
+| Feature | LaserGRBL | GRBL Studio | Status |
+|---|---|---|---|
+| Gerador de **QR Code** (ECC L/M/Q/H, dimensões em mm, quiet zone) | Não | Planejado (fase S1) | ⬜ |
+| Gerador de **código de barras** (Code 128, EAN-13/8, UPC-A, Code 39) | Não | Planejado (fase S2) | ⬜ |
+| Texto legível sob o código (HRI) | Não | Planejado (fase S2) | ⬜ |
+| Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Planejado (fase S3) | ⬜ |
+
+> Comparação: o **LightBurn** tem `Tools → Create Bar Code` (motor **zint**,
+> ~50 simbologias); o **LaserGRBL** não tem nenhuma ferramenta de geração.
+> Plano do GRBL Studio: [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+
 ## Configuração / UX
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
@@ -58,3 +70,4 @@
 3. Simulação de job (P2.3).
 4. Ferramentas de desenho + camadas (P2.1/P2.2).
 5. Câmera + rotativa (P3.1/P3.2).
+6. Geradores de QR Code e código de barras (P2.7/P2.8 — `PLANO_QR_BARCODE.md`).

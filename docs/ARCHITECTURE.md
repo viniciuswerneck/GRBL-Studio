@@ -105,6 +105,19 @@ isolados por `contextIsolation`:
 | `shared/boolean.ts` | Clipagem booleana por **cobertura** (união/intersecção/exclusão/subtração), com furos por paridade e agrupamento de aninhados. | ✅ |
 | `shared/offset.ts` | Offset de contornos fechados (`miter`/`round`/`bevel`, passadas concêntricas) com guarda de colapso; offset de polilinha aberta e `strokePaths` (espessura centrada). | ✅ |
 
+### Símbolos: QR Code e código de barras (fases S1–S3) — **planejado**
+
+| Módulo | Responsabilidade | Status |
+| :--- | :--- | :--- |
+| `shared/symbol/qr.ts` | Encoder QR (ISO/IEC 18004: modos, RS GF(256), máscaras, formato/versão) → matriz binária + metadados. | ⬜ |
+| `shared/symbol/barcode/*` | Encoders 1D (Code 128, EAN-13/8, UPC-A, Code 39 → depois ITF-14/Codabar/Code 93) → barras + HRI + avisos. | ⬜ |
+| `shared/symbol/mask.ts` | Matriz/barras → segmentos de varredura (usa `zigzagHatch`); overscan/polaridade. | ⬜ |
+| `shared/symbol/gcode.ts` | Símbolo + parâmetros → G-code GRBL (M3/M4, `M5` antes de `G0`, 3 decimais, passes). | ⬜ |
+
+> Dois bundles esbuild (`public/qrcode.js` → `GRBL_QR`, `public/barcode.js` →
+> `GRBL_BARCODE`) e dois overlays no renderer, no mesmo padrão de
+> `materialTest`. Plano completo em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+
 ### Imagem → G-code (Fase 5)
 
 | Módulo | Responsabilidade | Status |

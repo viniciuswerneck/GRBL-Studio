@@ -47,6 +47,7 @@ prazo; usar **importação SVG** como ponte para design (Inkscape).
 | Simulação de job | Não | Playback visual + tempo | Médio |
 | Jobs multi-operação | Não | Camadas (gravar + cortar) | Médio |
 | Grade de teste de material | Não | Gerador 1-clique | Baixo |
+| Geradores de QR Code / código de barras | Não | 2 ferramentas (Ferramentas) | Alto |
 | Z-axis no jog | Não | Sim | Baixo |
 | Editor de G-code | Não | Syntax highlight | Baixo |
 | Auto-update | Não | electron-updater | Baixo |
@@ -88,6 +89,8 @@ Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
 | P2.4 | **Importação DXF** | M | Parser + conversão para paths. |
 | P2.5 | **Catálogo de máquinas** (10+ perfis) | S | Ortur, AtomStack, Sculpfun S9/S10, xTool, etc. |
 | P2.6 | **Jobs multi-operação** (engrave + cut) | M | Uma execução, múltiplas passadas/ops. |
+| P2.7 | **Gerador de QR Code** (Ferramentas) | M | Conteúdo → matriz (ISO/IEC 18004) → G-code; ECC, dimensões em mm, preview, salvar/gravar. Plano: `PLANO_QR_BARCODE.md` (fase S1). |
+| P2.8 | **Gerador de código de barras** (Ferramentas) | M | Code 128 / EAN-13 / EAN-8 / UPC-A / Code 39 com checksum e quiet zone; HRI opcional. Plano: `PLANO_QR_BARCODE.md` (fases S2/S3). |
 
 ### Fase P3 — "Pro features" (8–12 semanas) · paridade com LightBurn/Meerk40t
 

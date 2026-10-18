@@ -74,12 +74,28 @@ Criar uma alternativa moderna para LaserGRBL, focada em Linux. Interface moderna
 - [ ] Camera overlay *(fora de escopo / futuro)*
 - [ ] Gerador de formas simples (retângulo/círculo/texto) *(opcional)*
 
+## v0.6 - Ferramentas de geração (planejado)
+
+> Planejamento detalhado: [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) — fases
+> **S1–S3**; requisitos **RF-SYM-1…9** (`PRODUCT_SPEC.md` §6, módulo **M12**);
+> itens **P2.7/P2.8** do `PLANO_PREMIUM.md`. Nada implementado ainda.
+
+- [ ] **Ferramenta: QR Code** (menu Ferramentas) — conteúdo → matriz ISO/IEC 18004 → G-code; ECC L/M/Q/H, dimensões em mm, quiet zone, preview, gravar/salvar *(S1 — pendente)*
+- [ ] **Ferramenta: código de barras** (menu Ferramentas) — Code 128, EAN-13, EAN-8, UPC-A e Code 39 com dígito verificador e quiet zone *(S2 — pendente)*
+- [ ] Texto legível (HRI) sob o código de barras *(S2 — pendente)*
+- [ ] Avisos de legibilidade (módulo/X-dimension × spot do laser) e de área de trabalho *(S1 — pendente)*
+- [ ] Simbologias extras: ITF-14/Codabar/Code 93 e 2D (Data Matrix, PDF417, Aztec) *(S3 — opcional)*
+- [ ] Lote: lista → grade de símbolos com espaçamento *(S3 — opcional)*
+- [ ] Símbolo como objeto no editor "Desenhar" *(S3 — opcional)*
+
 ## Próximos passos imediatos
 
 Ver `PLANO_DE_ACAO.md` §1.1. Resumo:
 1. Fechar a **Fase 7**: revisão de acessibilidade/polish e checklist visual
    (`DESIGN.md` §8), automação de release no GitHub e Flatpak (Could).
 2. **Fase 8**: cobertura do protocolo > 80 %, E2E Playwright, testes em hardware.
+3. **v0.6**: ferramentas de **QR Code** (S1) e de **código de barras** (S2) —
+   ver [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
 > persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
