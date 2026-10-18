@@ -40,6 +40,7 @@ export const CHANNELS = {
   macrosSave: 'file:save-macros',
   pickDir: 'app:pick-dir',
   openLogs: 'app:open-logs',
+  fontsList: 'app:fonts:list',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',

@@ -20,8 +20,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   (80 níveis).
 - **Texto como bloco**: todos os contornos de um texto formam um **grupo** que
   se move/redimensiona/rotaciona inteiro; **duplo clique** reabre o texto para
-  editar. Dois modos: **vetor (contorno)** — traça a fonte do sistema em alta
-  resolução (16 px/mm) com simplificação RDP; **traço único** (Hershey Simplex).
+  editar. Três modos: **vetor (contorno)** — traça a fonte do sistema em alta
+  resolução (16 px/mm) com simplificação RDP; **preenchido (cheio)** — contorno
+  + **preenchimento por varredura** (linhas/mm configurável, com zig-zague) para
+  gravar texto sólido; **traço único** (Hershey Simplex).
+- **Seletor de fontes**: além da lista curada e da fonte single-stroke, o campo
+  Fonte lista as **famílias instaladas no sistema** (`fontconfig` via IPC
+  `app:fonts:list`), em ordem alfabética, com busca pelo próprio `<datalist>`.
 - **Navegação**: roda do mouse = zoom no cursor, botão do meio / `Space`+arraste
   = mover a tela, `F` ajustar à página, `0` voltar a 100 %, `+`/`-` zoom.
 - **Tamanho da arte**: "Gerar e visualizar" abre um diálogo de **largura × altura
@@ -38,6 +43,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
   z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
   (`GRBL_DESIGN_EDITOR`).
+- Novo módulo **puro** `src/shared/hatch.ts` (preenchimento por varredura +
+  zig-zague) + **9 testes**; bundle `public/hatch.js` (`GRBL_HATCH`).
 
 ### Fixed — editor de desenho
 - "Gerar e visualizar" não produzia G-code: `designToGcode` recebia o array de
@@ -50,6 +57,18 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   no ponto inicial do arraste.
 - O modal **"Posicionar a gravadora"** aparecia atrás do editor (z-index); agora
   abre por cima e `Esc` fecha só ele.
+- **"Gerar e visualizar" parecia não fazer nada**: o modal de posicionamento e o
+  editor de desenho tinham o **mesmo `z-index`**, e como o editor vem depois no
+  DOM ele pintava por cima — o usuário precisava fechar o desenho para ver o
+  modal (e o "Conectar máquina"). Agora `#frameOverlay` tem empilhamento próprio
+  (`z-index: 110`).
+- **Queimar com o editor aberto**: ao iniciar a gravação pelo modal, o editor de
+  desenho (que cobre a janela inteira) continuava aberto escondendo DRO,
+  progresso, `Pausar` e `Cancelar`. Agora ele fecha antes do envio começar.
+- **Acentos na fonte de traço único**: "Ação" era gravado como "A??O" (a fonte
+  só tinha A–Z e o desconhecido caía em `?`). Agora o caractere é normalizado
+  (`á`→`A`, `ç`→`C`, `ß`→`SS`, …) e, quando ainda não há glifo, o editor avisa
+  quais caracteres ficarão como `?` em vez de gravar em silêncio.
 - Removido `<div>` de overlay duplicado em `public/index.html` (desbalanceava o
   DOM e escondia o restante da página).
 - **"▶ Gravar" não funcionava para o desenho**: o botão do modal de
@@ -57,6 +76,20 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   quando não havia imagem). Agora o app guarda a origem do job (`image`,
   `design`, `file`): no desenho o G-code é regerado a partir das formas com os
   parâmetros do modal; num arquivo aberto ele apenas inicia o envio já carregado.
+- **A área do job agora é a arte**: `parseGcode` passou a expor `cutBounds` (só
+  os movimentos de queima, sem `G0`). O modal "Posicionar a gravadora" usava a
+  área total — que inclui o deslocamento até a origem — e por isso um desenho de
+  2 × 3 mm no canto enquadrava/contornava a tela inteira.
+- **Barra de status do desenho** conta **objetos** (blocos), não contornos: um
+  texto preenchido mostra "1 objeto selecionado" em vez de "306 objetos".
+- **O pré-visualizar enquadra a arte**: o preview usava a área total (com o `G0`
+  de volta à origem) e deixava a arte minúscula num canto; agora usa `cutBounds`.
+- **As preferências do desenho são lembradas** entre sessões (velocidade,
+  potência, passadas, modo M3/M4, grade e o último texto: fonte, tamanho, modo,
+  negrito e espaçamento) — não é mais preciso redigitar tudo ao abrir de novo.
+- **A página do desenho parte da área da máquina** (`$130`/`$131`): sem
+  preferência salva, uma máquina de 400 × 400 abre com 400 × 400 em vez do
+  padrão fixo de 150 × 130.
 
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior

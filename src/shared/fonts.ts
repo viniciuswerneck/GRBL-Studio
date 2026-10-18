@@ -117,16 +117,51 @@ export interface TextShape {
   closed: boolean;
 }
 
+/**
+ * Ligações/dígrafos que o NFD não decompõe e que têm equivalente no alfabeto
+ * do traço único.
+ */
+const LIGATURES: Record<string, string> = {
+  Ø: 'O', Đ: 'D', Ł: 'L', Æ: 'AE', Œ: 'OE', ß: 'SS',
+};
+
+/**
+ * Normaliza um caractere para o alfabeto da fonte single-stroke (A–Z, 0–9 e
+ * pontuação): remove acentos (`ção` → `CAO`) e resolve dígrafos comuns.
+ */
+export function glyphKey(ch: string): string {
+  const base = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const upper = base.toUpperCase();
+  return LIGATURES[upper] ?? upper;
+}
+
+/**
+ * Caracteres do texto sem glifo na fonte single-stroke (viram `?`). Serve para
+ * avisar o usuário em vez de gravar um `?` silencioso.
+ */
+export function unsupportedChars(text: string, fontId?: string): string[] {
+  const font = getFont(fontId ?? DEFAULT_FONT);
+  const out: string[] = [];
+  for (const ch of text) {
+    if (ch === ' ' || ch === '\t') continue;
+    const key = glyphKey(ch);
+    if (font.glyphs[key]) continue;
+    // Dígrafos (AE/OE/SS) são aceitos quando todos os glifos existem.
+    if (key.length > 1 && [...key].every((c) => font.glyphs[c])) continue;
+    if (!out.includes(ch)) out.push(ch);
+  }
+  return out;
+}
+
 export function textToShapes(opts: TextToShapesOptions): TextShape[] {
   const font = getFont(opts.fontId ?? DEFAULT_FONT);
   const scale = opts.size / font.height;
   const shapes: TextShape[] = [];
   let cx = opts.x;
   const cy = opts.y;
-  for (const ch of opts.text) {
-    const upper = ch.toUpperCase();
-    const glyph = font.glyphs[upper] ?? font.glyphs[font.fallback];
-    if (!glyph) continue;
+  const emit = (key: string): void => {
+    const glyph = font.glyphs[key] ?? font.glyphs[font.fallback];
+    if (!glyph) return;
     for (const stroke of glyph.strokes) {
       const pts = stroke.map(([gx, gy]) => ({
         x: cx + gx * scale,
@@ -137,6 +172,12 @@ export function textToShapes(opts: TextToShapesOptions): TextShape[] {
       }
     }
     cx += (glyph.advance + (opts.letterSpacing ?? 0.1)) * scale;
+  };
+  for (const ch of opts.text) {
+    const key = glyphKey(ch);
+    if (font.glyphs[key]) emit(key);
+    else if (key.length > 1) for (const c of key) emit(c); // dígrafos
+    else emit(key); // sem glifo -> fallback (`?`)
   }
   return shapes;
 }

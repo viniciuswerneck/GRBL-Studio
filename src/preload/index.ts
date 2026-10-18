@@ -104,6 +104,8 @@ const api = {
   pickDir: (): Promise<string | null> => ipcRenderer.invoke(CHANNELS.pickDir),
   /** Abre a pasta de logs de sessão no gerenciador de arquivos (RNF-9). */
   openLogs: (): Promise<string> => ipcRenderer.invoke(CHANNELS.openLogs),
+  /** Famílias de fontes instaladas no sistema (seleção de fonte do desenho). */
+  listFonts: (): Promise<string[]> => ipcRenderer.invoke(CHANNELS.fontsList),
 
   // Eventos (main -> renderer)
   onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe =>

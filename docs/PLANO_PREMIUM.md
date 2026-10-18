@@ -81,7 +81,7 @@ Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
 
 | # | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
-| P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | ✅ Formas (retângulo/elipse/linha), **texto** (vetor/traço) como bloco, seleção múltipla + marquee, mover/redimensionar/rotacionar, ordem Z, agrupar, duplicar, alinhamento à página, réguas, undo/redo; falta offset/booleanas. |
+| P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | ✅ Formas (retângulo/elipse/linha), **texto** (vetor/preenchido/traço) como bloco, seleção múltipla + marquee, mover/redimensionar/rotacionar, ordem Z, agrupar, duplicar, alinhamento à página, réguas, undo/redo; fontes do sistema no seletor; falta offset/booleanas. |
 | P2.2 | **Camadas (layers)** com parâmetros por camada | M | Gravar + cortar numa execução; reordenação. |
 | P2.3 | **Simulação de job** (playback visual + tempo) | M | Play/pause/seek do caminho com velocidade real. |
 | P2.4 | **Importação DXF** | M | Parser + conversão para paths. |

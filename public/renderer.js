@@ -521,8 +521,11 @@ function openFrameModal() {
   // funcionam fora do fluxo de imagem.
   frameBounds =
     window.frameBounds ||
-    (previewProgram?.program?.bounds
-      ? { ...previewProgram.program.bounds }
+    ((previewProgram?.program?.cutBounds ?? previewProgram?.program?.bounds)
+      ? {
+          ...(previewProgram.program.cutBounds ??
+            previewProgram.program.bounds),
+        }
       : null);
   if (!el.frameOverlay) return;
   el.frameOverlay.classList.remove('hidden');
@@ -1170,11 +1173,26 @@ function dUpdateObjectList() {
 function dUpdateStatus() {
   const info = $('designSelInfo');
   if (!info) return;
-  if (!designState.selection.length) {
+  const sel = designState.selection;
+  if (!sel.length) {
     info.textContent = t('design.sel.none');
-  } else {
-    info.textContent = t('design.sel.count', { n: designState.selection.length });
+    return;
   }
+  // Conta **blocos** (objetos), não contornos: um texto preenchido é 1 objeto,
+  // ainda que tenha centenas de segmentos.
+  const total = DE ? DE.entityIndices(designState.shapes).length : sel.length;
+  const selSet = dSelectionSet();
+  const blocks = DE
+    ? DE.entityIndices(designState.shapes).filter((idxs) =>
+        idxs.some((i) => selSet.has(i)),
+      ).length
+    : sel.length;
+  info.textContent =
+    total > 1 && blocks === total
+      ? t('design.sel.all', { n: blocks })
+      : blocks === 1
+        ? t('design.sel.one')
+        : t('design.sel.blocks', { n: blocks });
 }
 
 function dUpdateButtons() {
@@ -1507,7 +1525,10 @@ function dOpenTextEditor(world, editing) {
     if (mode) mode.value = meta.mode;
     const bold = $('designTextBold');
     if (bold) bold.checked = meta.bold !== false;
+    const spacing = $('designTextSpacing');
+    if (spacing) spacing.value = String(meta.spacing ?? 5);
   }
+  dSyncTextModeUi();
   const p = dW2S(world.x, world.y);
   const wrap = $('designCanvasWrap');
   const ww = wrap ? wrap.clientWidth : designState.pxW;
@@ -1528,6 +1549,43 @@ function dCloseTextEditor() {
   designState.textEdit = null;
 }
 
+/** O espaçamento de preenchimento só aparece no modo "Preenchido". */
+function dSyncTextModeUi() {
+  const mode = $('designTextMode') ? $('designTextMode').value : 'vector';
+  const opts = $('designTextFillOpts');
+  if (opts) opts.classList.toggle('hidden', mode !== 'fill');
+}
+
+/**
+ * Completa o seletor de fontes com as famílias instaladas no sistema
+ * (`fc-list`, via IPC). Roda uma vez; sem fontconfig fica a lista curada.
+ */
+let designFontsRequested = false;
+async function dLoadSystemFonts() {
+  if (designFontsRequested) return;
+  designFontsRequested = true;
+  const list = $('designFontList');
+  if (!list || !window.grbl || typeof window.grbl.listFonts !== 'function') return;
+  try {
+    const families = await window.grbl.listFonts();
+    if (!Array.isArray(families)) return;
+    const known = new Set(
+      [...list.querySelectorAll('option')].map((o) => o.value.toLowerCase()),
+    );
+    for (const name of families) {
+      if (typeof name !== 'string' || !name) continue;
+      const key = name.toLowerCase();
+      if (known.has(key)) continue;
+      known.add(key);
+      const option = document.createElement('option');
+      option.value = name;
+      list.appendChild(option);
+    }
+  } catch {
+    /* sem fontconfig: mantém a lista curada */
+  }
+}
+
 /**
  * Gera as formas de um texto.
  * - `vector`: renderiza a fonte do sistema em alta resolução e traça o
@@ -1535,9 +1593,23 @@ function dCloseTextEditor() {
  * - `stroke`: usa a fonte single-stroke embutida (rápida, ideal p/ gravação).
  * Devolve pontos em mm (y-down), com a caixa do texto no canto (x, y).
  */
+/**
+ * Aviso da última geração de texto (ex.: caracteres fora da fonte de traço
+ * único). `dCommitText` mostra o aviso em vez do "pronto" genérico.
+ */
+let dTextWarn = '';
+
 async function dTextToShapes(value, opts) {
   const { font, size, mode, bold, x, y } = opts;
+  const spacing = Math.max(1, Math.min(20, Number(opts.spacing) || 5));
+  dTextWarn = '';
   if (mode === 'stroke' && window.GRBL_FONTS) {
+    if (typeof window.GRBL_FONTS.unsupportedChars === 'function') {
+      const bad = window.GRBL_FONTS.unsupportedChars(value, 'simplex');
+      if (bad.length) {
+        dTextWarn = t('design.text.unsupported', { chars: bad.join(' ') });
+      }
+    }
     const out = window.GRBL_FONTS.textToShapes({
       text: value,
       fontId: 'simplex',
@@ -1573,11 +1645,32 @@ async function dTextToShapes(value, opts) {
   const contours = window.GRBL_CONTOUR.traceContours(mask, canvas.width, canvas.height);
   const tol = 0.9 / PX;
   const shapes = [];
+  // O contorno vem sempre: no modo "cheio" ele é a borda nítida da letra.
   for (const cont of contours) {
     if (!cont || cont.length < 3) continue;
     const pts = cont.map((p) => ({ x: p.x / PX, y: p.y / PX }));
     const simp = DE.simplifyPolyline(pts, tol);
     if (simp.length >= 3) shapes.push({ kind: 'text', points: simp, closed: true });
+  }
+  if (mode === 'fill') {
+    if (!window.GRBL_HATCH) throw new Error(t('design.text.noFill'));
+    const spacingPx = Math.max(2, Math.round(PX / spacing));
+    const segs = window.GRBL_HATCH.zigzagHatch(
+      window.GRBL_HATCH.maskToHatchLines(mask, canvas.width, canvas.height, {
+        spacingPx,
+        minRunPx: Math.max(2, Math.round(PX * 0.12)),
+      }),
+    );
+    for (const s of segs) {
+      shapes.push({
+        kind: 'text',
+        points: [
+          { x: s.x0 / PX, y: s.y0 / PX },
+          { x: s.x1 / PX, y: s.y1 / PX },
+        ],
+        closed: false,
+      });
+    }
   }
   return dPlaceShapes(shapes, x, y);
 }
@@ -1616,6 +1709,7 @@ async function dCommitText() {
   const size = dNum('designTextSize', 10) || 10;
   let mode = $('designTextMode') ? $('designTextMode').value : 'vector';
   const bold = $('designTextBold') ? $('designTextBold').checked : true;
+  const spacing = dNum('designTextSpacing', 5) || 5;
   if (/simplex/i.test(font)) mode = 'stroke';
 
   const edit = designState.textEdit;
@@ -1624,7 +1718,7 @@ async function dCommitText() {
 
   let shapes;
   try {
-    shapes = await dTextToShapes(value, { font, size, mode, bold, x: anchor.x, y: anchor.y });
+    shapes = await dTextToShapes(value, { font, size, mode, bold, spacing, x: anchor.x, y: anchor.y });
   } catch (err) {
     dStatus(err.message, 'error');
     return;
@@ -1649,7 +1743,7 @@ async function dCommitText() {
   for (const sh of shapes) {
     sh.group = group;
     sh.name = name;
-    sh.text = { value, font, size, mode, bold };
+    sh.text = { value, font, size, mode, bold, spacing };
   }
   const base = designState.shapes.length;
   designState.shapes.push(...shapes);
@@ -1657,7 +1751,7 @@ async function dCommitText() {
   designState.selection = shapes.map((_, i) => base + i);
   dCloseTextEditor();
   dAfterSelection();
-  dStatus(t('design.status.done'));
+  dStatus(dTextWarn || t('design.status.done'), dTextWarn ? 'error' : 'ok');
 }
 
 // ------------------------------------------------------------------ ferramenta
@@ -2224,20 +2318,104 @@ function dApplyPageSize() {
   dRender();
 }
 
+/** Chave das preferências do desenho (parâmetros de gravação + texto). */
+const D_PREFS_KEY = 'grbl-design-prefs';
+/** Campos cuja alteração é persistida entre sessões. */
+const D_PREF_IDS = new Set([
+  'designSpeed',
+  'designPower',
+  'designPasses',
+  'designMode',
+  'designGrid',
+  'designTextFont',
+  'designTextSize',
+  'designTextMode',
+  'designTextBold',
+  'designTextSpacing',
+]);
+
+/** Guarda velocidade/potência/passadas/modo e o último texto usado. */
+function dSaveDesignPrefs() {
+  try {
+    localStorage.setItem(
+      D_PREFS_KEY,
+      JSON.stringify({
+        speed: dNum('designSpeed', 1000) || 1000,
+        power: dNum('designPower', 100) ?? 100,
+        passes: dNum('designPasses', 1) || 1,
+        mode: $('designMode') ? $('designMode').value : 'M4',
+        grid: dNum('designGrid', 5) || 5,
+        text: {
+          font: $('designTextFont') ? $('designTextFont').value : '',
+          size: dNum('designTextSize', 10) || 10,
+          mode: $('designTextMode') ? $('designTextMode').value : 'vector',
+          bold: $('designTextBold') ? $('designTextBold').checked : true,
+          spacing: dNum('designTextSpacing', 5) || 5,
+        },
+      }),
+    );
+  } catch {
+    /* sem localStorage: segue com os padrões */
+  }
+}
+
+/** Restaura as preferências do desenho. */
+function dRestoreDesignPrefs() {
+  let p = null;
+  try {
+    const raw = localStorage.getItem(D_PREFS_KEY);
+    if (raw) p = JSON.parse(raw);
+  } catch {
+    p = null;
+  }
+  if (!p || typeof p !== 'object') return;
+  const put = (id, value) => {
+    const node = $(id);
+    if (node && value !== undefined && value !== null && value !== '') {
+      node.value = String(value);
+    }
+  };
+  put('designSpeed', p.speed);
+  put('designPower', p.power);
+  put('designPasses', p.passes);
+  put('designGrid', p.grid);
+  const mode = $('designMode');
+  if (mode && (p.mode === 'M3' || p.mode === 'M4')) mode.value = p.mode;
+  const text = p.text;
+  if (text && typeof text === 'object') {
+    put('designTextFont', text.font);
+    put('designTextSize', text.size);
+    put('designTextSpacing', text.spacing);
+    const tm = $('designTextMode');
+    if (tm && typeof text.mode === 'string') tm.value = text.mode;
+    const tb = $('designTextBold');
+    if (tb && typeof text.bold === 'boolean') tb.checked = text.bold;
+  }
+}
+
 function dLoadPrefs() {
+  let page = null;
   try {
     const raw = localStorage.getItem('grbl-design-page');
     if (raw) {
       const p = JSON.parse(raw);
-      if (p && p.w > 0 && p.h > 0) designState.page = { w: p.w, h: p.h };
+      if (p && p.w > 0 && p.h > 0) page = { w: p.w, h: p.h };
     }
   } catch {
     /* ignore */
   }
+  // Sem preferência salva, a página parte da área real da máquina ($130/$131):
+  // quem tem 400 × 400 não precisa corrigir o tamanho toda vez.
+  const wa = previewProgram && previewProgram.workArea;
+  if (!page && wa && wa.widthMm > 0 && wa.heightMm > 0) {
+    page = { w: Math.round(wa.widthMm), h: Math.round(wa.heightMm) };
+  }
+  if (page) designState.page = page;
   const w = $('designPageW');
   if (w) w.value = String(designState.page.w);
   const h = $('designPageH');
   if (h) h.value = String(designState.page.h);
+  dRestoreDesignPrefs();
 }
 
 // --------------------------------------------------------------- modal/open
@@ -2256,6 +2434,7 @@ function openDesignModal() {
   designState.rotApplied = 0;
   dCloseTextEditor();
   dSetTool('select');
+  dLoadSystemFonts();
   if (!designState.history.length) dPushHistory();
   requestAnimationFrame(() => {
     dResizeCanvas();
@@ -2342,6 +2521,9 @@ function designGenerate({ autoStart = false } = {}) {
   dStatus(t('design.status.done'), 'ok');
   if (autoStart && state.connected) {
     closeFrameModal();
+    // O editor cobre a janela inteira: fechá-lo antes de queimar mostra o DRO,
+    // o progresso e o Pausar/Cancelar durante o job.
+    closeDesignModal();
     beginJob(0);
     return;
   }
@@ -2622,6 +2804,16 @@ function dConfirmSize() {
         e.preventDefault();
         dCommitText();
       }
+    });
+  }
+  const textMode = $('designTextMode');
+  if (textMode) textMode.addEventListener('change', dSyncTextModeUi);
+  dSyncTextModeUi();
+  // Lembra parâmetros de gravação/texto entre sessões (abrir → desenhar → gravar).
+  if (el.designOverlay) {
+    el.designOverlay.addEventListener('change', (e) => {
+      const id = e.target && e.target.id;
+      if (id && D_PREF_IDS.has(id)) dSaveDesignPrefs();
     });
   }
 
@@ -4916,7 +5108,9 @@ function drawGcodePreview() {
   }
   el.previewHint.classList.add('hidden');
 
-  const b = prog.bounds;
+  // Enquadra pela área **queimada**: num desenho longe da origem a área total
+  // (com o `G0` até 0,0) deixaria a arte pequena num canto do preview.
+  const b = prog.cutBounds ?? prog.bounds;
   if (!b) return;
   const padW = (b.xMax - b.xMin) * 0.05;
   const padH = (b.yMax - b.yMin) * 0.05;

@@ -78,8 +78,13 @@ export interface PreviewMove {
 
 export interface ParsedProgram {
   moves: PreviewMove[];
-  /** Área alcançada (mm). `null` se não houver nenhum movimento. */
+  /** Área alcançada (mm), incluindo deslocamentos `G0`. `null` se não houver movimento. */
   bounds: PreviewBounds | null;
+  /**
+   * Área **queimada** (só movimentos de corte, sem `G0`). É a "arte" do job —
+   * usada no enquadramento/contorno/centro. `null` se nada for cortado.
+   */
+  cutBounds: PreviewBounds | null;
   /** Total de linhas consideradas (inclui vazias/comentário). */
   totalLines: number;
   /** Comprimento queimado (mm), para estatística do preview. */
@@ -278,6 +283,26 @@ export function parseGcode(text: string): ParsedProgram {
     if (y > bounds.yMax) bounds.yMax = y;
   };
 
+  // Área efetivamente queimada (só movimentos de corte, sem `G0`).
+  // É ela que representa a "arte": deslocamentos até a origem/entre formas não
+  // devem inflar a área do job (contorno/centro/enquadramento).
+  let cutBounds: PreviewBounds | null = null;
+  const trackCut = (x: number, y: number): void => {
+    if (!cutBounds) {
+      cutBounds = { xMin: x, xMax: x, yMin: y, yMax: y };
+      return;
+    }
+    if (x < cutBounds.xMin) cutBounds.xMin = x;
+    if (x > cutBounds.xMax) cutBounds.xMax = x;
+    if (y < cutBounds.yMin) cutBounds.yMin = y;
+    if (y > cutBounds.yMax) cutBounds.yMax = y;
+  };
+  /** Rastreia a área total e, se for corte, também a área queimada. */
+  const trackMove = (x: number, y: number, cut: boolean): void => {
+    track(x, y);
+    if (cut) trackCut(x, y);
+  };
+
   const st: Modal = {
     scale: 1,
     absolute: true,
@@ -412,8 +437,8 @@ export function parseGcode(text: string): ParsedProgram {
         });
         const len = Math.hypot(tx - x0, ty - y0);
         if (!rapid) cutMm.value += len;
-        track(x0, y0);
-        track(tx, ty);
+        trackMove(x0, y0, !rapid);
+        trackMove(tx, ty, !rapid);
       }
     } else {
       const center = arcCenter(
@@ -443,7 +468,7 @@ export function parseGcode(text: string): ParsedProgram {
           st.power,
           st.pass,
           cutMm,
-          track,
+          (x, y) => trackMove(x, y, true),
         );
       } else {
         moves.push({
@@ -458,8 +483,8 @@ export function parseGcode(text: string): ParsedProgram {
           s: st.power,
         });
         cutMm.value += Math.hypot(tx - x0, ty - y0);
-        track(x0, y0);
-        track(tx, ty);
+        trackMove(x0, y0, true);
+        trackMove(tx, ty, true);
       }
     }
 
@@ -467,7 +492,13 @@ export function parseGcode(text: string): ParsedProgram {
     st.y = ty;
   }
 
-  return { moves, bounds, totalLines: rawLines.length, cutMm: cutMm.value };
+  return {
+    moves,
+    bounds,
+    cutBounds,
+    totalLines: rawLines.length,
+    cutMm: cutMm.value,
+  };
 }
 
 /** Parâmetros do cálculo de tempo estimado (RF-GC-2/5). */

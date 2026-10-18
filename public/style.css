@@ -701,6 +701,12 @@ input[type="checkbox"] {
   display: none;
 }
 
+/* O modal de posicionamento é aberto a partir do editor de desenho (que vem
+   depois no DOM): sem z-index próprio ele ficaria atrás do editor. */
+#frameOverlay {
+  z-index: 110;
+}
+
 .modal {
   display: flex;
   flex-direction: column;

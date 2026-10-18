@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FONTS, fontOptions, getFont, textToShapes } from '../src/shared/fonts';
+import {
+  FONTS,
+  fontOptions,
+  getFont,
+  glyphKey,
+  textToShapes,
+  unsupportedChars,
+} from '../src/shared/fonts';
 
 describe('fonts', () => {
   it('catálogo não vazio e default existe', () => {
@@ -43,5 +50,30 @@ describe('fonts', () => {
 
   it('texto vazio gera 0 formas', () => {
     expect(textToShapes({ text: '', size: 10, x: 0, y: 0 })).toHaveLength(0);
+  });
+
+  it('glyphKey remove acentos e resolve dígrafos', () => {
+    expect(glyphKey('ç')).toBe('C');
+    expect(glyphKey('á')).toBe('A');
+    expect(glyphKey('Ã')).toBe('A');
+    expect(glyphKey('ø')).toBe('O');
+    expect(glyphKey('ß')).toBe('SS');
+    expect(glyphKey('a')).toBe('A');
+    expect(glyphKey('7')).toBe('7');
+  });
+
+  it('acentos são gravados como a letra base (não viram "?")', () => {
+    const acentos = textToShapes({ text: 'Ação', size: 10, x: 0, y: 0 });
+    const base = textToShapes({ text: 'Acao', size: 10, x: 0, y: 0 });
+    expect(acentos).toHaveLength(base.length);
+    const maxA = Math.max(...acentos.flatMap((s) => s.points.map((p) => p.x)));
+    const maxB = Math.max(...base.flatMap((s) => s.points.map((p) => p.x)));
+    expect(maxA).toBeCloseTo(maxB, 6);
+  });
+
+  it('unsupportedChars aponta só o que não tem glifo', () => {
+    expect(unsupportedChars('Ação 42')).toEqual([]);
+    expect(unsupportedChars('A@B')).toEqual(['@']);
+    expect(unsupportedChars('R$ 10')).toEqual(['$']);
   });
 });

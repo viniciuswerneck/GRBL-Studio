@@ -37,8 +37,10 @@ export interface Shape {
     value: string;
     font: string;
     size: number;
-    mode: 'vector' | 'stroke';
+    mode: 'vector' | 'stroke' | 'fill';
     bold?: boolean;
+    /** Linhas por mm do preenchimento (modo `fill`). */
+    spacing?: number;
   };
 }
 

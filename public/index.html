@@ -1049,9 +1049,27 @@
                 <input type="text" id="designTextFont" list="designFontList" value="sans-serif" spellcheck="false" />
               </label>
               <datalist id="designFontList">
+                <option value="Simplex (single-stroke)"></option>
                 <option value="sans-serif"></option>
                 <option value="serif"></option>
                 <option value="monospace"></option>
+                <option value="cursive"></option>
+                <option value="fantasy"></option>
+                <option value="DejaVu Sans"></option>
+                <option value="DejaVu Sans Bold"></option>
+                <option value="DejaVu Serif"></option>
+                <option value="DejaVu Sans Mono"></option>
+                <option value="Liberation Sans"></option>
+                <option value="Liberation Serif"></option>
+                <option value="Liberation Mono"></option>
+                <option value="Noto Sans"></option>
+                <option value="Noto Serif"></option>
+                <option value="Ubuntu"></option>
+                <option value="Cantarell"></option>
+                <option value="Fira Sans"></option>
+                <option value="Roboto"></option>
+                <option value="FreeSans"></option>
+                <option value="Latin Modern Sans"></option>
                 <option value="Arial"></option>
                 <option value="Helvetica"></option>
                 <option value="Times New Roman"></option>
@@ -1059,7 +1077,6 @@
                 <option value="Verdana"></option>
                 <option value="Georgia"></option>
                 <option value="Impact"></option>
-                <option value="Simplex (single-stroke)"></option>
               </datalist>
               <div class="design-text-row">
                 <label class="design-field">
@@ -1070,10 +1087,15 @@
                   <span data-i18n="design.text.mode">Modo</span>
                   <select id="designTextMode">
                     <option value="vector" data-i18n="design.text.mode.vector">Vetor (contorno)</option>
+                    <option value="fill" data-i18n="design.text.mode.fill">Preenchido (cheio)</option>
                     <option value="stroke" data-i18n="design.text.mode.stroke">Traço único</option>
                   </select>
                 </label>
               </div>
+              <label class="design-field hidden" id="designTextFillOpts">
+                <span data-i18n="design.text.spacing">Preenchimento (linhas/mm)</span>
+                <input type="number" id="designTextSpacing" min="1" max="20" step="1" value="5" />
+              </label>
               <label class="design-check">
                 <input type="checkbox" id="designTextBold" checked />
                 <span data-i18n="design.text.bold">Negrito</span>
@@ -1360,6 +1382,7 @@
     <script src="./design.js"></script>
     <script src="./designEditor.js"></script>
     <script src="./fonts.js"></script>
+    <script src="./hatch.js"></script>
     <script src="./contour.js"></script>
     <script src="./renderer.js"></script>
   </body>

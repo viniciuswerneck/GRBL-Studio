@@ -14,6 +14,10 @@ import {
 } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 import { SerialPort } from 'serialport';
 import { CHANNELS } from '../shared/channels';
 import {
@@ -536,5 +540,34 @@ export function registerIpc(
     return log.dir;
   });
 
+  ipcMain.handle(
+    CHANNELS.fontsList,
+    async (): Promise<string[]> => listSystemFonts(),
+  );
+
   return { client, prefs, log };
+}
+
+/**
+ * Famílias de fontes instaladas (fontconfig, Linux). Alimenta o seletor de
+ * fontes da ferramenta de desenho. Falha silenciosa: devolve `[]` e a UI fica
+ * com a lista curada embutida.
+ */
+async function listSystemFonts(): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync(
+      'fc-list',
+      ['--format=%{family}\n'],
+      { timeout: 5000, maxBuffer: 8 * 1024 * 1024 },
+    );
+    const seen = new Set<string>();
+    for (const line of String(stdout).split('\n')) {
+      // "DejaVu Sans,DejaVu Sans Book": a primeira é a família principal.
+      const family = line.split(',')[0]?.trim();
+      if (family && !family.startsWith('.')) seen.add(family);
+    }
+    return [...seen].sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
 }
