@@ -1,54 +1,60 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
+> Atualizado em 17/10/2026 (v0.4.0). Status reflete o código atual em `main`.
+
 ## Core
 | Feature | LaserGRBL (C#) | GRBL Studio (Electron) | Status |
 |---|---|---|---|
-| Conexão Serial | Sim | Sim | ✅ Implementado |
-| Envio G-Code (janela por bytes) | Sim | Sim | ✅ Implementado |
-| JOG | Sim | Sim | ✅ Implementado |
-| Console (com respostas da máquina) | Sim | Sim | ✅ Implementado |
-| Status GRBL (pos/feed) | Sim | Sim | ✅ Implementado |
-| Override Feed/Spindle | Sim | Parcial (feed) | 🟡 Parcial |
-| Homing | Sim | Sim | ✅ Implementado |
-| Pausar / Retomar / Parar | Sim | Sim | ✅ Implementado |
+| Conexão Serial | Sim | Sim | ✅ |
+| Envio G-Code (janela por bytes) | Sim | Sim | ✅ |
+| JOG (X/Y, contínuo ao segurar) | Sim | Sim (X/Y; Z em andamento) | 🟡 |
+| Console (com respostas da máquina) | Sim | Sim (pausar/limpar/exportar) | ✅ |
+| Status GRBL (pos/feed) | Sim | Sim (MPos/WPos, DTG, overrides) | ✅ |
+| Override Feed/Spindle/Rapid | Sim | Sim (feed/spindle/rapid) | ✅ |
+| Homing | Sim | Sim | ✅ |
+| Pausar / Retomar / Parar | Sim | Sim (job bar flutuante) | ✅ |
+| WiFi (ESP8266/ESP32) | Sim | Sim (TCP) | ✅ (não validado em HW) |
+| Macros / botões customizados | Sim | Sim | ✅ |
+| Configurações `$$` (viewer/editor) | Sim | Sim (grupos + perfis) | ✅ |
+| Importar/exportar config | Sim | Sim (perfis) | ✅ |
+| Decodificação de alarmes | Sim | Sim (com ação recomendada) | ✅ |
+| Flash de firmware | Sim | Não | ⬜ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
-| Preview 2D | Sim | Sim (canvas) | ✅ Implementado |
-| OpenGL Preview | Sim | Não | Pendente |
-| Zoom/Pan | Sim | Não | Pendente |
-| Visualização tempo real | Sim | Não | Pendente |
+| Preview 2D | Sim | Sim (canvas, zoom/pan) | ✅ |
+| OpenGL Preview | Sim | Não | ⬜ |
+| Visualização tempo real | Sim | Sim (crosshair + trecho por passada) | ✅ |
+| Cores por passada / intensidade (S) | Parcial | Sim | ✅ |
 
 ## Importação
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
-| G-Code (.gcode/.nc) | Sim | Sim | Implementado |
-| Imagem (JPG/BMP/PNG) | Sim | Sim (PNG/JPEG/BMP/GIF/WebP/AVIF) | Implementado |
-| SVG | Experimental | Não | Pendente |
-| Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | Implementado |
-| Vetorização | Sim | Sim (contorno/recorte por limiar) | Implementado |
-| Perfis de material | Sim | Sim (matriz COMGO Z1: 5W e 10W) | Implementado |
+| G-Code (.gcode/.nc) | Sim | Sim | ✅ |
+| Imagem (JPG/BMP/PNG/…) | Sim | Sim (PNG/JPEG/BMP/GIF/WebP/AVIF) | ✅ |
+| SVG | Experimental | Sim (importação → contorno) | ✅ |
+| Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | ✅ |
+| Vetorização | Sim | Sim (contorno/RDP) | ✅ |
+| Perfis de material | Sim | Sim (COMGO Z1: 3W/5W/10W) | ✅ |
+| Grade de teste de material | Não | Sim | ✅ (superior) |
 
-## Configuração
+## Configuração / UX
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
-| Grbl Settings ($$) | Sim | Não | Pendente |
-| Custom Buttons | Sim | Não | Pendente |
-| WiFi (ESP8266) | Sim | Não | Pendente |
-| Macros | Sim | Não | Pendente |
+| Interface Windows | Sim | Inspirada/Moderna (Fluent) | Parcial |
+| Linux nativo | Via Wine | Nativo | ✅ |
+| macOS | Não | Não (planejado) | ⬜ |
+| Windows | Sim | Não (planejado) | ⬜ |
+| Dark/Light theme | Múltiplos | 11 temas | ✅ |
+| i18n | Não | pt-BR/en/es (484 chaves) | ✅ |
+| Assistente para leigos | Não | Sim (wizard) | ✅ |
+| Log de sessão persistente | Não | Sim (exportável) | ✅ |
+| Auto-update | Não | Não (planejado) | ⬜ |
 
-## UX
-| Feature | LaserGRBL | GRBL Studio | Status |
-|---|---|---|---|
-| Interface Windows | Sim | Inspirada/Moderna | Parcial |
-| Linux nativo | Via Mono | Nativo | Implementado |
-| Dark/Light theme | Múltiplos | Dark/Light | Implementado |
-
-## Prioridades para MVP funcional
-1. ~~Status GRBL em tempo real - `?` polling~~ ✅
-2. ~~Mostrar posição X/Y/Z~~ ✅
-3. ~~Transmissão confiável (aguardar `ok`)~~ ✅
-4. ~~Feed Hold/Resume/Reset~~ ✅
-5. Configurações básicas (`$$`) — **próximo (Fase 3)**
-6. Persistir preferências (porta/baud/tema) — **Fase 3**
+## Prioridades para o próximo ciclo
+1. Builds Windows/macOS (P1.1).
+2. Auto-update (P1.2).
+3. Simulação de job (P2.3).
+4. Ferramentas de desenho + camadas (P2.1/P2.2).
+5. Câmera + rotativa (P3.1/P3.2).

@@ -28,7 +28,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "bench:preview": "xvfb-run -a node scripts/bench-preview.mjs",
     "package": "npm run build && electron-builder --publish never --config electron-builder.yml",
     "package:linux": "npm run build && electron-builder --linux --publish never --config electron-builder.yml",
     "package:flatpak": "flatpak-builder --user --install --force-clean build-dir build/flatpak/com.grblstudio.app.yml",

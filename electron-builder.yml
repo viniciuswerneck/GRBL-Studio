@@ -26,7 +26,12 @@ linux:
   maintainer: Vinicius Werneck
   vendor: GRBL Studio
 mac:
-  target: []
+  target:
+    - dmg
+    - zip
+  category: public.app-category.utilities
 win:
-  target: []
+  target:
+    - nsis
+    - portable
 

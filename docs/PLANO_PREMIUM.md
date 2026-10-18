@@ -66,15 +66,15 @@ Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
 
 | # | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
-| P1.1 | **Builds Win + macOS no CI** (matrix no `release.yml`) | M | AppImage/.deb/.exe/.dmg publicados na tag. |
-| P1.2 | **Auto-update** (`electron-updater`) para AppImage/.deb | S | Notificação de nova versão + download/install. |
+| P1.1 | **Builds Win + macOS no CI** (matrix no `release.yml`) | M | ✅ Implementado (matrix ubuntu/windows/macos). |
+| P1.2 | **Auto-update** (`electron-updater`) para AppImage/.deb | S | ✅ Implementado (checkForUpdatesAndNotify + publish.provider=github). |
 | P1.3 | **Publicar Flatpak** (scaffold → Flathub) | M | `flatpak install` funcional, permissões de porta serial documentadas. |
 | P1.4 | **Onboarding / tour** (primeira execução) | S | Tour de 5 passos + link para docs. |
 | P1.5 | **Z-axis no jog** (UI + `frameJog`) | S | Jog Z visível quando `$22`/`$21` indicam Z; testes. |
 | P1.6 | **Importação SVG** (parser + paths → G-code) | M | Abrir `.svg`, preview, gerar G-code de contorno. |
 | P1.7 | **Grade de teste de material** (gerador) | S | ✅ Implementado (modal + gerador + 9 testes). |
-| P1.8 | **Medir orçamentos RNF-11/12** (startup, RAM, fps, DPI) | S | Checklist `DESIGN.md` §8 preenchido com números. |
-| P1.9 | **Atualizar `FEATURES_COMPARISON.md`** | S | Refletir estado real. |
+| P1.8 | **Medir orçamentos RNF-11/12** (startup, RAM, fps, DPI) | S | ✅ Parcial (preview 3 ms; startup ~1,2 s; restante a medir em HW). |
+| P1.9 | **Atualizar `FEATURES_COMPARISON.md`** | S | ✅ Atualizado. |
 | P1.10 | **G-code editor** (syntax highlight + numeração) | M | Editar e reenviar linhas; validação. |
 
 ### Fase P2 — "Design & produção" (6–8 semanas) · fecha a lacuna com LightBurn

@@ -108,16 +108,16 @@ Paleta de referência do tema padrão:
 
 ### 3.1 Performance (RNF obrigatórios)
 
-| Métrica | Orçamento | Como medir |
-| :--- | :--- | :--- |
-| Tempo de startup (janela pronta) | ≤ 1,5 s | `performance.now()` no bootstrap |
-| Memória residente (RAM) | ≤ 200 MB após 10 min | `process.memoryUsage()` / `ps` |
-| CPU ociosa (sem job) | ≈ 0 % | DevTools Performance |
-| Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) |
-| Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint |
-| Frame rate da UI durante job | ≥ 55 fps | DevTools Rendering FPS meter |
-| Render do preview (50k linhas) | ≤ 2 s no primeiro desenho; **≤ 16 ms por quadro durante o job** (camadas em cache) | `performance.now()` no draw |
-| Abertura da janela | < 3 reflows principais | DevTools Layout Shift |
+| Métrica | Orçamento | Como medir | Medido (17/10/2026) |
+| :--- | :--- | :--- | :--- |
+| Tempo de startup (janela pronta) | ≤ 1,5 s | `performance.now()` no bootstrap | SMOKE_OK (~1,2 s) |
+| Memória residente (RAM) | ≤ 200 MB após 10 min | `process.memoryUsage()` / `ps` | a medir em hardware |
+| CPU ociosa (sem job) | ≈ 0 % | DevTools Performance | a medir |
+| Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) | a medir |
+| Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint | a medir |
+| Frame rate da UI durante job | ≥ 55 fps | DevTools Rendering FPS meter | a medir |
+| Render do preview (50k linhas) | ≤ 2 s no primeiro desenho; **≤ 16 ms por quadro durante o job** (camadas em cache) | `performance.now()` no draw / `npm run bench:preview` | **3 ms** (quente, 270k trechos) vs 300 ms antes |
+| Abertura da janela | < 3 reflows principais | DevTools Layout Shift | a medir |
 
 ### 3.2 Precisão (o que não pode errar)
 
