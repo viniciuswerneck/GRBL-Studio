@@ -1995,6 +1995,14 @@ html[data-theme="sand"] .design-canvas-wrap {
   margin-bottom: 1px;
 }
 
+/* campos da matriz de cópias (colunas/linhas e passos, 2 colunas iguais) */
+.design-array-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: var(--sp-2);
+}
+
 .design-size-hint {
   margin: 0;
   font-size: var(--fs-12);

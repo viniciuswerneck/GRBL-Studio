@@ -145,6 +145,32 @@
           <path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 12h9l1-12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M17 3.5l1 2 2 .6-1.6 1.5.4 2.2-1.8-1-1.8 1 .4-2.2L13.4 6l2-.6z" fill="currentColor" />
         </symbol>
+        <symbol id="ic-mirror-h" viewBox="0 0 24 24">
+          <path d="M12 3v18" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2.5" />
+          <path d="M10 6.5L4 12l6 5.5z" fill="currentColor" />
+          <path d="M14 6.5L20 12l-6 5.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-mirror-v" viewBox="0 0 24 24">
+          <path d="M3 12h18" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2.5" />
+          <path d="M6.5 10L12 4l5.5 6z" fill="currentColor" />
+          <path d="M6.5 14L12 20l5.5-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-dist-h" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="3.4" height="14" rx="1" fill="currentColor" />
+          <rect x="10.3" y="8" width="3.4" height="8" rx="1" fill="currentColor" />
+          <rect x="17.6" y="5" width="3.4" height="14" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-dist-v" viewBox="0 0 24 24">
+          <rect x="5" y="3" width="14" height="3.4" rx="1" fill="currentColor" />
+          <rect x="8" y="10.3" width="8" height="3.4" rx="1" fill="currentColor" />
+          <rect x="5" y="17.6" width="14" height="3.4" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-array" viewBox="0 0 24 24">
+          <rect x="3.5" y="3.5" width="7" height="7" rx="1.4" fill="currentColor" />
+          <rect x="13.5" y="3.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
+        </symbol>
       </defs>
     </svg>
     <div class="app">
@@ -1016,6 +1042,21 @@
             <button type="button" id="designDuplicate" class="icon-btn" data-i18n-title="design.duplicate" title="Duplicar (Ctrl+D)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-duplicate" /></svg>
             </button>
+            <button type="button" id="designArray" class="icon-btn" data-i18n-title="design.array" title="Matriz de cópias…">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-array" /></svg>
+            </button>
+            <button type="button" id="designMirrorH" class="icon-btn" data-i18n-title="design.mirror.h" title="Espelhar na horizontal">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-mirror-h" /></svg>
+            </button>
+            <button type="button" id="designMirrorV" class="icon-btn" data-i18n-title="design.mirror.v" title="Espelhar na vertical">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-mirror-v" /></svg>
+            </button>
+            <button type="button" id="designDistH" class="icon-btn" data-i18n-title="design.distribute.h" title="Distribuir na horizontal">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-dist-h" /></svg>
+            </button>
+            <button type="button" id="designDistV" class="icon-btn" data-i18n-title="design.distribute.v" title="Distribuir na vertical">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-dist-v" /></svg>
+            </button>
           </div>
 
           <div class="design-prop-group design-prop-right">
@@ -1246,6 +1287,54 @@
           <button type="button" id="designSizeCancel" data-i18n="design.cancel">Cancelar</button>
           <button type="button" id="designSizeConfirm" class="primary" data-i18n="design.generate">
             Gerar e visualizar
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designArrayOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designArrayTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designArrayTitle" data-i18n="design.array.title">Matriz de cópias</h3>
+          <button type="button" id="designArrayClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <p class="design-size-hint" data-i18n="design.array.hint">
+            Repete a seleção em colunas e linhas, deslocando cada cópia pelo passo informado.
+          </p>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.array.cols">Colunas</span>
+              <input type="number" id="designArrayCols" min="1" max="200" step="1" value="2" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.array.rows">Linhas</span>
+              <input type="number" id="designArrayRows" min="1" max="200" step="1" value="1" />
+            </label>
+          </div>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.array.stepX">Passo X (mm)</span>
+              <input type="number" id="designArrayStepX" min="-2000" max="2000" step="0.1" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.array.stepY">Passo Y (mm)</span>
+              <input type="number" id="designArrayStepY" min="-2000" max="2000" step="0.1" />
+            </label>
+          </div>
+          <p class="design-size-note" data-i18n="design.array.note">
+            O passo é a distância entre o canto da peça original e o da cópia. Use o tamanho do objeto (ou um pouco mais) para as cópias saírem lado a lado.
+          </p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designArrayCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designArrayConfirm" class="primary" data-i18n="design.array.create">
+            Criar cópias
           </button>
         </footer>
       </div>

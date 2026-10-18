@@ -219,6 +219,7 @@ const el = {
   matTestGenerate: $('matTestGenerate'),
   designOverlay: $('designOverlay'),
   designSizeOverlay: $('designSizeOverlay'),
+  designArrayOverlay: $('designArrayOverlay'),
   designClose: $('designClose'),
   designMaximize: $('designMaximize'),
   designCanvas: $('designCanvas'),
@@ -603,6 +604,7 @@ const RULER = 22; // espessura das réguas (px)
 const D_MARGIN = 18; // margem do "ajustar à página" (px)
 const HANDLE = 3.5; // meia-aresta do handle (px)
 const HIT_PX = 3; // tolerância de clique (px)
+const SNAP_PX = 8; // tolerância do snap a objetos (px)
 
 const designState = {
   tool: 'select',
@@ -627,6 +629,8 @@ const designState = {
   textEdit: null,
   clipboard: null,
   seq: 0,
+  /** Linhas de guia do snap a objetos em mm (`{x, y}`, `null` = sem guia). */
+  guides: null,
 };
 
 // -------------------------------------------------------------- utilidades
@@ -645,6 +649,66 @@ function dSnapV(v) {
   if (!designState.snap) return v;
   const g = designState.grid > 0 ? designState.grid : 1;
   return Math.round(v / g) * g;
+}
+
+/**
+ * Alvos de snap a objetos (mm): bordas e centro de cada entidade + bordas e
+ * centro da página. Calculado **uma vez** no início do arrasto (RNF-11), pois
+ * não muda enquanto o ponteiro se move.
+ */
+function dSnapTargets(skip) {
+  const xs = [0, designState.page.w / 2, designState.page.w];
+  const ys = [0, designState.page.h / 2, designState.page.h];
+  for (const entity of DE.entityIndices(designState.shapes)) {
+    let excluded = false;
+    for (const i of entity) {
+      if (skip.has(i)) {
+        excluded = true;
+        break;
+      }
+    }
+    if (excluded) continue;
+    const b = DE.entityBounds(designState.shapes, entity);
+    if (!b) continue;
+    xs.push(b.minX, (b.minX + b.maxX) / 2, b.maxX);
+    ys.push(b.minY, (b.minY + b.maxY) / 2, b.maxY);
+  }
+  return { xs, ys };
+}
+
+/**
+ * Delta do arrasto com snap: encaixa bordas/centro da caixa em outros objetos
+ * e na página (tol. de `SNAP_PX` na tela); sem alvo por perto, cai na grade.
+ * Devolve também as guias ativas, para desenhar a linha de alinhamento.
+ */
+function dSnapMoveDelta(b, dxRaw, dyRaw, targets) {
+  const x = dSnapAxis(b.minX, b.maxX, dxRaw, targets.xs);
+  const y = dSnapAxis(b.minY, b.maxY, dyRaw, targets.ys);
+  return {
+    dx: x.delta !== null ? x.delta : dSnapV(b.minX + dxRaw) - b.minX,
+    dy: y.delta !== null ? y.delta : dSnapV(b.minY + dyRaw) - b.minY,
+    guides: { x: x.line, y: y.line },
+  };
+}
+
+/** Melhor encaixe de uma borda/centro (`min`..`max`) em uma lista de alvos. */
+function dSnapAxis(min, max, raw, list) {
+  const tol = SNAP_PX / Math.max(0.05, designState.view.scale);
+  let delta = null;
+  let line = null;
+  let best = tol;
+  for (const edge of [min, (min + max) / 2, max]) {
+    for (const target of list) {
+      const cand = target - edge;
+      const dist = Math.abs(cand - raw);
+      if (dist < best) {
+        best = dist;
+        delta = cand;
+        line = target;
+      }
+    }
+  }
+  return { delta, line };
 }
 
 function dStatus(msg, kind) {
@@ -1021,6 +1085,107 @@ function dNudge(dx, dy) {
   dTranslate(dx, dy);
 }
 
+/** Espelha a seleção em torno do centro da própria caixa (`h` = X, `v` = Y). */
+function dMirror(axis) {
+  if (!designState.selection.length) return;
+  designState.shapes = DE.mirrorEntities(
+    designState.shapes,
+    dSelectionSet(),
+    axis,
+  );
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dStatus(
+    t(axis === 'h' ? 'design.mirror.h.done' : 'design.mirror.v.done'),
+    'ok',
+  );
+}
+
+/** Distribui as entidades selecionadas com folga igual (precisa de 3+). */
+function dDistribute(axis) {
+  if (DE.selectedEntities(designState.shapes, dSelectionSet()).length < 3) {
+    dStatus(t('design.distribute.need3'), 'error');
+    return;
+  }
+  designState.shapes = DE.distributeEntities(
+    designState.shapes,
+    dSelectionSet(),
+    axis,
+  );
+  dPushHistory();
+  dAfterSelection();
+  dStatus(
+    t(axis === 'h' ? 'design.distribute.h.done' : 'design.distribute.v.done'),
+    'ok',
+  );
+}
+
+// ----------------------------------------------------------- matriz de cópias
+
+function dArrayDialogOpen() {
+  const o = el.designArrayOverlay;
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+/** Abre a matriz de cópias com o passo sugerido do tamanho da seleção. */
+function dOpenArrayDialog() {
+  if (!designState.selection.length) return;
+  const b = dSelectionBounds();
+  const w = b ? b.maxX - b.minX : designState.grid;
+  const h = b ? b.maxY - b.minY : designState.grid;
+  const cols = $('designArrayCols');
+  const rows = $('designArrayRows');
+  const sx = $('designArrayStepX');
+  const sy = $('designArrayStepY');
+  if (cols) cols.value = '2';
+  if (rows) rows.value = '1';
+  if (sx) sx.value = (w > 0.01 ? w : designState.grid).toFixed(1);
+  if (sy) sy.value = (h > 0.01 ? h : designState.grid).toFixed(1);
+  if (el.designArrayOverlay) el.designArrayOverlay.classList.remove('hidden');
+  if (cols) {
+    cols.focus();
+    cols.select();
+  }
+}
+
+function dCloseArrayDialog() {
+  if (el.designArrayOverlay) el.designArrayOverlay.classList.add('hidden');
+}
+
+function dConfirmArray() {
+  const cols = dClamp(Math.round(dNum('designArrayCols', 1)), 1, 200);
+  const rows = dClamp(Math.round(dNum('designArrayRows', 1)), 1, 200);
+  const stepX = dNum('designArrayStepX', 0);
+  const stepY = dNum('designArrayStepY', 0);
+  if (cols * rows <= 1) {
+    dStatus(t('design.array.need2'), 'error');
+    return;
+  }
+  if (cols * rows > 1000) {
+    dStatus(t('design.array.tooMany'), 'error');
+    return;
+  }
+  const clones = DE.arrayEntities(
+    designState.shapes,
+    dSelectionSet(),
+    cols,
+    rows,
+    stepX,
+    stepY,
+    () => `g${designState.seq++}`,
+  );
+  dCloseArrayDialog();
+  if (!clones.length) return;
+  const base = designState.shapes.length;
+  designState.shapes.push(...clones);
+  dPushHistory();
+  designState.selection = clones.map((_, i) => base + i);
+  dAfterSelection();
+  dStatus(t('design.array.done', { n: clones.length }), 'ok');
+}
+
 // -------------------------------------------------------------- propriedades
 
 /**
@@ -1335,9 +1500,19 @@ function dUpdateButtons() {
     'designBackward',
     'designBack',
     'designCopyStyle',
+    'designArray',
+    'designMirrorH',
+    'designMirrorV',
   ]) {
     const node = $(id);
     if (node) node.disabled = !hasSel;
+  }
+  // Distribuir exige 3+ objetos (o primeiro e o último ficam onde estão).
+  const multi3 =
+    DE.selectedEntities(designState.shapes, dSelectionSet()).length >= 3;
+  for (const id of ['designDistH', 'designDistV']) {
+    const node = $(id);
+    if (node) node.disabled = !multi3;
   }
   const pasteStyle = $('designPasteStyle');
   if (pasteStyle) pasteStyle.disabled = !hasSel || !dStyleClip;
@@ -1530,6 +1705,31 @@ function dPaint() {
     ctx.setLineDash([4, 2]);
     ctx.strokeRect(x + 0.5, y + 0.5, rw, rh);
     ctx.setLineDash([]);
+  }
+
+  // guias de alinhamento (snap a objetos)
+  const guides = designState.guides;
+  if (guides && (guides.x !== null || guides.y !== null)) {
+    ctx.save();
+    ctx.strokeStyle = dark ? '#ff6b6b' : '#e01b24';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 4]);
+    if (guides.x !== null) {
+      const gx = Math.round(dW2S(guides.x, 0).x) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(gx, p0.y);
+      ctx.lineTo(gx, p1.y);
+      ctx.stroke();
+    }
+    if (guides.y !== null) {
+      const gy = Math.round(dW2S(0, guides.y).y) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, gy);
+      ctx.lineTo(p1.x, gy);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   dDrawRulers(ctx, dark);
@@ -1984,7 +2184,13 @@ function dOnPointerDown(e) {
       if (e.shiftKey) dSelectShape(hit, true);
       else if (!already) dSelectShape(hit, false);
       if (designState.selection.length) {
-        designState.drag = { mode: 'move', start: { x: pt.wx, y: pt.wy }, orig: dSnapshotSelection() };
+        designState.drag = {
+          mode: 'move',
+          start: { x: pt.wx, y: pt.wy },
+          orig: dSnapshotSelection(),
+          // Alvos de snap calculados uma vez (RNF-11): não mudam durante o arrasto.
+          snapTargets: dSnapTargets(new Set(dSelectionSet())),
+        };
         c.setPointerCapture(e.pointerId);
       }
       return;
@@ -2032,8 +2238,17 @@ function dOnPointerMove(e) {
     let dx = pt.wx - d.start.x;
     let dy = pt.wy - d.start.y;
     if (designState.snap) {
-      dx = dSnapV(d.orig.bbox.minX + dx) - d.orig.bbox.minX;
-      dy = dSnapV(d.orig.bbox.minY + dy) - d.orig.bbox.minY;
+      const s = dSnapMoveDelta(
+        d.orig.bbox,
+        dx,
+        dy,
+        d.snapTargets || { xs: [], ys: [] },
+      );
+      dx = s.dx;
+      dy = s.dy;
+      designState.guides = s.guides;
+    } else {
+      designState.guides = null;
     }
     dApplyOrig(d.orig, (p, src) => {
       p.x = src.x + dx;
@@ -2200,6 +2415,7 @@ function dOnPointerUp(e) {
   const c = el.designCanvas;
   const d = designState.drag;
   designState.drag = null;
+  designState.guides = null;
   if (c.hasPointerCapture?.(e.pointerId)) {
     try {
       c.releasePointerCapture(e.pointerId);
@@ -2287,13 +2503,14 @@ function dDesignOpen() {
 
 function dOnKeyDown(e) {
   if (!dDesignOpen()) return;
-  const sizeOpen = dSizeDialogOpen();
+  const sizeOpen = dSizeDialogOpen() || dArrayDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
 
   if (e.key === 'Escape') {
     if (sizeOpen) {
       dCloseSizeDialog();
+      dCloseArrayDialog();
       e.preventDefault();
       e.stopImmediatePropagation();
       return;
@@ -2580,6 +2797,7 @@ function openDesignModal() {
 function closeDesignModal() {
   dCloseTextEditor();
   dCloseSizeDialog();
+  dCloseArrayDialog();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
 }
 
@@ -2809,6 +3027,11 @@ function dConfirmSize() {
     designDelete: dDeleteSelection,
     designClear: dClearAll,
     designDuplicate: dDuplicateSelection,
+    designArray: dOpenArrayDialog,
+    designMirrorH: () => dMirror('h'),
+    designMirrorV: () => dMirror('v'),
+    designDistH: () => dDistribute('h'),
+    designDistV: () => dDistribute('v'),
     designGroup: dGroupSelection,
     designUngroup: dUngroupSelection,
     designAlignLeft: () => dAlign('left'),
@@ -2925,6 +3148,35 @@ function dConfirmSize() {
   if (el.designSizeOverlay) {
     el.designSizeOverlay.addEventListener('click', (e) => {
       if (e.target === el.designSizeOverlay) dCloseSizeDialog();
+    });
+  }
+
+  // diálogo "matriz de cópias"
+  const arrConfirm = $('designArrayConfirm');
+  if (arrConfirm) arrConfirm.addEventListener('click', dConfirmArray);
+  const arrCancel = $('designArrayCancel');
+  if (arrCancel) arrCancel.addEventListener('click', dCloseArrayDialog);
+  const arrClose = $('designArrayClose');
+  if (arrClose) arrClose.addEventListener('click', dCloseArrayDialog);
+  for (const id of [
+    'designArrayCols',
+    'designArrayRows',
+    'designArrayStepX',
+    'designArrayStepY',
+  ]) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          dConfirmArray();
+        }
+      });
+    }
+  }
+  if (el.designArrayOverlay) {
+    el.designArrayOverlay.addEventListener('click', (e) => {
+      if (e.target === el.designArrayOverlay) dCloseArrayDialog();
     });
   }
 

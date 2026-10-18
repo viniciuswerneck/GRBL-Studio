@@ -34,6 +34,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   botões **Copiar estilo**/**Colar estilo** (`Ctrl+Shift+C`/`Ctrl+Shift+V`)
   replicam a gravação de um objeto na seleção — ex.: contorno fraco e
   preenchimento forte no mesmo desenho, sem gerar dois arquivos.
+- **Repetir e alinhar**: **matriz de cópias** (colunas × linhas com passo X/Y, já
+  preenchido com o tamanho do objeto; a cópia de um bloco vira um bloco
+  independente), **espelhar** na horizontal/vertical em torno da seleção e
+  **distribuir** o espaçamento (folgas iguais entre as caixas) em X ou Y com 3+
+  objetos selecionados.
+- **Snap a objetos**: ao arrastar, a seleção encaixa nas **bordas e no centro
+  dos outros objetos** e da página (tolerância de 8 px na tela), com **linha de
+  guia** mostrando o alinhamento; sem alvo por perto, cai na grade. Os alvos são
+  calculados uma vez por arrasto, não a cada movimento (RNF-11).
 - **Navegação**: roda do mouse = zoom no cursor, botão do meio / `Space`+arraste
   = mover a tela, `F` ajustar à página, `0` voltar a 100 %, `+`/`-` zoom.
 - **Tamanho da arte**: "Gerar e visualizar" abre um diálogo de **largura × altura
@@ -48,8 +57,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   regeram o G-code a partir das formas (antes só afetavam a imagem). O slider de
   velocidade do modal vai até 20000 mm/min.
 - Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
-  z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
-  (`GRBL_DESIGN_EDITOR`).
+  z-order, simplificação RDP, espelhar, distribuir, matriz de cópias) + **27
+  testes**; bundle `public/designEditor.js` (`GRBL_DESIGN_EDITOR`).
 - Novo módulo **puro** `src/shared/hatch.ts` (preenchimento por varredura +
   zig-zague) + **9 testes**; bundle `public/hatch.js` (`GRBL_HATCH`).
 

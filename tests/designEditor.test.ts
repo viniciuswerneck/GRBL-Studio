@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  arrayEntities,
   boundsIntersect,
   distanceToSegment,
+  distributeEntities,
+  entityBounds,
   entityIndices,
   expandSelection,
   hitTest,
+  mirrorEntities,
   pointInPolygon,
   reorderEntities,
   rotatePoint,
+  selectedEntities,
   selectionBounds,
   shapeBounds,
   simplifyPolyline,
@@ -209,5 +214,135 @@ describe('simplifyPolyline / rotatePoint', () => {
     const p = rotatePoint({ x: 1, y: 0 }, 0, 0, Math.PI / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(1);
+  });
+});
+
+describe('selectedEntities / entityBounds', () => {
+  it('agrupa por `group` e ignora entidades fora da seleção', () => {
+    const shapes = [
+      rect(0, 0, 1, 1, { group: 'a' }),
+      rect(2, 0, 1, 1, { group: 'a' }),
+      rect(10, 10, 2, 2),
+    ];
+    const ents = selectedEntities(shapes, new Set([1]));
+    expect(ents).toEqual([[0, 1]]);
+    expect(entityBounds(shapes, ents[0])).toEqual({
+      minX: 0,
+      minY: 0,
+      maxX: 3,
+      maxY: 1,
+    });
+  });
+});
+
+describe('mirrorEntities', () => {
+  it('espelha em X em torno do centro da seleção', () => {
+    const tri: Shape = {
+      kind: 'polygon',
+      points: [
+        { x: 0, y: 0 },
+        { x: 1, y: 2 },
+        { x: 2, y: 0 },
+      ],
+      closed: true,
+    };
+    const other = rect(6, 0, 2, 2);
+    const out = mirrorEntities([tri, other], new Set([0]), 'h');
+    expect(out[0].points).toEqual([
+      { x: 2, y: 0 },
+      { x: 1, y: 2 },
+      { x: 0, y: 0 },
+    ]);
+    // a forma não selecionada é reaproveitada
+    expect(out[1]).toBe(other);
+  });
+
+  it('espelha em Y em torno do centro da seleção', () => {
+    const shapes = [rect(0, 0, 2, 2), rect(0, 8, 2, 2)];
+    const out = mirrorEntities(shapes, new Set([0, 1]), 'v');
+    expect(shapeBounds(out[0])).toEqual({
+      minX: 0,
+      minY: 8,
+      maxX: 2,
+      maxY: 10,
+    });
+    expect(shapeBounds(out[1])).toEqual({ minX: 0, minY: 0, maxX: 2, maxY: 2 });
+  });
+
+  it('sem seleção não muda nada', () => {
+    const shapes = [rect(0, 0, 2, 2)];
+    expect(mirrorEntities(shapes, new Set(), 'h')[0]).toBe(shapes[0]);
+  });
+});
+
+describe('distributeEntities', () => {
+  it('iguala as folgas na horizontal (pontas fixas)', () => {
+    const shapes = [rect(0, 0, 10, 2), rect(15, 0, 10, 2), rect(40, 0, 10, 2)];
+    const out = distributeEntities(shapes, new Set([0, 1, 2]), 'h');
+    // vão total 50, largura usada 30 -> folga 10
+    expect(shapeBounds(out[0]).minX).toBeCloseTo(0);
+    expect(shapeBounds(out[1]).minX).toBeCloseTo(20);
+    expect(shapeBounds(out[2]).minX).toBeCloseTo(40);
+  });
+
+  it('iguala as folgas na vertical usando o grupo como unidade', () => {
+    const shapes = [
+      rect(0, 0, 2, 4, { group: 'a' }),
+      rect(0, 2, 2, 4, { group: 'a' }),
+      rect(0, 20, 2, 4),
+      rect(0, 60, 2, 4),
+    ];
+    const out = distributeEntities(shapes, new Set([0, 1, 2, 3]), 'v');
+    // entidades: bloco 0..6, 20..24, 60..64 -> vão 64, usado 14, folga 25
+    expect(shapeBounds(out[0]).minY).toBeCloseTo(0);
+    expect(shapeBounds(out[1]).minY).toBeCloseTo(2);
+    expect(shapeBounds(out[2]).minY).toBeCloseTo(31);
+    expect(shapeBounds(out[3]).minY).toBeCloseTo(60);
+  });
+
+  it('com menos de 3 entidades não move nada', () => {
+    const shapes = [rect(0, 0, 2, 2), rect(30, 0, 2, 2)];
+    const out = distributeEntities(shapes, new Set([0, 1]), 'h');
+    expect(shapeBounds(out[1]).minX).toBe(30);
+  });
+});
+
+describe('arrayEntities', () => {
+  it('cria a matriz com o passo pedido, sem copiar a origem', () => {
+    const shapes = [rect(0, 0, 2, 2)];
+    const out = arrayEntities(shapes, new Set([0]), 2, 2, 10, 5, () => 'g');
+    expect(out).toHaveLength(3);
+    const xs = out.map((s) => shapeBounds(s)?.minX);
+    const ys = out.map((s) => shapeBounds(s)?.minY);
+    expect(xs.sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([0, 10, 10]);
+    expect(ys.sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([0, 5, 5]);
+  });
+
+  it('dá grupo novo a cada cópia de uma entidade agrupada', () => {
+    const shapes = [
+      rect(0, 0, 2, 2, { group: 'a' }),
+      rect(2, 0, 2, 2, { group: 'a' }),
+    ];
+    let n = 0;
+    const out = arrayEntities(
+      shapes,
+      new Set([0, 1]),
+      3,
+      1,
+      10,
+      0,
+      () => `g${++n}`,
+    );
+    expect(out).toHaveLength(4);
+    expect(out[0].group).toBe('g1');
+    expect(out[1].group).toBe('g1');
+    expect(out[2].group).toBe('g2');
+    expect(out[3].group).toBe('g2');
+  });
+
+  it('matriz 1×1 não cria nada', () => {
+    expect(
+      arrayEntities([rect(0, 0, 1, 1)], new Set([0]), 1, 1, 5, 5, () => 'g'),
+    ).toEqual([]);
   });
 });
