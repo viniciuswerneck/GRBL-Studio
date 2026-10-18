@@ -6,7 +6,42 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Added — documentação e CI
+## [0.5.2] - 2026-10-18
+
+### Fixed — desenho (revisão: itens C)
+
+- **Espelhar preserva o sentido do contorno (winding)**: refletir inverte a ordem
+  dos pontos e, num contorno fechado, isso troca o sinal da área — o
+  `offsetLoop` decide crescer/encolher pelo sinal, então um **furo espelhado
+  passava a engordar** como peça. Agora a ordem é invertida em formas fechadas.
+- **A área de pega enxerga a espessura do traço**: o clique era comparado com a
+  linha do meio, não com a faixa de `width` mm que o usuário vê.
+- **`strokeOffsets` com o passo certo**: as passadas ficam a múltiplos exatos do
+  passo — `strokeOffsets(0.1, 0.1)` devolvia **3 passadas** em vez de 1 (o traço
+  saía com o dobro da densidade pedida). Estourado o limite de linhas, elas se
+  espalham até a borda como antes.
+- **Grupo vazio não junta objetos soltos**: formas com `group: ''` caíam todas no
+  mesmo balde e viravam um bloco único (mover uma movia as outras).
+- **Campos de propriedades inertes sem seleção** (X/Y/L/A/R e P/V/N/E/px).
+
+### Added — desenho
+
+- **Passadas por objeto (`shape.passes`)**: campo novo **N** na barra de
+  propriedades (ao lado de P/V/E), copiado no "copiar estilo" e **respeitado na
+  geração** — antes o valor era ignorado pelo `designToGcode`.
+- Acessibilidade/i18n: o `aria-label` dos botões de fechar do desenho agora é
+  traduzível (`data-i18n-aria`) e as chaves mortas `design.font` /
+  `design.sel.count` saíram dos três idiomas.
+
+### Fixed — CI (job E2E)
+
+- O script `test:e2e` havia sumido do `package.json`, então o job **E2E
+  (Playwright)** falhava sempre com `Missing script: "test:e2e"` — a suíte já
+  existia (`e2e/app.spec.ts`) e passa. Os workflows também deixaram de baixar os
+  navegadores do Playwright (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD`): o E2E usa o
+  Electron do projeto.
+
+### Documentação
 
 - **Módulo M13 — Editor vetorial ("Desenhar")** no `PRODUCT_SPEC.md`: 12
   requisitos `RF-DSN-1…12` (prancheta em mm, formas, transformações, snap,
@@ -18,14 +53,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Planejamento das ferramentas de QR Code e código de barras** (v0.6, fases
   S1–S3, `RF-SYM-1…9`, módulo M12): novo `docs/PLANO_QR_BARCODE.md` e atualização
   de `ARCHITECTURE`, `FEATURES_COMPARISON`, `PLANO_PREMIUM`, `ROADMAP` e índice.
-
-### Fixed — CI (job E2E)
-
-- O script `test:e2e` havia sumido do `package.json`, então o job **E2E
-  (Playwright)** falhava sempre com `Missing script: "test:e2e"` — a suíte já
-  existia (`e2e/app.spec.ts`) e passa. Os workflows também deixaram de baixar os
-  navegadores do Playwright (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD`): o E2E usa o
-  Electron do projeto.
 
 ## [0.5.1] - 2026-10-18
 
