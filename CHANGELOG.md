@@ -6,6 +6,42 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — editor de desenho estilo CorelDRAW (P2.1)
+- **Workspace novo**: caixa de ferramentas vertical com **ícones SVG**, barra de
+  propriedades contextual (X/Y/L/A/rotação, travar proporção, alinhamento à
+  página, ordem Z, agrupar/desagrupar, duplicar), **réguas** em mm, **prancheta**
+  com a área útil da máquina (150 × 130 mm, persistida) e painel de **Objetos**
+  (uma linha por bloco, não por contorno).
+- **Seleção e edição**: multi-seleção (clique + `Shift`), **marquee**, mover,
+  redimensionar por 8 *handles*, **rotacionar** por alça (com passo de 15° com
+  `Shift`), *nudge* pelas setas, `Ctrl+D` duplicar, `Ctrl+C`/`Ctrl+V`,
+  `Ctrl+G`/`Ctrl+Shift+G` agrupar/desagrupar, `Ctrl+[`/`Ctrl+]` ordem Z,
+  `Ctrl+A` selecionar tudo, `Del` excluir e `Ctrl+Z`/`Ctrl+Y` desfazer/refazer
+  (80 níveis).
+- **Texto como bloco**: todos os contornos de um texto formam um **grupo** que
+  se move/redimensiona/rotaciona inteiro; **duplo clique** reabre o texto para
+  editar. Dois modos: **vetor (contorno)** — traça a fonte do sistema em alta
+  resolução (16 px/mm) com simplificação RDP; **traço único** (Hershey Simplex).
+- **Navegação**: roda do mouse = zoom no cursor, botão do meio / `Space`+arraste
+  = mover a tela, `F` ajustar à página, `0` voltar a 100 %, `+`/`-` zoom.
+- Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
+  z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
+  (`GRBL_DESIGN_EDITOR`).
+
+### Fixed — editor de desenho
+- "Gerar e visualizar" não produzia G-code: `designToGcode` recebia o array de
+  formas em vez do documento (`{ shapes, width, height }`).
+- O conteúdo era pintado duas vezes por quadro e a lista de objetos era
+  reconstruída a cada movimento do mouse (violava RNF-11); agora o render é
+  agendado por `requestAnimationFrame` e a lista só muda quando necessário.
+- Alinhamento usava pixels do canvas como se fossem mm; agora usa a página (mm).
+- Elipse agora é desenhada canto-a-canto (como no CorelDRAW); antes era centrada
+  no ponto inicial do arraste.
+- O modal **"Posicionar a gravadora"** aparecia atrás do editor (z-index); agora
+  abre por cima e `Esc` fecha só ele.
+- Removido `<div>` de overlay duplicado em `public/index.html` (desbalanceava o
+  DOM e escondia o restante da página).
+
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior
   gasto de CPU do app durante a gravação (medido com um raster de 270 mil

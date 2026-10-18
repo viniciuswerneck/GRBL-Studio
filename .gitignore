@@ -8,6 +8,9 @@ public/materials.js
 public/preview.js
 public/resume.js
 public/contour.js
+public/design.js
+public/designEditor.js
+public/fonts.js
 public/svg.js
 public/i18n.js
 

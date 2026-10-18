@@ -1438,9 +1438,38 @@ body.job-active .job-bar {
   min-width: 72px;
 }
 
-/* ---------------------------------------- Desenho vetorial (modal) */
+/* ---------------------------------------------- Ícones SVG (sprite inline) */
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.design-ic {
+  width: 18px;
+  height: 18px;
+  display: block;
+  pointer-events: none;
+}
+
+.design-tool .design-ic,
+.design-toolbox .design-tool .design-ic {
+  width: 19px;
+  height: 19px;
+}
+
+/* ---------------------------------------- Desenho vetorial (modal) — CorelDRAW-like */
+/* Fica abaixo dos demais modais (frame/posicionar) para que "Gerar e
+   visualizar" abra o posicionamento por cima do editor. */
+#designOverlay {
+  z-index: 90;
+}
+
 .design-modal {
-  width: min(920px, 96vw);
+  width: min(1180px, 97vw);
+  height: min(840px, 94vh);
+  max-height: 94vh;
 }
 
 .design-modal.maximized {
@@ -1450,170 +1479,327 @@ body.job-active .job-bar {
   border-radius: 0;
 }
 
-.design-modal.maximized .design-body {
-  max-height: calc(100vh - 120px);
-}
-
-.design-modal.maximized #designCanvas {
-  aspect-ratio: auto;
-  height: calc(100vh - 260px);
-  max-height: none;
-}
-
-.design-body {
-  gap: var(--sp-2);
-}
-
-/* Barra de ferramentas (estilo CorelDRAW: grupos separados por separador). */
-.design-toolbar {
+/* --- barra de título --- */
+.design-titlebar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
-  background: var(--bg);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: 1px solid var(--stroke);
+  background: var(--bg-card);
 }
 
-.design-toolbar .design-tool {
-  min-width: 34px;
-  min-height: 30px;
-  padding: 4px 8px;
+.design-title-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.design-title-left h3 {
+  margin: 0;
   font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.design-badge {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--bg-input);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-pill);
+  padding: 1px var(--sp-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.design-title-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.design-title-right .icon-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.design-title-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--sp-1);
+  background: var(--stroke);
+}
+
+.design-zoom-value {
+  min-width: 52px;
+  min-height: 28px;
+  padding: 0 var(--sp-1);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
   background: transparent;
   border-color: transparent;
   color: var(--text-sub);
 }
 
-.design-toolbar .design-tool:hover:not(:disabled) {
+.design-zoom-value:hover:not(:disabled) {
   background: var(--bg-hover);
   color: var(--text);
 }
 
-.design-toolbar .design-tool.active {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: transparent;
+/* --- barra de propriedades --- */
+.design-propbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding: 3px var(--sp-2);
+  border-bottom: 1px solid var(--stroke);
+  background: var(--bg);
+  min-height: 38px;
 }
 
-.design-toolbar .design-tool.danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger) 20%, transparent);
-  color: var(--danger);
+.design-prop-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
-.design-sep {
+.design-prop-group .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.design-prop-sep {
   width: 1px;
   height: 22px;
   background: var(--stroke);
-  margin: 0 var(--sp-1);
 }
 
-/* Barra de propriedades (contextual). */
-.design-props {
-  display: flex;
-  align-items: center;
+.design-prop-right {
+  margin-left: auto;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--bg);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  flex-wrap: wrap;
 }
 
-.design-prop {
+.design-mini {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--fs-12);
+  gap: 4px;
+  font-size: 11px;
   color: var(--text-sub);
+  white-space: nowrap;
 }
 
-.design-prop span {
-  min-width: 1rem;
-}
-
-.design-prop input[type='number'] {
-  width: 4.2rem;
+.design-modal .design-mini > span {
+  min-width: 0.9rem;
   text-align: center;
 }
 
-.design-prop-check {
-  gap: var(--sp-1);
-}
-
-.design-prop-check input {
-  width: auto;
-}
-
-.design-prop-status {
-  margin-left: auto;
+.design-modal .design-mini input {
+  width: 3.7rem;
+  padding: 3px 4px;
   font-size: var(--fs-12);
+  text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+.design-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+.design-modal .design-check input {
+  width: auto;
+  margin: 0;
+}
+
+.design-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
   color: var(--text-disabled);
 }
 
-/* Área de trabalho: canvas + lista de objetos. */
-.design-workspace {
+.design-toggle:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.design-toggle.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* --- layout principal --- */
+.design-main {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 160px;
-  gap: var(--sp-2);
-  align-items: stretch;
+  grid-template-columns: 46px minmax(0, 1fr) 234px;
 }
 
-#designCanvas {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 720 / 420;
-  background: #0a0a0d;
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-sm);
-  cursor: crosshair;
-  touch-action: none;
-}
-
-/* Lista de objetos (estilo painel de camadas do CorelDRAW). */
-.design-objects {
+/* caixa de ferramentas vertical */
+.design-toolbox {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
+  align-items: center;
+  gap: 2px;
+  padding: var(--sp-1) 0;
+  border-right: 1px solid var(--stroke);
   background: var(--bg);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  max-height: 260px;
   overflow-y: auto;
 }
 
-.design-objects-head {
-  font-size: var(--fs-12);
+.design-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  border-radius: var(--r-md);
+  color: var(--text-sub);
+}
+
+.design-tool:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.design-tool.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.design-tool-sep {
+  width: 24px;
+  height: 1px;
+  margin: var(--sp-1) 0;
+  background: var(--stroke);
+}
+
+/* tela (canvas + editor de texto) */
+.design-canvas-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #262629;
+}
+
+#designCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: default;
+}
+
+html[data-theme="light"] .design-canvas-wrap,
+html[data-theme="solarized-light"] .design-canvas-wrap,
+html[data-theme="sand"] .design-canvas-wrap {
+  background: #d9d9dc;
+}
+
+/* painéis laterais */
+.design-dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--stroke);
+  background: var(--bg);
+}
+
+.design-dock-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--sp-2);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.design-dock-section.grow {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.design-dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-sub);
-  padding-bottom: var(--sp-1);
-  border-bottom: 1px solid var(--stroke);
 }
 
+.design-dock-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-disabled);
+}
+
+.design-dock-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.design-dock-row > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.design-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.design-modal .design-field input,
+.design-modal .design-field select {
+  width: 100%;
+  padding: 4px var(--sp-1);
+  font-size: var(--fs-12);
+}
+
+/* lista de objetos */
 .design-object-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .design-obj {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-1);
+  gap: 6px;
   padding: 4px 6px;
   border-radius: var(--r-sm);
   font-size: var(--fs-12);
-  cursor: pointer;
   color: var(--text-sub);
+  cursor: pointer;
+  user-select: none;
 }
 
 .design-obj:hover {
@@ -1622,16 +1808,33 @@ body.job-active .job-bar {
 }
 
 .design-obj.selected {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.design-obj .design-ic {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
+.design-obj-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .design-obj-del {
-  min-width: 20px;
+  width: 20px;
+  height: 20px;
   min-height: 20px;
   padding: 0;
-  font-size: 14px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border-color: transparent;
   color: var(--text-disabled);
@@ -1642,16 +1845,111 @@ body.job-active .job-bar {
   background: transparent;
 }
 
-/* Campos de parâmetros. */
-.design-fields {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--sp-2) var(--sp-3);
+.design-obj-empty {
+  padding: var(--sp-2) var(--sp-1);
+  font-size: var(--fs-12);
+  color: var(--text-disabled);
 }
 
-.design-fields .field input,
-.design-fields .field select {
-  width: 100%;
+/* barra de status */
+.design-statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px var(--sp-3);
+  border-top: 1px solid var(--stroke);
+  background: var(--bg);
+  font-size: 11px;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.design-status-msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-sub);
+}
+
+.design-status-msg.error {
+  color: var(--danger);
+}
+
+.design-status-msg.ok {
+  color: var(--ok);
+}
+
+.design-status-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--stroke);
+  flex: 0 0 auto;
+}
+
+.design-actions button {
+  min-width: 132px;
+}
+
+/* --- editor de texto flutuante --- */
+.design-text-editor {
+  position: absolute;
+  z-index: 6;
+  width: 244px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--bg-card);
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+}
+
+.design-text-editor.hidden {
+  display: none;
+}
+
+.design-text-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.design-text-head .icon-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.design-text-head .design-ic {
+  width: 14px;
+  height: 14px;
+}
+
+.design-text-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.design-text-row > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.design-text-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.design-text-actions button {
+  min-height: 30px;
+  padding: 4px var(--sp-2);
+  font-size: var(--fs-12);
 }
 
 .appearance-label {

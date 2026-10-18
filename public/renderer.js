@@ -246,8 +246,6 @@ const el = {
   designPower: $('designPower'),
   designPasses: $('designPasses'),
   designMode: $('designMode'),
-  designFont: $('designFont'),
-  designText: $('designText'),
   designTextSize: $('designTextSize'),
   designTextFont: $('designTextFont'),
   designTextMode: $('designTextMode'),
@@ -568,413 +566,1698 @@ async function openSvgImport() {
   }
 }
 
-// ------------------------------------------------------------------ desenho vetorial (design tools) — premium (CorelDRAW-inspired)
-window.__designSpace = false;
-document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.__designSpace = true; });
-document.addEventListener('keyup', (e) => { if (e.code === 'Space') window.__designSpace = false; });
+// ------------------------------------------------------------------ desenho vetorial (design tools)
+//
+// Editor vetorial estilo CorelDRAW. A geometria pura vive em
+// `src/shared/designEditor.ts` (bounds, grupos, hit-test, z-order, RDP) e a
+// geração de G-code em `src/shared/design.ts`. Aqui fica **só a interação**
+// (canvas, ponteiro, teclado) — nunca protocolo GRBL.
+
+const DE = window.GRBL_DESIGN_EDITOR;
+const RULER = 22; // espessura das réguas (px)
+const D_MARGIN = 18; // margem do "ajustar à página" (px)
+const HANDLE = 3.5; // meia-aresta do handle (px)
+const HIT_PX = 3; // tolerância de clique (px)
+
 const designState = {
   tool: 'select',
-  shapes: [],          // Shape[]
-  selected: -1,
+  shapes: [],
+  selection: [],
   drawing: null,
-  dragStart: null,
-  dragMoved: false,
-  resizeHandle: -1,
-  resizeOrig: null,
-  history: [],         // snapshots of shapes[]
+  history: [],
   historyIdx: -1,
-  view: { scale: 1, tx: 0, ty: 0 },
+  view: { scale: 4, tx: 40, ty: 40 },
+  page: { w: 150, h: 130 },
+  grid: 5,
   snap: true,
-  snapSize: 1,         // mm
+  lockAspect: false,
+  dpr: 1,
+  pxW: 900,
+  pxH: 600,
+  cursor: { x: 0, y: 0, inside: false },
+  marquee: null,
+  drag: null,
+  space: false,
+  rotApplied: 0,
+  textEdit: null,
   clipboard: null,
-  pendingTextPos: null,
-  panning: false,
-  panStart: null,
+  seq: 0,
 };
 
-function designCanvas() { return el.designCanvas; }
-function designCtx() { const c = el.designCanvas; return c ? c.getContext('2d') : null; }
-function designSize() { const c = el.designCanvas; return c ? { w: c.width, h: c.height } : { w: 720, h: 420 }; }
+// -------------------------------------------------------------- utilidades
 
-// ---- coordenadas mundo <-> canvas (com zoom/pan) ----
-function dWorldToCanvas(wx, wy) {
-  return { x: wx * designState.view.scale + designState.view.tx,
-           y: wy * designState.view.scale + designState.view.ty };
+function dNum(id, fallback) {
+  const node = $(id);
+  const v = node ? Number(node.value) : NaN;
+  return Number.isFinite(v) ? v : fallback;
 }
-function dCanvasToWorld(cx, cy) {
-  return { x: (cx - designState.view.tx) / designState.view.scale,
-           y: (cy - designState.view.ty) / designState.view.scale };
+
+function dClamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
 }
-function dSnap(v) {
+
+function dSnapV(v) {
   if (!designState.snap) return v;
-  const s = designState.snapSize || 1;
-  return Math.round(v / s) * s;
+  const g = designState.grid > 0 ? designState.grid : 1;
+  return Math.round(v / g) * g;
 }
 
-// ---- histórico (undo/redo) ----
-function dPushHistory() {
-  const snap = JSON.stringify(designState.shapes);
-  // descarta futuro
-  designState.history = designState.history.slice(0, designState.historyIdx + 1);
-  designState.history.push(snap);
-  if (designState.history.length > 60) designState.history.shift();
-  designState.historyIdx = designState.history.length - 1;
-  dUpdateUndoButtons();
+function dStatus(msg, kind) {
+  const node = $('designStatus');
+  if (!node) return;
+  node.textContent = msg || '';
+  node.classList.toggle('error', kind === 'error');
+  node.classList.toggle('ok', kind === 'ok');
 }
+
+// -------------------------------------------------------- coordenadas visão
+
+function dW2S(x, y) {
+  const v = designState.view;
+  return { x: x * v.scale + v.tx, y: y * v.scale + v.ty };
+}
+
+function dS2W(x, y) {
+  const v = designState.view;
+  return { x: (x - v.tx) / v.scale, y: (y - v.ty) / v.scale };
+}
+
+function dResizeCanvas() {
+  const c = el.designCanvas;
+  if (!c) return;
+  const rect = c.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return;
+  const dpr = dClamp(window.devicePixelRatio || 1, 1, 2);
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+  }
+  designState.pxW = w;
+  designState.pxH = h;
+  designState.dpr = dpr;
+}
+
+function dFitPage() {
+  dResizeCanvas();
+  const { pxW, pxH, page } = designState;
+  const availW = Math.max(40, pxW - RULER - D_MARGIN * 2);
+  const availH = Math.max(40, pxH - RULER - D_MARGIN * 2);
+  const scale = dClamp(Math.min(availW / page.w, availH / page.h), 0.2, 40);
+  designState.view.scale = scale;
+  designState.view.tx = RULER + D_MARGIN + (availW - page.w * scale) / 2;
+  designState.view.ty = RULER + D_MARGIN + (availH - page.h * scale) / 2;
+}
+
+function dZoomAt(sx, sy, factor) {
+  const before = dS2W(sx, sy);
+  designState.view.scale = dClamp(designState.view.scale * factor, 0.1, 60);
+  const after = dW2S(before.x, before.y);
+  designState.view.tx += sx - after.x;
+  designState.view.ty += sy - after.y;
+  dUpdateZoom();
+  dRender();
+}
+
+function dUpdateZoom() {
+  const label = `${Math.round(designState.view.scale * 100)}%`;
+  const zl = $('designZoomLabel');
+  if (zl) zl.textContent = label;
+  const z100 = $('designZoom100');
+  if (z100) z100.textContent = label;
+}
+
+// --------------------------------------------------------------- histórico
+
+function dPushHistory() {
+  designState.history = designState.history.slice(0, designState.historyIdx + 1);
+  designState.history.push(JSON.stringify(designState.shapes));
+  if (designState.history.length > 80) designState.history.shift();
+  designState.historyIdx = designState.history.length - 1;
+  dUpdateButtons();
+}
+
+function dRestoreShapes(json) {
+  designState.shapes = JSON.parse(json);
+  designState.selection = [];
+  designState.rotApplied = 0;
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateStatus();
+  dUpdateButtons();
+}
+
 function dUndo() {
   if (designState.historyIdx <= 0) return;
   designState.historyIdx--;
-  designState.shapes = JSON.parse(designState.history[designState.historyIdx]);
-  designState.selected = -1;
-  dRender();
-  dUpdateProps();
-  dUpdateObjectList();
-  dUpdateUndoButtons();
+  dRestoreShapes(designState.history[designState.historyIdx]);
+  dStatus(t('design.status.undo'));
 }
+
 function dRedo() {
   if (designState.historyIdx >= designState.history.length - 1) return;
   designState.historyIdx++;
-  designState.shapes = JSON.parse(designState.history[designState.historyIdx]);
-  designState.selected = -1;
+  dRestoreShapes(designState.history[designState.historyIdx]);
+  dStatus(t('design.status.redo'));
+}
+
+// ---------------------------------------------------------------- seleção
+
+function dSelectionSet() {
+  return new Set(designState.selection);
+}
+
+function dClearSelection(paint) {
+  if (!designState.selection.length) return;
+  designState.selection = [];
+  designState.rotApplied = 0;
+  if (paint !== false) {
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+    dUpdateStatus();
+    dUpdateButtons();
+  }
+}
+
+function dAfterSelection() {
+  designState.rotApplied = 0;
   dRender();
   dUpdateProps();
   dUpdateObjectList();
-  dUpdateUndoButtons();
-}
-function dUpdateUndoButtons() {
-  if (el.designUndo) el.designUndo.disabled = designState.historyIdx <= 0;
-  if (el.designRedo) el.designRedo.disabled = designState.historyIdx >= designState.history.length - 1;
+  dUpdateStatus();
+  dUpdateButtons();
 }
 
-// ---- renderização premium ----
+function dSelectShape(index, additive) {
+  if (index < 0) {
+    if (!additive) dClearSelection();
+    return;
+  }
+  const idxs = DE.expandSelection(designState.shapes, index);
+  if (additive) {
+    const set = dSelectionSet();
+    const allIn = idxs.every((i) => set.has(i));
+    for (const i of idxs) {
+      if (allIn) set.delete(i);
+      else set.add(i);
+    }
+    designState.selection = [...set].sort((a, b) => a - b);
+  } else {
+    designState.selection = idxs.slice();
+  }
+  dAfterSelection();
+}
+
+function dSelectAll() {
+  if (!designState.shapes.length) return;
+  const set = new Set();
+  for (let i = 0; i < designState.shapes.length; i++) set.add(i);
+  designState.selection = [...set];
+  dAfterSelection();
+}
+
+// -------------------------------------------------------------- geometria UI
+
+function dSelectionBounds() {
+  return DE ? DE.selectionBounds(designState.shapes, designState.selection) : null;
+}
+
+function dHandleScreenPoints(b) {
+  const midX = (b.minX + b.maxX) / 2;
+  const midY = (b.minY + b.maxY) / 2;
+  return [
+    dW2S(b.minX, b.minY),
+    dW2S(midX, b.minY),
+    dW2S(b.maxX, b.minY),
+    dW2S(b.maxX, midY),
+    dW2S(b.maxX, b.maxY),
+    dW2S(midX, b.maxY),
+    dW2S(b.minX, b.maxY),
+    dW2S(b.minX, midY),
+  ];
+}
+
+function dHandleIndexAt(b, sx, sy) {
+  const pts = dHandleScreenPoints(b);
+  for (let i = 0; i < pts.length; i++) {
+    if (Math.abs(pts[i].x - sx) <= HANDLE + 2 && Math.abs(pts[i].y - sy) <= HANDLE + 2) return i;
+  }
+  return -1;
+}
+
+function dRotateHandleAt(b, sx, sy) {
+  const top = dW2S((b.minX + b.maxX) / 2, b.minY);
+  const rp = { x: top.x, y: top.y - 26 };
+  return Math.hypot(sx - rp.x, sy - rp.y) <= 9;
+}
+
+function dSnapshotSelection() {
+  const idxs = designState.selection.slice();
+  return {
+    idxs,
+    pts: idxs.map((i) => designState.shapes[i].points.map((p) => ({ x: p.x, y: p.y }))),
+    bbox: dSelectionBounds(),
+  };
+}
+
+function dApplyOrig(orig, fn) {
+  for (let k = 0; k < orig.idxs.length; k++) {
+    const sh = designState.shapes[orig.idxs[k]];
+    if (!sh) continue;
+    const src = orig.pts[k];
+    for (let i = 0; i < sh.points.length; i++) fn(sh.points[i], src[i], i);
+  }
+}
+
+// -------------------------------------------------------------- operações
+
+function dNextName(kind) {
+  const label = t(`design.kind.${kind === 'circle' ? 'ellipse' : kind}`);
+  let n = 0;
+  for (const sh of designState.shapes) {
+    if (sh.name?.startsWith(label)) n++;
+  }
+  return `${label} ${n + 1}`;
+}
+
+function dAddShape(shape) {
+  designState.shapes.push(shape);
+  dPushHistory();
+  designState.selection = designState.shapes.map((_, i) => i).filter((i) => {
+    const g = shape.group;
+    return g ? designState.shapes[i].group === g : i === designState.shapes.length - 1;
+  });
+  dAfterSelection();
+}
+
+function dDeleteSelection() {
+  if (!designState.selection.length) return;
+  const set = dSelectionSet();
+  designState.shapes = designState.shapes.filter((_, i) => !set.has(i));
+  designState.selection = [];
+  designState.rotApplied = 0;
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateStatus();
+  dUpdateButtons();
+}
+
+function dClearAll() {
+  if (!designState.shapes.length) return;
+  designState.shapes = [];
+  designState.selection = [];
+  designState.rotApplied = 0;
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateStatus();
+  dUpdateButtons();
+}
+
+function dDuplicateSelection() {
+  if (!designState.selection.length) return;
+  const off = designState.grid > 0 ? designState.grid * 2 : 4;
+  const map = new Map();
+  const clones = [];
+  const newIdx = [];
+  for (const i of designState.selection) {
+    const src = designState.shapes[i];
+    const clone = JSON.parse(JSON.stringify(src));
+    clone.points = clone.points.map((p) => ({ x: p.x + off, y: p.y + off }));
+    if (clone.group) {
+      if (!map.has(clone.group)) map.set(clone.group, `g${designState.seq++}`);
+      clone.group = map.get(clone.group);
+    }
+    clones.push(clone);
+  }
+  const base = designState.shapes.length;
+  designState.shapes.push(...clones);
+  for (let i = 0; i < clones.length; i++) newIdx.push(base + i);
+  dPushHistory();
+  designState.selection = newIdx;
+  dAfterSelection();
+}
+
+function dCopySelection() {
+  if (!designState.selection.length) return;
+  designState.clipboard = designState.selection.map((i) =>
+    JSON.parse(JSON.stringify(designState.shapes[i])),
+  );
+  dStatus(t('design.status.copied', { n: designState.clipboard.length }), 'ok');
+}
+
+function dPasteClipboard() {
+  if (!designState.clipboard?.length) return;
+  const off = designState.grid > 0 ? designState.grid * 2 : 4;
+  const map = new Map();
+  const clones = designState.clipboard.map((src) => {
+    const clone = JSON.parse(JSON.stringify(src));
+    clone.points = clone.points.map((p) => ({ x: p.x + off, y: p.y + off }));
+    if (clone.group) {
+      if (!map.has(clone.group)) map.set(clone.group, `g${designState.seq++}`);
+      clone.group = map.get(clone.group);
+    }
+    return clone;
+  });
+  const base = designState.shapes.length;
+  designState.shapes.push(...clones);
+  dPushHistory();
+  designState.selection = clones.map((_, i) => base + i);
+  dAfterSelection();
+}
+
+function dGroupSelection() {
+  if (designState.selection.length < 2) return;
+  const g = `g${designState.seq++}`;
+  for (const i of designState.selection) designState.shapes[i].group = g;
+  dPushHistory();
+  dAfterSelection();
+  dStatus(t('design.status.grouped'), 'ok');
+}
+
+function dUngroupSelection() {
+  let changed = false;
+  for (const i of designState.selection) {
+    if (designState.shapes[i].group) {
+      delete designState.shapes[i].group;
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  dPushHistory();
+  dAfterSelection();
+  dStatus(t('design.status.ungrouped'), 'ok');
+}
+
+function dReorder(mode) {
+  if (!designState.selection.length) return;
+  designState.shapes = DE.reorderEntities(designState.shapes, dSelectionSet(), mode);
+  dPushHistory();
+  dAfterSelection();
+}
+
+function dAlign(mode) {
+  const b = dSelectionBounds();
+  if (!b) return;
+  const { w, h } = designState.page;
+  let dx = 0;
+  let dy = 0;
+  if (mode === 'left') dx = -b.minX;
+  else if (mode === 'center') dx = w / 2 - (b.minX + b.maxX) / 2;
+  else if (mode === 'right') dx = w - b.maxX;
+  else if (mode === 'top') dy = -b.minY;
+  else if (mode === 'middle') dy = h / 2 - (b.minY + b.maxY) / 2;
+  else if (mode === 'bottom') dy = h - b.maxY;
+  dTranslate(dx, dy);
+}
+
+function dTranslate(dx, dy) {
+  if (!designState.selection.length || (dx === 0 && dy === 0)) return;
+  for (const i of designState.selection) {
+    for (const p of designState.shapes[i].points) {
+      p.x += dx;
+      p.y += dy;
+    }
+  }
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateStatus();
+}
+
+function dNudge(dx, dy) {
+  if (!designState.selection.length) return;
+  dTranslate(dx, dy);
+}
+
+// -------------------------------------------------------------- propriedades
+
+function dUpdateProps() {
+  const px = $('designPropX');
+  if (!px) return;
+  const b = dSelectionBounds();
+  if (!b) {
+    for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH', 'designPropRot']) {
+      const node = $(id);
+      if (node) node.value = '';
+    }
+    return;
+  }
+  px.value = b.minX.toFixed(1);
+  const py = $('designPropY');
+  if (py) py.value = b.minY.toFixed(1);
+  const pw = $('designPropW');
+  if (pw) pw.value = (b.maxX - b.minX).toFixed(1);
+  const ph = $('designPropH');
+  if (ph) ph.value = (b.maxY - b.minY).toFixed(1);
+  const pr = $('designPropRot');
+  if (pr) pr.value = String(Math.round(designState.rotApplied));
+}
+
+function dApplyProps() {
+  const b = dSelectionBounds();
+  if (!b || !designState.selection.length) return;
+  const nx = dNum('designPropX', b.minX);
+  const ny = dNum('designPropY', b.minY);
+  const nw = dNum('designPropW', b.maxX - b.minX);
+  const nh = dNum('designPropH', b.maxY - b.minY);
+  const ow = b.maxX - b.minX || 1;
+  const oh = b.maxY - b.minY || 1;
+  let sx = nw / ow;
+  let sy = nh / oh;
+  if (designState.lockAspect) {
+    const s = Math.abs(nw / ow - 1) > Math.abs(nh / oh - 1) ? nw / ow : nh / oh;
+    sx = s;
+    sy = s;
+  }
+  if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx <= 0 || sy <= 0) return;
+  for (const i of designState.selection) {
+    for (const p of designState.shapes[i].points) {
+      p.x = nx + (p.x - b.minX) * sx;
+      p.y = ny + (p.y - b.minY) * sy;
+    }
+  }
+  const targetRot = dNum('designPropRot', designState.rotApplied);
+  const delta = targetRot - designState.rotApplied;
+  dPushHistory();
+  if (delta) {
+    // Gira em torno do centro real após o redimensionamento.
+    const b2 = dSelectionBounds();
+    const rcx = b2 ? (b2.minX + b2.maxX) / 2 : (nx + nw) / 2;
+    const rcy = b2 ? (b2.minY + b2.maxY) / 2 : (ny + nh) / 2;
+    const rad = (delta * Math.PI) / 180;
+    for (const i of designState.selection) {
+      for (const p of designState.shapes[i].points) {
+        const np = DE.rotatePoint(p, rcx, rcy, rad);
+        p.x = np.x;
+        p.y = np.y;
+      }
+    }
+    designState.rotApplied = targetRot;
+  }
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateStatus();
+}
+
+// ---------------------------------------------------------------- listas UI
+
+function dKindIconId(kind) {
+  switch (kind) {
+    case 'rect':
+      return 'ic-rect';
+    case 'circle':
+    case 'ellipse':
+      return 'ic-ellipse';
+    case 'line':
+      return 'ic-line';
+    case 'text':
+      return 'ic-text';
+    default:
+      return 'ic-rect';
+  }
+}
+
+function dUpdateObjectList() {
+  const ul = $('designObjectList');
+  if (!ul) return;
+  const entities = DE ? DE.entityIndices(designState.shapes) : [];
+  const selSet = dSelectionSet();
+  ul.textContent = '';
+  const count = $('designObjCount');
+  if (count) count.textContent = String(entities.length);
+  if (!entities.length) {
+    const li = document.createElement('li');
+    li.className = 'design-obj-empty';
+    li.textContent = t('design.objects.empty');
+    ul.appendChild(li);
+    return;
+  }
+  // topo primeiro (como o painel de camadas)
+  for (let ei = entities.length - 1; ei >= 0; ei--) {
+    const idxs = entities[ei];
+    const sh = designState.shapes[idxs[0]];
+    const selected = idxs.some((i) => selSet.has(i));
+    const li = document.createElement('li');
+    li.className = `design-obj${selected ? ' selected' : ''}`;
+    li.draggable = false;
+
+    const ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    ic.setAttribute('class', 'design-ic');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `#${dKindIconId(sh.kind)}`);
+    ic.appendChild(use);
+
+    const label = document.createElement('span');
+    label.className = 'design-obj-label';
+    label.textContent = sh.name || sh.kind;
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'design-obj-del';
+    del.title = t('design.delete');
+    del.textContent = '×';
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const set = new Set(idxs);
+      designState.shapes = designState.shapes.filter((_, i) => !set.has(i));
+      designState.selection = [];
+      dPushHistory();
+      dRender();
+      dUpdateProps();
+      dUpdateObjectList();
+      dUpdateStatus();
+      dUpdateButtons();
+    });
+
+    li.addEventListener('click', (e) => dSelectShape(idxs[0], e.shiftKey));
+    li.appendChild(ic);
+    li.appendChild(label);
+    li.appendChild(del);
+    ul.appendChild(li);
+  }
+}
+
+function dUpdateStatus() {
+  const info = $('designSelInfo');
+  if (!info) return;
+  if (!designState.selection.length) {
+    info.textContent = t('design.sel.none');
+  } else {
+    info.textContent = t('design.sel.count', { n: designState.selection.length });
+  }
+}
+
+function dUpdateButtons() {
+  const hasSel = designState.selection.length > 0;
+  const multi = designState.selection.length > 1;
+  for (const id of [
+    'designDelete',
+    'designDuplicate',
+    'designAlignLeft',
+    'designAlignCenter',
+    'designAlignRight',
+    'designAlignTop',
+    'designAlignMiddle',
+    'designAlignBottom',
+    'designFront',
+    'designForward',
+    'designBackward',
+    'designBack',
+  ]) {
+    const node = $(id);
+    if (node) node.disabled = !hasSel;
+  }
+  const g = $('designGroup');
+  if (g) g.disabled = !multi;
+  const u = $('designUngroup');
+  if (u) u.disabled = !hasSel;
+  const undo = $('designUndo');
+  if (undo) undo.disabled = designState.historyIdx <= 0;
+  const redo = $('designRedo');
+  if (redo) redo.disabled = designState.historyIdx >= designState.history.length - 1;
+  const lock = $('designLockAspect');
+  if (lock) lock.classList.toggle('active', designState.lockAspect);
+}
+
+function dUpdateDocBadge() {
+  const badge = $('designDocBadge');
+  if (badge) badge.textContent = `${designState.page.w} × ${designState.page.h} mm`;
+}
+
+// ------------------------------------------------------------------ render
+
+let dRaf = 0;
 function dRender() {
+  if (dRaf) return;
+  dRaf = requestAnimationFrame(() => {
+    dRaf = 0;
+    dPaint();
+  });
+}
+
+function dPath(ctx, sh) {
+  const pts = sh.points;
+  if (!pts.length) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (sh.closed && pts.length > 2) ctx.closePath();
+}
+
+function dPaint() {
   const c = el.designCanvas;
   if (!c) return;
+  dResizeCanvas();
   const ctx = c.getContext('2d');
-  const { w, h } = designSize();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, w, h);
+  if (!ctx) return;
+  const { pxW: w, pxH: h, dpr, page } = designState;
+  const v = designState.view;
+  const dark = getComputedStyle(document.documentElement).colorScheme !== 'light';
 
-  // fundo sutil
-  ctx.fillStyle = '#0f0f12';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = dark ? '#262629' : '#d9d9dc';
   ctx.fillRect(0, 0, w, h);
 
+  const p0 = dW2S(0, 0);
+  const p1 = dW2S(page.w, page.h);
+
+  // página (área útil da máquina)
   ctx.save();
-  ctx.translate(designState.view.tx, designState.view.ty);
-  ctx.scale(designState.view.scale, designState.view.scale);
-
-  // grade (menor + maior)
-  const grid = 10;
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1 / designState.view.scale;
-  for (let x = 0; x <= w / designState.view.scale + 100; x += grid) {
-    const wx = x;
-    ctx.beginPath(); ctx.moveTo(wx, -1000); ctx.lineTo(wx, 1000); ctx.stroke();
-  }
-  for (let y = 0; y <= h / designState.view.scale + 100; y += grid) {
-    const wy = y;
-    ctx.beginPath(); ctx.moveTo(-1000, wy); ctx.lineTo(1000, wy); ctx.stroke();
-  }
-  // eixos
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 1 / designState.view.scale;
-  ctx.beginPath(); ctx.moveTo(0, -1000); ctx.lineTo(0, 1000); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-1000, 0); ctx.lineTo(1000, 0); ctx.stroke();
-
-  const drawShape = (sh, selected) => {
-    if (!sh.points.length) return;
-    ctx.strokeStyle = selected ? '#4cc2ff' : '#e6e6e6';
-    ctx.lineWidth = (selected ? 2 : 1.5) / designState.view.scale;
-    ctx.beginPath();
-    ctx.moveTo(sh.points[0].x, sh.points[0].y);
-    for (let i = 1; i < sh.points.length; i++) ctx.lineTo(sh.points[i].x, sh.points[i].y);
-    if (sh.closed) ctx.closePath();
-    ctx.stroke();
-    if (sh.closed) {
-      ctx.fillStyle = selected ? 'rgba(76,194,255,0.10)' : 'rgba(255,255,255,0.03)';
-      ctx.fill();
-    }
-    if (selected) {
-      ctx.fillStyle = '#4cc2ff';
-      for (const p of sh.points) {
-        ctx.beginPath(); ctx.arc(p.x, p.y, 3 / designState.view.scale, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-  };
-
-  for (let i = 0; i < designState.shapes.length; i++) {
-    drawShape(designState.shapes[i], designSelectedIndices().includes(i));
-  }
-  if (designState.drawing) drawShape(designState.drawing, true);
-
-  // Handles + bbox do grupo selecionado (uma única vez, não por forma).
-  if (designState.selected >= 0 && designState.shapes.length) {
-    const b = designSelectedBounds();
-    if (b) {
-      ctx.strokeStyle = 'rgba(76,194,255,0.6)';
-      ctx.lineWidth = 1 / designState.view.scale;
-      ctx.setLineDash([4 / designState.view.scale, 3 / designState.view.scale]);
-      ctx.strokeRect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#4cc2ff';
-      const handles = [
-        { x: b.minX, y: b.minY }, { x: (b.minX + b.maxX) / 2, y: b.minY },
-        { x: b.maxX, y: b.minY }, { x: b.maxX, y: (b.minY + b.maxY) / 2 },
-        { x: b.maxX, y: b.maxY }, { x: (b.minX + b.maxX) / 2, y: b.maxY },
-        { x: b.minX, y: b.maxY }, { x: b.minX, y: (b.minY + b.maxY) / 2 },
-      ];
-      const hs = 6 / designState.view.scale;
-      for (const h of handles) {
-        ctx.fillRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
-        ctx.strokeRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
-      }
-    }
-  }
-
-  for (let i = 0; i < designState.shapes.length; i++) {
-    drawShape(designState.shapes[i], designSelectedIndices().includes(i));
-  }
-  if (designState.drawing) drawShape(designState.drawing, true);
-
+  ctx.shadowColor = 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
   ctx.restore();
 
-  // ---- réguas (screen space) ----
-  const RULER = 20;
-  const scale = designState.view.scale;
-  // major tick interval in world units, chosen so ticks are ~60-120 px apart
-  let major = 10;
-  while (major * scale < 40) major *= 2;
-  while (major * scale > 120) major /= 2;
-  const minor = major / 5;
-  const tx = designState.view.tx;
-  const ty = designState.view.ty;
+  // grade (só dentro da página)
+  const gridMinor = dark ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.07)';
+  const gridMajor = dark ? 'rgba(0,0,0,0.13)' : 'rgba(0,0,0,0.14)';
+  const g = designState.grid > 0 ? designState.grid : 1;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+  ctx.clip();
+  ctx.lineWidth = 1;
+  if (g * v.scale >= 6) {
+    ctx.strokeStyle = gridMinor;
+    ctx.beginPath();
+    for (let x = 0; x <= page.w + 1e-6; x += g) {
+      const sx = Math.round(dW2S(x, 0).x) + 0.5;
+      ctx.moveTo(sx, p0.y);
+      ctx.lineTo(sx, p1.y);
+    }
+    for (let y = 0; y <= page.h + 1e-6; y += g) {
+      const sy = Math.round(dW2S(0, y).y) + 0.5;
+      ctx.moveTo(p0.x, sy);
+      ctx.lineTo(p1.x, sy);
+    }
+    ctx.stroke();
+  }
+  const major = g * 5;
+  if (major * v.scale >= 6) {
+    ctx.strokeStyle = gridMajor;
+    ctx.beginPath();
+    for (let x = 0; x <= page.w + 1e-6; x += major) {
+      const sx = Math.round(dW2S(x, 0).x) + 0.5;
+      ctx.moveTo(sx, p0.y);
+      ctx.lineTo(sx, p1.y);
+    }
+    for (let y = 0; y <= page.h + 1e-6; y += major) {
+      const sy = Math.round(dW2S(0, y).y) + 0.5;
+      ctx.moveTo(p0.x, sy);
+      ctx.lineTo(p1.x, sy);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
 
-  // visible world range
-  const w0 = (0 - tx) / scale;
-  const w1 = (w - tx) / scale;
-  const h0 = (0 - ty) / scale;
-  const h1 = (h - ty) / scale;
+  // contorno da página
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.24)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(Math.round(p0.x) + 0.5, Math.round(p0.y) + 0.5, Math.round(p1.x - p0.x) - 1, Math.round(p1.y - p0.y) - 1);
 
-  // top ruler background
-  ctx.fillStyle = '#1a1a1e';
+  // formas (espaço do mundo)
+  const selSet = dSelectionSet();
+  ctx.save();
+  ctx.translate(v.tx, v.ty);
+  ctx.scale(v.scale, v.scale);
+  const accent = '#0a84ff';
+  const baseLw = 1.4 / v.scale;
+  for (let i = 0; i < designState.shapes.length; i++) {
+    const sh = designState.shapes[i];
+    if (!sh.points.length) continue;
+    const selected = selSet.has(i);
+    dPath(ctx, sh);
+    if (sh.closed) {
+      ctx.fillStyle = selected ? 'rgba(10,132,255,0.10)' : 'rgba(0,0,0,0.035)';
+      ctx.fill();
+    }
+    ctx.strokeStyle = selected ? accent : '#1b1b1b';
+    ctx.lineWidth = selected ? 2 / v.scale : baseLw;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+  if (designState.drawing) {
+    dPath(ctx, designState.drawing);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.8 / v.scale;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // seleção (espaço da tela)
+  const b = dSelectionBounds();
+  if (b) {
+    const tl = dW2S(b.minX, b.minY);
+    const br = dW2S(b.maxX, b.maxY);
+    ctx.strokeStyle = 'rgba(10,132,255,0.85)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    ctx.setLineDash([]);
+    const pts = dHandleScreenPoints(b);
+    for (const pt of pts) {
+      ctx.beginPath();
+      ctx.rect(pt.x - HANDLE, pt.y - HANDLE, HANDLE * 2, HANDLE * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#0a84ff';
+      ctx.stroke();
+    }
+    const top = dW2S((b.minX + b.maxX) / 2, b.minY);
+    const rp = { x: top.x, y: top.y - 26 };
+    ctx.beginPath();
+    ctx.moveTo(top.x, top.y);
+    ctx.lineTo(rp.x, rp.y);
+    ctx.strokeStyle = 'rgba(10,132,255,0.7)';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#0a84ff';
+    ctx.stroke();
+  }
+
+  // marquee
+  if (designState.marquee) {
+    const a = dW2S(designState.marquee.x0, designState.marquee.y0);
+    const m = dW2S(designState.marquee.x1, designState.marquee.y1);
+    const x = Math.min(a.x, m.x);
+    const y = Math.min(a.y, m.y);
+    const rw = Math.abs(m.x - a.x);
+    const rh = Math.abs(m.y - a.y);
+    ctx.fillStyle = 'rgba(10,132,255,0.12)';
+    ctx.fillRect(x, y, rw, rh);
+    ctx.strokeStyle = 'rgba(10,132,255,0.9)';
+    ctx.setLineDash([4, 2]);
+    ctx.strokeRect(x + 0.5, y + 0.5, rw, rh);
+    ctx.setLineDash([]);
+  }
+
+  dDrawRulers(ctx, dark);
+}
+
+function dDrawRulers(ctx, dark) {
+  const { pxW: w, pxH: h } = designState;
+  const v = designState.view;
+  const stripBg = dark ? '#1c1c1f' : '#e6e6e9';
+  const line = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.3)';
+  const text = dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)';
+
+  ctx.fillStyle = stripBg;
   ctx.fillRect(0, 0, w, RULER);
   ctx.fillRect(0, 0, RULER, h);
-  // corner
-  ctx.fillStyle = '#232328';
-  ctx.fillRect(0, 0, RULER, RULER);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  // passo "maior" com ~64 px entre rótulos
+  const steps = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  let major = steps[steps.length - 1];
+  for (const s of steps) {
+    if (s * v.scale >= 64) {
+      major = s;
+      break;
+    }
+  }
+  const minor = major / 5;
+  const fmt = (val) => (major < 1 ? val.toFixed(1) : String(Math.round(val)));
+
+  ctx.strokeStyle = line;
+  ctx.fillStyle = text;
   ctx.font = '9px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
   ctx.lineWidth = 1;
 
-  // top ticks
-  const firstMajorX = Math.ceil(w0 / major) * major;
-  for (let wx = firstMajorX; wx <= w1; wx += major) {
-    const sx = wx * scale + tx;
+  // régua superior
+  const wx0 = dS2W(0, 0).x;
+  const wx1 = dS2W(w, 0).x;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let wx = Math.floor(wx0 / major) * major; wx <= wx1; wx += major) {
+    const sx = Math.round(dW2S(wx, 0).x) + 0.5;
     if (sx < RULER || sx > w) continue;
     ctx.beginPath();
     ctx.moveTo(sx, RULER - 8);
     ctx.lineTo(sx, RULER);
     ctx.stroke();
-    ctx.fillText(String(Math.round(wx)), sx, 2);
-    // minor ticks
+    ctx.fillText(fmt(wx), sx, 2);
     for (let m = 1; m < 5; m++) {
-      const wxm = wx - major + m * minor;
-      const sxm = wxm * scale + tx;
-      if (sxm < RULER || sxm > w) continue;
+      const smx = Math.round(dW2S(wx + m * minor, 0).x) + 0.5;
+      if (smx < RULER || smx > w) continue;
       ctx.beginPath();
-      ctx.moveTo(sxm, RULER - 4);
-      ctx.lineTo(sxm, RULER);
+      ctx.moveTo(smx, RULER - 4);
+      ctx.lineTo(smx, RULER);
       ctx.stroke();
     }
   }
-  // left ticks
+
+  // régua esquerda
+  const wy0 = dS2W(0, 0).y;
+  const wy1 = dS2W(0, h).y;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  const firstMajorY = Math.ceil(h0 / major) * major;
-  for (let wy = firstMajorY; wy <= h1; wy += major) {
-    const sy = wy * scale + ty;
+  for (let wy = Math.floor(wy0 / major) * major; wy <= wy1; wy += major) {
+    const sy = Math.round(dW2S(0, wy).y) + 0.5;
     if (sy < RULER || sy > h) continue;
     ctx.beginPath();
     ctx.moveTo(RULER - 8, sy);
     ctx.lineTo(RULER, sy);
     ctx.stroke();
-    ctx.fillText(String(Math.round(wy)), RULER - 10, sy);
+    ctx.fillText(fmt(wy), RULER - 10, sy);
     for (let m = 1; m < 5; m++) {
-      const wym = wy - major + m * minor;
-      const sym = wym * scale + ty;
-      if (sym < RULER || sym > h) continue;
+      const smy = Math.round(dW2S(0, wy + m * minor).y) + 0.5;
+      if (smy < RULER || smy > h) continue;
       ctx.beginPath();
-      ctx.moveTo(RULER - 4, sym);
-      ctx.lineTo(RULER, sym);
+      ctx.moveTo(RULER - 4, smy);
+      ctx.lineTo(RULER, smy);
       ctx.stroke();
     }
   }
-  // border
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+
+  // canto (unidade) + bordas
+  ctx.fillStyle = dark ? '#232327' : '#d9d9dd';
+  ctx.fillRect(0, 0, RULER, RULER);
+  ctx.fillStyle = text;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '9px system-ui, sans-serif';
+  ctx.fillText('mm', RULER / 2, RULER / 2 + 0.5);
+  ctx.strokeStyle = line;
   ctx.beginPath();
-  ctx.moveTo(RULER, 0); ctx.lineTo(RULER, h);
-  ctx.moveTo(0, RULER); ctx.lineTo(w, RULER);
+  ctx.moveTo(RULER + 0.5, 0);
+  ctx.lineTo(RULER + 0.5, h);
+  ctx.moveTo(0, RULER + 0.5);
+  ctx.lineTo(w, RULER + 0.5);
   ctx.stroke();
-
-  // cursor crosshair (subtle)
-  // (none — keeps canvas clean)
-
-  dUpdateObjectList();
-  dUpdateProps();
-  dUpdateCursor();
 }
 
-function designHitTest(x, y) {
-  for (let i = designState.shapes.length - 1; i >= 0; i--) {
-    const sh = designState.shapes[i];
-    if (!sh.points.length) continue;
-    const xs = sh.points.map((p) => p.x);
-    const ys = sh.points.map((p) => p.y);
-    const minX = Math.min(...xs) - 6, maxX = Math.max(...xs) + 6;
-    const minY = Math.min(...ys) - 6, maxY = Math.max(...ys) + 6;
-    if (x >= minX && x <= maxX && y >= minY && y <= maxY) return i;
+// ------------------------------------------------------- ferramenta de texto
+
+function dOpenTextEditor(world, editing) {
+  const box = $('designTextEditor');
+  if (!box) return;
+  designState.textEdit = {
+    x: world.x,
+    y: world.y,
+    group: editing?.group ?? null,
+    editing: Boolean(editing),
+    name: editing ? editing.name : null,
+    indices: editing?.indices ?? null,
+  };
+  if (editing) {
+    const meta = editing.meta;
+    const val = $('designTextValue');
+    if (val) val.value = meta.value;
+    const font = $('designTextFont');
+    if (font) font.value = meta.font;
+    const size = $('designTextSize');
+    if (size) size.value = String(Math.round(meta.size * 10) / 10);
+    const mode = $('designTextMode');
+    if (mode) mode.value = meta.mode;
+    const bold = $('designTextBold');
+    if (bold) bold.checked = meta.bold !== false;
   }
-  return -1;
-}
-
-/** Índices de todas as formas do mesmo grupo da selecionada (ou só a selecionada). */
-function designSelectedIndices() {
-  const idx = designState.selected;
-  if (idx < 0 || idx >= designState.shapes.length) return [];
-  const g = designState.shapes[idx].group;
-  if (g === undefined || g === null) return [idx];
-  const out = [];
-  for (let i = 0; i < designState.shapes.length; i++) {
-    if (designState.shapes[i].group === g) out.push(i);
+  const p = dW2S(world.x, world.y);
+  const wrap = $('designCanvasWrap');
+  const ww = wrap ? wrap.clientWidth : designState.pxW;
+  const wh = wrap ? wrap.clientHeight : designState.pxH;
+  box.style.left = `${dClamp(p.x + 14, 8, Math.max(8, ww - 260))}px`;
+  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - 320))}px`;
+  box.classList.remove('hidden');
+  const val = $('designTextValue');
+  if (val) {
+    val.focus();
+    val.select();
   }
-  return out.length ? out : [idx];
 }
 
-/** Bounding box de todas as formas selecionadas (grupo). */
-function designSelectedBounds() {
-  const idxs = designSelectedIndices();
-  if (!idxs.length) return null;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const i of idxs) {
-    const sh = designState.shapes[i];
-    for (const p of sh.points) {
-      minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
-      maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+function dCloseTextEditor() {
+  const box = $('designTextEditor');
+  if (box) box.classList.add('hidden');
+  designState.textEdit = null;
+}
+
+/**
+ * Gera as formas de um texto.
+ * - `vector`: renderiza a fonte do sistema em alta resolução e traça o
+ *   contorno (resultado cheio, como CorelDRAW/Photoshop);
+ * - `stroke`: usa a fonte single-stroke embutida (rápida, ideal p/ gravação).
+ * Devolve pontos em mm (y-down), com a caixa do texto no canto (x, y).
+ */
+async function dTextToShapes(value, opts) {
+  const { font, size, mode, bold, x, y } = opts;
+  if (mode === 'stroke' && window.GRBL_FONTS) {
+    const out = window.GRBL_FONTS.textToShapes({
+      text: value,
+      fontId: 'simplex',
+      size,
+      x: 0,
+      y: 0,
+      letterSpacing: 0.08,
+    });
+    return dPlaceShapes(out.map((s) => ({ ...s })), x, y);
+  }
+  if (!window.GRBL_CONTOUR) throw new Error(t('design.text.noContour'));
+  const PX = 16;
+  const fontPx = Math.max(12, Math.round(size * PX));
+  const spec = `${bold ? '600 ' : ''}${fontPx}px "${font}", sans-serif`;
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = spec;
+  const metrics = probe.measureText(value);
+  const textW = Math.max(4, Math.ceil(metrics.width));
+  const pad = Math.ceil(fontPx * 0.3);
+  const canvas = document.createElement('canvas');
+  canvas.width = textW + pad * 2;
+  canvas.height = Math.ceil(fontPx * 1.6) + pad * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.font = spec;
+  ctx.textBaseline = 'top';
+  ctx.fillText(value, pad, pad);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const mask = new Uint8Array(canvas.width * canvas.height);
+  for (let i = 0; i < mask.length; i++) mask[i] = img.data[i * 4] > 110 ? 1 : 0;
+  const contours = window.GRBL_CONTOUR.traceContours(mask, canvas.width, canvas.height);
+  const tol = 0.9 / PX;
+  const shapes = [];
+  for (const cont of contours) {
+    if (!cont || cont.length < 3) continue;
+    const pts = cont.map((p) => ({ x: p.x / PX, y: p.y / PX }));
+    const simp = DE.simplifyPolyline(pts, tol);
+    if (simp.length >= 3) shapes.push({ kind: 'text', points: simp, closed: true });
+  }
+  return dPlaceShapes(shapes, x, y);
+}
+
+/** Translada as formas para que a caixa do conjunto comece em (x, y). */
+function dPlaceShapes(shapes, x, y) {
+  let minX = Infinity;
+  let minY = Infinity;
+  for (const s of shapes) {
+    for (const p of s.points) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
     }
   }
-  return { minX, minY, maxX, maxY };
-}
-
-/** Retorna o índice do handle (0-7) sob (x,y) para a forma selecionada, ou -1. */
-function designHandleAt(sh, x, y) {
-  if (!sh || !sh.points.length) return -1;
-  const xs = sh.points.map((p) => p.x);
-  const ys = sh.points.map((p) => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const hs = 7 / designState.view.scale;
-  const handles = [
-    { x: minX, y: minY }, { x: (minX + maxX) / 2, y: minY }, { x: maxX, y: minY },
-    { x: maxX, y: (minY + maxY) / 2 },
-    { x: maxX, y: maxY }, { x: (minX + maxX) / 2, y: maxY }, { x: minX, y: maxY },
-    { x: minX, y: (minY + maxY) / 2 },
-  ];
-  for (let i = 0; i < handles.length; i++) {
-    if (Math.abs(handles[i].x - x) <= hs && Math.abs(handles[i].y - y) <= hs) return i;
+  if (!Number.isFinite(minX)) return [];
+  const dx = x - minX;
+  const dy = y - minY;
+  for (const s of shapes) {
+    for (const p of s.points) {
+      p.x += dx;
+      p.y += dy;
+    }
   }
-  return -1;
+  return shapes;
 }
 
-function designCanvasCoords(e) {
-  const c = el.designCanvas;
-  const r = c.getBoundingClientRect();
-  const sx = c.width / r.width;
-  const sy = c.height / r.height;
-  const w = dCanvasToWorld((e.clientX - r.left) * sx, (e.clientY - r.top) * sy);
-  return w;
-}
-
-function dShapeBounds(sh) {
-  const xs = sh.points.map((p) => p.x);
-  const ys = sh.points.map((p) => p.y);
-  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
-}
-
-function dUpdateProps() {
-  if (!el.designPropX) return;
-  const b = designSelectedBounds();
-  if (!b || designState.selected < 0) {
-    el.designPropX.value = '';
-    el.designPropY.value = '';
-    el.designPropW.value = '';
-    el.designPropH.value = '';
+async function dCommitText() {
+  const valueNode = $('designTextValue');
+  const value = valueNode ? valueNode.value.trim() : '';
+  if (!value) {
+    dStatus(t('design.status.textEmpty'), 'error');
     return;
   }
-  el.designPropX.value = b.minX.toFixed(1);
-  el.designPropY.value = b.minY.toFixed(1);
-  el.designPropW.value = (b.maxX - b.minX).toFixed(1);
-  el.designPropH.value = (b.maxY - b.minY).toFixed(1);
+  const fontNode = $('designTextFont');
+  const font = fontNode?.value || 'sans-serif';
+  const size = dNum('designTextSize', 10) || 10;
+  let mode = $('designTextMode') ? $('designTextMode').value : 'vector';
+  const bold = $('designTextBold') ? $('designTextBold').checked : true;
+  if (/simplex/i.test(font)) mode = 'stroke';
+
+  const edit = designState.textEdit;
+  const anchor = edit ? { x: edit.x, y: edit.y } : { x: 50, y: 50 };
+  dStatus(t('design.status.generating'));
+
+  let shapes;
+  try {
+    shapes = await dTextToShapes(value, { font, size, mode, bold, x: anchor.x, y: anchor.y });
+  } catch (err) {
+    dStatus(err.message, 'error');
+    return;
+  }
+  if (!shapes?.length) {
+    dStatus(t('design.status.textFail'), 'error');
+    return;
+  }
+
+  let group = edit?.group ?? `g${designState.seq++}`;
+  const name = edit?.name ?? dNextName('text');
+
+  if (edit?.group) {
+    // remove o bloco antigo e recria no mesmo lugar
+    designState.shapes = designState.shapes.filter((s) => s.group !== edit.group);
+  } else if (edit?.indices?.length) {
+    const set = new Set(edit.indices);
+    designState.shapes = designState.shapes.filter((_, i) => !set.has(i));
+  }
+  if (!group) group = `g${designState.seq++}`;
+
+  for (const sh of shapes) {
+    sh.group = group;
+    sh.name = name;
+    sh.text = { value, font, size, mode, bold };
+  }
+  const base = designState.shapes.length;
+  designState.shapes.push(...shapes);
+  dPushHistory();
+  designState.selection = shapes.map((_, i) => base + i);
+  dCloseTextEditor();
+  dAfterSelection();
+  dStatus(t('design.status.done'));
 }
 
-function dUpdateObjectList() {
-  const ul = el.designObjectList;
-  if (!ul) return;
-  ul.innerHTML = '';
-  designState.shapes.forEach((sh, i) => {
-    const li = document.createElement('li');
-    li.className = 'design-obj' + (i === designState.selected ? ' selected' : '');
-    li.textContent = `${i + 1}. ${sh.kind}`;
-    li.addEventListener('click', () => {
-      designState.selected = i;
-      dRender();
-    });
-    const del = document.createElement('button');
-    del.className = 'design-obj-del';
-    del.textContent = '×';
-    del.addEventListener('click', (e) => {
-      e.stopPropagation();
-      designState.shapes.splice(i, 1);
-      designState.selected = -1;
-      dPushHistory();
-      dRender();
-    });
-    li.appendChild(del);
-    ul.appendChild(li);
-  });
+// ------------------------------------------------------------------ ferramenta
+
+function dSetTool(tool) {
+  designState.tool = tool;
+  designState.drawing = null;
+  if (tool !== 'text') dCloseTextEditor();
+  const map = {
+    designToolSelect: 'select',
+    designToolRect: 'rect',
+    designToolCircle: 'circle',
+    designToolLine: 'line',
+    designToolText: 'text',
+  };
+  for (const [id, name] of Object.entries(map)) {
+    const node = $(id);
+    if (node) node.classList.toggle('active', name === tool);
+  }
+  const c = el.designCanvas;
+  if (c) c.style.cursor = tool === 'select' ? 'default' : 'crosshair';
+  dRender();
 }
 
-function dUpdateCursor() {
-  if (!el.designCursor) return;
-  // updated on mousemove
+// ------------------------------------------------------------------ ponteiro
+
+function dCanvasPoint(e) {
+  const c = el.designCanvas;
+  const r = c.getBoundingClientRect();
+  const sx = e.clientX - r.left;
+  const sy = e.clientY - r.top;
+  const wpt = dS2W(sx, sy);
+  return { sx, sy, wx: wpt.x, wy: wpt.y };
 }
+
+function dCursorForSelect(sx, sy) {
+  const b = dSelectionBounds();
+  if (b && designState.selection.length) {
+    if (dRotateHandleAt(b, sx, sy)) return 'grab';
+    const hi = dHandleIndexAt(b, sx, sy);
+    if (hi >= 0) {
+      return ['nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize'][hi];
+    }
+  }
+  const p = dS2W(sx, sy);
+  const tol = HIT_PX / designState.view.scale;
+  if (DE.hitTest(designState.shapes, p.x, p.y, tol) >= 0) return 'move';
+  return 'default';
+}
+
+function dOnPointerDown(e) {
+  const c = el.designCanvas;
+  if (e.button === 1 || (e.button === 0 && designState.space)) {
+    designState.drag = {
+      mode: 'pan',
+      sx: e.clientX,
+      sy: e.clientY,
+      tx: designState.view.tx,
+      ty: designState.view.ty,
+    };
+    c.setPointerCapture(e.pointerId);
+    c.style.cursor = 'grabbing';
+    e.preventDefault();
+    return;
+  }
+  if (e.button !== 0) return;
+  dCloseTextEditor();
+  const pt = dCanvasPoint(e);
+
+  if (designState.tool === 'text') {
+    dOpenTextEditor({ x: dSnapV(pt.wx), y: dSnapV(pt.wy) });
+    return;
+  }
+
+  if (designState.tool === 'select') {
+    const b = dSelectionBounds();
+    if (b && designState.selection.length) {
+      if (dRotateHandleAt(b, pt.sx, pt.sy)) {
+        const cx = (b.minX + b.maxX) / 2;
+        const cy = (b.minY + b.maxY) / 2;
+        designState.drag = {
+          mode: 'rotate',
+          orig: dSnapshotSelection(),
+          cx,
+          cy,
+          startAngle: Math.atan2(pt.wy - cy, pt.wx - cx),
+          shift: e.shiftKey,
+        };
+        c.setPointerCapture(e.pointerId);
+        c.style.cursor = 'grabbing';
+        return;
+      }
+      const hi = dHandleIndexAt(b, pt.sx, pt.sy);
+      if (hi >= 0) {
+        designState.drag = { mode: 'resize', handle: hi, orig: dSnapshotSelection(), shift: e.shiftKey };
+        c.setPointerCapture(e.pointerId);
+        return;
+      }
+    }
+    const tol = HIT_PX / designState.view.scale;
+    const hit = DE.hitTest(designState.shapes, pt.wx, pt.wy, tol);
+    if (hit >= 0) {
+      const already = designState.selection.includes(hit);
+      if (e.shiftKey) dSelectShape(hit, true);
+      else if (!already) dSelectShape(hit, false);
+      if (designState.selection.length) {
+        designState.drag = { mode: 'move', start: { x: pt.wx, y: pt.wy }, orig: dSnapshotSelection() };
+        c.setPointerCapture(e.pointerId);
+      }
+      return;
+    }
+    if (!e.shiftKey) dClearSelection();
+    designState.drag = { mode: 'marquee', start: { x: pt.wx, y: pt.wy }, base: designState.selection.slice() };
+    designState.marquee = { x0: pt.wx, y0: pt.wy, x1: pt.wx, y1: pt.wy };
+    c.setPointerCapture(e.pointerId);
+    dRender();
+    return;
+  }
+
+  // ferramentas de criação
+  const sx = dSnapV(pt.wx);
+  const sy = dSnapV(pt.wy);
+  designState.drag = { mode: 'create', start: { x: sx, y: sy } };
+  designState.drawing = null;
+  if (designState.tool === 'rect') {
+    designState.drawing = { kind: 'rect', points: [], closed: true };
+  } else if (designState.tool === 'circle') {
+    designState.drawing = { kind: 'ellipse', points: [], closed: true };
+  } else if (designState.tool === 'line') {
+    designState.drawing = { kind: 'line', points: [], closed: false };
+  }
+  if (designState.drawing) c.setPointerCapture(e.pointerId);
+}
+
+function dOnPointerMove(e) {
+  const c = el.designCanvas;
+  const pt = dCanvasPoint(e);
+  designState.cursor = { x: pt.wx, y: pt.wy, inside: true };
+  const cur = $('designCursor');
+  if (cur) cur.textContent = `X ${pt.wx.toFixed(1)} · Y ${pt.wy.toFixed(1)} mm`;
+
+  const d = designState.drag;
+
+  if (d && d.mode === 'pan') {
+    designState.view.tx = d.tx + (e.clientX - d.sx);
+    designState.view.ty = d.ty + (e.clientY - d.sy);
+    dRender();
+    return;
+  }
+
+  if (d && d.mode === 'move') {
+    let dx = pt.wx - d.start.x;
+    let dy = pt.wy - d.start.y;
+    if (designState.snap) {
+      dx = dSnapV(d.orig.bbox.minX + dx) - d.orig.bbox.minX;
+      dy = dSnapV(d.orig.bbox.minY + dy) - d.orig.bbox.minY;
+    }
+    dApplyOrig(d.orig, (p, src) => {
+      p.x = src.x + dx;
+      p.y = src.y + dy;
+    });
+    d.dirty = true;
+    dRender();
+    dUpdateProps();
+    return;
+  }
+
+  if (d && d.mode === 'resize') {
+    const b = d.orig.bbox;
+    const px = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    const py = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    let nMinX = b.minX;
+    let nMaxX = b.maxX;
+    let nMinY = b.minY;
+    let nMaxY = b.maxY;
+    const hi = d.handle;
+    if (hi === 0 || hi === 6 || hi === 7) nMinX = px;
+    if (hi === 2 || hi === 3 || hi === 4) nMaxX = px;
+    if (hi === 0 || hi === 1 || hi === 2) nMinY = py;
+    if (hi === 4 || hi === 5 || hi === 6) nMaxY = py;
+    const MIN = 0.5;
+    if (nMaxX - nMinX < MIN) {
+      if (hi === 0 || hi === 6 || hi === 7) nMinX = nMaxX - MIN;
+      else nMaxX = nMinX + MIN;
+    }
+    if (nMaxY - nMinY < MIN) {
+      if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - MIN;
+      else nMaxY = nMinY + MIN;
+    }
+    let sx = (nMaxX - nMinX) / (b.maxX - b.minX || 1);
+    let sy = (nMaxY - nMinY) / (b.maxY - b.minY || 1);
+    const aspect = designState.lockAspect || d.shift;
+    if (aspect) {
+      let s = Math.abs(sx - 1) > Math.abs(sy - 1) ? sx : sy;
+      if (!Number.isFinite(s) || s <= 0) s = 1;
+      sx = s;
+      sy = s;
+      if (hi === 0 || hi === 6 || hi === 7) nMinX = nMaxX - (b.maxX - b.minX) * s;
+      else nMaxX = nMinX + (b.maxX - b.minX) * s;
+      if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - (b.maxY - b.minY) * s;
+      else nMaxY = nMinY + (b.maxY - b.minY) * s;
+    }
+    dApplyOrig(d.orig, (p, src) => {
+      p.x = nMinX + (src.x - b.minX) * sx;
+      p.y = nMinY + (src.y - b.minY) * sy;
+    });
+    d.dirty = true;
+    dRender();
+    dUpdateProps();
+    return;
+  }
+
+  if (d && d.mode === 'rotate') {
+    let angle = Math.atan2(pt.wy - d.cy, pt.wx - d.cx) - d.startAngle;
+    if (e.shiftKey || d.shift) {
+      const step = Math.PI / 12; // 15°
+      angle = Math.round(angle / step) * step;
+    }
+    const grad = angle * (180 / Math.PI);
+    for (let k = 0; k < d.orig.idxs.length; k++) {
+      const sh = designState.shapes[d.orig.idxs[k]];
+      const src = d.orig.pts[k];
+      for (let i = 0; i < sh.points.length; i++) {
+        const np = DE.rotatePoint(src[i], d.cx, d.cy, angle);
+        sh.points[i].x = np.x;
+        sh.points[i].y = np.y;
+      }
+    }
+    designState.rotApplied = grad;
+    d.dirty = true;
+    dRender();
+    dUpdateProps();
+    return;
+  }
+
+  if (d && d.mode === 'marquee') {
+    designState.marquee = { x0: d.start.x, y0: d.start.y, x1: pt.wx, y1: pt.wy };
+    const mb = {
+      minX: Math.min(d.start.x, pt.wx),
+      minY: Math.min(d.start.y, pt.wy),
+      maxX: Math.max(d.start.x, pt.wx),
+      maxY: Math.max(d.start.y, pt.wy),
+    };
+    const hitIdx = [];
+    for (let i = 0; i < designState.shapes.length; i++) {
+      const sb = DE.shapeBounds(designState.shapes[i]);
+      if (sb && DE.boundsIntersect(sb, mb)) hitIdx.push(i);
+    }
+    // Atualiza a seleção *sem* reconstruir a lista de objetos a cada quadro
+    // (RNF-11): a lista/propriedades só são atualizadas ao soltar o ponteiro.
+    const set = new Set(d.base);
+    for (const i of hitIdx) {
+      for (const j of DE.expandSelection(designState.shapes, i)) set.add(j);
+    }
+    designState.selection = [...set].sort((x, y) => x - y);
+    dRender();
+    return;
+  }
+
+  if (d && d.mode === 'create' && designState.drawing) {
+    const tool = designState.tool;
+    const start = d.start;
+    let x = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    let y = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    if (tool === 'rect') {
+      if (e.shiftKey) {
+        const s = Math.max(Math.abs(x - start.x), Math.abs(y - start.y));
+        x = start.x + Math.sign(x - start.x || 1) * s;
+        y = start.y + Math.sign(y - start.y || 1) * s;
+      }
+      const minX = Math.min(start.x, x);
+      const minY = Math.min(start.y, y);
+      designState.drawing.points = [
+        { x: minX, y: minY },
+        { x: minX + Math.abs(x - start.x), y: minY },
+        { x: minX + Math.abs(x - start.x), y: minY + Math.abs(y - start.y) },
+        { x: minX, y: minY + Math.abs(y - start.y) },
+      ];
+    } else if (tool === 'circle') {
+      // Elipse inscrita na caixa do arraste (como no CorelDRAW).
+      let w = Math.abs(x - start.x);
+      let h = Math.abs(y - start.y);
+      let minX = Math.min(start.x, x);
+      let minY = Math.min(start.y, y);
+      if (e.shiftKey) {
+        const s = Math.max(w, h);
+        w = s;
+        h = s;
+        minX = x >= start.x ? start.x : start.x - s;
+        minY = y >= start.y ? start.y : start.y - s;
+      }
+      designState.drawing.points = window.GRBL_DESIGN
+        ? window.GRBL_DESIGN.makeEllipse(minX + w / 2, minY + h / 2, w / 2, h / 2, 64)
+        : [];
+    } else if (tool === 'line') {
+      if (e.shiftKey) {
+        const ang = Math.atan2(y - start.y, x - start.x);
+        const step = Math.PI / 12;
+        const snapped = Math.round(ang / step) * step;
+        const len = Math.hypot(x - start.x, y - start.y);
+        x = start.x + Math.cos(snapped) * len;
+        y = start.y + Math.sin(snapped) * len;
+      }
+      designState.drawing.points = [
+        { x: start.x, y: start.y },
+        { x, y },
+      ];
+    }
+    dRender();
+    return;
+  }
+
+  // cursor ocioso
+  if (!d) {
+    c.style.cursor = designState.tool === 'select' ? dCursorForSelect(pt.sx, pt.sy) : 'crosshair';
+  }
+}
+
+function dOnPointerUp(e) {
+  const c = el.designCanvas;
+  const d = designState.drag;
+  designState.drag = null;
+  if (c.hasPointerCapture?.(e.pointerId)) {
+    try {
+      c.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+  if (d && d.mode === 'pan') {
+    c.style.cursor = designState.tool === 'select' ? 'default' : 'crosshair';
+    return;
+  }
+
+  if (d && d.mode === 'create' && designState.drawing) {
+    const sh = designState.drawing;
+    designState.drawing = null;
+    const pts = sh.points;
+    if (sh.kind === 'line' && pts.length >= 2) {
+      const len = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      if (len >= 0.5) {
+        sh.name = dNextName('line');
+        dAddShape(sh);
+      }
+    } else if (sh.kind !== 'line' && pts.length >= 3) {
+      const b = DE.shapeBounds(sh);
+      if (b && (b.maxX - b.minX > 0.5 || b.maxY - b.minY > 0.5)) {
+        sh.name = dNextName(sh.kind);
+        dAddShape(sh);
+      }
+    }
+    dUpdateButtons();
+    return;
+  }
+
+  if (d && d.mode === 'marquee') {
+    designState.marquee = null;
+    dAfterSelection();
+    return;
+  }
+
+  if (d && (d.mode === 'move' || d.mode === 'resize' || d.mode === 'rotate')) {
+    if (d.dirty) dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+    dUpdateStatus();
+    dUpdateButtons();
+    return;
+  }
+
+  dRender();
+}
+
+function dOnDblClick(e) {
+  if (designState.tool !== 'select') return;
+  const pt = dCanvasPoint(e);
+  const tol = HIT_PX / designState.view.scale;
+  const hit = DE.hitTest(designState.shapes, pt.wx, pt.wy, tol);
+  if (hit < 0) return;
+  const sh = designState.shapes[hit];
+  if (!sh.text || !sh.group) return;
+  const idxs = DE.expandSelection(designState.shapes, hit);
+  const b = DE.selectionBounds(designState.shapes, idxs);
+  dSelectShape(hit, false);
+  dOpenTextEditor(
+    { x: b ? b.minX : pt.wx, y: b ? b.minY : pt.wy },
+    { group: sh.group, meta: sh.text, name: sh.name, indices: idxs },
+  );
+}
+
+function dOnWheel(e) {
+  e.preventDefault();
+  const c = el.designCanvas;
+  const r = c.getBoundingClientRect();
+  const sx = e.clientX - r.left;
+  const sy = e.clientY - r.top;
+  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  dZoomAt(sx, sy, factor);
+}
+
+// ------------------------------------------------------------------ teclado
+
+function dDesignOpen() {
+  return el.designOverlay && !el.designOverlay.classList.contains('hidden');
+}
+
+function dOnKeyDown(e) {
+  if (!dDesignOpen()) return;
+  const editor = $('designTextEditor');
+  const editorOpen = editor && !editor.classList.contains('hidden');
+
+  if (e.key === 'Escape') {
+    // O modal de posicionamento ("frame") abre por cima do editor: Esc fecha
+    // só ele, mantendo o desenho à vista.
+    if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
+      el.frameOverlay.classList.add('hidden');
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if (editorOpen) {
+      dCloseTextEditor();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if (designState.selection.length) {
+      dClearSelection();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    return; // deixa o handler global fechar o modal
+  }
+
+  if (editorOpen || typingInField(e.target)) return;
+
+  const mod = e.ctrlKey || e.metaKey;
+  const key = e.key;
+
+  if (mod) {
+    const k = key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      dUndo();
+      return;
+    }
+    if (k === 'y' || (k === 'z' && e.shiftKey)) {
+      e.preventDefault();
+      dRedo();
+      return;
+    }
+    if (k === 'a') {
+      e.preventDefault();
+      dSelectAll();
+      return;
+    }
+    if (k === 'd') {
+      e.preventDefault();
+      dDuplicateSelection();
+      return;
+    }
+    if (k === 'c') {
+      e.preventDefault();
+      dCopySelection();
+      return;
+    }
+    if (k === 'v') {
+      e.preventDefault();
+      dPasteClipboard();
+      return;
+    }
+    if (k === 'g') {
+      e.preventDefault();
+      if (e.shiftKey) dUngroupSelection();
+      else dGroupSelection();
+      return;
+    }
+    if (key === ']') {
+      e.preventDefault();
+      dReorder(e.shiftKey ? 'front' : 'forward');
+      return;
+    }
+    if (key === '[') {
+      e.preventDefault();
+      dReorder(e.shiftKey ? 'back' : 'backward');
+      return;
+    }
+    return;
+  }
+
+  if (key === 'Delete' || key === 'Backspace') {
+    if (designState.selection.length) {
+      e.preventDefault();
+      dDeleteSelection();
+    }
+    return;
+  }
+
+  const step = designState.snap && designState.grid > 0 ? designState.grid : 1;
+  const mult = e.shiftKey ? 10 : 1;
+  if (key === 'ArrowLeft') {
+    e.preventDefault();
+    dNudge(-step * mult, 0);
+    return;
+  }
+  if (key === 'ArrowRight') {
+    e.preventDefault();
+    dNudge(step * mult, 0);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    e.preventDefault();
+    dNudge(0, -step * mult);
+    return;
+  }
+  if (key === 'ArrowDown') {
+    e.preventDefault();
+    dNudge(0, step * mult);
+    return;
+  }
+
+  if (key === 'v' || key === 'V') dSetTool('select');
+  else if (key === 'r' || key === 'R') dSetTool('rect');
+  else if (key === 'e' || key === 'E') dSetTool('circle');
+  else if (key === 'l' || key === 'L') dSetTool('line');
+  else if (key === 't' || key === 'T') dSetTool('text');
+  else if (key === '+' || key === '=') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
+  else if (key === '-' || key === '_') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2);
+  else if (key === '0') {
+    designState.view.scale = 4;
+    dUpdateZoom();
+    dRender();
+  } else if (key === 'f' || key === 'F') {
+    dFitPage();
+    dUpdateZoom();
+    dRender();
+  }
+}
+
+// ------------------------------------------------------------------ página
+
+function dApplyPageSize() {
+  const w = dNum('designPageW', 150) || 150;
+  const h = dNum('designPageH', 130) || 130;
+  designState.page = { w: dClamp(w, 1, 2000), h: dClamp(h, 1, 2000) };
+  try {
+    localStorage.setItem('grbl-design-page', JSON.stringify(designState.page));
+  } catch {
+    /* ignore */
+  }
+  dUpdateDocBadge();
+  dFitPage();
+  dUpdateZoom();
+  dRender();
+}
+
+function dLoadPrefs() {
+  try {
+    const raw = localStorage.getItem('grbl-design-page');
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p && p.w > 0 && p.h > 0) designState.page = { w: p.w, h: p.h };
+    }
+  } catch {
+    /* ignore */
+  }
+  const w = $('designPageW');
+  if (w) w.value = String(designState.page.w);
+  const h = $('designPageH');
+  if (h) h.value = String(designState.page.h);
+}
+
+// --------------------------------------------------------------- modal/open
 
 function openDesignModal() {
   if (!el.designOverlay) return;
   el.designOverlay.classList.remove('hidden');
+  if (!DE) appendLine('Módulo de edição não carregado.', 'error');
+  dLoadPrefs();
+  const g = $('designGrid');
+  if (g) designState.grid = Number(g.value) || 5;
   designState.tool = 'select';
-  designState.selected = -1;
   designState.drawing = null;
-  designState.view = { scale: 1, tx: 20, ty: 20 };
-  designUpdateToolButtons();
-  dPushHistory();
-  dRender();
+  designState.drag = null;
+  designState.marquee = null;
+  designState.rotApplied = 0;
+  dCloseTextEditor();
+  dSetTool('select');
+  if (!designState.history.length) dPushHistory();
+  requestAnimationFrame(() => {
+    dResizeCanvas();
+    dFitPage();
+    dUpdateZoom();
+    dUpdateProps();
+    dUpdateObjectList();
+    dUpdateStatus();
+    dUpdateButtons();
+    dUpdateDocBadge();
+    dRender();
+  });
 }
 
 function closeDesignModal() {
+  dCloseTextEditor();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
 }
 
-function designUpdateToolButtons() {
-  const tools = { designToolSelect: 'select', designToolRect: 'rect', designToolCircle: 'circle', designToolLine: 'line', designToolText: 'text' };
-  for (const [id, tool] of Object.entries(tools)) {
-    const b = el[id];
-    if (b) b.classList.toggle('active', designState.tool === tool);
-  }
+// ------------------------------------------------------------ gerar G-code
+
+function dReadEngraveOptions() {
+  const sMax = Number($('imgSmax') ? $('imgSmax').value : 1000) || 1000;
+  return {
+    feed: dNum('designSpeed', 1000) || 1000,
+    travelFeed: 3000,
+    sMax,
+    powerPercent: dNum('designPower', 100) || 100,
+    passes: dNum('designPasses', 1) || 1,
+    mode: $('designMode') && $('designMode').value === 'M3' ? 'M3' : 'M4',
+    samples: 24,
+  };
 }
 
 function designGenerate() {
@@ -983,44 +2266,24 @@ function designGenerate() {
     return;
   }
   if (!designState.shapes.length) {
-    if (el.designStatus) el.designStatus.textContent = 'Desenhe ao menos uma forma.';
+    dStatus(t('design.status.needShape'), 'error');
     return;
   }
-  if (el.designStatus) el.designStatus.textContent = t('design.status.generating');
-  const sMax = Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
-  const opts = {
-    feed: Number(el.designSpeed.value) || 1000,
-    travelFeed: 3000,
-    sMax,
-    powerPercent: Number(el.designPower.value) || 100,
-    passes: Number(el.designPasses.value) || 1,
-    mode: el.designMode.value === 'M3' ? 'M3' : 'M4',
-    samples: 24,
-  };
+  dStatus(t('design.status.generating'));
   const gcode = window.GRBL_DESIGN.designToGcode(
-    { shapes: designState.shapes, width: 0, height: 0 },
-    opts,
+    { shapes: designState.shapes, width: designState.page.w, height: designState.page.h },
+    dReadEngraveOptions(),
   );
   applyJobLines('design.gcode', gcode);
-  if (el.designStatus) el.designStatus.textContent = t('design.status.done');
+  dStatus(t('design.status.done'), 'ok');
   openFrameModal();
 }
 
 async function designSave() {
   if (!window.GRBL_DESIGN || !designState.shapes.length) return;
-  const sMax = Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
-  const opts = {
-    feed: Number(el.designSpeed.value) || 1000,
-    travelFeed: 3000,
-    sMax,
-    powerPercent: Number(el.designPower.value) || 100,
-    passes: Number(el.designPasses.value) || 1,
-    mode: el.designMode.value === 'M3' ? 'M3' : 'M4',
-    samples: 24,
-  };
   const gcode = window.GRBL_DESIGN.designToGcode(
-    { shapes: designState.shapes, width: 0, height: 0 },
-    opts,
+    { shapes: designState.shapes, width: designState.page.w, height: designState.page.h },
+    dReadEngraveOptions(),
   );
   try {
     const path = await window.grbl.saveGcode(gcode, 'design.gcode');
@@ -1030,504 +2293,170 @@ async function designSave() {
   }
 }
 
-// ---- interações do canvas ----
-(function wireDesignCanvas() {
-  const c = el.designCanvas;
-  if (!c) return;
-  let start = null;
-  let panning = false;
-  let panStart = null;
+// -------------------------------------------------------------------- wiring
 
-  c.addEventListener('mousedown', (e) => {
-    if (e.button === 1 || (e.button === 0 && window.__designSpace)) {
-      panning = true;
-      panStart = { x: e.clientX, y: e.clientY, tx: designState.view.tx, ty: designState.view.ty };
-      c.style.cursor = 'grabbing';
-      return;
-    }
-    const pt = designCanvasCoords(e);
-    if (designState.tool === 'select') {
-      // Primeiro: está clicando num handle da forma selecionada?
-      if (designState.selected >= 0) {
-        const idxs = designSelectedIndices();
-        const allPts = idxs.flatMap((i) => designState.shapes[i].points);
-        const hi = designHandleAt({ points: allPts }, pt.x, pt.y);
-        if (hi >= 0) {
-          designState.resizeHandle = hi;
-          designState.resizeOrig = {
-            shapes: idxs.map((i) => designState.shapes[i].points.map((p) => ({ x: p.x, y: p.y }))),
-            idxs: idxs.slice(),
-            minX: Math.min(...allPts.map((p) => p.x)),
-            maxX: Math.max(...allPts.map((p) => p.x)),
-            minY: Math.min(...allPts.map((p) => p.y)),
-            maxY: Math.max(...allPts.map((p) => p.y)),
-            mouse: pt,
-          };
-          dRender();
-          return;
-        }
-      }
-      const idx = designHitTest(pt.x, pt.y);
-      designState.selected = idx;
-      if (idx >= 0) {
-        designState.dragStart = pt;
-        designState.dragMoved = false;
-      }
+(function wireDesign() {
+  const overlay = el.designOverlay;
+  const canvas = el.designCanvas;
+  if (!overlay || !canvas) return;
+
+  const closeBtn = $('designClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeDesignModal);
+  const maxBtn = $('designMaximize');
+  if (maxBtn) {
+    maxBtn.addEventListener('click', () => {
+      const m = overlay.querySelector('.design-modal');
+      if (!m) return;
+      m.classList.toggle('maximized');
+      requestAnimationFrame(() => {
+        dResizeCanvas();
+        dFitPage();
+        dUpdateZoom();
+        dRender();
+      });
+    });
+  }
+
+  const toolTools = {
+    designToolSelect: 'select',
+    designToolRect: 'rect',
+    designToolCircle: 'circle',
+    designToolLine: 'line',
+    designToolText: 'text',
+  };
+  for (const [id, tool] of Object.entries(toolTools)) {
+    const node = $(id);
+    if (node) node.addEventListener('click', () => dSetTool(tool));
+  }
+
+  const actions = {
+    designUndo: dUndo,
+    designRedo: dRedo,
+    designDelete: dDeleteSelection,
+    designClear: dClearAll,
+    designDuplicate: dDuplicateSelection,
+    designGroup: dGroupSelection,
+    designUngroup: dUngroupSelection,
+    designAlignLeft: () => dAlign('left'),
+    designAlignCenter: () => dAlign('center'),
+    designAlignRight: () => dAlign('right'),
+    designAlignTop: () => dAlign('top'),
+    designAlignMiddle: () => dAlign('middle'),
+    designAlignBottom: () => dAlign('bottom'),
+    designFront: () => dReorder('front'),
+    designForward: () => dReorder('forward'),
+    designBackward: () => dReorder('backward'),
+    designBack: () => dReorder('back'),
+    designZoomIn: () => dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2),
+    designZoomOut: () => dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2),
+    designZoomFit: () => {
+      dFitPage();
+      dUpdateZoom();
       dRender();
-      dUpdateProps();
-      return;
-    }
-    // ferramenta de texto: armazena o ponto de inserção e foca o campo de texto
-    if (designState.tool === 'text') {
-      designState.pendingTextPos = { x: pt.x, y: pt.y };
-      if (el.designText) { el.designText.focus(); el.designText.select(); }
-      return;
-    }
-    start = pt;
-    designState.drawing = null;
-    if (designState.tool === 'rect') {
-      const sx = designState.snap ? dSnap(pt.x) : pt.x;
-      const sy = designState.snap ? dSnap(pt.y) : pt.y;
-      designState.drawing = { kind: 'rect', points: [{ x: sx, y: sy }, { x: sx, y: sy }, { x: sx, y: sy }, { x: sx, y: sy }], closed: true, _start: { x: sx, y: sy } };
-    } else if (designState.tool === 'circle') {
-      const sx = designState.snap ? dSnap(pt.x) : pt.x;
-      const sy = designState.snap ? dSnap(pt.y) : pt.y;
-      designState.drawing = { kind: 'circle', points: [{ x: sx, y: sy }], closed: true, _center: { x: sx, y: sy }, _r: 0 };
-    } else if (designState.tool === 'line') {
-      const sx = designState.snap ? dSnap(pt.x) : pt.x;
-      const sy = designState.snap ? dSnap(pt.y) : pt.y;
-      designState.drawing = { kind: 'line', points: [{ x: sx, y: sy }, { x: sx, y: sy }], closed: false };
-    }
+    },
+    designZoom100: () => {
+      designState.view.scale = 4;
+      dUpdateZoom();
+      dRender();
+    },
+  };
+  for (const [id, fn] of Object.entries(actions)) {
+    const node = $(id);
+    if (node) node.addEventListener('click', fn);
+  }
+
+  const lock = $('designLockAspect');
+  if (lock) {
+    lock.addEventListener('click', () => {
+      designState.lockAspect = !designState.lockAspect;
+      dUpdateButtons();
+    });
+  }
+
+  const snap = $('designSnap');
+  if (snap) {
+    snap.checked = designState.snap;
+    snap.addEventListener('change', () => {
+      designState.snap = snap.checked;
+    });
+  }
+  const grid = $('designGrid');
+  if (grid) {
+    grid.addEventListener('change', () => {
+      designState.grid = dClamp(Number(grid.value) || 5, 0.5, 50);
+      grid.value = String(designState.grid);
+      dRender();
+    });
+  }
+
+  for (const id of ['designPageW', 'designPageH']) {
+    const node = $(id);
+    if (node) node.addEventListener('change', dApplyPageSize);
+  }
+
+  for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH', 'designPropRot']) {
+    const node = $(id);
+    if (node) node.addEventListener('change', dApplyProps);
+  }
+
+  const genBtn = $('designGenerate');
+  if (genBtn) genBtn.addEventListener('click', designGenerate);
+  const saveBtn = $('designSave');
+  if (saveBtn) saveBtn.addEventListener('click', designSave);
+
+  // editor de texto
+  const textAdd = $('designTextAdd');
+  if (textAdd) textAdd.addEventListener('click', dCommitText);
+  const textCancel = $('designTextCancel');
+  if (textCancel) textCancel.addEventListener('click', dCloseTextEditor);
+  const textClose = $('designTextClose');
+  if (textClose) textClose.addEventListener('click', dCloseTextEditor);
+  const textValue = $('designTextValue');
+  if (textValue) {
+    textValue.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dCommitText();
+      }
+    });
+  }
+
+  // ponteiro/canvas
+  canvas.addEventListener('pointerdown', dOnPointerDown);
+  canvas.addEventListener('pointermove', dOnPointerMove);
+  canvas.addEventListener('pointerup', dOnPointerUp);
+  canvas.addEventListener('pointercancel', dOnPointerUp);
+  canvas.addEventListener('dblclick', dOnDblClick);
+  canvas.addEventListener('wheel', dOnWheel, { passive: false });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('pointerleave', () => {
+    designState.cursor.inside = false;
   });
 
-  c.addEventListener('mousemove', (e) => {
-    const pt = designCanvasCoords(e);
-    // cursor status
-    if (el.designCursor) el.designCursor.textContent = `${pt.x.toFixed(1)}, ${pt.y.toFixed(1)} mm`;
-    // cursor shape
-    if (designState.tool === 'select' && designState.selected >= 0 && !designState.dragStart && designState.resizeHandle < 0) {
-      const sh = designState.shapes[designState.selected];
-      const hi = designHandleAt(sh, pt.x, pt.y);
-      if (hi >= 0) {
-        const cursors = ['nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize'];
-        c.style.cursor = cursors[hi];
-      } else if (designHitTest(pt.x, pt.y) >= 0) {
-        c.style.cursor = 'move';
-      } else {
-        c.style.cursor = 'default';
-      }
-    } else if (designState.tool !== 'select') {
-      c.style.cursor = 'crosshair';
-    }
-    if (panning && panStart) {
-      designState.view.tx = panStart.tx + (e.clientX - panStart.x);
-      designState.view.ty = panStart.ty + (e.clientY - panStart.y);
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      if (!dDesignOpen()) return;
+      dResizeCanvas();
       dRender();
-      return;
-    }
-    // resize de forma selecionada via handle
-    if (designState.resizeHandle >= 0 && designState.resizeOrig && designState.selected >= 0) {
-      const orig = designState.resizeOrig;
-      const hi = designState.resizeHandle;
-      const newPt = designState.snap ? { x: dSnap(pt.x), y: dSnap(pt.y) } : pt;
-      const ow = orig.maxX - orig.minX || 1;
-      const oh = orig.maxY - orig.minY || 1;
-      // determina novo bbox conforme o handle
-      let nMinX = orig.minX, nMaxX = orig.maxX, nMinY = orig.minY, nMaxY = orig.maxY;
-      // handles: 0=TL,1=TC,2=TR,3=MR,4=BR,5=BC,6=BL,7=ML
-      if (hi === 0 || hi === 6 || hi === 7) nMinX = newPt.x;
-      if (hi === 2 || hi === 3 || hi === 4) nMaxX = newPt.x;
-      if (hi === 0 || hi === 1 || hi === 2) nMinY = newPt.y;
-      if (hi === 4 || hi === 5 || hi === 6) nMaxY = newPt.y;
-      if (nMaxX - nMinX < 2) { if (hi === 0 || hi === 6 || hi === 7) nMinX = nMaxX - 2; else nMaxX = nMinX + 2; }
-      if (nMaxY - nMinY < 2) { if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - 2; else nMaxY = nMinY + 2; }
-      const sx = (nMaxX - nMinX) / ow;
-      const sy = (nMaxY - nMinY) / oh;
-      for (let k = 0; k < orig.idxs.length; k++) {
-        const sh2 = designState.shapes[orig.idxs[k]];
-        if (!sh2) continue;
-        const op = orig.shapes[k];
-        for (let i = 0; i < sh2.points.length; i++) {
-          sh2.points[i].x = nMinX + (op[i].x - orig.minX) * sx;
-          sh2.points[i].y = nMinY + (op[i].y - orig.minY) * sy;
-        }
-      }
-      dRender();
-      dUpdateProps();
-      return;
-    }
-    if (designState.drawing) {
-      const s = designState.drawing._start || designState.drawing.points[0];
-      const x = designState.snap ? dSnap(pt.x) : pt.x;
-      const y = designState.snap ? dSnap(pt.y) : pt.y;
-      if (designState.tool === 'rect') {
-        designState.drawing.points = [s, { x, y: s.y }, { x, y }, { x: s.x, y }];
-      } else if (designState.tool === 'circle') {
-        const center = designState.drawing._center;
-        const r = Math.hypot(x - center.x, y - center.y);
-        designState.drawing.points = window.GRBL_DESIGN.makeCircle(center.x, center.y, r, 32);
-        designState.drawing._r = r;
-      } else if (designState.tool === 'line') {
-        designState.drawing.points = [designState.drawing.points[0], { x, y }];
-      }
-      dRender();
-      return;
-    }
-    // move selected
-    if (designState.selected >= 0 && designState.dragStart) {
-      const sh = designState.shapes[designState.selected];
-      const dx = pt.x - designState.dragStart.x;
-      const dy = pt.y - designState.dragStart.y;
-      if (dx === 0 && dy === 0) return;
-      for (const p of sh.points) { p.x += dx; p.y += dy; }
-      designState.dragStart = pt;
-      designState.dragMoved = true;
-      dRender();
-      dUpdateProps();
+    });
+    ro.observe(canvas);
+  }
+
+  document.addEventListener('keydown', dOnKeyDown);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && dDesignOpen() && !typingInField(e.target)) {
+      designState.space = true;
     }
   });
-
-  c.addEventListener('mouseup', (e) => {
-    if (panning) {
-      panning = false;
-      panStart = null;
-      c.style.cursor = designState.tool === 'select' ? 'default' : 'crosshair';
-      return;
-    }
-    let changed = false;
-    if (designState.resizeHandle >= 0) {
-      designState.resizeHandle = -1;
-      designState.resizeOrig = null;
-      changed = true;
-    }
-    if (designState.drawing) {
-      const sh = designState.drawing;
-      delete sh._center; delete sh._r; delete sh._start;
-      const xs = sh.points.map((p) => p.x);
-      const ys = sh.points.map((p) => p.y);
-      const w = Math.max(...xs) - Math.min(...xs);
-      const h = Math.max(...ys) - Math.min(...ys);
-      if (w > 1 || h > 1 || sh.kind === 'line') {
-        designState.shapes.push(sh);
-        designState.selected = designState.shapes.length - 1;
-        changed = true;
-      }
-      designState.drawing = null;
-    }
-    if (designState.dragStart) {
-      if (designState.dragMoved) changed = true;
-      designState.dragStart = null;
-      designState.dragMoved = false;
-    }
-    if (changed) {
-      dPushHistory();
-      dUpdateProps();
-      dUpdateObjectList();
-    }
-    dRender();
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') designState.space = false;
   });
 
-  c.addEventListener('mouseleave', () => {
-    if (designState.drawing) {
-      designState.drawing = null;
-      dRender();
-    }
-    designState.dragStart = null;
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeDesignModal();
   });
-
-  // wheel zoom
-  c.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const rect = c.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) * (c.width / rect.width);
-    const cy = (e.clientY - rect.top) * (c.height / rect.height);
-    const before = dCanvasToWorld(cx, cy);
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    designState.view.scale = Math.max(0.2, Math.min(8, designState.view.scale * factor));
-    const after = dWorldToCanvas(before.x, before.y);
-    designState.view.tx += cx - after.x;
-    designState.view.ty += cy - after.y;
-    dRender();
-  }, { passive: false });
-
-  // keyboard
-  c.addEventListener('keydown', (e) => {});
 })();
 
-// space-key tracking for pan
-document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && !e.repeat) {
-    const c = el.designCanvas;
-    if (c && document.activeElement === c) {
-      c.dataset.space = '1';
-    }
-  }
-});
-document.addEventListener('keyup', (e) => {
-  if (e.code === 'Space') {
-    const c = el.designCanvas;
-    if (c) delete c.dataset.space;
-  }
-});
-
-// Patch mousedown to detect space for panning (already handled via e.spaceKey check above is unreliable; use dataset)
-// We'll just rely on middle mouse (button 1) for pan, already handled.
-
-document.addEventListener('keydown', (e) => {
-  if (!el.designOverlay || el.designOverlay.classList.contains('hidden')) return;
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); dUndo(); return; }
-    if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); dRedo(); return; }
-    return;
-  }
-  if (e.key === 'Delete' || e.key === 'Backspace') {
-    if (designState.selected >= 0) {
-      e.preventDefault();
-      designState.shapes.splice(designState.selected, 1);
-      designState.selected = -1;
-      dPushHistory();
-      dRender();
-      dUpdateProps();
-      dUpdateObjectList();
-    }
-    return;
-  }
-  if (e.key === 'Escape') {
-    closeDesignModal();
-  }
-});
-if (el.designClose) el.designClose.addEventListener('click', closeDesignModal);
-if (el.designMaximize) el.designMaximize.addEventListener('click', () => {
-  const m = el.designOverlay.querySelector('.design-modal');
-  if (!m) return;
-  const max = m.classList.toggle('maximized');
-  el.designMaximize.textContent = max ? ' ( ) ' : ' ( ) ';
-  el.designMaximize.title = max ? 'Restaurar' : 'Maximizar';
-  // re-render canvas to fit new size
-  setTimeout(() => dRender(), 50);
-});
-if (el.designOverlay)
-  el.designOverlay.addEventListener('click', (e) => {
-    if (e.target === el.designOverlay) closeDesignModal();
-  });
-function designSetTool(t) {
-  designState.tool = t;
-  designState.drawing = null;
-  designUpdateToolButtons();
-  dRender();
-}
-if (el.designToolSelect) el.designToolSelect.addEventListener('click', () => designSetTool('select'));
-if (el.designToolRect) el.designToolRect.addEventListener('click', () => designSetTool('rect'));
-if (el.designToolCircle) el.designToolCircle.addEventListener('click', () => designSetTool('circle'));
-if (el.designToolLine) el.designToolLine.addEventListener('click', () => designSetTool('line'));
-async function designAddText() {
-  const txt = el.designText ? el.designText.value : '';
-  if (!txt || !txt.trim()) {
-    if (el.designStatus) el.designStatus.textContent = 'Digite o texto.';
-    return;
-  }
-  const fontName = el.designTextFont ? (el.designTextFont.value || 'sans-serif') : 'sans-serif';
-  const size = Number(el.designTextSize && el.designTextSize.value) || 10;
-  const mode = el.designTextMode ? el.designTextMode.value : 'vector';
-  if (el.designStatus) el.designStatus.textContent = t('design.status.generating');
-
-  if (mode === 'stroke' && window.GRBL_FONTS) {
-    // Single-stroke (Hershey): rápido, ideal para gravação.
-    const fontId = el.designFont && el.designFont.tagName === 'SELECT' ? el.designFont.value : 'simplex';
-    const pos = designState.pendingTextPos || { x: 50, y: 50 };
-    const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pos.x, y: pos.y, letterSpacing: 0.1 });
-    for (const sh of shapes) designState.shapes.push(sh);
-    designState.selected = designState.shapes.length - 1;
-    designState.pendingTextPos = null;
-    dPushHistory();
-    dRender();
-    dUpdateProps();
-    dUpdateObjectList();
-    if (el.designStatus) el.designStatus.textContent = t('design.status.done');
-    return;
-  }
-
-  // Modo vetor (contorno real da fonte do sistema): renderiza em canvas e
-  // traça o contorno — resultado "premium", como CorelDRAW/Photoshop.
-  if (!window.GRBL_CONTOUR) {
-    appendLine('Módulo de contorno não carregado.', 'error');
-    if (el.designStatus) el.designStatus.textContent = '';
-    return;
-  }
-  try {
-    const pos = designState.pendingTextPos || { x: 50, y: 50 };
-    const shapes = await renderTextToShapes(txt, fontName, size, pos.x, pos.y);
-    if (!shapes.length) {
-      if (el.designStatus) el.designStatus.textContent = 'Não foi possível gerar o texto.';
-      return;
-    }
-    for (const sh of shapes) designState.shapes.push(sh);
-    designState.selected = designState.shapes.length - 1;
-    designState.pendingTextPos = null;
-    dPushHistory();
-    dRender();
-    dUpdateProps();
-    dUpdateObjectList();
-    if (el.designStatus) el.designStatus.textContent = t('design.status.done');
-  } catch (err) {
-    appendLine(t('err.prefix', { msg: err.message }), 'error');
-    if (el.designStatus) el.designStatus.textContent = '';
-  }
-}
-
-/**
- * Renderiza texto com a fonte do sistema em alta resolução e traça o contorno,
- * retornando formas vetoriais (coordenadas em mm, y-down no canvas).
- */
-async function renderTextToShapes(text, fontName, sizeMm, cx, cy) {
-  const PX_PER_MM = 8;
-  const fontSizePx = Math.max(16, Math.round(sizeMm * PX_PER_MM));
-  // canvas temporário (tamanho generoso)
-  const pad = Math.round(fontSizePx * 0.5);
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round((sizeMm * text.length * 1.2 + 4) * PX_PER_MM);
-  canvas.height = Math.round((sizeMm * 1.6 + 2) * PX_PER_MM);
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#fff';
-  ctx.font = `bold ${fontSizePx}px "${fontName}", sans-serif`;
-  ctx.textBaseline = 'top';
-  ctx.fillText(text, pad, pad);
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  // binariza (threshold)
-  const mask = new Uint8Array(canvas.width * canvas.height);
-  for (let i = 0; i < mask.length; i++) {
-    mask[i] = img.data[i * 4] > 128 ? 1 : 0;
-  }
-  const contours = window.GRBL_CONTOUR.traceContours(mask, canvas.width, canvas.height);
-  // Converte contornos (pixels, y-down) em formas (mm, y-down). Escala.
-  const shapes = [];
-  for (const cont of contours) {
-    if (!cont || cont.length < 3) continue;
-    const pts = cont.map((p) => ({
-      x: (p.x / PX_PER_MM) + (cx - (canvas.width / PX_PER_MM) / 2),
-      y: (p.y / PX_PER_MM) + (cy - (canvas.height / PX_PER_MM) / 2),
-    }));
-    shapes.push({ kind: 'text', points: pts, closed: true });
-  }
-  return shapes;
-}
-if (el.designToolText) el.designToolText.addEventListener('click', () => designSetTool('text'));
-if (el.designUndo) el.designUndo.addEventListener('click', dUndo);
-if (el.designRedo) el.designRedo.addEventListener('click', dRedo);
-if (el.designZoomIn) el.designZoomIn.addEventListener('click', () => { designState.view.scale = Math.min(8, designState.view.scale * 1.2); dRender(); });
-if (el.designZoomOut) el.designZoomOut.addEventListener('click', () => { designState.view.scale = Math.max(0.2, designState.view.scale / 1.2); dRender(); });
-if (el.designZoomFit) el.designZoomFit.addEventListener('click', () => { designState.view = { scale: 1, tx: 20, ty: 20 }; dRender(); });
-if (el.designAlignLeft) el.designAlignLeft.addEventListener('click', () => dAlign('left'));
-if (el.designAlignCenter) el.designAlignCenter.addEventListener('click', () => dAlign('center'));
-if (el.designAlignRight) el.designAlignRight.addEventListener('click', () => dAlign('right'));
-if (el.designDelete) el.designDelete.addEventListener('click', () => {
-  if (designState.selected >= 0) {
-    designState.shapes.splice(designState.selected, 1);
-    designState.selected = -1;
-    dPushHistory();
-    dRender();
-    dUpdateProps();
-    dUpdateObjectList();
-  }
-});
-if (el.designClear) el.designClear.addEventListener('click', () => {
-  if (!designState.shapes.length) return;
-  designState.shapes = [];
-  designState.selected = -1;
-  dPushHistory();
-  dRender();
-  dUpdateProps();
-  dUpdateObjectList();
-});
-if (el.designGenerate) el.designGenerate.addEventListener('click', designGenerate);
-if (el.designSave) el.designSave.addEventListener('click', designSave);
-if (el.designTextAdd) el.designTextAdd.addEventListener('click', designAddText);
-if (el.designSnap) el.designSnap.addEventListener('change', (e) => { designState.snap = e.target.checked; });
-// Properties bar -> apply to selected shape (translate/scale)
-function dApplyProps() {
-  const idx = designState.selected;
-  if (idx < 0) return;
-  const sh = designState.shapes[idx];
-  const b = dShapeBounds(sh);
-  const newX = Number(el.designPropX.value);
-  const newY = Number(el.designPropY.value);
-  const newW = Number(el.designPropW.value);
-  const newH = Number(el.designPropH.value);
-  if (!Number.isFinite(newX) || !Number.isFinite(newY) || !Number.isFinite(newW) || !Number.isFinite(newH)) return;
-  const dx = newX - b.minX;
-  const dy = newY - b.minY;
-  const sx = (b.maxX - b.minX) > 0 ? newW / (b.maxX - b.minX) : 1;
-  const sy = (b.maxY - b.minY) > 0 ? newH / (b.maxY - b.minY) : 1;
-  // scale around (minX, minY) then translate
-  for (const p of sh.points) {
-    p.x = newX + (p.x - b.minX) * sx;
-    p.y = newY + (p.y - b.minY) * sy;
-  }
-  // also apply the base translate (already included above via newX/newY)
-  dPushHistory();
-  dRender();
-  dUpdateProps();
-  dUpdateObjectList();
-}
-for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH']) {
-  if (el[id]) el[id].addEventListener('change', dApplyProps);
-}
-
-function dAlign(mode) {
-  if (designState.selected < 0) return;
-  const sh = designState.shapes[designState.selected];
-  const b = dShapeBounds(sh);
-  const cx = (b.minX + b.maxX) / 2;
-  const cy = (b.minY + b.maxY) / 2;
-  const dx = mode === 'left' ? -b.minX : mode === 'right' ? -b.maxX : mode === 'center' ? -cx : 0;
-  const dy = mode === 'top' ? -b.minY : mode === 'bottom' ? -b.maxY : mode === 'middle' ? -cy : 0;
-  // align to canvas center
-  const { w, h } = designSize();
-  const targetX = mode === 'left' ? 0 : mode === 'right' ? w : mode === 'center' ? w / 2 : 0;
-  const targetY = mode === 'top' ? 0 : mode === 'bottom' ? h : mode === 'middle' ? h / 2 : 0;
-  // simpler: align shape's bbox edge to canvas edge/center
-  let tx = 0, ty = 0;
-  if (mode === 'left') tx = -b.minX;
-  else if (mode === 'right') tx = w - b.maxX;
-  else if (mode === 'center') tx = w / 2 - cx;
-  if (mode === 'top') ty = -b.minY;
-  else if (mode === 'bottom') ty = h - b.maxY;
-  else if (mode === 'middle') ty = h / 2 - cy;
-  for (const p of sh.points) { p.x += tx; p.y += ty; }
-  dPushHistory();
-  dRender();
-  dUpdateProps();
-}
-
-function openDesignModal() {
-  if (!el.designOverlay) return;
-  el.designOverlay.classList.remove('hidden');
-  designState.tool = 'select';
-  designState.selected = -1;
-  designState.drawing = null;
-  designState.view = { scale: 1, tx: 20, ty: 20 };
-  if (designState.history.length === 0) dPushHistory();
-  // Popula o seletor de fonte single-stroke (se existir).
-  if (el.designFont && window.GRBL_FONTS && el.designFont.tagName === 'SELECT') {
-    const cur = el.designFont.value;
-    el.designFont.innerHTML = '';
-    for (const f of window.GRBL_FONTS.fontOptions()) {
-      const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.textContent = f.name;
-      el.designFont.appendChild(opt);
-    }
-    if (cur) el.designFont.value = cur;
-  }
-  designUpdateToolButtons();
-  dRender();
-}
-
-function closeDesignModal() {
-  if (el.designOverlay) el.designOverlay.classList.add('hidden');
-}
 
 function updateFrameButtons() {
   const busy = state.jobState === 'running' || state.jobState === 'paused';

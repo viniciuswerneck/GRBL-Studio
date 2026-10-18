@@ -25,6 +25,21 @@ export interface Shape {
   speed?: number;
   power?: number;
   passes?: number;
+  /**
+   * Agrupamento: formas com o mesmo id formam um **bloco** (ex.: todas as
+   * letras/contornos de um texto) e são movidas/redimensionadas juntas.
+   */
+  group?: string;
+  /** Rótulo exibido no painel de objetos (`Retângulo 1`, `Texto 2`, …). */
+  name?: string;
+  /** Metadados do bloco de texto (permite reeditá-lo como bloco inteiro). */
+  text?: {
+    value: string;
+    font: string;
+    size: number;
+    mode: 'vector' | 'stroke';
+    bold?: boolean;
+  };
 }
 
 export interface DesignDocument {

@@ -11,6 +11,133 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <!-- Símbolos de ícone (SVG inline, sem dependências). Reutilizados com
+         <use href="#ic-…"> nos botões das ferramentas de desenho. -->
+    <svg class="icon-sprite" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="ic-select" viewBox="0 0 24 24">
+          <path d="M6 3.2l12 8.6-5.3 1L9.7 19.4 6 3.2z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-rect" viewBox="0 0 24 24">
+          <rect x="4" y="6" width="16" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        </symbol>
+        <symbol id="ic-ellipse" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="8" ry="6.2" fill="none" stroke="currentColor" stroke-width="1.8" />
+        </symbol>
+        <symbol id="ic-line" viewBox="0 0 24 24">
+          <path d="M4.5 19.5L19.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-text" viewBox="0 0 24 24">
+          <path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-undo" viewBox="0 0 24 24">
+          <path d="M9 6L4 11l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M4 11h10a5 5 0 0 1 0 10h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-redo" viewBox="0 0 24 24">
+          <path d="M15 6l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M20 11H10a5 5 0 0 0 0 10h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-zoom-in" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <path d="M15.2 15.2L20 20M10.5 7.5v6M7.5 10.5h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-zoom-out" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <path d="M15.2 15.2L20 20M7.5 10.5h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-fit" viewBox="0 0 24 24">
+          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-maximize" viewBox="0 0 24 24">
+          <path d="M9 4v5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="6" y="6" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+        </symbol>
+        <symbol id="ic-close" viewBox="0 0 24 24">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-trash" viewBox="0 0 24 24">
+          <path d="M5 7h14M9.5 7V5h5v2M6.5 7l1 12h9l1-12M10.5 11v5M13.5 11v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-duplicate" viewBox="0 0 24 24">
+          <rect x="9" y="9" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-align-left" viewBox="0 0 24 24">
+          <path d="M4 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="7" y="7" width="12" height="4" rx="1" fill="currentColor" />
+          <rect x="7" y="13" width="8" height="4" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-align-center" viewBox="0 0 24 24">
+          <path d="M12 3v18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="5" y="7" width="14" height="4" rx="1" fill="currentColor" />
+          <rect x="8" y="13" width="8" height="4" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-align-right" viewBox="0 0 24 24">
+          <path d="M20 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="5" y="7" width="12" height="4" rx="1" fill="currentColor" />
+          <rect x="9" y="13" width="8" height="4" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-align-top" viewBox="0 0 24 24">
+          <path d="M4 4h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="7" y="7" width="4" height="13" rx="1" fill="currentColor" />
+          <rect x="13" y="7" width="4" height="8" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-align-middle" viewBox="0 0 24 24">
+          <path d="M3 12h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="7" y="5" width="4" height="14" rx="1" fill="currentColor" />
+          <rect x="13" y="8" width="4" height="8" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-align-bottom" viewBox="0 0 24 24">
+          <path d="M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <rect x="7" y="4" width="4" height="13" rx="1" fill="currentColor" />
+          <rect x="13" y="9" width="4" height="8" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-front" viewBox="0 0 24 24">
+          <rect x="4" y="10" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <rect x="10" y="4" width="10" height="10" rx="1.5" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-back" viewBox="0 0 24 24">
+          <rect x="10" y="4" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <rect x="4" y="10" width="10" height="10" rx="1.5" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-forward" viewBox="0 0 24 24">
+          <path d="M12 3v9M8.5 6.5L12 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="5" y="15" width="14" height="5" rx="1.5" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-backward" viewBox="0 0 24 24">
+          <path d="M12 21v-9M8.5 15.5L12 19l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="5" y="4" width="14" height="5" rx="1.5" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-group" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <rect x="12" y="12" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <path d="M12 8h4a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2" />
+        </symbol>
+        <symbol id="ic-ungroup" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <rect x="13" y="13" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <path d="M13 10h4M10 13v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-lock" viewBox="0 0 24 24">
+          <rect x="6" y="10.5" width="12" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <path d="M9 10.5V8a3 3 0 0 1 6 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+        </symbol>
+        <symbol id="ic-grid" viewBox="0 0 24 24">
+          <path d="M4 9.3h16M4 14.6h16M9.3 4v16M14.6 4v16" fill="none" stroke="currentColor" stroke-width="1.6" />
+        </symbol>
+        <symbol id="ic-bold" viewBox="0 0 24 24">
+          <path d="M7 4.5h6.2a3.6 3.6 0 0 1 0 7.2H7zM7 11.7h7a4 4 0 0 1 0 8H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-check" viewBox="0 0 24 24">
+          <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-clear" viewBox="0 0 24 24">
+          <path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 12h9l1-12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M17 3.5l1 2 2 .6-1.6 1.5.4 2.2-1.8-1-1.8 1 .4-2.2L13.4 6l2-.6z" fill="currentColor" />
+        </symbol>
+      </defs>
+    </svg>
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
@@ -749,128 +876,283 @@
 
     <div class="overlay hidden" id="designOverlay">
       <div class="modal design-modal" role="dialog" aria-modal="true" aria-labelledby="designTitle">
-        <header class="modal-head">
-          <h3 id="designTitle" data-i18n="design.title">Desenhar</h3>
-          <div class="design-head-tools">
-            <button type="button" id="designUndo" class="icon-btn" data-i18n-title="design.undo" title="Desfazer (Ctrl+Z)">↶</button>
-            <button type="button" id="designRedo" class="icon-btn" data-i18n-title="design.redo" title="Refazer (Ctrl+Y)">↷</button>
-            <button type="button" id="designZoomIn" class="icon-btn" title="Zoom in">+</button>
-            <button type="button" id="designZoomOut" class="icon-btn" title="Zoom out">−</button>
-            <button type="button" id="designZoomFit" class="icon-btn" title="Ajustar"> ( ) </button>
-            <button type="button" id="designMaximize" class="icon-btn" data-i18n-title="design.maximize" title="Maximizar"> ( ) </button>
-            <button
-              type="button"
-              id="designClose"
-              class="icon-btn"
-              data-i18n-title="nav.close"
-              data-i18n-aria="nav.close"
-            >✕</button>
+        <!-- Barra de título -->
+        <header class="design-titlebar">
+          <div class="design-title-left">
+            <h3 id="designTitle" data-i18n="design.title">Desenhar</h3>
+            <span class="design-badge" id="designDocBadge">150 × 130 mm</span>
+          </div>
+          <div class="design-title-right">
+            <button type="button" id="designUndo" class="icon-btn" data-i18n-title="design.undo" title="Desfazer (Ctrl+Z)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-undo" /></svg>
+            </button>
+            <button type="button" id="designRedo" class="icon-btn" data-i18n-title="design.redo" title="Refazer (Ctrl+Y)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-redo" /></svg>
+            </button>
+            <span class="design-title-sep"></span>
+            <button type="button" id="designZoomOut" class="icon-btn" data-i18n-title="design.zoom.out" title="Zoom -">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-zoom-out" /></svg>
+            </button>
+            <button type="button" id="designZoom100" class="design-zoom-value" title="100%">100%</button>
+            <button type="button" id="designZoomIn" class="icon-btn" data-i18n-title="design.zoom.in" title="Zoom +">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-zoom-in" /></svg>
+            </button>
+            <button type="button" id="designZoomFit" class="icon-btn" data-i18n-title="design.zoom.fit" title="Ajustar à página">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-fit" /></svg>
+            </button>
+            <span class="design-title-sep"></span>
+            <button type="button" id="designMaximize" class="icon-btn" data-i18n-title="design.maximize" title="Maximizar/Restaurar">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-maximize" /></svg>
+            </button>
+            <button type="button" id="designClose" class="icon-btn" data-i18n-title="nav.close" aria-label="Fechar">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-close" /></svg>
+            </button>
           </div>
         </header>
-        <div class="modal-body design-body">
-          <!-- Barra de ferramentas (estilo CorelDRAW) -->
-          <div class="design-toolbar">
-            <button type="button" id="designToolSelect" class="design-tool active" data-i18n-title="design.tool.select" title="Selecionar (V)">↖</button>
-            <span class="design-sep"></span>
-            <button type="button" id="designToolRect" class="design-tool" data-i18n-title="design.tool.rect" title="Retângulo (R)">▭</button>
-            <button type="button" id="designToolCircle" class="design-tool" data-i18n-title="design.tool.circle" title="Círculo (C)">○</button>
-            <button type="button" id="designToolLine" class="design-tool" data-i18n-title="design.tool.line" title="Linha (L)">╱</button>
-            <span class="design-sep"></span>
-            <button type="button" id="designToolText" class="design-tool" data-i18n-title="design.tool.text" title="Texto (T)">T</button>
-            <span class="design-sep"></span>
-            <button type="button" id="designAlignLeft" class="design-tool" title="Alinhar à esquerda">⇤</button>
-            <button type="button" id="designAlignCenter" class="design-tool" title="Centralizar">⇔</button>
-            <button type="button" id="designAlignRight" class="design-tool" title="Alinhar à direita">⇥</button>
-            <span class="design-sep"></span>
-            <button type="button" id="designDelete" class="design-tool danger" data-i18n-title="design.delete" title="Excluir (Del)">🗑</button>
-            <button type="button" id="designClear" class="design-tool" data-i18n-title="design.clear" title="Limpar tudo">🧹</button>
-          </div>
-          <!-- Barra de propriedades (contextual) -->
-          <div class="design-textbar">
-            <input type="text" id="designText" placeholder="Texto…" data-i18n-placeholder="design.text.placeholder" />
-            <input type="number" id="designTextSize" min="1" max="100" step="1" value="10" title="Tamanho (mm)" />
-            <input type="text" id="designTextFont" list="designFontList" placeholder="Fonte" value="sans-serif" />
-            <datalist id="designFontList">
-              <option value="sans-serif">
-              <option value="serif">
-              <option value="monospace">
-              <option value="Arial">
-              <option value="Helvetica">
-              <option value="Times New Roman">
-              <option value="Courier New">
-              <option value="Verdana">
-            </datalist>
-            <select id="designTextMode">
-              <option value="vector">Vetor (contorno)</option>
-              <option value="stroke">Single-stroke</option>
-            </select>
-            <button type="button" id="designTextAdd" class="primary" data-i18n="design.text.add">Adicionar</button>
-          </div>
-          <div class="design-props">
-            <label class="design-prop">
+
+        <!-- Barra de propriedades (contextual) -->
+        <div class="design-propbar">
+          <div class="design-prop-group">
+            <label class="design-mini">
               <span>X</span>
               <input type="number" id="designPropX" step="0.1" />
             </label>
-            <label class="design-prop">
+            <label class="design-mini">
               <span>Y</span>
               <input type="number" id="designPropY" step="0.1" />
             </label>
-            <label class="design-prop">
-              <span>W</span>
+            <label class="design-mini">
+              <span data-i18n="design.prop.w">L</span>
               <input type="number" id="designPropW" step="0.1" min="0" />
             </label>
-            <label class="design-prop">
-              <span>H</span>
+            <label class="design-mini">
+              <span data-i18n="design.prop.h">A</span>
               <input type="number" id="designPropH" step="0.1" min="0" />
             </label>
-            <label class="design-prop design-prop-check">
+            <label class="design-mini">
+              <span data-i18n="design.prop.rot">R</span>
+              <input type="number" id="designPropRot" step="1" />
+            </label>
+            <button type="button" id="designLockAspect" class="design-toggle" data-i18n-title="design.lockAspect" title="Travar proporção">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-lock" /></svg>
+            </button>
+          </div>
+
+          <span class="design-prop-sep"></span>
+
+          <div class="design-prop-group">
+            <button type="button" id="designAlignLeft" class="icon-btn" data-i18n-title="design.align.left" title="Alinhar à esquerda">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-left" /></svg>
+            </button>
+            <button type="button" id="designAlignCenter" class="icon-btn" data-i18n-title="design.align.center" title="Centralizar">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-center" /></svg>
+            </button>
+            <button type="button" id="designAlignRight" class="icon-btn" data-i18n-title="design.align.right" title="Alinhar à direita">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-right" /></svg>
+            </button>
+            <button type="button" id="designAlignTop" class="icon-btn" data-i18n-title="design.align.top" title="Alinhar ao topo">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-top" /></svg>
+            </button>
+            <button type="button" id="designAlignMiddle" class="icon-btn" data-i18n-title="design.align.middle" title="Centralizar na vertical">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-middle" /></svg>
+            </button>
+            <button type="button" id="designAlignBottom" class="icon-btn" data-i18n-title="design.align.bottom" title="Alinhar à base">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-align-bottom" /></svg>
+            </button>
+          </div>
+
+          <span class="design-prop-sep"></span>
+
+          <div class="design-prop-group">
+            <button type="button" id="designFront" class="icon-btn" data-i18n-title="design.order.front" title="Trazer para frente">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-front" /></svg>
+            </button>
+            <button type="button" id="designForward" class="icon-btn" data-i18n-title="design.order.forward" title="Avançar">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-forward" /></svg>
+            </button>
+            <button type="button" id="designBackward" class="icon-btn" data-i18n-title="design.order.backward" title="Recuar">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-backward" /></svg>
+            </button>
+            <button type="button" id="designBack" class="icon-btn" data-i18n-title="design.order.back" title="Enviar para trás">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-back" /></svg>
+            </button>
+            <span class="design-prop-sep"></span>
+            <button type="button" id="designGroup" class="icon-btn" data-i18n-title="design.group" title="Agrupar (Ctrl+G)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-group" /></svg>
+            </button>
+            <button type="button" id="designUngroup" class="icon-btn" data-i18n-title="design.ungroup" title="Desagrupar (Ctrl+U)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-ungroup" /></svg>
+            </button>
+            <button type="button" id="designDuplicate" class="icon-btn" data-i18n-title="design.duplicate" title="Duplicar (Ctrl+D)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-duplicate" /></svg>
+            </button>
+          </div>
+
+          <div class="design-prop-group design-prop-right">
+            <label class="design-check">
               <input type="checkbox" id="designSnap" checked />
               <span data-i18n="design.snap">Snap</span>
             </label>
-            <span class="design-prop-status" id="designCursor">0, 0 mm</span>
-          </div>
-          <div class="design-workspace">
-            <canvas id="designCanvas" width="720" height="420"></canvas>
-            <aside class="design-objects">
-              <div class="design-objects-head" data-i18n="design.objects">Objetos</div>
-              <ul id="designObjectList" class="design-object-list"></ul>
-            </aside>
-          </div>
-          <div class="design-fields">
-            <label class="field">
-              <span data-i18n="design.speed">Velocidade (mm/min)</span>
-              <input type="number" id="designSpeed" min="100" max="20000" step="50" value="1000" />
-            </label>
-            <label class="field">
-              <span data-i18n="design.power">Potência (%)</span>
-              <input type="number" id="designPower" min="0" max="100" value="100" />
-            </label>
-            <label class="field">
-              <span data-i18n="design.passes">Passadas</span>
-              <input type="number" id="designPasses" min="1" max="10" value="1" />
-            </label>
-            <label class="field">
-              <span data-i18n="design.mode">Modo</span>
-              <select id="designMode">
-                <option value="M4">M4 (dinâmico)</option>
-                <option value="M3">M3 (constante)</option>
-              </select>
-            </label>
-            <label class="field">
-              <span data-i18n="design.font">Fonte</span>
-              <select id="designFont"></select>
+            <label class="design-mini">
+              <span data-i18n="design.grid">Grade</span>
+              <input type="number" id="designGrid" min="0.5" max="50" step="0.5" value="5" />
             </label>
           </div>
-          <div id="designStatus" class="hint"></div>
         </div>
-        <footer class="modal-foot">
+
+        <!-- Área principal: caixa de ferramentas | tela | painéis -->
+        <div class="design-main">
+          <aside class="design-toolbox">
+            <button type="button" id="designToolSelect" class="design-tool active" data-i18n-title="design.tool.select" title="Selecionar (V)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-select" /></svg>
+            </button>
+            <span class="design-tool-sep"></span>
+            <button type="button" id="designToolRect" class="design-tool" data-i18n-title="design.tool.rect" title="Retângulo (R)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-rect" /></svg>
+            </button>
+            <button type="button" id="designToolCircle" class="design-tool" data-i18n-title="design.tool.circle" title="Elipse (E)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-ellipse" /></svg>
+            </button>
+            <button type="button" id="designToolLine" class="design-tool" data-i18n-title="design.tool.line" title="Linha (L)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-line" /></svg>
+            </button>
+            <button type="button" id="designToolText" class="design-tool" data-i18n-title="design.tool.text" title="Texto (T)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-text" /></svg>
+            </button>
+            <span class="design-tool-sep"></span>
+            <button type="button" id="designDelete" class="design-tool" data-i18n-title="design.delete" title="Excluir (Del)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-trash" /></svg>
+            </button>
+            <button type="button" id="designClear" class="design-tool" data-i18n-title="design.clear" title="Limpar tudo">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-clear" /></svg>
+            </button>
+          </aside>
+
+          <div class="design-canvas-wrap" id="designCanvasWrap">
+            <canvas id="designCanvas"></canvas>
+
+            <!-- Editor de texto flutuante (clique com a ferramenta Texto) -->
+            <div class="design-text-editor hidden" id="designTextEditor">
+              <div class="design-text-head">
+                <span data-i18n="design.text.title">Texto</span>
+                <button type="button" id="designTextClose" class="icon-btn" aria-label="Fechar">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-close" /></svg>
+                </button>
+              </div>
+              <label class="design-field">
+                <span data-i18n="design.text.content">Texto</span>
+                <input type="text" id="designTextValue" data-i18n-placeholder="design.text.placeholder" placeholder="Texto…" spellcheck="false" />
+              </label>
+              <label class="design-field">
+                <span data-i18n="design.text.font">Fonte</span>
+                <input type="text" id="designTextFont" list="designFontList" value="sans-serif" spellcheck="false" />
+              </label>
+              <datalist id="designFontList">
+                <option value="sans-serif"></option>
+                <option value="serif"></option>
+                <option value="monospace"></option>
+                <option value="Arial"></option>
+                <option value="Helvetica"></option>
+                <option value="Times New Roman"></option>
+                <option value="Courier New"></option>
+                <option value="Verdana"></option>
+                <option value="Georgia"></option>
+                <option value="Impact"></option>
+                <option value="Simplex (single-stroke)"></option>
+              </datalist>
+              <div class="design-text-row">
+                <label class="design-field">
+                  <span data-i18n="design.text.size">Tamanho (mm)</span>
+                  <input type="number" id="designTextSize" min="1" max="200" step="1" value="10" />
+                </label>
+                <label class="design-field">
+                  <span data-i18n="design.text.mode">Modo</span>
+                  <select id="designTextMode">
+                    <option value="vector" data-i18n="design.text.mode.vector">Vetor (contorno)</option>
+                    <option value="stroke" data-i18n="design.text.mode.stroke">Traço único</option>
+                  </select>
+                </label>
+              </div>
+              <label class="design-check">
+                <input type="checkbox" id="designTextBold" checked />
+                <span data-i18n="design.text.bold">Negrito</span>
+              </label>
+              <div class="design-text-actions">
+                <button type="button" id="designTextCancel" data-i18n="design.cancel">Cancelar</button>
+                <button type="button" id="designTextAdd" class="primary" data-i18n="design.text.add">Adicionar</button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="design-dock">
+            <section class="design-dock-section grow">
+              <header class="design-dock-head">
+                <span data-i18n="design.objects">Objetos</span>
+                <span class="design-dock-count" id="designObjCount">0</span>
+              </header>
+              <ul id="designObjectList" class="design-object-list"></ul>
+            </section>
+            <section class="design-dock-section">
+              <header class="design-dock-head" data-i18n="design.document">Documento</header>
+              <div class="design-dock-row">
+                <label class="design-mini">
+                  <span data-i18n="design.doc.width">Largura</span>
+                  <input type="number" id="designPageW" min="1" max="2000" step="1" value="150" />
+                </label>
+                <label class="design-mini">
+                  <span data-i18n="design.doc.height">Altura</span>
+                  <input type="number" id="designPageH" min="1" max="2000" step="1" value="130" />
+                </label>
+              </div>
+            </section>
+            <section class="design-dock-section">
+              <header class="design-dock-head" data-i18n="design.engraving">Gravação</header>
+              <div class="design-dock-row">
+                <label class="design-field">
+                  <span data-i18n="design.speed">Velocidade (mm/min)</span>
+                  <input type="number" id="designSpeed" min="100" max="20000" step="50" value="1000" />
+                </label>
+                <label class="design-field">
+                  <span data-i18n="design.power">Potência (%)</span>
+                  <input type="number" id="designPower" min="0" max="100" value="100" />
+                </label>
+              </div>
+              <div class="design-dock-row">
+                <label class="design-field">
+                  <span data-i18n="design.passes">Passadas</span>
+                  <input type="number" id="designPasses" min="1" max="10" value="1" />
+                </label>
+                <label class="design-field">
+                  <span data-i18n="design.mode">Modo</span>
+                  <select id="designMode">
+                    <option value="M4">M4 (dinâmico)</option>
+                    <option value="M3">M3 (constante)</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <!-- Barra de status -->
+        <footer class="design-statusbar">
+          <span class="design-status-msg" id="designStatus" data-i18n="design.status.hint">
+            Desenhe com as ferramentas à esquerda. Roda do mouse = zoom; botão do meio = mover a tela.
+          </span>
+          <span class="design-status-sep"></span>
+          <span id="designSelInfo" data-i18n="design.sel.none">Nenhum objeto selecionado</span>
+          <span class="design-status-sep"></span>
+          <span id="designCursor">X 0,0 · Y 0,0 mm</span>
+          <span class="design-status-sep"></span>
+          <span id="designZoomLabel">100%</span>
+        </footer>
+
+        <footer class="modal-foot design-actions">
           <button type="button" id="designSave" data-i18n="design.save">Salvar .gcode…</button>
           <button type="button" id="designGenerate" class="primary" data-i18n="design.generate">Gerar e visualizar</button>
         </footer>
       </div>
     </div>
-
-    <div class="overlay hidden" id="settingsOverlay">
 
     <div class="overlay hidden" id="settingsOverlay">
       <div
@@ -1030,6 +1312,7 @@
     <script src="./materialTest.js"></script>
     <script src="./svg.js"></script>
     <script src="./design.js"></script>
+    <script src="./designEditor.js"></script>
     <script src="./fonts.js"></script>
     <script src="./contour.js"></script>
     <script src="./renderer.js"></script>
