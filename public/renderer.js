@@ -250,6 +250,7 @@ const el = {
   designText: $('designText'),
   designTextSize: $('designTextSize'),
   designTextFont: $('designTextFont'),
+  designTextMode: $('designTextMode'),
   designTextAdd: $('designTextAdd'),
   designStatus: $('designStatus'),
   designSave: $('designSave'),
@@ -1319,22 +1320,99 @@ if (el.designToolSelect) el.designToolSelect.addEventListener('click', () => des
 if (el.designToolRect) el.designToolRect.addEventListener('click', () => designSetTool('rect'));
 if (el.designToolCircle) el.designToolCircle.addEventListener('click', () => designSetTool('circle'));
 if (el.designToolLine) el.designToolLine.addEventListener('click', () => designSetTool('line'));
-if (el.designTextAdd) el.designTextAdd.addEventListener('click', () => {
+async function designAddText() {
   const txt = el.designText ? el.designText.value : '';
-  if (!txt || !txt.trim() || !window.GRBL_FONTS) return;
-  const fontId = el.designTextFont ? el.designTextFont.value : (el.designFont ? el.designFont.value : 'simplex');
+  if (!txt || !txt.trim()) {
+    if (el.designStatus) el.designStatus.textContent = 'Digite o texto.';
+    return;
+  }
+  const fontName = el.designTextFont ? (el.designTextFont.value || 'sans-serif') : 'sans-serif';
   const size = Number(el.designTextSize && el.designTextSize.value) || 10;
-  const pos = designState.pendingTextPos || { x: 50, y: 50 };
-  const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pos.x, y: pos.y, letterSpacing: 0.1 });
-  for (const sh of shapes) designState.shapes.push(sh);
-  designState.selected = designState.shapes.length - 1;
-  designState.pendingTextPos = null;
-  dPushHistory();
-  dRender();
-  dUpdateProps();
-  dUpdateObjectList();
-  if (el.designStatus) el.designStatus.textContent = t('design.status.done');
-});
+  const mode = el.designTextMode ? el.designTextMode.value : 'vector';
+  if (el.designStatus) el.designStatus.textContent = t('design.status.generating');
+
+  if (mode === 'stroke' && window.GRBL_FONTS) {
+    // Single-stroke (Hershey): rápido, ideal para gravação.
+    const fontId = el.designFont && el.designFont.tagName === 'SELECT' ? el.designFont.value : 'simplex';
+    const pos = designState.pendingTextPos || { x: 50, y: 50 };
+    const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pos.x, y: pos.y, letterSpacing: 0.1 });
+    for (const sh of shapes) designState.shapes.push(sh);
+    designState.selected = designState.shapes.length - 1;
+    designState.pendingTextPos = null;
+    dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+    if (el.designStatus) el.designStatus.textContent = t('design.status.done');
+    return;
+  }
+
+  // Modo vetor (contorno real da fonte do sistema): renderiza em canvas e
+  // traça o contorno — resultado "premium", como CorelDRAW/Photoshop.
+  if (!window.GRBL_CONTOUR) {
+    appendLine('Módulo de contorno não carregado.', 'error');
+    if (el.designStatus) el.designStatus.textContent = '';
+    return;
+  }
+  try {
+    const pos = designState.pendingTextPos || { x: 50, y: 50 };
+    const shapes = await renderTextToShapes(txt, fontName, size, pos.x, pos.y);
+    if (!shapes.length) {
+      if (el.designStatus) el.designStatus.textContent = 'Não foi possível gerar o texto.';
+      return;
+    }
+    for (const sh of shapes) designState.shapes.push(sh);
+    designState.selected = designState.shapes.length - 1;
+    designState.pendingTextPos = null;
+    dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+    if (el.designStatus) el.designStatus.textContent = t('design.status.done');
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+    if (el.designStatus) el.designStatus.textContent = '';
+  }
+}
+
+/**
+ * Renderiza texto com a fonte do sistema em alta resolução e traça o contorno,
+ * retornando formas vetoriais (coordenadas em mm, y-down no canvas).
+ */
+async function renderTextToShapes(text, fontName, sizeMm, cx, cy) {
+  const PX_PER_MM = 8;
+  const fontSizePx = Math.max(16, Math.round(sizeMm * PX_PER_MM));
+  // canvas temporário (tamanho generoso)
+  const pad = Math.round(fontSizePx * 0.5);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round((sizeMm * text.length * 1.2 + 4) * PX_PER_MM);
+  canvas.height = Math.round((sizeMm * 1.6 + 2) * PX_PER_MM);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${fontSizePx}px "${fontName}", sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.fillText(text, pad, pad);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  // binariza (threshold)
+  const mask = new Uint8Array(canvas.width * canvas.height);
+  for (let i = 0; i < mask.length; i++) {
+    mask[i] = img.data[i * 4] > 128 ? 1 : 0;
+  }
+  const contours = window.GRBL_CONTOUR.traceContours(mask, canvas.width, canvas.height);
+  // Converte contornos (pixels, y-down) em formas (mm, y-down). Escala.
+  const shapes = [];
+  for (const cont of contours) {
+    if (!cont || cont.length < 3) continue;
+    const pts = cont.map((p) => ({
+      x: (p.x / PX_PER_MM) + (cx - (canvas.width / PX_PER_MM) / 2),
+      y: (p.y / PX_PER_MM) + (cy - (canvas.height / PX_PER_MM) / 2),
+    }));
+    shapes.push({ kind: 'text', points: pts, closed: true });
+  }
+  return shapes;
+}
 if (el.designToolText) el.designToolText.addEventListener('click', () => designSetTool('text'));
 if (el.designUndo) el.designUndo.addEventListener('click', dUndo);
 if (el.designRedo) el.designRedo.addEventListener('click', dRedo);
@@ -1365,6 +1443,7 @@ if (el.designClear) el.designClear.addEventListener('click', () => {
 });
 if (el.designGenerate) el.designGenerate.addEventListener('click', designGenerate);
 if (el.designSave) el.designSave.addEventListener('click', designSave);
+if (el.designTextAdd) el.designTextAdd.addEventListener('click', designAddText);
 if (el.designSnap) el.designSnap.addEventListener('change', (e) => { designState.snap = e.target.checked; });
 // Properties bar -> apply to selected shape (translate/scale)
 function dApplyProps() {
@@ -1430,20 +1509,17 @@ function openDesignModal() {
   designState.drawing = null;
   designState.view = { scale: 1, tx: 20, ty: 20 };
   if (designState.history.length === 0) dPushHistory();
-  // Popula os seletores de fontes.
-  if (window.GRBL_FONTS) {
-    for (const sel of [el.designFont, el.designTextFont]) {
-      if (!sel) continue;
-      const cur = sel.value;
-      sel.innerHTML = '';
-      for (const f of window.GRBL_FONTS.fontOptions()) {
-        const opt = document.createElement('option');
-        opt.value = f.id;
-        opt.textContent = f.name;
-        sel.appendChild(opt);
-      }
-      if (cur) sel.value = cur;
+  // Popula o seletor de fonte single-stroke (se existir).
+  if (el.designFont && window.GRBL_FONTS && el.designFont.tagName === 'SELECT') {
+    const cur = el.designFont.value;
+    el.designFont.innerHTML = '';
+    for (const f of window.GRBL_FONTS.fontOptions()) {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      el.designFont.appendChild(opt);
     }
+    if (cur) el.designFont.value = cur;
   }
   designUpdateToolButtons();
   dRender();

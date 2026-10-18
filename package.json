@@ -6,7 +6,8 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:fonts && npm run build:i18n",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:fonts && npm run build:contour && npm run build:i18n",
+    "build:contour": "esbuild src/shared/image/contour.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_CONTOUR --outfile=public/contour.js",
     "build:fonts": "esbuild src/shared/fonts.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_FONTS --outfile=public/fonts.js",
     "build:design": "esbuild src/shared/design.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_DESIGN --outfile=public/design.js",
     "build:materialTest": "esbuild src/shared/materialTest.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIAL_TEST --outfile=public/materialTest.js",

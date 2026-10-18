@@ -789,7 +789,21 @@
           <div class="design-textbar">
             <input type="text" id="designText" placeholder="Texto…" data-i18n-placeholder="design.text.placeholder" />
             <input type="number" id="designTextSize" min="1" max="100" step="1" value="10" title="Tamanho (mm)" />
-            <select id="designTextFont"></select>
+            <input type="text" id="designTextFont" list="designFontList" placeholder="Fonte" value="sans-serif" />
+            <datalist id="designFontList">
+              <option value="sans-serif">
+              <option value="serif">
+              <option value="monospace">
+              <option value="Arial">
+              <option value="Helvetica">
+              <option value="Times New Roman">
+              <option value="Courier New">
+              <option value="Verdana">
+            </datalist>
+            <select id="designTextMode">
+              <option value="vector">Vetor (contorno)</option>
+              <option value="stroke">Single-stroke</option>
+            </select>
             <button type="button" id="designTextAdd" class="primary" data-i18n="design.text.add">Adicionar</button>
           </div>
           <div class="design-props">
@@ -1017,6 +1031,7 @@
     <script src="./svg.js"></script>
     <script src="./design.js"></script>
     <script src="./fonts.js"></script>
+    <script src="./contour.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>
