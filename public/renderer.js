@@ -572,6 +572,8 @@ const designState = {
   drawing: null,
   dragStart: null,
   dragMoved: false,
+  resizeHandle: -1,
+  resizeOrig: null,
   history: [],         // snapshots of shapes[]
   historyIdx: -1,
   view: { scale: 1, tx: 0, ty: 0 },
@@ -746,6 +748,26 @@ function designHitTest(x, y) {
   return -1;
 }
 
+/** Retorna o índice do handle (0-7) sob (x,y) para a forma selecionada, ou -1. */
+function designHandleAt(sh, x, y) {
+  if (!sh || !sh.points.length) return -1;
+  const xs = sh.points.map((p) => p.x);
+  const ys = sh.points.map((p) => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const hs = 7 / designState.view.scale;
+  const handles = [
+    { x: minX, y: minY }, { x: (minX + maxX) / 2, y: minY }, { x: maxX, y: minY },
+    { x: maxX, y: (minY + maxY) / 2 },
+    { x: maxX, y: maxY }, { x: (minX + maxX) / 2, y: maxY }, { x: minX, y: maxY },
+    { x: minX, y: (minY + maxY) / 2 },
+  ];
+  for (let i = 0; i < handles.length; i++) {
+    if (Math.abs(handles[i].x - x) <= hs && Math.abs(handles[i].y - y) <= hs) return i;
+  }
+  return -1;
+}
+
 function designCanvasCoords(e) {
   const c = el.designCanvas;
   const r = c.getBoundingClientRect();
@@ -905,10 +927,29 @@ async function designSave() {
     }
     const pt = designCanvasCoords(e);
     if (designState.tool === 'select') {
+      // Primeiro: está clicando num handle da forma selecionada?
+      if (designState.selected >= 0) {
+        const sh = designState.shapes[designState.selected];
+        const hi = designHandleAt(sh, pt.x, pt.y);
+        if (hi >= 0) {
+          const xs = sh.points.map((p) => p.x);
+          const ys = sh.points.map((p) => p.y);
+          designState.resizeHandle = hi;
+          designState.resizeOrig = {
+            points: sh.points.map((p) => ({ x: p.x, y: p.y })),
+            minX: Math.min(...xs), maxX: Math.max(...xs),
+            minY: Math.min(...ys), maxY: Math.max(...ys),
+            mouse: pt,
+          };
+          dRender();
+          return;
+        }
+      }
       const idx = designHitTest(pt.x, pt.y);
       designState.selected = idx;
       if (idx >= 0) {
         designState.dragStart = pt;
+        designState.dragMoved = false;
       }
       dRender();
       dUpdateProps();
@@ -935,10 +976,57 @@ async function designSave() {
     const pt = designCanvasCoords(e);
     // cursor status
     if (el.designCursor) el.designCursor.textContent = `${pt.x.toFixed(1)}, ${pt.y.toFixed(1)} mm`;
+    // cursor shape
+    if (designState.tool === 'select' && designState.selected >= 0 && !designState.dragStart && designState.resizeHandle < 0) {
+      const sh = designState.shapes[designState.selected];
+      const hi = designHandleAt(sh, pt.x, pt.y);
+      if (hi >= 0) {
+        const cursors = ['nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize'];
+        c.style.cursor = cursors[hi];
+      } else if (designHitTest(pt.x, pt.y) >= 0) {
+        c.style.cursor = 'move';
+      } else {
+        c.style.cursor = 'default';
+      }
+    } else if (designState.tool !== 'select') {
+      c.style.cursor = 'crosshair';
+    }
     if (panning && panStart) {
       designState.view.tx = panStart.tx + (e.clientX - panStart.x);
       designState.view.ty = panStart.ty + (e.clientY - panStart.y);
       dRender();
+      return;
+    }
+    // resize de forma selecionada via handle
+    if (designState.resizeHandle >= 0 && designState.resizeOrig && designState.selected >= 0) {
+      const sh = designState.shapes[designState.selected];
+      const orig = designState.resizeOrig;
+      const hi = designState.resizeHandle;
+      const newPt = designState.snap ? { x: dSnap(pt.x), y: dSnap(pt.y) } : pt;
+      const xs = orig.points.map((p) => p.x);
+      const ys = orig.points.map((p) => p.y);
+      const oMinX = Math.min(...xs), oMaxX = Math.max(...xs);
+      const oMinY = Math.min(...ys), oMaxY = Math.max(...ys);
+      const ow = oMaxX - oMinX || 1;
+      const oh = oMaxY - oMinY || 1;
+      // determina novo bbox conforme o handle
+      let nMinX = oMinX, nMaxX = oMaxX, nMinY = oMinY, nMaxY = oMaxY;
+      // handles: 0=TL,1=TC,2=TR,3=MR,4=BR,5=BC,6=BL,7=ML
+      if (hi === 0 || hi === 6 || hi === 7) nMinX = newPt.x;
+      if (hi === 2 || hi === 3 || hi === 4) nMaxX = newPt.x;
+      if (hi === 0 || hi === 1 || hi === 2) nMinY = newPt.y;
+      if (hi === 4 || hi === 5 || hi === 6) nMaxY = newPt.y;
+      if (nMaxX - nMinX < 2) { if (hi === 0 || hi === 6 || hi === 7) nMinX = nMaxX - 2; else nMaxX = nMinX + 2; }
+      if (nMaxY - nMinY < 2) { if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - 2; else nMaxY = nMinY + 2; }
+      const sx = (nMaxX - nMinX) / ow;
+      const sy = (nMaxY - nMinY) / oh;
+      for (let i = 0; i < sh.points.length; i++) {
+        const op = orig.points[i];
+        sh.points[i].x = nMinX + (op.x - oMinX) * sx;
+        sh.points[i].y = nMinY + (op.y - oMinY) * sy;
+      }
+      dRender();
+      dUpdateProps();
       return;
     }
     if (designState.drawing) {
@@ -966,6 +1054,7 @@ async function designSave() {
       if (dx === 0 && dy === 0) return;
       for (const p of sh.points) { p.x += dx; p.y += dy; }
       designState.dragStart = pt;
+      designState.dragMoved = true;
       dRender();
       dUpdateProps();
     }
@@ -978,6 +1067,12 @@ async function designSave() {
       c.style.cursor = designState.tool === 'select' ? 'default' : 'crosshair';
       return;
     }
+    let changed = false;
+    if (designState.resizeHandle >= 0) {
+      designState.resizeHandle = -1;
+      designState.resizeOrig = null;
+      changed = true;
+    }
     if (designState.drawing) {
       const sh = designState.drawing;
       delete sh._center; delete sh._r; delete sh._start;
@@ -988,14 +1083,21 @@ async function designSave() {
       if (w > 1 || h > 1 || sh.kind === 'line') {
         designState.shapes.push(sh);
         designState.selected = designState.shapes.length - 1;
-        dPushHistory();
+        changed = true;
       }
       designState.drawing = null;
-      dRender();
+    }
+    if (designState.dragStart) {
+      if (designState.dragMoved) changed = true;
+      designState.dragStart = null;
+      designState.dragMoved = false;
+    }
+    if (changed) {
+      dPushHistory();
       dUpdateProps();
       dUpdateObjectList();
     }
-    designState.dragStart = null;
+    dRender();
   });
 
   c.addEventListener('mouseleave', () => {
@@ -1044,7 +1146,29 @@ document.addEventListener('keyup', (e) => {
 // Patch mousedown to detect space for panning (already handled via e.spaceKey check above is unreliable; use dataset)
 // We'll just rely on middle mouse (button 1) for pan, already handled.
 
-// Wire design modal buttons.
+document.addEventListener('keydown', (e) => {
+  if (!el.designOverlay || el.designOverlay.classList.contains('hidden')) return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); dUndo(); return; }
+    if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); dRedo(); return; }
+    return;
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (designState.selected >= 0) {
+      e.preventDefault();
+      designState.shapes.splice(designState.selected, 1);
+      designState.selected = -1;
+      dPushHistory();
+      dRender();
+      dUpdateProps();
+      dUpdateObjectList();
+    }
+    return;
+  }
+  if (e.key === 'Escape') {
+    closeDesignModal();
+  }
+});
 if (el.designClose) el.designClose.addEventListener('click', closeDesignModal);
 if (el.designOverlay)
   el.designOverlay.addEventListener('click', (e) => {
