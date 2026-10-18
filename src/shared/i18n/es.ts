@@ -197,7 +197,8 @@ export const es = {
   'frame.origin': 'Ir al origen (0,0)',
   'frame.outline': 'Dibujar contorno',
   'frame.center': 'Marcar centro',
-  'frame.center.title': 'Lleva el láser al centro de la imagen (láser débil por un instante)',
+  'frame.center.title':
+    'Lleva el láser al centro de la imagen (láser débil por un instante)',
   'frame.center.done': 'Láser en el centro de la imagen (láser débil).',
   'frame.start': '▶ Grabar',
   'frame.power': 'Potencia del grabado (%)',
@@ -256,7 +257,8 @@ export const es = {
   'design.generate': 'Generar y previsualizar',
   'design.save': 'Guardar .gcode…',
   'design.status.generating': 'Generando el dibujo…',
-  'design.status.done': 'Dibujo generado. Revisa la vista previa y envía o guarda.',
+  'design.status.done':
+    'Dibujo generado. Revisa la vista previa y envía o guarda.',
   'design.prop.w': 'A',
   'design.prop.h': 'Al',
   'design.prop.rot': 'R',
@@ -309,6 +311,13 @@ export const es = {
   'design.status.ungrouped': 'Objetos desagrupados.',
   'design.status.undo': 'Deshecho.',
   'design.status.redo': 'Rehecho.',
+  'design.size.title': 'Tamaño de la obra',
+  'design.size.width': 'Ancho (mm)',
+  'design.size.height': 'Alto (mm)',
+  'design.size.current': 'Tamaño actual: {w} × {h} mm',
+  'design.size.note':
+    'Rellena un lado y el otro se ajusta a la misma proporción. Desbloquea el candado para redimensionar libremente.',
+  'design.size.invalid': 'Indica ancho y alto mayores que cero.',
 
   // ------------------------------------------------- ejecución y archivo
   'run.title': 'Ejecución',

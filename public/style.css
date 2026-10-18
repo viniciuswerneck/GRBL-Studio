@@ -1591,12 +1591,14 @@ body.job-active .job-bar {
   white-space: nowrap;
 }
 
-.design-modal .design-mini > span {
+.design-modal .design-mini > span,
+.design-size-modal .design-mini > span {
   min-width: 0.9rem;
   text-align: center;
 }
 
-.design-modal .design-mini input {
+.design-modal .design-mini input,
+.design-size-modal .design-mini input {
   width: 3.7rem;
   padding: 3px 4px;
   font-size: var(--fs-12);
@@ -1613,7 +1615,8 @@ body.job-active .job-bar {
   white-space: nowrap;
 }
 
-.design-modal .design-check input {
+.design-modal .design-check input,
+.design-size-modal .design-check input {
   width: auto;
   margin: 0;
 }
@@ -1772,7 +1775,9 @@ html[data-theme="sand"] .design-canvas-wrap {
 }
 
 .design-modal .design-field input,
-.design-modal .design-field select {
+.design-modal .design-field select,
+.design-size-modal .design-field input,
+.design-size-modal .design-field select {
   width: 100%;
   padding: 4px var(--sp-1);
   font-size: var(--fs-12);
@@ -1950,6 +1955,42 @@ html[data-theme="sand"] .design-canvas-wrap {
   min-height: 30px;
   padding: 4px var(--sp-2);
   font-size: var(--fs-12);
+}
+
+/* --- diálogo "tamanho da arte" --- */
+.design-size-modal {
+  width: min(480px, 92vw);
+}
+
+.design-size-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.design-size-fields {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: var(--sp-2);
+}
+
+.design-size-fields .design-toggle {
+  margin-bottom: 1px;
+}
+
+.design-size-hint {
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.design-size-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-sub);
 }
 
 .appearance-label {

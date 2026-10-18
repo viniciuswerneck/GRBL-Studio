@@ -207,7 +207,8 @@ export const ptBR = {
   'frame.origin': 'Ir para origem (0,0)',
   'frame.outline': 'Desenhar contorno',
   'frame.center': 'Marcar centro',
-  'frame.center.title': 'Leva o laser até o centro da imagem (laser fraco por um instante)',
+  'frame.center.title':
+    'Leva o laser até o centro da imagem (laser fraco por um instante)',
   'frame.center.done': 'Laser no centro da imagem (laser fraco).',
   'frame.start': '▶ Gravar',
   'frame.power': 'Potência da gravação (%)',
@@ -318,6 +319,13 @@ export const ptBR = {
   'design.status.ungrouped': 'Objetos desagrupados.',
   'design.status.undo': 'Desfeito.',
   'design.status.redo': 'Refeito.',
+  'design.size.title': 'Tamanho da arte',
+  'design.size.width': 'Largura (mm)',
+  'design.size.height': 'Altura (mm)',
+  'design.size.current': 'Tamanho atual: {w} × {h} mm',
+  'design.size.note':
+    'Preencha um lado e o outro é ajustado na mesma proporção. Destrave o cadeado para redimensionar livremente.',
+  'design.size.invalid': 'Informe largura e altura maiores que zero.',
 
   // ------------------------------------------------- execução e arquivo
   'run.title': 'Execução',

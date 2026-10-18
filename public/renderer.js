@@ -217,6 +217,7 @@ const el = {
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
   designOverlay: $('designOverlay'),
+  designSizeOverlay: $('designSizeOverlay'),
   designClose: $('designClose'),
   designMaximize: $('designMaximize'),
   designCanvas: $('designCanvas'),
@@ -2045,10 +2046,17 @@ function dDesignOpen() {
 
 function dOnKeyDown(e) {
   if (!dDesignOpen()) return;
+  const sizeOpen = dSizeDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
 
   if (e.key === 'Escape') {
+    if (sizeOpen) {
+      dCloseSizeDialog();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
     // O modal de posicionamento ("frame") abre por cima do editor: Esc fecha
     // só ele, mantendo o desenho à vista.
     if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
@@ -2072,6 +2080,7 @@ function dOnKeyDown(e) {
     return; // deixa o handler global fechar o modal
   }
 
+  if (sizeOpen) return;
   if (editorOpen || typingInField(e.target)) return;
 
   const mod = e.ctrlKey || e.metaKey;
@@ -2242,6 +2251,7 @@ function openDesignModal() {
 
 function closeDesignModal() {
   dCloseTextEditor();
+  dCloseSizeDialog();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
 }
 
@@ -2291,6 +2301,101 @@ async function designSave() {
   } catch (err) {
     appendLine(t('err.prefix', { msg: err.message }), 'error');
   }
+}
+
+// ------------------------------------------------------- tamanho da arte
+//
+// "Gerar e visualizar" pergunta o tamanho final da arte. Com o cadeado
+// travado (padrão), preencher um lado ajusta o outro na mesma proporção;
+// destravado, permite redimensionar livremente (distorce).
+
+function dArtBounds() {
+  return DE.selectionBounds(designState.shapes, designState.shapes.map((_, i) => i));
+}
+
+function dSizeDialogOpen() {
+  const o = el.designSizeOverlay;
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+function dOpenSizeDialog() {
+  if (!designState.shapes.length) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  const b = dArtBounds();
+  if (!b) return;
+  const w = b.maxX - b.minX;
+  const h = b.maxY - b.minY;
+  designState.sizeBounds = b;
+  designState.sizeAspect = w > 0.01 && h > 0.01 ? w / h : null;
+  if (designState.sizeLock === undefined) designState.sizeLock = true;
+  const W = $('designSizeW');
+  const H = $('designSizeH');
+  if (W) W.value = (w > 0.01 ? w : 1).toFixed(1);
+  if (H) H.value = (h > 0.01 ? h : 1).toFixed(1);
+  const lock = $('designSizeLock');
+  if (lock) {
+    lock.classList.toggle('active', designState.sizeLock);
+    lock.disabled = designState.sizeAspect === null;
+    lock.title = t('design.lockAspect');
+  }
+  const hint = $('designSizeHint');
+  if (hint) hint.textContent = t('design.size.current', { w: w.toFixed(1), h: h.toFixed(1) });
+  if (el.designSizeOverlay) el.designSizeOverlay.classList.remove('hidden');
+  if (W) {
+    W.focus();
+    W.select();
+  }
+}
+
+function dCloseSizeDialog() {
+  if (el.designSizeOverlay) el.designSizeOverlay.classList.add('hidden');
+}
+
+/** Preenche o outro lado mantendo a proporção (cadeado travado). */
+function dSizeSync(source) {
+  if (!designState.sizeLock || !designState.sizeAspect) return;
+  const W = $('designSizeW');
+  const H = $('designSizeH');
+  if (!W || !H) return;
+  if (source === 'w') {
+    const w = Number(W.value);
+    if (Number.isFinite(w) && w > 0) H.value = (w / designState.sizeAspect).toFixed(1);
+  } else {
+    const h = Number(H.value);
+    if (Number.isFinite(h) && h > 0) W.value = (h * designState.sizeAspect).toFixed(1);
+  }
+}
+
+/** Aplica o tamanho pedido (escala a arte em torno do canto superior esquerdo). */
+function dConfirmSize() {
+  const b = designState.sizeBounds || dArtBounds();
+  const w = dNum('designSizeW', 0);
+  const h = dNum('designSizeH', 0);
+  if (!b || !(w > 0) || !(h > 0)) {
+    dStatus(t('design.size.invalid'), 'error');
+    return;
+  }
+  const curW = b.maxX - b.minX;
+  const curH = b.maxY - b.minY;
+  const sx = curW > 0.01 ? w / curW : 1;
+  const sy = curH > 0.01 ? h / curH : 1;
+  if (Math.abs(sx - 1) > 1e-6 || Math.abs(sy - 1) > 1e-6) {
+    for (const sh of designState.shapes) {
+      for (const p of sh.points) {
+        p.x = b.minX + (p.x - b.minX) * sx;
+        p.y = b.minY + (p.y - b.minY) * sy;
+      }
+    }
+    dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+    dUpdateStatus();
+  }
+  dCloseSizeDialog();
+  designGenerate();
 }
 
 // -------------------------------------------------------------------- wiring
@@ -2400,9 +2505,49 @@ async function designSave() {
   }
 
   const genBtn = $('designGenerate');
-  if (genBtn) genBtn.addEventListener('click', designGenerate);
+  if (genBtn) genBtn.addEventListener('click', dOpenSizeDialog);
   const saveBtn = $('designSave');
   if (saveBtn) saveBtn.addEventListener('click', designSave);
+
+  // diálogo "tamanho da arte"
+  const sizeConfirm = $('designSizeConfirm');
+  if (sizeConfirm) sizeConfirm.addEventListener('click', dConfirmSize);
+  const sizeCancel = $('designSizeCancel');
+  if (sizeCancel) sizeCancel.addEventListener('click', dCloseSizeDialog);
+  const sizeClose = $('designSizeClose');
+  if (sizeClose) sizeClose.addEventListener('click', dCloseSizeDialog);
+  const sizeW = $('designSizeW');
+  if (sizeW) {
+    sizeW.addEventListener('input', () => dSizeSync('w'));
+    sizeW.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dConfirmSize();
+      }
+    });
+  }
+  const sizeH = $('designSizeH');
+  if (sizeH) {
+    sizeH.addEventListener('input', () => dSizeSync('h'));
+    sizeH.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dConfirmSize();
+      }
+    });
+  }
+  const sizeLock = $('designSizeLock');
+  if (sizeLock) {
+    sizeLock.addEventListener('click', () => {
+      designState.sizeLock = !designState.sizeLock;
+      sizeLock.classList.toggle('active', designState.sizeLock);
+    });
+  }
+  if (el.designSizeOverlay) {
+    el.designSizeOverlay.addEventListener('click', (e) => {
+      if (e.target === el.designSizeOverlay) dCloseSizeDialog();
+    });
+  }
 
   // editor de texto
   const textAdd = $('designTextAdd');

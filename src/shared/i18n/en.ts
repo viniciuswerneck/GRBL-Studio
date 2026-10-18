@@ -191,7 +191,8 @@ export const en = {
   'frame.origin': 'Go to origin (0,0)',
   'frame.outline': 'Draw outline',
   'frame.center': 'Mark center',
-  'frame.center.title': 'Moves the laser to the image center (weak laser for a moment)',
+  'frame.center.title':
+    'Moves the laser to the image center (weak laser for a moment)',
   'frame.center.done': 'Laser at the image center (weak laser).',
   'frame.start': '▶ Engrave',
   'frame.power': 'Engraving power (%)',
@@ -250,7 +251,8 @@ export const en = {
   'design.generate': 'Generate and preview',
   'design.save': 'Save .gcode…',
   'design.status.generating': 'Generating the drawing…',
-  'design.status.done': 'Drawing generated. Check the preview, then send or save.',
+  'design.status.done':
+    'Drawing generated. Check the preview, then send or save.',
   'design.prop.w': 'W',
   'design.prop.h': 'H',
   'design.prop.rot': 'R',
@@ -303,6 +305,13 @@ export const en = {
   'design.status.ungrouped': 'Objects ungrouped.',
   'design.status.undo': 'Undone.',
   'design.status.redo': 'Redone.',
+  'design.size.title': 'Artwork size',
+  'design.size.width': 'Width (mm)',
+  'design.size.height': 'Height (mm)',
+  'design.size.current': 'Current size: {w} × {h} mm',
+  'design.size.note':
+    'Fill in one side and the other follows the same ratio. Unlock the padlock to resize freely.',
+  'design.size.invalid': 'Enter width and height greater than zero.',
 
   // ------------------------------------------------- execução e arquivo
   'run.title': 'Run',

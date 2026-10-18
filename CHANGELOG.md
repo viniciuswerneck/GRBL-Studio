@@ -24,6 +24,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   resolução (16 px/mm) com simplificação RDP; **traço único** (Hershey Simplex).
 - **Navegação**: roda do mouse = zoom no cursor, botão do meio / `Space`+arraste
   = mover a tela, `F` ajustar à página, `0` voltar a 100 %, `+`/`-` zoom.
+- **Tamanho da arte**: "Gerar e visualizar" abre um diálogo de **largura × altura
+  (mm)**; com o cadeado travado (padrão), preencher um lado ajusta o outro na
+  mesma proporção (`Esc` fecha só o diálogo). Confirmar escala a arte a partir do
+  canto superior esquerdo e gera o G-code.
 - Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
   z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
   (`GRBL_DESIGN_EDITOR`).
