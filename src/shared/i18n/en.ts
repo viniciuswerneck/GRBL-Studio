@@ -208,8 +208,6 @@ export const en = {
   'frame.connect': 'Connect machine',
   'frame.connect.noPort':
     'No serial port found. Check the cable and click “Connect machine”.',
-  'frame.ready.note':
-    'The G-code is ready. Connect the machine and use “▶ Engrave”.',
 
   // ------------------------------------------------------- material test grid
   'matTest.title': 'Material test grid',

@@ -195,8 +195,6 @@ const el = {
   frameCancel: $('frameCancel'),
   frameStatus: $('frameStatus'),
   frameConnect: $('frameConnect'),
-  frameGenParams: $('frameGenParams'),
-  frameReadyNote: $('frameReadyNote'),
   framePower: $('framePower'),
   framePowerValue: $('framePowerValue'),
   frameSpeed: $('frameSpeed'),
@@ -528,11 +526,25 @@ function openFrameModal() {
       : null);
   if (!el.frameOverlay) return;
   el.frameOverlay.classList.remove('hidden');
-  // Sincroniza potência/velocidade com os parâmetros da imagem.
-  if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
-  if (el.framePower && el.imgSmax) {
-    const pct = Math.round((Number(el.imgSmax.value) || 0) / 10);
-    el.framePower.value = String(Math.max(0, Math.min(100, pct)));
+  // Sincroniza potência/velocidade/passadas com a origem do job: no fluxo de
+  // imagem vêm dos campos da conversão; no desenho, dos campos da prancheta.
+  if (state.jobSource === 'design') {
+    const dSpeed = $('designSpeed');
+    const dPower = $('designPower');
+    const dPasses = $('designPasses');
+    if (el.frameSpeed && dSpeed) el.frameSpeed.value = dSpeed.value;
+    if (el.framePower && dPower) {
+      el.framePower.value = String(
+        Math.max(0, Math.min(100, Number(dPower.value) || 0)),
+      );
+    }
+    if (el.framePasses && dPasses) el.framePasses.value = dPasses.value;
+  } else {
+    if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
+    if (el.framePower && el.imgSmax) {
+      const pct = Math.round((Number(el.imgSmax.value) || 0) / 10);
+      el.framePower.value = String(Math.max(0, Math.min(100, pct)));
+    }
   }
   if (el.frameSpeedValue && el.frameSpeed)
     el.frameSpeedValue.textContent = `${el.frameSpeed.value} mm/min`;
@@ -541,11 +553,6 @@ function openFrameModal() {
   // "Conectar" no próprio modal: quem esqueceu de conectar não precisa fechar
   // o desenho e começar tudo de novo.
   updateFrameConnectButton();
-  // Potência/velocidade/passadas só regeram o G-code no fluxo de imagem; num
-  // desenho (ou arquivo aberto) o programa já está pronto — esconde os campos.
-  const isImage = state.jobSource === 'image';
-  if (el.frameGenParams) el.frameGenParams.classList.toggle('hidden', !isImage);
-  if (el.frameReadyNote) el.frameReadyNote.classList.toggle('hidden', isImage);
   updateFrameButtons();
 }
 
@@ -2284,7 +2291,40 @@ function dReadEngraveOptions() {
   };
 }
 
-function designGenerate() {
+/**
+ * Copia potência/velocidade/passadas do modal de posicionamento para os campos
+ * de gravação da prancheta (o modal é onde o usuário confere antes de gravar).
+ */
+function dFrameParamsToDesign() {
+  const put = (id, value) => {
+    const input = $(id);
+    if (input) input.value = String(value);
+  };
+  if (el.frameSpeed) {
+    put(
+      'designSpeed',
+      Math.max(100, Math.min(20000, Number(el.frameSpeed.value) || 1000)),
+    );
+  }
+  if (el.framePower) {
+    put(
+      'designPower',
+      Math.max(0, Math.min(100, Number(el.framePower.value) || 0)),
+    );
+  }
+  if (el.framePasses) {
+    put(
+      'designPasses',
+      Math.max(1, Math.min(10, Number(el.framePasses.value) || 1)),
+    );
+  }
+}
+
+/**
+ * Gera o G-code do desenho. Com `autoStart`, inicia o envio em seguida — usado
+ * pelo "▶ Gravar" do modal de posicionamento.
+ */
+function designGenerate({ autoStart = false } = {}) {
   if (!window.GRBL_DESIGN) {
     appendLine('Módulo de desenho não carregado.', 'error');
     return;
@@ -2300,6 +2340,11 @@ function designGenerate() {
   );
   applyJobLines('design.gcode', gcode, 'design');
   dStatus(t('design.status.done'), 'ok');
+  if (autoStart && state.connected) {
+    closeFrameModal();
+    beginJob(0);
+    return;
+  }
   openFrameModal();
 }
 
@@ -6491,6 +6536,19 @@ if (el.framePower && el.framePowerValue) {
 }
 if (el.frameStart)
   el.frameStart.addEventListener('click', () => {
+    if (state.jobSource === 'design') {
+      // Desenho: os parâmetros do modal alimentam a prancheta e o G-code é
+      // regerado a partir das formas — depois o envio inicia.
+      dFrameParamsToDesign();
+      if (!state.connected) {
+        if (el.frameStatus)
+          el.frameStatus.textContent = t('frame.status.disconnected');
+        return;
+      }
+      closeFrameModal();
+      designGenerate({ autoStart: true });
+      return;
+    }
     if (state.jobSource === 'image') {
       // Fluxo de imagem: copia os parâmetros do modal e regera o G-code.
       if (el.framePower && el.imgSmax) {
@@ -6508,7 +6566,7 @@ if (el.frameStart)
       generateGcode(true);
       return;
     }
-    // Desenho ou arquivo aberto: o G-code já está pronto — só inicia o envio.
+    // Arquivo aberto/SVG: o G-code já está pronto — só inicia o envio.
     if (!state.connected) {
       if (el.frameStatus)
         el.frameStatus.textContent = t('frame.status.disconnected');

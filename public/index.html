@@ -764,33 +764,28 @@
               </p>
 
               <h4 class="frame-section" data-i18n="frame.group.job">Gravação</h4>
-              <div id="frameGenParams">
-                <label class="frame-field" data-i18n="frame.power">
-                  Potência do contorno (%)
-                  <span class="frame-field-row">
-                    <input type="range" id="framePower" min="0" max="100" value="1" />
-                    <span class="frame-value" id="framePowerValue">1 %</span>
-                  </span>
-                </label>
-                <label class="frame-field" data-i18n="frame.speed">
-                  Velocidade de gravação (mm/min)
-                  <span class="frame-field-row">
-                    <input type="range" id="frameSpeed" min="100" max="5000" step="50" value="1000" />
-                    <span class="frame-value" id="frameSpeedValue">1000 mm/min</span>
-                  </span>
-                </label>
-                <label class="frame-field" data-i18n="img.passes">
-                  Passadas
-                  <span class="frame-stepper">
-                    <button type="button" id="framePassesMinus">−</button>
-                    <input type="number" id="framePasses" min="1" max="99" step="1" value="1" />
-                    <button type="button" id="framePassesPlus">+</button>
-                  </span>
-                </label>
-              </div>
-              <p class="frame-note" id="frameReadyNote" data-i18n="frame.ready.note">
-                O G-code já está pronto. Conecte a máquina e use “▶ Gravar”.
-              </p>
+              <label class="frame-field" data-i18n="frame.power">
+                Potência do contorno (%)
+                <span class="frame-field-row">
+                  <input type="range" id="framePower" min="0" max="100" value="1" />
+                  <span class="frame-value" id="framePowerValue">1 %</span>
+                </span>
+              </label>
+              <label class="frame-field" data-i18n="frame.speed">
+                Velocidade de gravação (mm/min)
+                <span class="frame-field-row">
+                  <input type="range" id="frameSpeed" min="100" max="20000" step="50" value="1000" />
+                  <span class="frame-value" id="frameSpeedValue">1000 mm/min</span>
+                </span>
+              </label>
+              <label class="frame-field" data-i18n="img.passes">
+                Passadas
+                <span class="frame-stepper">
+                  <button type="button" id="framePassesMinus">−</button>
+                  <input type="number" id="framePasses" min="1" max="99" step="1" value="1" />
+                  <button type="button" id="framePassesPlus">+</button>
+                </span>
+              </label>
             </section>
           </div>
         </div>

@@ -31,6 +31,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Conectar no modal de posicionamento**: botão **Conectar máquina** (área de
   status do modal) para quem esqueceu de conectar antes — não é mais preciso
   fechar o desenho e refazer tudo.
+- **Parâmetros de gravação valem para o desenho**: potência, velocidade e
+  passadas ajustadas no modal "Posicionar a gravadora" alimentam a prancheta e
+  regeram o G-code a partir das formas (antes só afetavam a imagem). O slider de
+  velocidade do modal vai até 20000 mm/min.
 - Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
   z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
   (`GRBL_DESIGN_EDITOR`).
@@ -51,9 +55,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **"▶ Gravar" não funcionava para o desenho**: o botão do modal de
   posicionamento só regenerava o G-code da **imagem** (e voltava sem fazer nada
   quando não havia imagem). Agora o app guarda a origem do job (`image`,
-  `design`, `file`): em desenho/arquivo o G-code já está pronto e o botão apenas
-  inicia o envio. Os campos de potência/velocidade/passadas (que só regeram a
-  imagem) ficam ocultos nesses casos.
+  `design`, `file`): no desenho o G-code é regerado a partir das formas com os
+  parâmetros do modal; num arquivo aberto ele apenas inicia o envio já carregado.
 
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior
