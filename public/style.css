@@ -1429,7 +1429,7 @@ body.job-active .job-bar {
   padding: 2px 8px;
 }
 
-.sim-bar input[type='range'] {
+.sim-bar input[type="range"] {
   flex: 1;
   min-width: 60px;
 }

@@ -469,7 +469,11 @@ describe('edição de nós (hitTestNode / hitTestSegment / insertNode / removeNo
     const out = removeNode(poly, 1, false);
     expect(out).toHaveLength(3);
     // Fechado: precisa de 3+
-    const closed = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }];
+    const closed = [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 5 },
+    ];
     expect(removeNode(closed, 1, true)).toHaveLength(3); // não remove (min 3)
     expect(removeNode(closed, 1, false)).toHaveLength(2);
   });

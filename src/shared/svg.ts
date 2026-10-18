@@ -28,11 +28,11 @@ export interface SvgDocument {
 }
 
 export interface SvgToGcodeOptions {
-  feed: number;       // mm/min para G1
+  feed: number; // mm/min para G1
   travelFeed: number; // mm/min para G0
-  scale: number;      // fator de escala (1 = unidades do SVG em mm)
-  flipY: boolean;     // inverte Y (SVG é y-down)
-  samples: number;    // amostras por curva (mínimo)
+  scale: number; // fator de escala (1 = unidades do SVG em mm)
+  flipY: boolean; // inverte Y (SVG é y-down)
+  samples: number; // amostras por curva (mínimo)
 }
 
 const DEFAULT_OPTS: SvgToGcodeOptions = {
@@ -82,7 +82,12 @@ function sampleCubic(
 }
 
 /** Amostra uma Bézier quadrática em `n` pontos. */
-function sampleQuad(p0: SvgPoint, p1: SvgPoint, p2: SvgPoint, n: number): SvgPoint[] {
+function sampleQuad(
+  p0: SvgPoint,
+  p1: SvgPoint,
+  p2: SvgPoint,
+  n: number,
+): SvgPoint[] {
   const out: SvgPoint[] = [];
   for (let i = 1; i <= n; i++) {
     const t = i / n;
@@ -122,7 +127,8 @@ function parsePathD(d: string): SvgContour[] {
     startY = 0;
   let closed = false;
 
-  const tokens = d.match(/[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*/g) ?? [];
+  const tokens =
+    d.match(/[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*/g) ?? [];
   for (const tok of tokens) {
     const cmd = tok[0];
     const nums = parseNumbers(tok.slice(1));
@@ -206,7 +212,12 @@ function parsePathD(d: string): SvgContour[] {
           const y1 = rel ? y + nums[i + 1] : nums[i + 1];
           const x2 = rel ? x + nums[i + 2] : nums[i + 2];
           const y2 = rel ? y + nums[i + 3] : nums[i + 3];
-          const pts = sampleQuad({ x, y }, { x: x1, y: y1 }, { x: x2, y: y2 }, 12);
+          const pts = sampleQuad(
+            { x, y },
+            { x: x1, y: y1 },
+            { x: x2, y: y2 },
+            12,
+          );
           current.push(...pts);
           x = x2;
           y = y2;
@@ -257,7 +268,12 @@ function parsePathD(d: string): SvgContour[] {
   return contours;
 }
 
-function parseTransform(s: string | null): { sx: number; sy: number; tx: number; ty: number } {
+function parseTransform(s: string | null): {
+  sx: number;
+  sy: number;
+  tx: number;
+  ty: number;
+} {
   const out = { sx: 1, sy: 1, tx: 0, ty: 0 };
   if (!s) return out;
   const t = s.match(/translate\(([^)]+)\)/);
@@ -275,7 +291,10 @@ function parseTransform(s: string | null): { sx: number; sy: number; tx: number;
   return out;
 }
 
-function applyTransform(p: SvgPoint, tr: { sx: number; sy: number; tx: number; ty: number }): SvgPoint {
+function applyTransform(
+  p: SvgPoint,
+  tr: { sx: number; sy: number; tx: number; ty: number },
+): SvgPoint {
   return { x: p.x * tr.sx + tr.tx, y: p.y * tr.sy + tr.ty };
 }
 
@@ -297,16 +316,26 @@ export function parseSvg(text: string): SvgDocument {
   function attrs(tag: string): Record<string, string> {
     const out: Record<string, string> = {};
     const re = /([\w-]+)\s*=\s*"([^"]*)"/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(tag)) !== null) out[m[1]] = m[2];
+    let m = re.exec(tag);
+    while (m !== null) {
+      out[m[1]] = m[2];
+      m = re.exec(tag);
+    }
     return out;
   }
 
-  function handleLeaf(tagName: string, a: Record<string, string>, tr: { sx: number; sy: number; tx: number; ty: number }) {
+  function handleLeaf(
+    tagName: string,
+    a: Record<string, string>,
+    tr: { sx: number; sy: number; tx: number; ty: number },
+  ) {
     const tag = tagName.toLowerCase();
     if (tag === 'path' && a.d) {
       for (const cont of parsePathD(a.d)) {
-        contours.push({ points: cont.points.map((p) => applyTransform(p, tr)), closed: cont.closed });
+        contours.push({
+          points: cont.points.map((p) => applyTransform(p, tr)),
+          closed: cont.closed,
+        });
       }
       return;
     }
@@ -320,36 +349,57 @@ export function parseSvg(text: string): SvgDocument {
       const r = Math.min(rx, ry, w / 2, h / 2);
       const pts: SvgPoint[] = [];
       if (r <= 0) {
-        pts.push({ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }, { x, y });
+        pts.push(
+          { x, y },
+          { x: x + w, y },
+          { x: x + w, y: y + h },
+          { x, y: y + h },
+          { x, y },
+        );
       } else {
         const n = 6;
         pts.push({ x: x + r, y });
         pts.push({ x: x + w - r, y });
         for (let i = 1; i <= n; i++) {
           const ang = -Math.PI / 2 + (Math.PI / 2) * (i / n);
-          pts.push({ x: x + w - r + r * Math.cos(ang), y: y + r + r * Math.sin(ang) });
+          pts.push({
+            x: x + w - r + r * Math.cos(ang),
+            y: y + r + r * Math.sin(ang),
+          });
         }
         pts.push({ x: x + w, y: y + r });
         pts.push({ x: x + w, y: y + h - r });
         for (let i = 1; i <= n; i++) {
           const ang = 0 + (Math.PI / 2) * (i / n);
-          pts.push({ x: x + w - r + r * Math.cos(ang), y: y + h - r + r * Math.sin(ang) });
+          pts.push({
+            x: x + w - r + r * Math.cos(ang),
+            y: y + h - r + r * Math.sin(ang),
+          });
         }
         pts.push({ x: x + w - r, y: y + h });
         pts.push({ x: x + r, y: y + h });
         for (let i = 1; i <= n; i++) {
           const ang = Math.PI / 2 + (Math.PI / 2) * (i / n);
-          pts.push({ x: x + r + r * Math.cos(ang), y: y + h - r + r * Math.sin(ang) });
+          pts.push({
+            x: x + r + r * Math.cos(ang),
+            y: y + h - r + r * Math.sin(ang),
+          });
         }
         pts.push({ x, y: y + h - r });
         pts.push({ x, y: y + r });
         for (let i = 1; i <= n; i++) {
           const ang = Math.PI + (Math.PI / 2) * (i / n);
-          pts.push({ x: x + r + r * Math.cos(ang), y: y + r + r * Math.sin(ang) });
+          pts.push({
+            x: x + r + r * Math.cos(ang),
+            y: y + r + r * Math.sin(ang),
+          });
         }
         pts.push({ x: x + r, y });
       }
-      contours.push({ points: pts.map((p) => applyTransform(p, tr)), closed: true });
+      contours.push({
+        points: pts.map((p) => applyTransform(p, tr)),
+        closed: true,
+      });
       return;
     }
     if (tag === 'circle') {
@@ -358,7 +408,10 @@ export function parseSvg(text: string): SvgDocument {
       const r = num(a.r);
       const pts = sampleArc(cx, cy, r, r, 0, Math.PI * 2, 24);
       pts.unshift({ x: cx + r, y: cy });
-      contours.push({ points: pts.map((p) => applyTransform(p, tr)), closed: true });
+      contours.push({
+        points: pts.map((p) => applyTransform(p, tr)),
+        closed: true,
+      });
       return;
     }
     if (tag === 'ellipse') {
@@ -368,7 +421,10 @@ export function parseSvg(text: string): SvgDocument {
       const ry = num(a.ry);
       const pts = sampleArc(cx, cy, rx, ry, 0, Math.PI * 2, 24);
       pts.unshift({ x: cx + rx, y: cy });
-      contours.push({ points: pts.map((p) => applyTransform(p, tr)), closed: true });
+      contours.push({
+        points: pts.map((p) => applyTransform(p, tr)),
+        closed: true,
+      });
       return;
     }
     if (tag === 'line') {
@@ -377,7 +433,10 @@ export function parseSvg(text: string): SvgDocument {
       const x2 = num(a.x2);
       const y2 = num(a.y2);
       contours.push({
-        points: [{ x: x1, y: y1 }, { x: x2, y: y2 }].map((p) => applyTransform(p, tr)),
+        points: [
+          { x: x1, y: y1 },
+          { x: x2, y: y2 },
+        ].map((p) => applyTransform(p, tr)),
         closed: false,
       });
       return;
@@ -385,8 +444,12 @@ export function parseSvg(text: string): SvgDocument {
     if (tag === 'polyline' || tag === 'polygon') {
       const nums = parseNumbers(a.points ?? '');
       const pts: SvgPoint[] = [];
-      for (let i = 0; i + 1 < nums.length; i += 2) pts.push({ x: nums[i], y: nums[i + 1] });
-      contours.push({ points: pts.map((p) => applyTransform(p, tr)), closed: tag === 'polygon' });
+      for (let i = 0; i + 1 < nums.length; i += 2)
+        pts.push({ x: nums[i], y: nums[i + 1] });
+      contours.push({
+        points: pts.map((p) => applyTransform(p, tr)),
+        closed: tag === 'polygon',
+      });
       return;
     }
   }
@@ -400,20 +463,34 @@ export function parseSvg(text: string): SvgDocument {
   for (const tok of tokens) {
     if (skipDepth > 0) {
       if (tok.startsWith('</')) {
-        const name = tok.slice(2).replace(/[^a-zA-Z].*/, '').toLowerCase();
-        if (name === 'defs' || name === 'style' || name === 'script') skipDepth--;
+        const name = tok
+          .slice(2)
+          .replace(/[^a-zA-Z].*/, '')
+          .toLowerCase();
+        if (name === 'defs' || name === 'style' || name === 'script')
+          skipDepth--;
       }
       continue;
     }
     if (tok.startsWith('</')) {
-      const name = tok.slice(2).replace(/[^a-zA-Z].*/, '').toLowerCase();
+      const name = tok
+        .slice(2)
+        .replace(/[^a-zA-Z].*/, '')
+        .toLowerCase();
       if (name === 'g' && stack.length > 1) stack.pop();
       continue;
     }
     const nameMatch = tok.match(/^<([a-zA-Z][\w-]*)/);
     const name = nameMatch ? nameMatch[1].toLowerCase() : '';
     if (!name) continue;
-    if (name === 'defs' || name === 'style' || name === 'script' || name === 'title' || name === 'desc' || name === 'metadata') {
+    if (
+      name === 'defs' ||
+      name === 'style' ||
+      name === 'script' ||
+      name === 'title' ||
+      name === 'desc' ||
+      name === 'metadata'
+    ) {
       skipDepth++;
       continue;
     }
@@ -449,7 +526,11 @@ export function parseSvg(text: string): SvgDocument {
     }
   }
   if (!Number.isFinite(minX) || contours.length === 0) {
-    return { width: width > 0 ? width : 100, height: height > 0 ? height : 100, contours: [] };
+    return {
+      width: width > 0 ? width : 100,
+      height: height > 0 ? height : 100,
+      contours: [],
+    };
   }
   for (const cont of contours) {
     for (const p of cont.points) {
@@ -463,11 +544,16 @@ export function parseSvg(text: string): SvgDocument {
 }
 
 /** Converte um documento SVG em G-code de contorno. */
-export function svgToGcode(doc: SvgDocument, opts: Partial<SvgToGcodeOptions> = {}): string {
+export function svgToGcode(
+  doc: SvgDocument,
+  opts: Partial<SvgToGcodeOptions> = {},
+): string {
   const o = { ...DEFAULT_OPTS, ...opts };
   const lines: string[] = [];
   lines.push('; GRBL Studio — importação SVG');
-  lines.push(`; ${doc.contours.length} contorno(s), ${doc.width.toFixed(2)} x ${doc.height.toFixed(2)} mm`);
+  lines.push(
+    `; ${doc.contours.length} contorno(s), ${doc.width.toFixed(2)} x ${doc.height.toFixed(2)} mm`,
+  );
   lines.push('G21');
   lines.push('G90');
   lines.push('G94');
@@ -501,6 +587,9 @@ export function svgToGcode(doc: SvgDocument, opts: Partial<SvgToGcodeOptions> = 
 }
 
 /** Atalho: texto SVG → G-code. */
-export function svgTextToGcode(text: string, opts: Partial<SvgToGcodeOptions> = {}): string {
+export function svgTextToGcode(
+  text: string,
+  opts: Partial<SvgToGcodeOptions> = {},
+): string {
   return svgToGcode(parseSvg(text), opts);
 }

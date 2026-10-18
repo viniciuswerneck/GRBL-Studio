@@ -555,7 +555,14 @@ export function hitTestSegment(
   let best: SegmentHit | null = null;
   let bestDist = tol;
   for (let i = 1; i < n; i++) {
-    const d = distanceToSegment(x, y, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+    const d = distanceToSegment(
+      x,
+      y,
+      points[i - 1].x,
+      points[i - 1].y,
+      points[i].x,
+      points[i].y,
+    );
     if (d < bestDist) {
       bestDist = d;
       // Projeção no segmento
@@ -566,7 +573,10 @@ export function hitTestSegment(
       const dx = bx - ax;
       const dy = by - ay;
       const len2 = dx * dx + dy * dy;
-      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
+      const t =
+        len2 === 0
+          ? 0
+          : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
       best = {
         segmentIndex: i - 1,
         point: { x: ax + t * dx, y: ay + t * dy },
@@ -575,7 +585,14 @@ export function hitTestSegment(
   }
   // Segmento de fechamento (último → primeiro)
   if (closed && n >= 3) {
-    const d = distanceToSegment(x, y, points[n - 1].x, points[n - 1].y, points[0].x, points[0].y);
+    const d = distanceToSegment(
+      x,
+      y,
+      points[n - 1].x,
+      points[n - 1].y,
+      points[0].x,
+      points[0].y,
+    );
     if (d < bestDist) {
       bestDist = d;
       const ax = points[n - 1].x;
@@ -585,7 +602,10 @@ export function hitTestSegment(
       const dx = bx - ax;
       const dy = by - ay;
       const len2 = dx * dx + dy * dy;
-      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
+      const t =
+        len2 === 0
+          ? 0
+          : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
       best = {
         segmentIndex: n - 1,
         point: { x: ax + t * dx, y: ay + t * dy },
@@ -636,7 +656,8 @@ export function moveNode(
   x: number,
   y: number,
 ): Point[] {
-  if (nodeIndex < 0 || nodeIndex >= points.length) return points.map((p) => ({ ...p }));
+  if (nodeIndex < 0 || nodeIndex >= points.length)
+    return points.map((p) => ({ ...p }));
   const out = points.map((p) => ({ ...p }));
   out[nodeIndex] = { x, y };
   return out;
@@ -652,7 +673,8 @@ export function splitPolyline(
   nodeIndex: number,
 ): [Point[], Point[] | null] {
   const n = points.length;
-  if (nodeIndex <= 0 || nodeIndex >= n - 1) return [points.map((p) => ({ ...p })), null];
+  if (nodeIndex <= 0 || nodeIndex >= n - 1)
+    return [points.map((p) => ({ ...p })), null];
   const a = points.slice(0, nodeIndex + 1).map((p) => ({ ...p }));
   const b = points.slice(nodeIndex).map((p) => ({ ...p }));
   return [a, b];

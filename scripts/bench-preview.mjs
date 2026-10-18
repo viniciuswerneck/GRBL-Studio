@@ -6,7 +6,11 @@ import { _electron } from '@playwright/test';
 const GCODE = process.argv[2] || '/tmp/opencode/bench-raster.gcode';
 
 (async () => {
-  const app = await _electron.launch({ args: ['.', '--no-sandbox'], cwd: process.cwd(), env: { ...process.env, GRBL_E2E: '1' } });
+  const app = await _electron.launch({
+    args: ['.', '--no-sandbox'],
+    cwd: process.cwd(),
+    env: { ...process.env, GRBL_E2E: '1' },
+  });
   const page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(800);
@@ -15,7 +19,11 @@ const GCODE = process.argv[2] || '/tmp/opencode/bench-raster.gcode';
     setGcodePreview(text, 'bench');
     const total = previewProgram.program.totalLines;
     const N = 20;
-    const ms = (fn) => { const t0 = performance.now(); fn(); return performance.now() - t0; };
+    const ms = (fn) => {
+      const t0 = performance.now();
+      fn();
+      return performance.now() - t0;
+    };
     previewProgram.done = Math.floor(total / N);
     const frio = ms(() => drawGcodePreview());
     const quente = [];
@@ -32,9 +40,13 @@ const GCODE = process.argv[2] || '/tmp/opencode/bench-raster.gcode';
     return {
       moves: previewProgram.program.moves.length,
       frioMs: +frio.toFixed(1),
-      quenteMedioMs: +(quente.reduce((a, b) => a + b, 0) / quente.length).toFixed(2),
+      quenteMedioMs: +(
+        quente.reduce((a, b) => a + b, 0) / quente.length
+      ).toFixed(2),
       quenteMaxMs: +Math.max(...quente).toFixed(1),
-      antigoMedioMs: +(antigo.reduce((a, b) => a + b, 0) / antigo.length).toFixed(2),
+      antigoMedioMs: +(
+        antigo.reduce((a, b) => a + b, 0) / antigo.length
+      ).toFixed(2),
       antigoMaxMs: +Math.max(...antigo).toFixed(1),
     };
   }, gcode);

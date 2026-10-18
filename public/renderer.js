@@ -587,9 +587,15 @@ async function openSvgImport() {
       flipY: true,
     });
     applyJobLines(file.name.replace(/\.svg$/i, '.gcode'), gcode);
-    appendLine(t('file.loaded', { name: file.name, lines: gcode.split('\n').length }), 'ok');
+    appendLine(
+      t('file.loaded', { name: file.name, lines: gcode.split('\n').length }),
+      'ok',
+    );
     try {
-      const path = await window.grbl.saveGcode(gcode, file.name.replace(/\.svg$/i, '.gcode'));
+      const path = await window.grbl.saveGcode(
+        gcode,
+        file.name.replace(/\.svg$/i, '.gcode'),
+      );
       if (path) appendLine(t('file.saved', { path }), 'ok');
     } catch (err) {
       appendLine(t('err.prefix', { msg: err.message }), 'error');
@@ -796,7 +802,10 @@ function dUpdateZoom() {
 // --------------------------------------------------------------- histórico
 
 function dPushHistory() {
-  designState.history = designState.history.slice(0, designState.historyIdx + 1);
+  designState.history = designState.history.slice(
+    0,
+    designState.historyIdx + 1,
+  );
   designState.history.push(JSON.stringify(designState.shapes));
   if (designState.history.length > 80) designState.history.shift();
   designState.historyIdx = designState.history.length - 1;
@@ -887,7 +896,9 @@ function dSelectAll() {
 // -------------------------------------------------------------- geometria UI
 
 function dSelectionBounds() {
-  return DE ? DE.selectionBounds(designState.shapes, designState.selection) : null;
+  return DE
+    ? DE.selectionBounds(designState.shapes, designState.selection)
+    : null;
 }
 
 function dHandleScreenPoints(b) {
@@ -908,7 +919,11 @@ function dHandleScreenPoints(b) {
 function dHandleIndexAt(b, sx, sy) {
   const pts = dHandleScreenPoints(b);
   for (let i = 0; i < pts.length; i++) {
-    if (Math.abs(pts[i].x - sx) <= HANDLE + 2 && Math.abs(pts[i].y - sy) <= HANDLE + 2) return i;
+    if (
+      Math.abs(pts[i].x - sx) <= HANDLE + 2 &&
+      Math.abs(pts[i].y - sy) <= HANDLE + 2
+    )
+      return i;
   }
   return -1;
 }
@@ -923,7 +938,9 @@ function dSnapshotSelection() {
   const idxs = designState.selection.slice();
   return {
     idxs,
-    pts: idxs.map((i) => designState.shapes[i].points.map((p) => ({ x: p.x, y: p.y }))),
+    pts: idxs.map((i) =>
+      designState.shapes[i].points.map((p) => ({ x: p.x, y: p.y })),
+    ),
     bbox: dSelectionBounds(),
   };
 }
@@ -951,10 +968,14 @@ function dNextName(kind) {
 function dAddShape(shape) {
   designState.shapes.push(shape);
   dPushHistory();
-  designState.selection = designState.shapes.map((_, i) => i).filter((i) => {
-    const g = shape.group;
-    return g ? designState.shapes[i].group === g : i === designState.shapes.length - 1;
-  });
+  designState.selection = designState.shapes
+    .map((_, i) => i)
+    .filter((i) => {
+      const g = shape.group;
+      return g
+        ? designState.shapes[i].group === g
+        : i === designState.shapes.length - 1;
+    });
   dAfterSelection();
 }
 
@@ -1062,7 +1083,11 @@ function dUngroupSelection() {
 
 function dReorder(mode) {
   if (!designState.selection.length) return;
-  designState.shapes = DE.reorderEntities(designState.shapes, dSelectionSet(), mode);
+  designState.shapes = DE.reorderEntities(
+    designState.shapes,
+    dSelectionSet(),
+    mode,
+  );
   dPushHistory();
   dAfterSelection();
 }
@@ -1341,14 +1366,16 @@ function dOpenBoolMenu() {
   if (!p) return;
   dCloseOffsetDialog();
   p.classList.remove('hidden');
-  if (el.designBoolMenu) el.designBoolMenu.setAttribute('aria-expanded', 'true');
+  if (el.designBoolMenu)
+    el.designBoolMenu.setAttribute('aria-expanded', 'true');
 }
 
 function dCloseBoolMenu() {
   const p = el.designBoolPop;
   if (!p || p.classList.contains('hidden')) return;
   p.classList.add('hidden');
-  if (el.designBoolMenu) el.designBoolMenu.setAttribute('aria-expanded', 'false');
+  if (el.designBoolMenu)
+    el.designBoolMenu.setAttribute('aria-expanded', 'false');
 }
 
 function dToggleBoolMenu() {
@@ -1444,7 +1471,13 @@ function dUpdateProps() {
   if (!px) return;
   const b = dSelectionBounds();
   if (!b) {
-    for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH', 'designPropRot']) {
+    for (const id of [
+      'designPropX',
+      'designPropY',
+      'designPropW',
+      'designPropH',
+      'designPropRot',
+    ]) {
       const node = $(id);
       if (node) node.value = '';
     }
@@ -1478,7 +1511,8 @@ function dUpdateObjStyleFields(selection) {
       return;
     }
     const v = dCommonShapeProp(key);
-    const show = (n) => (digits > 0 ? String(Number(n.toFixed(digits))) : String(Math.round(n)));
+    const show = (n) =>
+      digits > 0 ? String(Number(n.toFixed(digits))) : String(Math.round(n));
     node.value = typeof v === 'number' ? show(v) : '';
     if (v === null) node.placeholder = '—';
     else node.placeholder = show(dNum(globalId, 0) || 0);
@@ -1492,7 +1526,8 @@ function dUpdateObjStyleFields(selection) {
   const v = selection?.length ? dCommonShapeProp('width') : undefined;
   const mm = typeof v === 'number' ? v : v === null ? null : 0;
   if (width) {
-    width.value = typeof mm === 'number' && mm > 0 ? String(Number(mm.toFixed(2))) : '';
+    width.value =
+      typeof mm === 'number' && mm > 0 ? String(Number(mm.toFixed(2))) : '';
     width.placeholder = mm === null ? '—' : '0';
   }
   if (widthPx) {
@@ -1614,7 +1649,8 @@ function dApplyProps() {
     sx = s;
     sy = s;
   }
-  if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx <= 0 || sy <= 0) return;
+  if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx <= 0 || sy <= 0)
+    return;
   for (const i of designState.selection) {
     for (const p of designState.shapes[i].points) {
       p.x = nx + (p.x - b.minX) * sx;
@@ -1702,7 +1738,8 @@ function dUpdateObjectList() {
     const meta = [];
     if (typeof sh.power === 'number') meta.push(`${Math.round(sh.power)}%`);
     if (typeof sh.speed === 'number') meta.push(`${Math.round(sh.speed)}`);
-    if (sh.width && sh.width > 0) meta.push(`${Number(sh.width.toFixed(2))} mm`);
+    if (sh.width && sh.width > 0)
+      meta.push(`${Number(sh.width.toFixed(2))} mm`);
     const info = meta.length ? document.createElement('span') : null;
     if (info) {
       info.className = 'design-obj-meta';
@@ -1815,14 +1852,16 @@ function dUpdateButtons() {
   const undo = $('designUndo');
   if (undo) undo.disabled = designState.historyIdx <= 0;
   const redo = $('designRedo');
-  if (redo) redo.disabled = designState.historyIdx >= designState.history.length - 1;
+  if (redo)
+    redo.disabled = designState.historyIdx >= designState.history.length - 1;
   const lock = $('designLockAspect');
   if (lock) lock.classList.toggle('active', designState.lockAspect);
 }
 
 function dUpdateDocBadge() {
   const badge = $('designDocBadge');
-  if (badge) badge.textContent = `${designState.page.w} × ${designState.page.h} mm`;
+  if (badge)
+    badge.textContent = `${designState.page.w} × ${designState.page.h} mm`;
 }
 
 // ------------------------------------------------------------------ render
@@ -1853,7 +1892,8 @@ function dPaint() {
   if (!ctx) return;
   const { pxW: w, pxH: h, dpr, page } = designState;
   const v = designState.view;
-  const dark = getComputedStyle(document.documentElement).colorScheme !== 'light';
+  const dark =
+    getComputedStyle(document.documentElement).colorScheme !== 'light';
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
@@ -1917,7 +1957,12 @@ function dPaint() {
   // contorno da página
   ctx.strokeStyle = dark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.24)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(Math.round(p0.x) + 0.5, Math.round(p0.y) + 0.5, Math.round(p1.x - p0.x) - 1, Math.round(p1.y - p0.y) - 1);
+  ctx.strokeRect(
+    Math.round(p0.x) + 0.5,
+    Math.round(p0.y) + 0.5,
+    Math.round(p1.x - p0.x) - 1,
+    Math.round(p1.y - p0.y) - 1,
+  );
 
   // formas (espaço do mundo)
   const selSet = dSelectionSet();
@@ -1959,10 +2004,16 @@ function dPaint() {
     ctx.lineCap = 'round';
     ctx.setLineDash([4, 3]);
     ctx.beginPath();
-    const first = dW2S(designState.freehandPoints[0].x, designState.freehandPoints[0].y);
+    const first = dW2S(
+      designState.freehandPoints[0].x,
+      designState.freehandPoints[0].y,
+    );
     ctx.moveTo(first.x, first.y);
     for (let i = 1; i < designState.freehandPoints.length; i++) {
-      const p = dW2S(designState.freehandPoints[i].x, designState.freehandPoints[i].y);
+      const p = dW2S(
+        designState.freehandPoints[i].x,
+        designState.freehandPoints[i].y,
+      );
       ctx.lineTo(p.x, p.y);
     }
     ctx.stroke();
@@ -2234,7 +2285,8 @@ async function dLoadSystemFonts() {
   if (designFontsRequested) return;
   designFontsRequested = true;
   const list = $('designFontList');
-  if (!list || !window.grbl || typeof window.grbl.listFonts !== 'function') return;
+  if (!list || !window.grbl || typeof window.grbl.listFonts !== 'function')
+    return;
   try {
     const families = await window.grbl.listFonts();
     if (!Array.isArray(families)) return;
@@ -2287,7 +2339,11 @@ async function dTextToShapes(value, opts) {
       y: 0,
       letterSpacing: 0.08,
     });
-    return dPlaceShapes(out.map((s) => ({ ...s })), x, y);
+    return dPlaceShapes(
+      out.map((s) => ({ ...s })),
+      x,
+      y,
+    );
   }
   if (!window.GRBL_CONTOUR) throw new Error(t('design.text.noContour'));
   const PX = 16;
@@ -2311,7 +2367,11 @@ async function dTextToShapes(value, opts) {
   const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const mask = new Uint8Array(canvas.width * canvas.height);
   for (let i = 0; i < mask.length; i++) mask[i] = img.data[i * 4] > 110 ? 1 : 0;
-  const contours = window.GRBL_CONTOUR.traceContours(mask, canvas.width, canvas.height);
+  const contours = window.GRBL_CONTOUR.traceContours(
+    mask,
+    canvas.width,
+    canvas.height,
+  );
   const tol = 0.9 / PX;
   const shapes = [];
   // O contorno vem sempre: no modo "cheio" ele é a borda nítida da letra.
@@ -2319,7 +2379,8 @@ async function dTextToShapes(value, opts) {
     if (!cont || cont.length < 3) continue;
     const pts = cont.map((p) => ({ x: p.x / PX, y: p.y / PX }));
     const simp = DE.simplifyPolyline(pts, tol);
-    if (simp.length >= 3) shapes.push({ kind: 'text', points: simp, closed: true });
+    if (simp.length >= 3)
+      shapes.push({ kind: 'text', points: simp, closed: true });
   }
   if (mode === 'fill') {
     if (!window.GRBL_HATCH) throw new Error(t('design.text.noFill'));
@@ -2387,7 +2448,15 @@ async function dCommitText() {
 
   let shapes;
   try {
-    shapes = await dTextToShapes(value, { font, size, mode, bold, spacing, x: anchor.x, y: anchor.y });
+    shapes = await dTextToShapes(value, {
+      font,
+      size,
+      mode,
+      bold,
+      spacing,
+      x: anchor.x,
+      y: anchor.y,
+    });
   } catch (err) {
     dStatus(err.message, 'error');
     return;
@@ -2403,8 +2472,10 @@ async function dCommitText() {
   // Reeditar não pode jogar fora a gravação do bloco: potência, velocidade e
   // espessura do traço voltam para os contornos novos.
   let keep = null;
-  if (edit?.group) keep = designState.shapes.find((s) => s.group === edit.group) ?? null;
-  else if (edit?.indices?.length) keep = designState.shapes[edit.indices[0]] ?? null;
+  if (edit?.group)
+    keep = designState.shapes.find((s) => s.group === edit.group) ?? null;
+  else if (edit?.indices?.length)
+    keep = designState.shapes[edit.indices[0]] ?? null;
   const style = {};
   if (keep) {
     for (const k of ['speed', 'power', 'passes', 'width']) {
@@ -2414,7 +2485,9 @@ async function dCommitText() {
 
   if (edit?.group) {
     // remove o bloco antigo e recria no mesmo lugar
-    designState.shapes = designState.shapes.filter((s) => s.group !== edit.group);
+    designState.shapes = designState.shapes.filter(
+      (s) => s.group !== edit.group,
+    );
   } else if (edit?.indices?.length) {
     const set = new Set(edit.indices);
     designState.shapes = designState.shapes.filter((_, i) => !set.has(i));
@@ -2477,7 +2550,16 @@ function dCursorForSelect(sx, sy) {
     if (dRotateHandleAt(b, sx, sy)) return 'grab';
     const hi = dHandleIndexAt(b, sx, sy);
     if (hi >= 0) {
-      return ['nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize', 'ew-resize'][hi];
+      return [
+        'nwse-resize',
+        'ns-resize',
+        'nesw-resize',
+        'ew-resize',
+        'nwse-resize',
+        'ns-resize',
+        'nesw-resize',
+        'ew-resize',
+      ][hi];
     }
   }
   const p = dS2W(sx, sy);
@@ -2530,7 +2612,12 @@ function dOnPointerDown(e) {
       }
       const hi = dHandleIndexAt(b, pt.sx, pt.sy);
       if (hi >= 0) {
-        designState.drag = { mode: 'resize', handle: hi, orig: dSnapshotSelection(), shift: e.shiftKey };
+        designState.drag = {
+          mode: 'resize',
+          handle: hi,
+          orig: dSnapshotSelection(),
+          shift: e.shiftKey,
+        };
         c.setPointerCapture(e.pointerId);
         return;
       }
@@ -2554,7 +2641,11 @@ function dOnPointerDown(e) {
       return;
     }
     if (!e.shiftKey) dClearSelection();
-    designState.drag = { mode: 'marquee', start: { x: pt.wx, y: pt.wy }, base: designState.selection.slice() };
+    designState.drag = {
+      mode: 'marquee',
+      start: { x: pt.wx, y: pt.wy },
+      base: designState.selection.slice(),
+    };
     designState.marquee = { x0: pt.wx, y0: pt.wy, x1: pt.wx, y1: pt.wy };
     c.setPointerCapture(e.pointerId);
     dRender();
@@ -2570,21 +2661,44 @@ function dOnPointerDown(e) {
       const tol = HIT_PX / designState.view.scale;
       const nodeHit = DE.hitTestNode(sh.points, pt.wx, pt.wy, tol);
       if (nodeHit) {
-        designState.nodeEdit = { shapeIndex: idx, nodeIndex: nodeHit.nodeIndex, dragging: true };
+        designState.nodeEdit = {
+          shapeIndex: idx,
+          nodeIndex: nodeHit.nodeIndex,
+          dragging: true,
+        };
         designState.drag = { mode: 'node-edit', nodeIndex: nodeHit.nodeIndex };
-        try { c.setPointerCapture(e.pointerId); } catch { /* synthetic event */ }
+        try {
+          c.setPointerCapture(e.pointerId);
+        } catch {
+          /* synthetic event */
+        }
         return;
       }
       const segHit = DE.hitTestSegment(sh.points, pt.wx, pt.wy, tol, sh.closed);
       if (segHit) {
         // Clicou num segmento: insere nó e começa a arrastar
-        const newPoints = DE.insertNode(sh.points, segHit.segmentIndex, segHit.point);
+        const newPoints = DE.insertNode(
+          sh.points,
+          segHit.segmentIndex,
+          segHit.point,
+        );
         const newSh = { ...sh, points: newPoints };
         designState.shapes[idx] = newSh;
-        designState.nodeEdit = { shapeIndex: idx, nodeIndex: segHit.segmentIndex + 1, dragging: true };
-        designState.drag = { mode: 'node-edit', nodeIndex: segHit.segmentIndex + 1 };
+        designState.nodeEdit = {
+          shapeIndex: idx,
+          nodeIndex: segHit.segmentIndex + 1,
+          dragging: true,
+        };
+        designState.drag = {
+          mode: 'node-edit',
+          nodeIndex: segHit.segmentIndex + 1,
+        };
         dPushHistory();
-        try { c.setPointerCapture(e.pointerId); } catch { /* synthetic event */ }
+        try {
+          c.setPointerCapture(e.pointerId);
+        } catch {
+          /* synthetic event */
+        }
         return;
       }
     }
@@ -2606,7 +2720,8 @@ function dOnPointerDown(e) {
     // Caneta: inicia coleta de pontos livres
     designState.freehandPoints = [{ x: sx, y: sy }];
   }
-  if (designState.drawing || designState.tool === 'pen') c.setPointerCapture(e.pointerId);
+  if (designState.drawing || designState.tool === 'pen')
+    c.setPointerCapture(e.pointerId);
 }
 
 function dOnPointerMove(e) {
@@ -2681,9 +2796,11 @@ function dOnPointerMove(e) {
       if (!Number.isFinite(s) || s <= 0) s = 1;
       sx = s;
       sy = s;
-      if (hi === 0 || hi === 6 || hi === 7) nMinX = nMaxX - (b.maxX - b.minX) * s;
+      if (hi === 0 || hi === 6 || hi === 7)
+        nMinX = nMaxX - (b.maxX - b.minX) * s;
       else nMaxX = nMinX + (b.maxX - b.minX) * s;
-      if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - (b.maxY - b.minY) * s;
+      if (hi === 0 || hi === 1 || hi === 2)
+        nMinY = nMaxY - (b.maxY - b.minY) * s;
       else nMaxY = nMinY + (b.maxY - b.minY) * s;
     }
     dApplyOrig(d.orig, (p, src) => {
@@ -2720,7 +2837,12 @@ function dOnPointerMove(e) {
   }
 
   if (d && d.mode === 'marquee') {
-    designState.marquee = { x0: d.start.x, y0: d.start.y, x1: pt.wx, y1: pt.wy };
+    designState.marquee = {
+      x0: d.start.x,
+      y0: d.start.y,
+      x1: pt.wx,
+      y1: pt.wy,
+    };
     const mb = {
       minX: Math.min(d.start.x, pt.wx),
       minY: Math.min(d.start.y, pt.wy),
@@ -2776,7 +2898,13 @@ function dOnPointerMove(e) {
         minY = y >= start.y ? start.y : start.y - s;
       }
       designState.drawing.points = window.GRBL_DESIGN
-        ? window.GRBL_DESIGN.makeEllipse(minX + w / 2, minY + h / 2, w / 2, h / 2, 64)
+        ? window.GRBL_DESIGN.makeEllipse(
+            minX + w / 2,
+            minY + h / 2,
+            w / 2,
+            h / 2,
+            64,
+          )
         : [];
     } else if (tool === 'line') {
       if (e.shiftKey) {
@@ -2798,10 +2926,11 @@ function dOnPointerMove(e) {
 
   // Caneta (freehand): acumula pontos durante o arrasto
   if (d && d.mode === 'create' && designState.tool === 'pen') {
-    let x = designState.snap ? dSnapV(pt.wx) : pt.wx;
-    let y = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    const x = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    const y = designState.snap ? dSnapV(pt.wy) : pt.wy;
     // Evita pontos duplicados muito próximos (filtro leve)
-    const last = designState.freehandPoints[designState.freehandPoints.length - 1];
+    const last =
+      designState.freehandPoints[designState.freehandPoints.length - 1];
     if (!last || Math.hypot(x - last.x, y - last.y) > 0.5) {
       designState.freehandPoints.push({ x, y });
     }
@@ -2812,8 +2941,8 @@ function dOnPointerMove(e) {
   // Edição de nós: arrasta o nó selecionado
   if (d && d.mode === 'node-edit' && designState.nodeEdit?.dragging) {
     const ne = designState.nodeEdit;
-    let x = designState.snap ? dSnapV(pt.wx) : pt.wx;
-    let y = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    const x = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    const y = designState.snap ? dSnapV(pt.wy) : pt.wy;
     const sh = designState.shapes[ne.shapeIndex];
     if (sh && ne.nodeIndex >= 0 && ne.nodeIndex < sh.points.length) {
       sh.points = DE.moveNode(sh.points, ne.nodeIndex, x, y);
@@ -2825,7 +2954,10 @@ function dOnPointerMove(e) {
 
   // cursor ocioso
   if (!d) {
-    c.style.cursor = designState.tool === 'select' ? dCursorForSelect(pt.sx, pt.sy) : 'crosshair';
+    c.style.cursor =
+      designState.tool === 'select'
+        ? dCursorForSelect(pt.sx, pt.sy)
+        : 'crosshair';
   }
 }
 
@@ -2852,7 +2984,10 @@ function dOnPointerUp(e) {
     designState.freehandPoints = [];
     if (pts.length >= 3) {
       const sh = window.GRBL_DESIGN_EDITOR
-        ? window.GRBL_DESIGN_EDITOR.createFreehandShape(pts, { tolerance: 0.5, closeThreshold: 1.0 })
+        ? window.GRBL_DESIGN_EDITOR.createFreehandShape(pts, {
+            tolerance: 0.5,
+            closeThreshold: 1.0,
+          })
         : null;
       if (sh) {
         sh.name = dNextName(sh.closed ? 'polygon' : 'line');
@@ -2948,7 +3083,8 @@ function dDesignOpen() {
 
 function dOnKeyDown(e) {
   if (!dDesignOpen()) return;
-  const sizeOpen = dSizeDialogOpen() || dArrayDialogOpen() || dOffsetDialogOpen();
+  const sizeOpen =
+    dSizeDialogOpen() || dArrayDialogOpen() || dOffsetDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
 
@@ -3073,7 +3209,8 @@ function dOnKeyDown(e) {
         if (sh.points.length > minPts) {
           sh.points = DE.removeNode(sh.points, ne.nodeIndex, sh.closed);
           // Ajusta o índice se removeu o último
-          if (ne.nodeIndex >= sh.points.length) ne.nodeIndex = sh.points.length - 1;
+          if (ne.nodeIndex >= sh.points.length)
+            ne.nodeIndex = sh.points.length - 1;
           dPushHistory();
           dRender();
           dUpdateProps();
@@ -3120,8 +3257,10 @@ function dOnKeyDown(e) {
   else if (key === 'p' || key === 'P') dSetTool('pen');
   else if (key === 'n' || key === 'N') dSetTool('node');
   else if (key === 't' || key === 'T') dSetTool('text');
-  else if (key === '+' || key === '=') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
-  else if (key === '-' || key === '_') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2);
+  else if (key === '+' || key === '=')
+    dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
+  else if (key === '-' || key === '_')
+    dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2);
   else if (key === '0') {
     designState.view.scale = 4;
     dUpdateZoom();
@@ -3349,7 +3488,11 @@ function designGenerate({ autoStart = false } = {}) {
   }
   dStatus(t('design.status.generating'));
   const gcode = window.GRBL_DESIGN.designToGcode(
-    { shapes: designState.shapes, width: designState.page.w, height: designState.page.h },
+    {
+      shapes: designState.shapes,
+      width: designState.page.w,
+      height: designState.page.h,
+    },
     dReadEngraveOptions(),
   );
   applyJobLines('design.gcode', gcode, 'design');
@@ -3368,7 +3511,11 @@ function designGenerate({ autoStart = false } = {}) {
 async function designSave() {
   if (!window.GRBL_DESIGN || !designState.shapes.length) return;
   const gcode = window.GRBL_DESIGN.designToGcode(
-    { shapes: designState.shapes, width: designState.page.w, height: designState.page.h },
+    {
+      shapes: designState.shapes,
+      width: designState.page.w,
+      height: designState.page.h,
+    },
     dReadEngraveOptions(),
   );
   try {
@@ -3386,7 +3533,10 @@ async function designSave() {
 // destravado, permite redimensionar livremente (distorce).
 
 function dArtBounds() {
-  return DE.selectionBounds(designState.shapes, designState.shapes.map((_, i) => i));
+  return DE.selectionBounds(
+    designState.shapes,
+    designState.shapes.map((_, i) => i),
+  );
 }
 
 function dSizeDialogOpen() {
@@ -3417,7 +3567,11 @@ function dOpenSizeDialog() {
     lock.title = t('design.lockAspect');
   }
   const hint = $('designSizeHint');
-  if (hint) hint.textContent = t('design.size.current', { w: w.toFixed(1), h: h.toFixed(1) });
+  if (hint)
+    hint.textContent = t('design.size.current', {
+      w: w.toFixed(1),
+      h: h.toFixed(1),
+    });
   if (el.designSizeOverlay) el.designSizeOverlay.classList.remove('hidden');
   if (W) {
     W.focus();
@@ -3437,10 +3591,12 @@ function dSizeSync(source) {
   if (!W || !H) return;
   if (source === 'w') {
     const w = Number(W.value);
-    if (Number.isFinite(w) && w > 0) H.value = (w / designState.sizeAspect).toFixed(1);
+    if (Number.isFinite(w) && w > 0)
+      H.value = (w / designState.sizeAspect).toFixed(1);
   } else {
     const h = Number(H.value);
-    if (Number.isFinite(h) && h > 0) W.value = (h * designState.sizeAspect).toFixed(1);
+    if (Number.isFinite(h) && h > 0)
+      W.value = (h * designState.sizeAspect).toFixed(1);
   }
 }
 
@@ -3536,7 +3692,8 @@ function dConfirmSize() {
     designBackward: () => dReorder('backward'),
     designBack: () => dReorder('back'),
     designZoomIn: () => dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2),
-    designZoomOut: () => dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2),
+    designZoomOut: () =>
+      dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2),
     designZoomFit: () => {
       dFitPage();
       dUpdateZoom();
@@ -3582,7 +3739,13 @@ function dConfirmSize() {
     if (node) node.addEventListener('change', dApplyPageSize);
   }
 
-  for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH', 'designPropRot']) {
+  for (const id of [
+    'designPropX',
+    'designPropY',
+    'designPropW',
+    'designPropH',
+    'designPropRot',
+  ]) {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyProps);
   }
@@ -3795,7 +3958,6 @@ function dConfirmSize() {
   });
 })();
 
-
 /** Alterna o rótulo Conectar/Desconectar do botão dentro do modal (RF-CON-1). */
 function updateFrameConnectButton() {
   if (!el.frameConnect) return;
@@ -3955,7 +4117,7 @@ function moveToFrameCenter() {
     'G90',
     'M5',
     `G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`,
-    `M3 S${sPower}`,   // M3 = potência constante (acende mesmo parado/lento)
+    `M3 S${sPower}`, // M3 = potência constante (acende mesmo parado/lento)
     `G1 X${(cx + step).toFixed(3)} Y${cy.toFixed(3)} F300`,
     `G1 X${(cx - step).toFixed(3)} Y${cy.toFixed(3)} F300`,
     `G1 X${cx.toFixed(3)} Y${cy.toFixed(3)} F300`,
@@ -4413,7 +4575,14 @@ function updateControls() {
         : '';
 
   // Jog/origem/macros não fazem sentido em alarme (o GRBL recusa o movimento).
-  for (const b of [el.jogXp, el.jogXm, el.jogYp, el.jogYm, el.jogZp, el.jogZm]) {
+  for (const b of [
+    el.jogXp,
+    el.jogXm,
+    el.jogYp,
+    el.jogYm,
+    el.jogZp,
+    el.jogZm,
+  ]) {
     if (b) b.disabled = !conn || alarm;
   }
   el.homeBtn.disabled = !conn || alarm || !machineHoming();
@@ -5810,7 +5979,7 @@ function simPrepare() {
     const dx = m.x1 - m.x0;
     const dy = m.y1 - m.y0;
     const dist = Math.hypot(dx, dy);
-    const feed = m.rapid ? RAPID : (m.feed || 1000);
+    const feed = m.rapid ? RAPID : m.feed || 1000;
     const t = feed > 0 ? (dist / feed) * 60 : 0;
     acc += t;
     simState.cum.push(acc);
@@ -5829,7 +5998,10 @@ function simFmt(s) {
 function simUpdateUi() {
   if (!el.simTime) return;
   el.simTime.textContent = `${simFmt(simState.time)} / ${simFmt(simState.total)}`;
-  if (el.simSeek) el.simSeek.value = String(Math.round((simState.time / simState.total) * 1000));
+  if (el.simSeek)
+    el.simSeek.value = String(
+      Math.round((simState.time / simState.total) * 1000),
+    );
 }
 
 function simTick(ts) {
@@ -5839,7 +6011,10 @@ function simTick(ts) {
   simState.lastTs = ts;
   simState.time = Math.min(simState.total, simState.time + dt * simState.speed);
   const moves = simState.moves;
-  while (simState.index < moves.length - 1 && simState.cum[simState.index + 1] <= simState.time) {
+  while (
+    simState.index < moves.length - 1 &&
+    simState.cum[simState.index + 1] <= simState.time
+  ) {
     simState.index++;
   }
   const m = moves[simState.index];
@@ -5902,7 +6077,8 @@ function simSeek(val) {
   if (wasRunning) simPause();
   simState.time = (Number(val) / 1000) * simState.total;
   let i = 0;
-  while (i < simState.moves.length - 1 && simState.cum[i + 1] <= simState.time) i++;
+  while (i < simState.moves.length - 1 && simState.cum[i + 1] <= simState.time)
+    i++;
   simState.index = i;
   const m = simState.moves[i];
   if (m) {
@@ -5941,7 +6117,6 @@ const _origSetGcodePreview = setGcodePreview;
 // (setGcodePreview is a function declaration; wrap via redefinition is not possible.
 // Instead, patch at call sites is unnecessary: simStop is invoked by the toggle.
 // We keep simState reset lightweight here.)
-
 
 /** Atualiza a área de trabalho (vem das $130/$131 — Fase 3). */
 function setWorkArea(widthMm, heightMm) {
@@ -7702,7 +7877,10 @@ if (el.frameStart)
     if (state.jobSource === 'image') {
       // Fluxo de imagem: copia os parâmetros do modal e regera o G-code.
       if (el.framePower && el.imgSmax) {
-        const pct = Math.max(0, Math.min(100, Number(el.framePower.value) || 0));
+        const pct = Math.max(
+          0,
+          Math.min(100, Number(el.framePower.value) || 0),
+        );
         el.imgSmax.value = String(Math.round(pct * 10));
       }
       if (el.frameSpeed && el.imgSpeed) {
