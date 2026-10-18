@@ -236,6 +236,55 @@ export const es = {
   'matTest.status.done':
     'Cuadrícula generada. Revisa la vista previa y envía o guarda.',
 
+  // ------------------------------------------------ Código QR (v0.6, RF-SYM-1)
+  'menu.qrCode': 'Código QR…',
+  'qr.title': 'Código QR',
+  'qr.hint':
+    'Genera un código QR como G-code de barrido: elige el contenido, el ' +
+    'tamaño del módulo y graba. El origen del arte es la esquina inferior ' +
+    'izquierda (X0 Y0).',
+  'qr.content': 'Contenido',
+  'qr.contentPlaceholder': 'https://ejemplo.com o un texto',
+  'qr.ecc': 'Corrección de errores',
+  'qr.ecc.L': 'L — 7%',
+  'qr.ecc.M': 'M — 15%',
+  'qr.ecc.Q': 'Q — 25%',
+  'qr.ecc.H': 'H — 30%',
+  'qr.version': 'Versión',
+  'qr.versionAuto': 'Automática',
+  'qr.module': 'Lado del módulo (mm)',
+  'qr.quietZone': 'Zona silenciosa (módulos)',
+  'qr.linesPerMm': 'Líneas de barrido por mm',
+  'qr.power': 'Potencia (%)',
+  'qr.feed': 'Velocidad (mm/min)',
+  'qr.passes': 'Pasadas',
+  'qr.mode': 'Modo del láser',
+  'qr.mode.m4': 'M4 (dinámico)',
+  'qr.mode.m3': 'M3 (constante)',
+  'qr.overscan': 'Sobrebarrido (mm)',
+  'qr.invert': 'Polaridad invertida (grabar el fondo)',
+  'qr.generate': 'Generar y previsualizar',
+  'qr.save': 'Guardar .gcode…',
+  'qr.status.generating': 'Generando el código QR…',
+  'qr.moduleMissing': 'Generador de código QR no cargado.',
+  'qr.status.done':
+    'QR generado: {version} · {size}×{size} módulos · {w} × {h} mm. ' +
+    'Revisa la vista previa y envía o guarda.',
+  'qr.err.empty': 'Indica un contenido para generar el código QR.',
+  'qr.err.too-long':
+    'El contenido es demasiado largo para un código QR en el nivel {ecc}.',
+  'qr.err.bad-version': 'Versión de la información de formato no válida.',
+  'qr.warn.module-small':
+    'Módulo menor que 2× el punto del láser: el código puede salir ilegible.',
+  'qr.warn.module-tiny':
+    'Módulo por debajo de 0,3 mm: demasiado pequeño para la mayoría de lectores.',
+  'qr.warn.quiet-zone-small':
+    'Zona silenciosa menor que la norma (4 módulos): dificulta la lectura.',
+  'qr.warn.lines-too-few':
+    'Menos de 3 líneas de barrido por módulo: el relleno puede salir con fallas.',
+  'qr.warn.outside-work-area':
+    'El símbolo no cabe en el área de trabajo desde este origen.',
+
   // ------------------------------------------------------- dibujo vectorial
   'design.title': 'Dibujar',
   'design.tool.select': 'Seleccionar (V)',

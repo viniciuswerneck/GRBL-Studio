@@ -42,6 +42,9 @@ npm test               # Vitest (unit + integração)
   (há teste de integração real via PTY/socat em `tests/serial-integration.test.ts`).
 - Sempre rode `tsc`/type-check e os testes antes de considerar uma tarefa pronta.
 - Guia de ambiente/build/testes: `docs/DEVELOPMENT.md`.
+- Tabelas do QR Code são **geradas**: `node scripts/gen-qr-tables.mjs` reescreve
+  `src/shared/symbol/qr.tables.ts` (formato já compatível com o Biome) a partir
+  da referência `qrcode-generator` — não editar a tabela à mão.
 
 ## Invariantes do protocolo (NUNCA quebre)
 
@@ -102,9 +105,10 @@ Regras de leveza: nada de `backdrop-filter` na janela inteira; animar só
 
 ## Não faça
 
-- Não edite arquivos gerados (`dist/`, e os bundles `public/{gcode.worker,materials,adjust,preview,resume,macros,i18n}.js`)
-  — edite a fonte TS e recompile (`npm run build`). `public/renderer.js` **é fonte**
-  (editável) e não é gerado.
+- Não edite arquivos gerados (`dist/`, e os bundles gerados em `public/*.js` —
+  ex.: `qrcode`, `i18n`, `materials`, `gcode.worker`). Eles são listados no
+  `.gitignore`: edite a fonte TS e recompile (`npm run build`).
+  `public/renderer.js` **é fonte** (editável) e não é gerado.
 - Não faça commit de segredos, `.bak` ou artefatos de build.
 - Não introduza dependência pesada de UI (frame de componentes grande) sem
   confirmar que os orçamentos de performance continuam válidos (ver ADR-11).

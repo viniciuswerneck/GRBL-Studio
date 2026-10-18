@@ -245,6 +245,54 @@ export const ptBR = {
   'matTest.status.generating': 'Gerando a grade de teste…',
   'matTest.status.done': 'Grade gerada. Confira no preview e envie ou salve.',
 
+  // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
+  'menu.qrCode': 'QR Code…',
+  'qr.title': 'QR Code',
+  'qr.hint':
+    'Gera um QR Code como G-code de varredura: escolha o conteúdo, o tamanho ' +
+    'do módulo e grave. A origem da arte é o canto inferior esquerdo (X0 Y0).',
+  'qr.content': 'Conteúdo',
+  'qr.contentPlaceholder': 'https://exemplo.com ou um texto',
+  'qr.ecc': 'Correção de erro',
+  'qr.ecc.L': 'L — 7%',
+  'qr.ecc.M': 'M — 15%',
+  'qr.ecc.Q': 'Q — 25%',
+  'qr.ecc.H': 'H — 30%',
+  'qr.version': 'Versão',
+  'qr.versionAuto': 'Automática',
+  'qr.module': 'Lado do módulo (mm)',
+  'qr.quietZone': 'Quiet zone (módulos)',
+  'qr.linesPerMm': 'Linhas de varredura por mm',
+  'qr.power': 'Potência (%)',
+  'qr.feed': 'Velocidade (mm/min)',
+  'qr.passes': 'Passadas',
+  'qr.mode': 'Modo do laser',
+  'qr.mode.m4': 'M4 (dinâmico)',
+  'qr.mode.m3': 'M3 (constante)',
+  'qr.overscan': 'Overscan (mm)',
+  'qr.invert': 'Polaridade invertida (queimar o fundo)',
+  'qr.generate': 'Gerar e visualizar',
+  'qr.save': 'Salvar .gcode…',
+  'qr.status.generating': 'Gerando o QR Code…',
+  'qr.moduleMissing': 'Gerador de QR Code não carregado.',
+  'qr.status.done':
+    'QR gerado: {version} · {size}×{size} módulos · {w} × {h} mm. ' +
+    'Confira no preview e envie ou salve.',
+  'qr.err.empty': 'Informe um conteúdo para gerar o QR Code.',
+  'qr.err.too-long':
+    'O conteúdo é longo demais para um QR Code no nível {ecc}.',
+  'qr.err.bad-version': 'Versão da informação de formato inválida.',
+  'qr.warn.module-small':
+    'Módulo menor que 2× o ponto do laser: o código pode sair ilegível.',
+  'qr.warn.module-tiny':
+    'Módulo abaixo de 0,3 mm: pequeno demais para a maioria dos leitores.',
+  'qr.warn.quiet-zone-small':
+    'Quiet zone menor que a norma (4 módulos): dificulta a leitura.',
+  'qr.warn.lines-too-few':
+    'Menos de 3 linhas de varredura por módulo: o preenchimento pode sair com falhas.',
+  'qr.warn.outside-work-area':
+    'O símbolo não cabe na área de trabalho a partir desta origem.',
+
   // ------------------------------------------------------- desenho vetorial
   'design.title': 'Desenhar',
   'design.tool.select': 'Selecionar (V)',

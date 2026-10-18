@@ -944,6 +944,98 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="qrOverlay">
+      <div class="modal qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+        <header class="modal-head">
+          <h3 id="qrTitle" data-i18n="qr.title">QR Code</h3>
+          <button
+            type="button"
+            id="qrClose"
+            class="icon-btn"
+            data-i18n-title="nav.close"
+            data-i18n-aria="nav.close"
+          >✕</button>
+        </header>
+        <div class="modal-body">
+          <p class="mat-test-hint" data-i18n="qr.hint">
+            Gera um QR Code como G-code de varredura: escolha o conteúdo, o
+            tamanho do módulo e grave. A origem da arte é o canto inferior
+            esquerdo (X0 Y0).
+          </p>
+          <div class="qr-fields">
+            <label class="field field-wide">
+              <span data-i18n="qr.content">Conteúdo</span>
+              <textarea
+                id="qrContent"
+                rows="2"
+                placeholder="https://exemplo.com ou um texto"
+                data-i18n-placeholder="qr.contentPlaceholder"
+              ></textarea>
+            </label>
+            <label class="field">
+              <span data-i18n="qr.ecc">Correção de erro</span>
+              <select id="qrEcc">
+                <option value="L" data-i18n="qr.ecc.L">L — 7%</option>
+                <option value="M" selected data-i18n="qr.ecc.M">M — 15%</option>
+                <option value="Q" data-i18n="qr.ecc.Q">Q — 25%</option>
+                <option value="H" data-i18n="qr.ecc.H">H — 30%</option>
+              </select>
+            </label>
+            <label class="field">
+              <span data-i18n="qr.version">Versão</span>
+              <select id="qrVersion">
+                <option value="0" data-i18n="qr.versionAuto">Automática</option>
+              </select>
+            </label>
+            <label class="field">
+              <span data-i18n="qr.module">Lado do módulo (mm)</span>
+              <input type="number" id="qrModule" min="0.05" max="20" step="0.05" value="0.5" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.quietZone">Quiet zone (módulos)</span>
+              <input type="number" id="qrQuiet" min="0" max="10" step="1" value="4" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.linesPerMm">Linhas de varredura por mm</span>
+              <input type="number" id="qrLines" min="1" max="40" step="1" value="10" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.power">Potência (%)</span>
+              <input type="number" id="qrPower" min="0" max="100" step="5" value="100" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.feed">Velocidade (mm/min)</span>
+              <input type="number" id="qrFeed" min="1" max="20000" step="50" value="1000" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.passes">Passadas</span>
+              <input type="number" id="qrPasses" min="1" max="10" value="1" />
+            </label>
+            <label class="field">
+              <span data-i18n="qr.mode">Modo do laser</span>
+              <select id="qrMode">
+                <option value="M4" data-i18n="qr.mode.m4">M4 (dinâmico)</option>
+                <option value="M3" data-i18n="qr.mode.m3">M3 (constante)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span data-i18n="qr.overscan">Overscan (mm)</span>
+              <input type="number" id="qrOverscan" min="0" max="5" step="0.5" value="0" />
+            </label>
+            <label class="check field-wide">
+              <input type="checkbox" id="qrInvert" />
+              <span data-i18n="qr.invert">Polaridade invertida (queimar o fundo)</span>
+            </label>
+          </div>
+          <div id="qrStatus" class="hint" role="status" aria-live="polite"></div>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="qrSave" data-i18n="qr.save">Salvar .gcode…</button>
+          <button type="button" id="qrGenerate" class="primary" data-i18n="qr.generate">Gerar e visualizar</button>
+        </footer>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="designOverlay">
       <div class="modal design-modal" role="dialog" aria-modal="true" aria-labelledby="designTitle">
         <!-- Barra de título -->
@@ -1645,6 +1737,7 @@
     <script src="./contour.js"></script>
     <script src="./boolean.js"></script>
     <script src="./offset.js"></script>
+    <script src="./qrcode.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

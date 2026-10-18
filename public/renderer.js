@@ -219,6 +219,23 @@ const el = {
   matTestStatus: $('matTestStatus'),
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
+  qrOverlay: $('qrOverlay'),
+  qrClose: $('qrClose'),
+  qrContent: $('qrContent'),
+  qrEcc: $('qrEcc'),
+  qrVersion: $('qrVersion'),
+  qrModule: $('qrModule'),
+  qrQuiet: $('qrQuiet'),
+  qrLines: $('qrLines'),
+  qrPower: $('qrPower'),
+  qrFeed: $('qrFeed'),
+  qrPasses: $('qrPasses'),
+  qrMode: $('qrMode'),
+  qrOverscan: $('qrOverscan'),
+  qrInvert: $('qrInvert'),
+  qrStatus: $('qrStatus'),
+  qrSave: $('qrSave'),
+  qrGenerate: $('qrGenerate'),
   designOverlay: $('designOverlay'),
   designSizeOverlay: $('designSizeOverlay'),
   designArrayOverlay: $('designArrayOverlay'),
@@ -4094,6 +4111,130 @@ async function saveMatTest() {
   }
 }
 
+// ------------------------------------------------------ QR Code (v0.6, RF-SYM-1)
+
+/** Preenche o seletor de versão (0 = automática) uma única vez. */
+function populateQrVersions() {
+  if (!el.qrVersion || el.qrVersion.options.length > 1) return;
+  for (let v = 1; v <= 40; v++) {
+    const opt = document.createElement('option');
+    opt.value = String(v);
+    opt.textContent = String(v);
+    el.qrVersion.appendChild(opt);
+  }
+}
+
+function openQrModal() {
+  if (!el.qrOverlay) return;
+  populateQrVersions();
+  el.qrOverlay.classList.remove('hidden');
+  if (el.qrStatus) el.qrStatus.textContent = '';
+  if (el.qrContent) el.qrContent.focus();
+}
+
+function closeQrModal() {
+  if (el.qrOverlay) el.qrOverlay.classList.add('hidden');
+}
+
+/**
+ * Referência de `S` da conversão (%) → `S`: o `$30` da máquina, lido do campo
+ * da interface (mesmo padrão da grade de teste de material).
+ */
+function qrSMax() {
+  return Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
+}
+
+function readQrOptions() {
+  const clampNum = (input, min, max, fallback) => {
+    const raw = Number(input ? input.value : Number.NaN);
+    if (!Number.isFinite(raw)) return fallback;
+    return Math.max(min, Math.min(max, raw));
+  };
+  const version = clampNum(el.qrVersion, 0, 40, 0);
+  return {
+    ecc: el.qrEcc?.value || 'M',
+    version: version > 0 ? Math.round(version) : 'auto',
+    moduleMm: clampNum(el.qrModule, 0.05, 20, 0.5),
+    quietZoneModules: Math.round(clampNum(el.qrQuiet, 0, 10, 4)),
+    linesPerMm: Math.round(clampNum(el.qrLines, 1, 40, 10)),
+    powerPercent: clampNum(el.qrPower, 0, 100, 100),
+    feed: Math.round(clampNum(el.qrFeed, 1, 20000, 1000)),
+    passes: Math.round(clampNum(el.qrPasses, 1, 10, 1)),
+    mode: el.qrMode && el.qrMode.value === 'M3' ? 'M3' : 'M4',
+    overscanMm: clampNum(el.qrOverscan, 0, 5, 0),
+    invert: Boolean(el.qrInvert?.checked),
+  };
+}
+
+/** Texto da linha de status: dimensões, módulo e avisos de legibilidade. */
+function qrStatusText(result) {
+  const parts = [
+    t('qr.status.done', {
+      version: `v${result.qr.version}-${result.qr.ecc}`,
+      size: result.qr.size,
+      w: result.widthMm.toFixed(1),
+      h: result.heightMm.toFixed(1),
+    }),
+  ];
+  if (result.warnings?.length) {
+    parts.push(...result.warnings.map((code) => `⚠ ${t(`qr.warn.${code}`)}`));
+  }
+  return parts.join(' ');
+}
+
+function generateQr() {
+  if (!window.GRBL_QR) {
+    appendLine(t('qr.moduleMissing'), 'error');
+    return;
+  }
+  const opts = readQrOptions();
+  if (el.qrContent && !el.qrContent.value.trim()) {
+    if (el.qrStatus) el.qrStatus.textContent = t('qr.err.empty');
+    return;
+  }
+  if (el.qrStatus) el.qrStatus.textContent = t('qr.status.generating');
+  let result;
+  try {
+    result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
+      ...opts,
+      sMax: qrSMax(),
+      travelFeed: 3000,
+    });
+  } catch (err) {
+    // QrError traz um `code` estável → a mensagem vem do i18n.
+    const key = `qr.err.${err?.code ?? 'bad-version'}`;
+    if (el.qrStatus) el.qrStatus.textContent = t(key, opts);
+    appendLine(t(key, opts), 'error');
+    return;
+  }
+  // Carrega como arquivo virtual (habilita Play e preview).
+  applyJobLines('qr-code.gcode', result.gcode);
+  if (el.qrStatus) el.qrStatus.textContent = qrStatusText(result);
+  // Abre o posicionamento para alinhar a origem e gravar.
+  openFrameModal();
+}
+
+async function saveQr() {
+  if (!window.GRBL_QR) return;
+  const opts = readQrOptions();
+  if (el.qrContent && !el.qrContent.value.trim()) {
+    if (el.qrStatus) el.qrStatus.textContent = t('qr.err.empty');
+    return;
+  }
+  try {
+    const result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
+      ...opts,
+      sMax: qrSMax(),
+      travelFeed: 3000,
+    });
+    const path = await window.grbl.saveGcode(result.gcode, 'qr-code.gcode');
+    if (path) appendLine(t('file.saved', { path }), 'ok');
+  } catch (err) {
+    const key = `qr.err.${err?.code ?? 'bad-version'}`;
+    appendLine(t(key, opts), 'error');
+  }
+}
+
 function frameJog(axis, sign) {
   if (!state.connected) {
     appendLine(t('err.connectForFrame'), 'error');
@@ -6890,6 +7031,7 @@ for (const overlay of [
   el.settingsOverlay,
   el.frameOverlay,
   el.matTestOverlay,
+  el.qrOverlay,
   el.designOverlay,
 ]) {
   if (!overlay) continue;
@@ -6924,6 +7066,7 @@ document.addEventListener('keydown', (e) => {
     el.settingsOverlay,
     el.frameOverlay,
     el.matTestOverlay,
+    el.qrOverlay,
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
   if (overlays.length) {
@@ -6960,6 +7103,7 @@ if (window.grbl.onAction)
         appendLine(t('err.prefix', { msg: err.message }), 'error');
       });
     else if (name === 'material-test') openMatTestModal();
+    else if (name === 'qr-code') openQrModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'design') openDesignModal();
   });
@@ -7848,6 +7992,13 @@ if (el.matTestOverlay)
 if (el.matTestGenerate)
   el.matTestGenerate.addEventListener('click', generateMatTest);
 if (el.matTestSave) el.matTestSave.addEventListener('click', saveMatTest);
+if (el.qrClose) el.qrClose.addEventListener('click', closeQrModal);
+if (el.qrOverlay)
+  el.qrOverlay.addEventListener('click', (e) => {
+    if (e.target === el.qrOverlay) closeQrModal();
+  });
+if (el.qrGenerate) el.qrGenerate.addEventListener('click', generateQr);
+if (el.qrSave) el.qrSave.addEventListener('click', saveQr);
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
 if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));

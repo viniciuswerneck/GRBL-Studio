@@ -1,6 +1,7 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
-> **Status: planejamento. Nenhuma linha de código escrita.**
+> **Status: S1 (QR Code) implementada** — v0.6 em andamento (18/10/2026).
+> Ver §15 para o que foi entregue, medido e o que falta (S2/S3).
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
@@ -355,7 +356,7 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 
 | Fase | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
-| **S1 — Fundação + QR** | `shared/symbol/{mask,gcode,qr}.ts` + bundle + modal QR + menu + i18n + testes | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
+| **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
 | **S2 — 1D + HRI** | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. |
 | **S3 — Extras** | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. |
 
@@ -365,9 +366,9 @@ compartilham `fonts.ts`/`hatch.ts` — sem conflito, sem tocar no protocolo.
 
 ---
 
-## 11. Decisões em aberto (precisam do seu OK)
+## 11. Decisões (ratificadas e já aplicadas na S1)
 
-| # | Decisão | Recomendação |
+| # | Decisão | Resultado |
 | :--- | :--- | :--- |
 | A | **Encoder próprio × dependência.** Usar biblioteca pronta (`qrcode-generator` p/ QR; `bwip-js`/`jsbarcode` p/ 1D) ou implementar? | **Implementar** os encoders no projeto e usar bibliotecas **apenas como devDependency nos testes** (cross-check + decodificação). Mantém runtime sem dependência nova (ADR-11/leveza), licenças limpas (MIT) e controle total da geometria/avisos. |
 | B | **Escopo do MVP** | QR + **Code 128** (mais versátil) + **EAN-13/UPC-A** (produto) + **Code 39** (indústria). |
@@ -393,28 +394,40 @@ compartilham `fonts.ts`/`hatch.ts` — sem conflito, sem tocar no protocolo.
 
 ## 13. Checklist de arquivos (implementação)
 
-**Novos**
+**Novos (S1 — feitos)**
 
 - `src/shared/symbol/mask.ts`, `src/shared/symbol/gcode.ts`
-- `src/shared/symbol/qr.ts`
+- `src/shared/symbol/qr.ts`, `src/shared/symbol/qr.tables.ts` (gerado)
+- `src/shared/symbol/entry.qr.ts`
+- `scripts/gen-qr-tables.mjs` (gera `qr.tables.ts` a partir da referência)
+- `tests/symbol-qr.test.ts`, `tests/symbol-gcode.test.ts`
+- (gerado) `public/qrcode.js`
+
+**Novos (S2/S3 — a fazer)**
+
 - `src/shared/symbol/barcode/{tables,code128,ean,code39,index}.ts`
-- `src/shared/symbol/entry.qr.ts`, `src/shared/symbol/entry.barcode.ts`
-- `tests/symbol-qr.test.ts`, `tests/symbol-barcode.test.ts`,
-  `tests/symbol-gcode.test.ts`
-- (gerados) `public/qrcode.js`, `public/barcode.js`
+- `src/shared/symbol/entry.barcode.ts`
+- `tests/symbol-barcode.test.ts`
+- (gerado) `public/barcode.js`
 
-**Alterados**
+**Alterados (S1 — feitos)**
 
-- `package.json` (scripts `build:qrcode`/`build:barcode` + devDeps de teste)
-- `src/main/menu.ts` (2 itens em Ferramentas)
-- `src/shared/channels.ts` (`MENU_ACTIONS.qrcode`/`.barcode`)
-- `src/shared/types.ts` (`Prefs.symbols?`)
-- `src/shared/i18n/{pt-BR,en,es}.ts`
-- `public/index.html` (2 overlays + `<script>` dos bundles)
-- `public/renderer.js` (open/read/generate/save, dispatch do menu, ramo no
-  `openFrameModal`/`frameStart`)
-- `docs/PRODUCT_SPEC.md`, `docs/FEATURES_COMPARISON.md`, `docs/PLANO_PREMIUM.md`,
-  `docs/ARCHITECTURE.md`, `docs/README.md`, `CHANGELOG.md`
+- `package.json` (script `build:qrcode` + devDeps de teste `qrcode-generator`,
+  `jsqr`), `package-lock.json`
+- `src/main/menu.ts` (item "QR Code…" em Ferramentas)
+- `src/shared/channels.ts` (`MENU_ACTIONS.qrCode`)
+- `src/shared/i18n/{pt-BR,en,es}.ts` (namespace `qr.*`)
+- `public/index.html` (`#qrOverlay` + `<script src="./qrcode.js">`)
+- `public/style.css` (`.qr-modal`, `.qr-fields`)
+- `public/renderer.js` (`openQrModal`/`readQrOptions`/`generateQr`/`saveQr`,
+  dispatch do menu, overlay no Esc/clique-fora)
+- `e2e/app.spec.ts` (teste do fluxo Ferramentas → QR Code…)
+- `.gitignore` (`public/qrcode.js`)
+- `CHANGELOG.md`, `docs/HANDOFF.md`, `AGENTS.md`, este documento
+
+**A alterar na S2**: `src/shared/types.ts` (`Prefs.symbols?`) e os documentos de
+produto (`PRODUCT_SPEC.md`, `FEATURES_COMPARISON.md`, `PLANO_PREMIUM.md`,
+`docs/ARCHITECTURE.md`, `docs/README.md`).
 
 ---
 
@@ -428,3 +441,60 @@ compartilham `fonts.ts`/`hatch.ts` — sem conflito, sem tocar no protocolo.
 - LightBurn — *Tools → Create Bar Code* (referência de UX; motor `zint`).
 - Projeto interno: `src/shared/materialTest.ts` e `src/shared/design.ts`
   (modelos de "módulo puro → G-code") e `src/shared/hatch.ts` (varredura).
+
+---
+
+## 15. Estado da implementação — S1 (18/10/2026)
+
+**Entregue e no `main` quando esta seção foi escrita** (bundle `GRBL_QR`):
+
+| Camada | Arquivo | O que faz |
+| :--- | :--- | :--- |
+| Encoder | `src/shared/symbol/qr.ts` | ISO/IEC 18004 completo: modos numérico/alfanumérico/**byte UTF-8** (auto-seleção), v1–40, L/M/Q/H, RS sobre GF(256), máscaras 0–7 com penalidade da norma, informação de formato/versão (BCH). Erros tipados (`QrError`: `empty`/`too-long`/`bad-version`). |
+| Tabelas | `src/shared/symbol/qr.tables.ts` | 160 linhas de blocos EC + 40 de *alignment patterns*, **geradas** por `scripts/gen-qr-tables.mjs` (proveniência no cabeçalho). |
+| Geometria | `src/shared/symbol/mask.ts` | matriz → faixas; barras 1D → faixa (S2); varredura por linhas, inversão de polaridade, `bandsToScanSegments`. |
+| G-code | `src/shared/symbol/gcode.ts` | `symbolToGcode` (zigue-zague + `M5` por trecho + passadas), `applyOverscan`, avisos, `qrToGcode` (fachada). |
+| Bundle/UI | `entry.qr.ts` → `public/qrcode.js`; `#qrOverlay`; menu **Ferramentas → QR Code…** | Camuflagem padrão das ferramentas: modal → módulo puro → `applyJobLines` → preview/Play/Salvar + posicionamento. |
+
+**Testes (todos verdes nesta data: 460 no total, 64 do símbolo)**
+
+- `tests/symbol-qr.test.ts` — **cross-check de matriz** contra `qrcode-generator`
+  (v1–v33, todos os níveis; a máscara é lida da informação de formato do símbolo
+  de referência e reaplicada no nosso encoder) + **decodificação real** com
+  `jsqr` (incluindo UTF-8/emoji, as 8 máscaras e v1–v40) + estrutura (finders,
+  *timing*, alinhamento, módulo escuro, BCH) + erros e escolha de modo/versão.
+- `tests/symbol-gcode.test.ts` — geometria, varredura, polaridade, invariantes de
+  segurança (nunca `G0` com o laser armado), 3 casas, passadas, avisos de
+  legibilidade e limites da área de trabalho.
+- `e2e/app.spec.ts` — menu → modal → **gerar** → status com as dimensões →
+  posicionamento aberto.
+
+**Decisões confirmadas na prática**
+
+- **A (encoder próprio)**: `qrcode-generator` e `jsqr` ficaram **só em
+  `devDependencies`** (MIT); o bundle não leva dependência de runtime (33 kB,
+  sem framework) — ADR-11 preservado.
+- **D (overscan/polaridade)**: implementados com padrão **desligado**
+  (`overscanMm: 0`, `invert: false`).
+- **F**: ECC **M**, versão **automática**, módulo **0,5 mm**, quiet zone **4
+  módulos**, **10 linhas/mm** (5 linhas por módulo — acima do mínimo de 3 que os
+  avisos usam).
+
+**Bug encontrado e corrigido no caminho:** a partir da versão 7 há *alignment
+patterns* sobre a linha/coluna 6; desenhá-los **depois** do *timing* apagava
+módulos de sincronismo e o símbolo **não lia**. A ordem correta (alinhamento →
+*timing*) está travada por teste.
+
+**Divergências do plano (de propósito):**
+
+- Nomes alinhados nesta revisão: entrada `entry.qr.ts` e bundle
+  `public/qrcode.js` / `build:qrcode` (o plano já os previa).
+- `symbolWarnings()` devolve **códigos estáveis** (`module-small`,
+  `module-tiny`, `quiet-zone-small`, `lines-too-few`, `outside-work-area`) — o
+  renderer é quem traduz (`qr.warn.*`). Nada de texto de UI no módulo puro.
+- Sem `Prefs.symbols` nesta fase: os campos do modal já têm os padrões certos;
+  persistir preferências fica na S2, junto com a segunda ferramenta.
+
+**Próximo passo (S2):** `symbol/barcode/` (Code 128, EAN-13/8, UPC-A, Code 39),
+HRI com `fonts.ts`, modal `#barcodeOverlay`, `build:barcode` e o item de menu
+correspondente — sem tocar no núcleo (`mask.ts`/`gcode.ts`) já pronto.

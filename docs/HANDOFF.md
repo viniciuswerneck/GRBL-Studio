@@ -136,3 +136,28 @@ npx electron --no-sandbox .    # abre o app
 > `docs: planejamento dos geradores de QR Code e código de barras (v0.6)`. A
 > ancoragem na origem foi especificada como **RF-DSN-9** (módulo M13) e o
 > script `test:e2e` foi restaurado — ver `CHANGELOG.md` (`[Unreleased]`).
+
+---
+
+## 7. v0.6 S1 — gerador de QR Code (18/10/2026)
+
+**Estado:** implementado, testado e na `main` (encoder próprio + ferramenta no
+menu). Detalhes em `docs/PLANO_QR_BARCODE.md` §15; resumo para retomar rápido:
+
+- **Ferramentas → QR Code…** (menu nativo → `MENU_ACTIONS.qrCode` → `#qrOverlay`).
+  O fluxo é o das demais ferramentas: o modal só lê campos e chama o módulo puro
+  (`window.GRBL_QR.qrToGcode`); o G-code entra em `applyJobLines` e o
+  **posicionamento** (`openFrameModal`) abre para alinhar a origem.
+- **Núcleo puro** em `src/shared/symbol/`: `qr.ts` (ISO/IEC 18004 completo, com
+  `qr.tables.ts` **gerado** por `scripts/gen-qr-tables.mjs`), `mask.ts`
+  (matriz → faixas/segmentos) e `gcode.ts` (`qrToGcode`, overscan, polaridade,
+  avisos). Bundle gerado: `public/qrcode.js` (`npm run build:qrcode`).
+- **Sem dependência de runtime** (ADR-11). `qrcode-generator` e `jsqr` são só
+  `devDependencies`, usadas em `tests/symbol-qr.test.ts` (cross-check de matriz +
+  decodificação real).
+- **Pendências da v0.6:** S2 (código de barras 1D + HRI: `symbol/barcode/`,
+  modal `#barcodeOverlay`, `build:barcode`) e S3 (2D/lote/objeto no editor).
+- **Validar com hardware:** gerar um QR de 0,5 mm em papel/madeira com
+  velocidade baixa e ler com o celular; se sair claro demais, aumentar potência
+  ou reduzir a velocidade (os avisos do modal já cobrem módulo pequeno/linhas
+  insuficientes).

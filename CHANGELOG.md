@@ -6,6 +6,36 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Ferramentas: gerador de QR Code (v0.6, fase S1)
+
+- **Ferramentas → QR Code…**: gera um QR Code como G-code de varredura, no mesmo
+  fluxo das outras ferramentas (modal → preview → **Play** ou **Salvar
+  .gcode…**). Campos: conteúdo (URL/texto), correção de erro (L/M/Q/H), versão
+  (automática ou 1–40), lado do módulo, quiet zone, linhas/mm, potência,
+  velocidade, passadas, modo (M4/M3), overscan e polaridade invertida.
+- **Encoder próprio, sem dependência de runtime** (ADR-11): ISO/IEC 18004
+  completo — modos numérico/alfanumérico/**byte UTF-8** com seleção automática,
+  versões 1–40, níveis L/M/Q/H, Reed–Solomon sobre GF(256), as 8 máscaras com a
+  penalidade da norma e BCH de formato/versão — em `src/shared/symbol/qr.ts`.
+  As tabelas de blocos EC e de *alignment patterns* são **geradas** por
+  `scripts/gen-qr-tables.mjs` (proveniência no cabeçalho do arquivo gerado).
+- **Avisos de legibilidade** antes de gravar: módulo pequeno para o ponto do
+  laser, módulo abaixo de 0,3 mm, quiet zone insuficiente, menos de 3 linhas de
+  varredura por módulo e símbolo que não cabe na área de trabalho.
+- **Núcleo reutilizável** para a fase S2: `src/shared/symbol/mask.ts`
+  (matriz/barras → faixas e segmentos de varredura, inversão de polaridade) e
+  `src/shared/symbol/gcode.ts` (`symbolToGcode` com zigue-zague, `M5` antes de
+  cada deslocamento, passadas, `S ≤ $30`, 3 casas decimais).
+- **Testes**: cross-check de matriz com `qrcode-generator` (v1–v33, todos os
+  níveis) e **decodificação real** com `jsqr` (incluindo UTF-8/emoji, as 8
+  máscaras e v1–v40) — ambas **devDependencies** MIT; invariantes de G-code em
+  `tests/symbol-gcode.test.ts`; E2E do fluxo Ferramentas → QR Code… → gerar.
+
+### Documentação
+
+- `docs/PLANO_QR_BARCODE.md` §15: estado da S1 (arquivos, testes, decisões
+  ratificadas e o bug de *alignment pattern* × *timing* corrigido no caminho).
+
 ## [0.5.2] - 2026-10-18
 
 ### Fixed — desenho (revisão: itens C)

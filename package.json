@@ -6,7 +6,7 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n && npm run build:qrcode",
     "build:boolean": "esbuild src/shared/boolean.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_BOOLEAN --outfile=public/boolean.js",
     "build:offset": "esbuild src/shared/offset.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_OFFSET --outfile=public/offset.js",
     "build:contour": "esbuild src/shared/image/contour.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_CONTOUR --outfile=public/contour.js",
@@ -17,6 +17,7 @@
     "build:materialTest": "esbuild src/shared/materialTest.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIAL_TEST --outfile=public/materialTest.js",
     "build:svg": "esbuild src/shared/svg.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_SVG --outfile=public/svg.js",
     "build:i18n": "esbuild src/shared/i18n/entry.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_I18N --outfile=public/i18n.js",
+    "build:qrcode": "esbuild src/shared/symbol/entry.qr.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_QR --outfile=public/qrcode.js",
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js",
     "build:worker": "esbuild src/renderer/gcode.worker.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=public/gcode.worker.js",
     "build:materials": "esbuild src/shared/materials.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIALS --outfile=public/materials.js",
@@ -54,6 +55,8 @@
     "electron": "^44.8.0",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.28.2",
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
     "typescript": "^7.0.2",
     "vitest": "^3.2.4"
   }

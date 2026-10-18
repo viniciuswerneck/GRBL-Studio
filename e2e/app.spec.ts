@@ -102,4 +102,26 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await close();
     }
   });
+
+  test('gera um QR Code (Ferramentas → QR Code…) e abre o posicionamento', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      await page.fill('#qrContent', 'https://lab.werneck.dev.br');
+      await page.click('#qrGenerate');
+      // O status resume o símbolo gerado (versão, módulos e dimensões).
+      await expect(page.locator('#qrStatus')).toContainText('QR gerado');
+      await expect(page.locator('#qrStatus')).not.toContainText('⚠');
+      // O job virtual virou o programa atual e o posicionamento abriu.
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
 });

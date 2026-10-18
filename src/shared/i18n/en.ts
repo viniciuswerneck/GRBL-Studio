@@ -230,6 +230,52 @@ export const en = {
   'matTest.status.done':
     'Grid generated. Check the preview, then send or save.',
 
+  // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
+  'menu.qrCode': 'QR Code…',
+  'qr.title': 'QR Code',
+  'qr.hint':
+    'Generates a QR Code as raster G-code: pick the content, the module size ' +
+    'and engrave. The artwork origin is the bottom-left corner (X0 Y0).',
+  'qr.content': 'Content',
+  'qr.contentPlaceholder': 'https://example.com or some text',
+  'qr.ecc': 'Error correction',
+  'qr.ecc.L': 'L — 7%',
+  'qr.ecc.M': 'M — 15%',
+  'qr.ecc.Q': 'Q — 25%',
+  'qr.ecc.H': 'H — 30%',
+  'qr.version': 'Version',
+  'qr.versionAuto': 'Automatic',
+  'qr.module': 'Module size (mm)',
+  'qr.quietZone': 'Quiet zone (modules)',
+  'qr.linesPerMm': 'Scan lines per mm',
+  'qr.power': 'Power (%)',
+  'qr.feed': 'Speed (mm/min)',
+  'qr.passes': 'Passes',
+  'qr.mode': 'Laser mode',
+  'qr.mode.m4': 'M4 (dynamic)',
+  'qr.mode.m3': 'M3 (constant)',
+  'qr.overscan': 'Overscan (mm)',
+  'qr.invert': 'Inverted polarity (burn the background)',
+  'qr.generate': 'Generate and preview',
+  'qr.save': 'Save .gcode…',
+  'qr.status.generating': 'Generating the QR Code…',
+  'qr.moduleMissing': 'QR Code generator not loaded.',
+  'qr.status.done':
+    'QR generated: {version} · {size}×{size} modules · {w} × {h} mm. ' +
+    'Check the preview, then send or save.',
+  'qr.err.empty': 'Enter some content to generate the QR Code.',
+  'qr.err.too-long': 'The content is too long for a QR Code at level {ecc}.',
+  'qr.err.bad-version': 'Invalid format information version.',
+  'qr.warn.module-small':
+    'Module smaller than 2× the laser spot: the code may be unreadable.',
+  'qr.warn.module-tiny': 'Module below 0.3 mm: too small for most readers.',
+  'qr.warn.quiet-zone-small':
+    'Quiet zone below the standard (4 modules): harder to read.',
+  'qr.warn.lines-too-few':
+    'Fewer than 3 scan lines per module: the fill may come out patchy.',
+  'qr.warn.outside-work-area':
+    'The symbol does not fit the work area from this origin.',
+
   // ------------------------------------------------------- vector drawing
   'design.title': 'Design',
   'design.tool.select': 'Select (V)',
