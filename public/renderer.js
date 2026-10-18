@@ -784,7 +784,9 @@ function dZoomAt(sx, sy, factor) {
 }
 
 function dUpdateZoom() {
-  const label = `${Math.round(designState.view.scale * 100)}%`;
+  // `scale` é px por mm; 100 % = D_PX_MM px/mm (4 px/mm) — o mesmo valor que o
+  // botão “100 %” e a tecla `0` restauram. Sem isso o rótulo sairia 4× maior.
+  const label = `${Math.round(designState.view.scale * D_PX_MM * 100)}%`;
   const zl = $('designZoomLabel');
   if (zl) zl.textContent = label;
   const z100 = $('designZoom100');
@@ -2996,6 +2998,11 @@ function dOnKeyDown(e) {
     }
     return; // deixa o handler global fechar o modal
   }
+
+  // O modal “Posicionar a gravadora” abre por cima do editor. Enquanto ele
+  // estiver aberto, nenhum atalho do desenho pode agir: o desenho não está à
+  // vista e a tecla cairia no objeto errado (só o Esc acima o fecha).
+  if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) return;
 
   if (sizeOpen) return;
   if (editorOpen || typingInField(e.target)) return;
@@ -6713,7 +6720,12 @@ document.addEventListener('keydown', (e) => {
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
   if (overlays.length) {
-    for (const overlay of overlays) overlay.classList.add('hidden');
+    for (const overlay of overlays) {
+      // O editor de desenho tem desmontagem própria (fecha diálogos, menu de
+      // booleanas e editor de texto); esconder na mão deixaria estado preso.
+      if (overlay === el.designOverlay) closeDesignModal();
+      else overlay.classList.add('hidden');
+    }
     return;
   }
   // Sem overlays abertos, Esc também para o job (botão crítico sempre acessível).

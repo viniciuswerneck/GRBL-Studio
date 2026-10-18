@@ -96,6 +96,40 @@ describe('offsetLoop', () => {
     ).toBeNull();
   });
 
+  it('contorno fino encolhendo colapsa em vez de virar espigão', () => {
+    // Arestas quase colineares: a intersecção das retas deslocadas cairia a
+    // ~200 mm do vértice, bem fora da peça (e o laser queimaria lá).
+    const sliver: Point[] = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 5, y: 0.05 },
+    ];
+    expect(offsetLoop(sliver, -1)).toBeNull();
+    // O traço grosso do mesmo contorno fica na faixa esperada (±width/2).
+    for (const ring of strokePaths(sliver, true, 2)) {
+      for (const p of ring) {
+        expect(Math.abs(p.x)).toBeLessThanOrEqual(11.001);
+        expect(Math.abs(p.y)).toBeLessThanOrEqual(1.051);
+      }
+    }
+  });
+
+  it('quina aguda legítima mantém o vértice do inset (sem chanfro)', () => {
+    // Triângulo 10×2 encolhido 0,5 mm: o inset existe (raio interno ≈ 0,96) e
+    // os vértices da base ficam a ~2,6 mm do original — nada de chanfro.
+    const tri: Point[] = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 5, y: 2 },
+    ];
+    const out = offsetLoop(tri, -0.5) as Point[];
+    expect(out).not.toBeNull();
+    expect(out).toHaveLength(3);
+    expect(out[0].x).toBeCloseTo(2.596, 2);
+    expect(out[1].x).toBeCloseTo(7.404, 2);
+    expect(out[2].y).toBeCloseTo(1.461, 2);
+  });
+
   it('mantém o sentido do contorno (área positiva continua positiva)', () => {
     const out = offsetLoop(rect(0, 0, 10, 10), 1) as Point[];
     expect(signedArea(out)).toBeGreaterThan(0);

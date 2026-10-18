@@ -20,6 +20,7 @@
 
 import { type Loop, signedArea } from './boolean';
 import type { Point } from './design';
+import { pointInPolygon } from './designEditor';
 
 export type JoinStyle = 'miter' | 'round' | 'bevel';
 
@@ -140,6 +141,11 @@ export function offsetLoop(
   if (distance < 0) {
     for (const p of cleaned) {
       if (distanceToLoop(p, points) < Math.abs(distance) * 0.95) return null;
+      // …e tem de ficar **dentro** do contorno original. Numa quina muito
+      // aguda (contorno fino encolhendo) a intersecção das retas deslocadas
+      // cai fora da peça — um espigão de centenas de mm que passaria por todas
+      // as demais checagens. Aí o correto é a passada colapsar.
+      if (!pointInPolygon(points, p.x, p.y)) return null;
     }
   }
   return cleaned;

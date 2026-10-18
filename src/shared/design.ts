@@ -31,6 +31,7 @@ export interface Shape {
   closed: boolean;
   /** Parâmetros de gravação opcionais (sobrescrevem os globais). */
   speed?: number;
+  /** Potência do objeto em **porcentagem** (0–100), como o campo “P” do painel. */
   power?: number;
   passes?: number;
   /**
@@ -90,6 +91,23 @@ function fmt(v: number): string {
   return v.toFixed(3);
 }
 
+/** Deslocamento/velocidade válidos: não-finito ou ≤ 0 cai no padrão. */
+function positive(v: number | undefined, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback;
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Só pontos finitos: `NaN`/`Infinity` circulariam até o G-code (`G1 XNaN`) e
+ * fariam a máquina responder `error:` no meio do job.
+ */
+function finitePoints(points: ReadonlyArray<Point>): Point[] {
+  return points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+}
+
 /** Gera pontos de um círculo (centro + raio). */
 export function makeCircle(
   cx: number,
@@ -137,7 +155,18 @@ export function designToGcode(
   opts: Partial<DesignToGcodeOptions> = {},
 ): string {
   const o = { ...DEFAULT_OPTS, ...opts };
-  const powerS = Math.round((o.powerPercent / 100) * o.sMax);
+  // Sanitiza os parâmetros: `F0`, `S-50`, `NaN` fazem o GRBL responder
+  // `error:` e abortar o job no meio da gravação — melhor cair num padrão
+  // seguro do que gerar um arquivo inválido.
+  const feed = positive(o.feed, DEFAULT_OPTS.feed);
+  const travelFeed = positive(o.travelFeed, DEFAULT_OPTS.travelFeed);
+  const sMax = positive(o.sMax, DEFAULT_OPTS.sMax);
+  const powerPercent = Number.isFinite(o.powerPercent)
+    ? clamp(o.powerPercent, 0, 100)
+    : DEFAULT_OPTS.powerPercent;
+  const passes = Number.isFinite(o.passes)
+    ? Math.max(1, Math.floor(o.passes))
+    : 1;
   const arm = o.mode === 'M4' ? 'M4' : 'M3';
 
   // Calcula a área (bounds) para informação: inclui a espessura do traço
@@ -146,16 +175,19 @@ export function designToGcode(
     minY = Infinity,
     maxX = -Infinity,
     maxY = -Infinity;
+  let hasShapes = false;
   for (const sh of doc.shapes) {
+    const pts = finitePoints(sh.points);
+    if (pts.length < 2) continue;
+    hasShapes = true;
     const grow = sh.width && sh.width > STROKE_STEP ? sh.width / 2 : 0;
-    for (const p of sh.points) {
+    for (const p of pts) {
       minX = Math.min(minX, p.x - grow);
       minY = Math.min(minY, p.y - grow);
       maxX = Math.max(maxX, p.x + grow);
       maxY = Math.max(maxY, p.y + grow);
     }
   }
-  const hasShapes = doc.shapes.length > 0;
 
   // A arte é gravada **ancorada na origem de trabalho**: o canto inferior
   // esquerdo do desenho vira X0 Y0. Como o usuário posiciona o laser onde o
@@ -193,7 +225,7 @@ export function designToGcode(
     power: number,
   ) => {
     const start = toMachine(pts[0]);
-    lines.push(`G0 X${fmt(start.x)} Y${fmt(start.y)} F${o.travelFeed}`);
+    lines.push(`G0 X${fmt(start.x)} Y${fmt(start.y)} F${travelFeed}`);
     lines.push(`${arm} S${power}`);
     for (let i = 1; i < pts.length; i++) {
       const m = toMachine(pts[i]);
@@ -231,22 +263,30 @@ export function designToGcode(
     return best === 0 ? [...pts] : [...pts.slice(best), ...pts.slice(0, best)];
   };
 
-  for (let pass = 0; pass < o.passes; pass++) {
-    if (o.passes > 1) lines.push(`; pass ${pass + 1}/${o.passes}`);
+  for (let pass = 0; pass < passes; pass++) {
+    if (passes > 1) lines.push(`; pass ${pass + 1}/${passes}`);
     for (const sh of doc.shapes) {
-      if (sh.points.length < 2) continue;
-      const feed = sh.speed ?? o.feed;
-      const power = sh.power ?? powerS;
+      const src = finitePoints(sh.points);
+      if (src.length < 2) continue;
+      // Um contorno "fechado" com 2 pontos tem área zero: é uma linha. Tratá-lo
+      // como fechado o faria desaparecer ao ganhar espessura (`strokePaths`
+      // exige 3) e deixaria o `cursor` apontando para o canto errado.
+      const closed = Boolean(sh.closed) && src.length > 2;
+      const shapeFeed = positive(sh.speed, feed);
+      // `power` da forma é percentual (campo “P”); o S sai do $30 da máquina.
+      const pct =
+        typeof sh.power === 'number' && Number.isFinite(sh.power)
+          ? clamp(sh.power, 0, 100)
+          : powerPercent;
+      const power = Math.round((pct / 100) * sMax);
       // Traço grosso: cobre a faixa de `width` mm centrada no caminho.
       const paths =
-        sh.width && sh.width > 0
-          ? strokePaths(sh.points, sh.closed, sh.width)
-          : [sh.points];
+        sh.width && sh.width > 0 ? strokePaths(src, closed, sh.width) : [src];
       for (const raw of paths) {
         if (raw.length < 2) continue;
-        const pts = orderFrom(raw, sh.closed);
-        emit(pts, sh.closed, feed, power);
-        const end = sh.closed ? pts[0] : pts[pts.length - 1];
+        const pts = orderFrom(raw, closed);
+        emit(pts, closed, shapeFeed, power);
+        const end = closed ? pts[0] : pts[pts.length - 1];
         cursor = toMachine(end);
       }
     }

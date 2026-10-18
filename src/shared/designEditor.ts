@@ -477,10 +477,14 @@ export function createFreehandShape(
   const simple = simplifyPolyline(cleaned, tolerance);
   if (simple.length < 2) return null;
 
-  // Detecta fechamento (último próximo do primeiro)
+  // Detecta fechamento (último próximo do primeiro). Precisa de 4 pontos
+  // simplificados: ao descartar o último (= primeiro) o laço tem de continuar
+  // com 3+ pontos — um "fechado" de 2 pontos tem área zero e sumiria ao ganhar
+  // espessura.
   const first = simple[0];
   const last = simple[simple.length - 1];
-  const closed = simple.length >= 3 &&
+  const closed =
+    simple.length >= 4 &&
     Math.hypot(last.x - first.x, last.y - first.y) <= closeThreshold;
 
   // Se fecha, garante que o último = primeiro (não duplicado no array)

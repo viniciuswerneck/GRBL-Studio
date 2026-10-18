@@ -104,7 +104,8 @@ describe('designToGcode', () => {
           points: makeRect(0, 0, 5, 5),
           closed: true,
           speed: 500,
-          power: 300,
+          // `power` é porcentagem (campo “P” do painel), não valor S cru.
+          power: 30,
         },
       ],
       width: 5,
@@ -112,7 +113,7 @@ describe('designToGcode', () => {
     };
     const g = designToGcode(doc, baseOpts);
     expect(g).toContain('F500');
-    expect(g).toContain('S300');
+    expect(g).toContain('S300'); // 30 % de 1000
   });
 
   it('mistura forma com e sem override: as demais seguem o global', () => {
@@ -123,7 +124,7 @@ describe('designToGcode', () => {
           points: makeRect(0, 0, 5, 5),
           closed: true,
           speed: 500,
-          power: 300,
+          power: 30,
         },
         { kind: 'rect', points: makeRect(10, 0, 5, 5), closed: true },
       ],
@@ -136,7 +137,7 @@ describe('designToGcode', () => {
       powerPercent: 50,
       travelFeed: 3000,
     });
-    expect(g).toContain('S300'); // override da 1ª forma
+    expect(g).toContain('S300'); // override da 1ª forma (30 %)
     expect(g).toContain('S500'); // 50 % de sMax na 2ª
     expect(g).toContain('F500'); // velocidade própria
     expect(g).toContain('F1000'); // velocidade global
@@ -199,6 +200,121 @@ describe('designToGcode', () => {
       baseOpts,
     );
     expect(outro).toBe(g);
+  });
+});
+
+describe('entradas degeneradas e parâmetros inválidos', () => {
+  const rect5 = (extra: Partial<Shape> = {}): Shape => ({
+    kind: 'rect',
+    points: makeRect(0, 0, 5, 5),
+    closed: true,
+    ...extra,
+  });
+  const g1s = (g: string) => (g.match(/G1 /g) ?? []).length;
+
+  it('contorno “fechado” de 2 pontos vira linha (não desaparece com espessura)', () => {
+    const shape: Shape = {
+      kind: 'polygon',
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
+      closed: true,
+    };
+    expect(g1s(shapesToGcode([shape], baseOpts))).toBe(1);
+    // Antes o traço grosso zerava os caminhos (`strokePaths` exige 3 pontos).
+    const thick = shapesToGcode([{ ...shape, width: 2 }], baseOpts);
+    expect(g1s(thick)).toBe(21); // 21 paralelas, 1 G1 cada
+  });
+
+  it('o cursor avança para o fim do contorno de 2 pontos', () => {
+    const g = shapesToGcode(
+      [
+        {
+          kind: 'polygon',
+          points: [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+          ],
+          closed: true,
+        },
+        {
+          kind: 'polygon',
+          points: [
+            { x: 90, y: 5 },
+            { x: 100, y: 5 },
+          ],
+          closed: true,
+        },
+      ],
+      baseOpts,
+    );
+    // O 2º contorno começa no ponto mais próximo de onde o cabeçote parou.
+    expect(g).toContain('G0 X100.000 Y0.000');
+  });
+
+  it('feed ≤ 0 volta ao padrão (nada de F0/F-negativo)', () => {
+    expect(shapesToGcode([rect5()], { ...baseOpts, feed: 0 })).toContain(
+      'F1000',
+    );
+    expect(shapesToGcode([rect5()], { ...baseOpts, feed: 0 })).not.toMatch(
+      /F0\b/,
+    );
+    expect(shapesToGcode([rect5({ speed: -500 })], baseOpts)).not.toMatch(
+      /F-\d/,
+    );
+  });
+
+  it('potência fica no intervalo 0–100 % (clamp)', () => {
+    expect(shapesToGcode([rect5({ power: -50 })], baseOpts)).toContain('M4 S0');
+    expect(shapesToGcode([rect5({ power: 500 })], baseOpts)).toContain(
+      'M4 S1000',
+    );
+    expect(
+      shapesToGcode([rect5()], { ...baseOpts, powerPercent: 200 }),
+    ).toContain('M4 S1000');
+  });
+
+  it('passes < 1 ainda gera uma passada (job não sai vazio)', () => {
+    // retângulo fechado = 4 lados (3 seguimentos + o fechamento)
+    expect(g1s(shapesToGcode([rect5()], { ...baseOpts, passes: 0 }))).toBe(4);
+  });
+
+  it('pontos não finitos são descartados (nada de NaN/Infinity)', () => {
+    const g = shapesToGcode(
+      [
+        {
+          kind: 'line',
+          points: [
+            { x: Number.NaN, y: 5 },
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: Number.POSITIVE_INFINITY, y: 3 },
+          ],
+          closed: false,
+        },
+      ],
+      baseOpts,
+    );
+    expect(g).not.toContain('NaN');
+    expect(g).not.toContain('Infinity');
+    expect(g).toContain('X0.000 Y0.000');
+    expect(g).toContain('X10.000');
+  });
+
+  it('forma inteiramente inválida não vira cabeçalho de área quebrado', () => {
+    const g = shapesToGcode(
+      [
+        {
+          kind: 'line',
+          points: [{ x: Number.NaN, y: Number.NaN }],
+          closed: false,
+        },
+      ],
+      baseOpts,
+    );
+    expect(g).not.toContain('NaN');
+    expect(g).not.toContain('; área');
   });
 });
 

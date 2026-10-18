@@ -387,6 +387,22 @@ describe('createFreehandShape', () => {
     expect(sh?.points.length).toBe(3);
   });
 
+  it('não fecha um laço que ficaria com 2 pontos (área zero)', () => {
+    // O último ponto volta perto do primeiro, mas ao descartá-lo sobrariam só
+    // 2 pontos — isso não é contorno fechado (sumiria ao ganhar espessura).
+    const sh = createFreehandShape(
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 0.1, y: 0.1 },
+      ],
+      { tolerance: 0, closeThreshold: 1 },
+    );
+    expect(sh).not.toBeNull();
+    expect(sh?.closed).toBe(false);
+    expect(sh?.points).toHaveLength(3);
+  });
+
   it('remove duplicados consecutivos', () => {
     const pts = [
       { x: 0, y: 0 },
