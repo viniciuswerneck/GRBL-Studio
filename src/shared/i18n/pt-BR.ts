@@ -351,6 +351,37 @@ export const ptBR = {
     'Informe mais de uma cópia (colunas × linhas maior que 1).',
   'design.array.tooMany': 'Muitas cópias (máx. 1000). Reduza colunas/linhas.',
   'design.array.done': '{n} cópia(s) criada(s).',
+  'design.bool.menu': 'Booleanas e contorno paralelo',
+  'design.bool.union': 'Unir',
+  'design.bool.subtract': 'Subtrair',
+  'design.bool.intersect': 'Intersecção',
+  'design.bool.xor': 'Exclusão',
+  'design.bool.unavailable':
+    'Recurso de booleanas indisponível. Recompile o app.',
+  'design.bool.need2':
+    'Selecione 2 ou mais objetos fechados (retângulo, elipse ou contorno de texto).',
+  'design.bool.empty': 'A operação não deixou nenhuma área. Nada foi alterado.',
+  'design.bool.failed': 'Falha na operação: {msg}',
+  'design.bool.done': '{n} objeto(s) no resultado.',
+  'design.offset': 'Contorno paralelo…',
+  'design.offset.hint':
+    'Cria contornos paralelos à forma selecionada. A distância positiva cresce a forma; a negativa encolhe.',
+  'design.offset.dist': 'Distância (mm)',
+  'design.offset.passes': 'Passadas',
+  'design.offset.join': 'Cantos',
+  'design.offset.join.miter': 'Em bico',
+  'design.offset.join.round': 'Arredondados',
+  'design.offset.join.bevel': 'Chanfrados',
+  'design.offset.keep': 'Manter a forma original',
+  'design.offset.note':
+    'Com mais de uma passada saem anéis concêntricos: a segunda a duas distâncias, a terceira a três, e assim por diante.',
+  'design.offset.need1':
+    'Selecione um objeto fechado (retângulo, elipse ou contorno de texto).',
+  'design.offset.zero': 'Informe uma distância diferente de zero.',
+  'design.offset.empty':
+    'Nenhum contorno coube nessa distância. Aumente a forma ou reduza a distância.',
+  'design.offset.done': '{n} contorno(s) criado(s).',
+  'design.offset.create': 'Criar contornos',
   'design.objects.empty': 'Nenhum objeto ainda.',
   'design.kind.rect': 'Retângulo',
   'design.kind.ellipse': 'Elipse',

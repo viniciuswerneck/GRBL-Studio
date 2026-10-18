@@ -344,6 +344,37 @@ export const es = {
   'design.array.tooMany':
     'Demasiadas copias (máx. 1000). Reduzca columnas/filas.',
   'design.array.done': '{n} copia(s) creada(s).',
+  'design.bool.menu': 'Booleanas y contorno paralelo',
+  'design.bool.union': 'Unir',
+  'design.bool.subtract': 'Restar',
+  'design.bool.intersect': 'Intersección',
+  'design.bool.xor': 'Exclusión',
+  'design.bool.unavailable':
+    'Función de booleanas no disponible. Recompile la aplicación.',
+  'design.bool.need2':
+    'Seleccione 2 o más objetos cerrados (rectángulo, elipse o contorno de texto).',
+  'design.bool.empty': 'La operación no dejó ninguna área. No se cambió nada.',
+  'design.bool.failed': 'Falló la operación: {msg}',
+  'design.bool.done': '{n} objeto(s) en el resultado.',
+  'design.offset': 'Contorno paralelo…',
+  'design.offset.hint':
+    'Crea contornos paralelos a la forma seleccionada. La distancia positiva agranda la forma; la negativa la reduce.',
+  'design.offset.dist': 'Distancia (mm)',
+  'design.offset.passes': 'Pasadas',
+  'design.offset.join': 'Esquinas',
+  'design.offset.join.miter': 'En punta',
+  'design.offset.join.round': 'Redondeadas',
+  'design.offset.join.bevel': 'Achaflanadas',
+  'design.offset.keep': 'Mantener la forma original',
+  'design.offset.note':
+    'Con más de una pasada salen anillos concéntricos: la segunda a dos distancias, la tercera a tres, y así sucesivamente.',
+  'design.offset.need1':
+    'Seleccione un objeto cerrado (rectángulo, elipse o contorno de texto).',
+  'design.offset.zero': 'Indique una distancia distinta de cero.',
+  'design.offset.empty':
+    'Ningún contorno cabía en esa distancia. Agrande la forma o reduzca la distancia.',
+  'design.offset.done': '{n} contorno(s) creado(s).',
+  'design.offset.create': 'Crear contornos',
   'design.objects.empty': 'Aún no hay objetos.',
   'design.kind.rect': 'Rectángulo',
   'design.kind.ellipse': 'Elipse',

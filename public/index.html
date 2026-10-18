@@ -171,6 +171,27 @@
           <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
           <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
         </symbol>
+        <symbol id="ic-bool" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" d="M3.5 4.5h11v15h-11z M12.5 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-bool-union" viewBox="0 0 24 24">
+          <path d="M9.5 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z M3.5 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-bool-subtract" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" d="M3.5 4h13v16h-13z M10.5 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-bool-intersect" viewBox="0 0 24 24">
+          <circle cx="9.8" cy="12" r="5.6" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <circle cx="14.2" cy="12" r="5.6" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <path d="M12 6.2a7.6 7.6 0 0 1 0 11.6a7.6 7.6 0 0 1 0-11.6z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-bool-xor" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" d="M9.8 12a5.6 5.6 0 1 0 11.2 0a5.6 5.6 0 1 0 -11.2 0z M3 12a5.6 5.6 0 1 0 11.2 0a5.6 5.6 0 1 0 -11.2 0z" fill="currentColor" />
+        </symbol>
+        <symbol id="ic-offset" viewBox="0 0 24 24">
+          <rect x="3" y="3.5" width="18" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.4" />
+          <rect x="6.5" y="7" width="11" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" />
+        </symbol>
       </defs>
     </svg>
     <div class="app">
@@ -1057,6 +1078,43 @@
             <button type="button" id="designDistV" class="icon-btn" data-i18n-title="design.distribute.v" title="Distribuir na vertical">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-dist-v" /></svg>
             </button>
+            <span class="design-prop-sep"></span>
+            <div class="design-menu-wrap">
+              <button
+                type="button"
+                id="designBoolMenu"
+                class="icon-btn"
+                data-i18n-title="design.bool.menu"
+                title="Booleanas e contorno paralelo"
+                aria-haspopup="menu"
+                aria-expanded="false"
+              >
+                <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-bool" /></svg>
+              </button>
+              <div class="design-menu hidden" id="designBoolPop" role="menu" aria-labelledby="designBoolMenu">
+                <button type="button" role="menuitem" id="designBoolUnion">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-bool-union" /></svg>
+                  <span data-i18n="design.bool.union">Unir</span>
+                </button>
+                <button type="button" role="menuitem" id="designBoolSubtract">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-bool-subtract" /></svg>
+                  <span data-i18n="design.bool.subtract">Subtrair</span>
+                </button>
+                <button type="button" role="menuitem" id="designBoolIntersect">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-bool-intersect" /></svg>
+                  <span data-i18n="design.bool.intersect">Intersecção</span>
+                </button>
+                <button type="button" role="menuitem" id="designBoolXor">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-bool-xor" /></svg>
+                  <span data-i18n="design.bool.xor">Exclusão</span>
+                </button>
+                <span class="design-menu-sep"></span>
+                <button type="button" role="menuitem" id="designBoolOffset">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-offset" /></svg>
+                  <span data-i18n="design.offset">Contorno paralelo…</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="design-prop-group design-prop-right">
@@ -1340,6 +1398,58 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="designOffsetOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designOffsetTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designOffsetTitle" data-i18n="design.offset">Contorno paralelo</h3>
+          <button type="button" id="designOffsetClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <p class="design-size-hint" data-i18n="design.offset.hint">
+            Cria contornos paralelos à forma selecionada. A distância positiva cresce a forma; a negativa encolhe.
+          </p>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.offset.dist">Distância (mm)</span>
+              <input type="number" id="designOffsetDist" min="-500" max="500" step="0.1" value="1" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.offset.passes">Passadas</span>
+              <input type="number" id="designOffsetPasses" min="1" max="50" step="1" value="1" />
+            </label>
+          </div>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.offset.join">Cantos</span>
+              <select id="designOffsetJoin">
+                <option value="miter" data-i18n="design.offset.join.miter">Em bico</option>
+                <option value="round" data-i18n="design.offset.join.round">Arredondados</option>
+                <option value="bevel" data-i18n="design.offset.join.bevel">Chanfrados</option>
+              </select>
+            </label>
+            <label class="design-check design-check-field">
+              <input type="checkbox" id="designOffsetKeep" checked />
+              <span data-i18n="design.offset.keep">Manter a forma original</span>
+            </label>
+          </div>
+          <p class="design-size-note" data-i18n="design.offset.note">
+            Com mais de uma passada saem anéis concêntricos: a segunda a duas distâncias, a terceira a três, e assim por diante.
+          </p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designOffsetCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designOffsetConfirm" class="primary" data-i18n="design.offset.create">
+            Criar contornos
+          </button>
+        </footer>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="settingsOverlay">
       <div
         class="modal"
@@ -1502,6 +1612,8 @@
     <script src="./fonts.js"></script>
     <script src="./hatch.js"></script>
     <script src="./contour.js"></script>
+    <script src="./boolean.js"></script>
+    <script src="./offset.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

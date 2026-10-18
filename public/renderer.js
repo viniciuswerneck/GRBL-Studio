@@ -220,6 +220,9 @@ const el = {
   designOverlay: $('designOverlay'),
   designSizeOverlay: $('designSizeOverlay'),
   designArrayOverlay: $('designArrayOverlay'),
+  designOffsetOverlay: $('designOffsetOverlay'),
+  designBoolMenu: $('designBoolMenu'),
+  designBoolPop: $('designBoolPop'),
   designClose: $('designClose'),
   designMaximize: $('designMaximize'),
   designCanvas: $('designCanvas'),
@@ -600,6 +603,8 @@ async function openSvgImport() {
 // (canvas, ponteiro, teclado) — nunca protocolo GRBL.
 
 const DE = window.GRBL_DESIGN_EDITOR;
+const BOOL = window.GRBL_BOOLEAN;
+const OFFSET = window.GRBL_OFFSET;
 const RULER = 22; // espessura das réguas (px)
 const D_MARGIN = 18; // margem do "ajustar à página" (px)
 const HANDLE = 3.5; // meia-aresta do handle (px)
@@ -1122,6 +1127,224 @@ function dDistribute(axis) {
   );
 }
 
+// ------------------------------------------------------ booleanas e offset
+
+/** Contornos fechados de uma entidade (buracos entram por paridade). */
+function dEntityLoops(entity) {
+  const loops = [];
+  for (const i of entity) {
+    const sh = designState.shapes[i];
+    if (sh?.closed && sh.points.length >= 3) loops.push(sh.points);
+  }
+  return loops;
+}
+
+/** Objetos (entidades) selecionados com contornos fechados, em ordem Z. */
+function dSelectedObjects() {
+  if (!DE || !designState.shapes.length) return [];
+  const sel = dSelectionSet();
+  const out = [];
+  for (const entity of DE.entityIndices(designState.shapes)) {
+    let hit = false;
+    for (const i of entity) if (sel.has(i)) hit = true;
+    if (!hit) continue;
+    const loops = dEntityLoops(entity);
+    if (loops.length) out.push({ entity, loops });
+  }
+  return out;
+}
+
+/** Estilo de gravação (potência/velocidade/passadas) herdado de uma forma. */
+function dStyleOf(shape) {
+  const style = {};
+  if (!shape) return style;
+  if (shape.speed !== undefined) style.speed = shape.speed;
+  if (shape.power !== undefined) style.power = shape.power;
+  if (shape.passes !== undefined) style.passes = shape.passes;
+  return style;
+}
+
+/** Aninhamento de cada contorno: 0 = externo, 1 = furo, 2 = ilha… */
+function dLoopDepths(loops) {
+  const areas = loops.map((l) => Math.abs(BOOL.signedArea(l)));
+  return loops.map((loop, i) => {
+    const probe = loop[0];
+    let depth = 0;
+    for (let j = 0; j < loops.length; j++) {
+      if (j === i || areas[j] <= areas[i]) continue;
+      if (DE.pointInPolygon(loops[j], probe.x, probe.y)) depth++;
+    }
+    return depth;
+  });
+}
+
+/** Troca os objetos de `objs` pelos contornos `loops` (estilo herdado). */
+function dApplyContours(loops, objs, style, label, keepSources) {
+  const groups = BOOL.groupNestedLoops(loops);
+  const remove = new Set();
+  if (!keepSources) {
+    for (const o of objs) for (const i of o.entity) remove.add(i);
+  }
+  const made = [];
+  let n = 0;
+  for (const group of groups) {
+    // Contornos aninhados (externo + furos/ilhas) andam juntos.
+    const groupId = group.length > 1 ? `g${designState.seq++}` : undefined;
+    for (const k of group) {
+      n++;
+      const sh = {
+        kind: 'polygon',
+        points: loops[k].map((p) => ({ x: p.x, y: p.y })),
+        closed: true,
+        name: `${label} ${n}`,
+        ...style,
+      };
+      if (groupId) sh.group = groupId;
+      made.push(sh);
+    }
+  }
+  if (!made.length) return [];
+  const kept = [];
+  for (let i = 0; i < designState.shapes.length; i++) {
+    if (!remove.has(i)) kept.push(designState.shapes[i]);
+  }
+  designState.shapes = kept.concat(made);
+  designState.selection = made.map((_, k) => kept.length + k);
+  dPushHistory();
+  dAfterSelection();
+  return made;
+}
+
+/** União / subtração / intersecção / exclusão dos objetos selecionados. */
+function dBooleanOp(op) {
+  if (!BOOL) {
+    dStatus(t('design.bool.unavailable'), 'error');
+    return;
+  }
+  const objs = dSelectedObjects();
+  if (objs.length < 2) {
+    dStatus(t('design.bool.need2'), 'error');
+    return;
+  }
+  const label = t(`design.bool.${op}`);
+  let loops = [];
+  try {
+    loops = BOOL.booleanObjects(
+      objs.map((o) => o.loops),
+      op,
+    );
+  } catch (err) {
+    dStatus(t('design.bool.failed', { msg: String(err) }), 'error');
+    return;
+  }
+  if (!loops.length) {
+    dStatus(t('design.bool.empty'), 'error');
+    return;
+  }
+  const style = dStyleOf(designState.shapes[objs[0].entity[0]]);
+  const made = dApplyContours(loops, objs, style, label, false);
+  if (made.length) dStatus(t('design.bool.done', { n: made.length }), 'ok');
+}
+
+function dOffsetDialogOpen() {
+  const o = el.designOffsetOverlay;
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+function dOpenOffsetDialog() {
+  if (!dSelectedObjects().length) {
+    dStatus(t('design.offset.need1'), 'error');
+    return;
+  }
+  const dist = $('designOffsetDist');
+  const passes = $('designOffsetPasses');
+  if (dist) dist.value = '1';
+  if (passes) passes.value = '1';
+  if (el.designOffsetOverlay) {
+    el.designOffsetOverlay.classList.remove('hidden');
+  }
+  if (dist) {
+    dist.focus();
+    dist.select();
+  }
+}
+
+function dCloseOffsetDialog() {
+  if (el.designOffsetOverlay) el.designOffsetOverlay.classList.add('hidden');
+}
+
+/** Gera contornos paralelos (offset) das formas selecionadas. */
+function dConfirmOffset() {
+  if (!OFFSET || !BOOL) {
+    dStatus(t('design.bool.unavailable'), 'error');
+    return;
+  }
+  const objs = dSelectedObjects();
+  if (!objs.length) {
+    dStatus(t('design.offset.need1'), 'error');
+    return;
+  }
+  const dist = dNum('designOffsetDist', 1);
+  if (Math.abs(dist) < 1e-6) {
+    dStatus(t('design.offset.zero'), 'error');
+    return;
+  }
+  const passes = dClamp(Math.round(dNum('designOffsetPasses', 1)), 1, 50);
+  const joinNode = $('designOffsetJoin');
+  const join = joinNode ? joinNode.value : 'miter';
+  const keepNode = $('designOffsetKeep');
+  const keep = keepNode ? Boolean(keepNode.checked) : true;
+
+  const loops = [];
+  for (const o of objs) {
+    const depths = dLoopDepths(o.loops);
+    for (let k = 0; k < o.loops.length; k++) {
+      // Furos andam ao contrário: num contorno crescido eles encolhem.
+      const dir = depths[k] % 2 === 0 ? 1 : -1;
+      for (const ring of OFFSET.offsetPasses(o.loops[k], dist * dir, passes, {
+        join,
+      })) {
+        loops.push(ring);
+      }
+    }
+  }
+  dCloseOffsetDialog();
+  if (!loops.length) {
+    dStatus(t('design.offset.empty'), 'error');
+    return;
+  }
+  const style = dStyleOf(designState.shapes[objs[0].entity[0]]);
+  const made = dApplyContours(loops, objs, style, t('design.offset'), keep);
+  if (made.length) dStatus(t('design.offset.done', { n: made.length }), 'ok');
+}
+
+// ------------------------------------------------------ menu de booleanas
+
+function dBoolMenuOpen() {
+  const p = el.designBoolPop;
+  return Boolean(p && !p.classList.contains('hidden'));
+}
+
+function dOpenBoolMenu() {
+  const p = el.designBoolPop;
+  if (!p) return;
+  dCloseOffsetDialog();
+  p.classList.remove('hidden');
+  if (el.designBoolMenu) el.designBoolMenu.setAttribute('aria-expanded', 'true');
+}
+
+function dCloseBoolMenu() {
+  const p = el.designBoolPop;
+  if (!p || p.classList.contains('hidden')) return;
+  p.classList.add('hidden');
+  if (el.designBoolMenu) el.designBoolMenu.setAttribute('aria-expanded', 'false');
+}
+
+function dToggleBoolMenu() {
+  if (dBoolMenuOpen()) dCloseBoolMenu();
+  else dOpenBoolMenu();
+}
+
 // ----------------------------------------------------------- matriz de cópias
 
 function dArrayDialogOpen() {
@@ -1516,6 +1739,20 @@ function dUpdateButtons() {
   }
   const pasteStyle = $('designPasteStyle');
   if (pasteStyle) pasteStyle.disabled = !hasSel || !dStyleClip;
+  // Booleanas exigem 2+ objetos fechados; o contorno paralelo, 1.
+  const closedObjs = dSelectedObjects().length;
+  const boolMenu = $('designBoolMenu');
+  if (boolMenu) boolMenu.disabled = closedObjs < 1;
+  for (const [id, min] of [
+    ['designBoolUnion', 2],
+    ['designBoolSubtract', 2],
+    ['designBoolIntersect', 2],
+    ['designBoolXor', 2],
+    ['designBoolOffset', 1],
+  ]) {
+    const node = $(id);
+    if (node) node.disabled = closedObjs < min;
+  }
   const g = $('designGroup');
   if (g) g.disabled = !multi;
   const u = $('designUngroup');
@@ -2503,7 +2740,7 @@ function dDesignOpen() {
 
 function dOnKeyDown(e) {
   if (!dDesignOpen()) return;
-  const sizeOpen = dSizeDialogOpen() || dArrayDialogOpen();
+  const sizeOpen = dSizeDialogOpen() || dArrayDialogOpen() || dOffsetDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
 
@@ -2511,6 +2748,14 @@ function dOnKeyDown(e) {
     if (sizeOpen) {
       dCloseSizeDialog();
       dCloseArrayDialog();
+      dCloseOffsetDialog();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    // Menu de booleanas aberto fecha só ele.
+    if (dBoolMenuOpen()) {
+      dCloseBoolMenu();
       e.preventDefault();
       e.stopImmediatePropagation();
       return;
@@ -2798,6 +3043,8 @@ function closeDesignModal() {
   dCloseTextEditor();
   dCloseSizeDialog();
   dCloseArrayDialog();
+  dCloseOffsetDialog();
+  dCloseBoolMenu();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
 }
 
@@ -3177,6 +3424,63 @@ function dConfirmSize() {
   if (el.designArrayOverlay) {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
+    });
+  }
+
+  // booleanas e contorno paralelo
+  if (el.designBoolMenu) {
+    el.designBoolMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dToggleBoolMenu();
+    });
+  }
+  for (const [id, op] of [
+    ['designBoolUnion', 'union'],
+    ['designBoolSubtract', 'difference'],
+    ['designBoolIntersect', 'intersection'],
+    ['designBoolXor', 'xor'],
+  ]) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('click', () => {
+        dCloseBoolMenu();
+        dBooleanOp(op);
+      });
+    }
+  }
+  const offsetBtn = $('designBoolOffset');
+  if (offsetBtn) {
+    offsetBtn.addEventListener('click', () => {
+      dCloseBoolMenu();
+      dOpenOffsetDialog();
+    });
+  }
+  document.addEventListener('pointerdown', (e) => {
+    if (!dBoolMenuOpen()) return;
+    const wrap = el.designBoolMenu ? el.designBoolMenu.parentElement : null;
+    if (wrap && e.target instanceof Node && wrap.contains(e.target)) return;
+    dCloseBoolMenu();
+  });
+  for (const id of ['designOffsetDist', 'designOffsetPasses']) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          dConfirmOffset();
+        }
+      });
+    }
+  }
+  const offsetConfirm = $('designOffsetConfirm');
+  if (offsetConfirm) offsetConfirm.addEventListener('click', dConfirmOffset);
+  const offsetCancel = $('designOffsetCancel');
+  if (offsetCancel) offsetCancel.addEventListener('click', dCloseOffsetDialog);
+  const offsetClose = $('designOffsetClose');
+  if (offsetClose) offsetClose.addEventListener('click', dCloseOffsetDialog);
+  if (el.designOffsetOverlay) {
+    el.designOffsetOverlay.addEventListener('click', (e) => {
+      if (e.target === el.designOffsetOverlay) dCloseOffsetDialog();
     });
   }
 

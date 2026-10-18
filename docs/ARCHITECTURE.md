@@ -94,6 +94,17 @@ isolados por `contextIsolation`:
 | `shared/i18n/*` | Catálogos pt-BR/en/es, `t()`/`detectLocale`/`slugify` (puros) e `applyDom` (renderer). | ✅ |
 | `shared/themes.ts` | Catálogo dos 11 temas (id, variante, rótulo i18n, amostra). | ✅ |
 
+### Desenho vetorial (Fase P2.1)
+
+| Módulo | Responsabilidade | Status |
+| :--- | :--- | :--- |
+| `shared/design.ts` | Formas (`Shape`), validação e `designToGcode` (contorno G0/G1 + M3/M4). | ✅ |
+| `shared/designEditor.ts` | Edição pura: hit-test, *handles*, marquee, zoom, espelhar, distribuir, matriz, agrupar. | ✅ |
+| `shared/fonts.ts` | Fonte single-stroke (Hershey Simplex) → polilinhas. | ✅ |
+| `shared/hatch.ts` | Preenchimento por varredura (`zigzagHatch`, máscara → linhas). | ✅ |
+| `shared/boolean.ts` | Clipagem booleana por **cobertura** (união/intersecção/exclusão/subtração), com furos por paridade e agrupamento de aninhados. | ✅ |
+| `shared/offset.ts` | Offset de contornos fechados (`miter`/`round`/`bevel`, passadas concêntricas) com guarda de colapso. | ✅ |
+
 ### Imagem → G-code (Fase 5)
 
 | Módulo | Responsabilidade | Status |

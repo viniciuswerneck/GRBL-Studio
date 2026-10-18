@@ -34,6 +34,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   botões **Copiar estilo**/**Colar estilo** (`Ctrl+Shift+C`/`Ctrl+Shift+V`)
   replicam a gravação de um objeto na seleção — ex.: contorno fraco e
   preenchimento forte no mesmo desenho, sem gerar dois arquivos.
+- **Booleanas e contorno paralelo** (menu da barra de propriedades): **unir**,
+  **subtrair** (o objeto de trás menos os da frente), **intersecção** e
+  **exclusão** entre 2+ objetos fechados — com furos corretos (paridade de
+  contornos, ex.: texto vetorizado) e contornos aninhados do resultado andando
+  juntos como um bloco. **Contorno paralelo** (offset): distância em mm
+  (positiva cresce, negativa encolhe), **passadas** concêntricas, cantos em
+  bico/arredondados/chanfrados e opção de manter a forma original. Furos andam
+  ao contrário (encolhem quando a forma cresce).
 - **Repetir e alinhar**: **matriz de cópias** (colunas × linhas com passo X/Y, já
   preenchido com o tamanho do objeto; a cópia de um bloco vira um bloco
   independente), **espelhar** na horizontal/vertical em torno da seleção e

@@ -2003,6 +2003,65 @@ html[data-theme="sand"] .design-canvas-wrap {
   gap: var(--sp-2);
 }
 
+/* caixa de marcar alinhada à base de um campo (ex.: manter original) */
+.design-check-field {
+  padding-bottom: 6px;
+}
+
+/* menu suspenso da barra de ferramentas do desenho (booleanas) */
+.design-menu-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.design-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  min-width: 186px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.design-menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.design-menu button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.design-menu button:disabled {
+  color: var(--text-sub);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.design-menu-sep {
+  height: 1px;
+  margin: 3px 4px;
+  background: var(--stroke);
+}
+
 .design-size-hint {
   margin: 0;
   font-size: var(--fs-12);

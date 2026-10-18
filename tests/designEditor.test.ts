@@ -280,9 +280,9 @@ describe('distributeEntities', () => {
     const shapes = [rect(0, 0, 10, 2), rect(15, 0, 10, 2), rect(40, 0, 10, 2)];
     const out = distributeEntities(shapes, new Set([0, 1, 2]), 'h');
     // vão total 50, largura usada 30 -> folga 10
-    expect(shapeBounds(out[0]).minX).toBeCloseTo(0);
-    expect(shapeBounds(out[1]).minX).toBeCloseTo(20);
-    expect(shapeBounds(out[2]).minX).toBeCloseTo(40);
+    expect(shapeBounds(out[0])!.minX).toBeCloseTo(0);
+    expect(shapeBounds(out[1])!.minX).toBeCloseTo(20);
+    expect(shapeBounds(out[2])!.minX).toBeCloseTo(40);
   });
 
   it('iguala as folgas na vertical usando o grupo como unidade', () => {
@@ -294,16 +294,16 @@ describe('distributeEntities', () => {
     ];
     const out = distributeEntities(shapes, new Set([0, 1, 2, 3]), 'v');
     // entidades: bloco 0..6, 20..24, 60..64 -> vão 64, usado 14, folga 25
-    expect(shapeBounds(out[0]).minY).toBeCloseTo(0);
-    expect(shapeBounds(out[1]).minY).toBeCloseTo(2);
-    expect(shapeBounds(out[2]).minY).toBeCloseTo(31);
-    expect(shapeBounds(out[3]).minY).toBeCloseTo(60);
+    expect(shapeBounds(out[0])!.minY).toBeCloseTo(0);
+    expect(shapeBounds(out[1])!.minY).toBeCloseTo(2);
+    expect(shapeBounds(out[2])!.minY).toBeCloseTo(31);
+    expect(shapeBounds(out[3])!.minY).toBeCloseTo(60);
   });
 
   it('com menos de 3 entidades não move nada', () => {
     const shapes = [rect(0, 0, 2, 2), rect(30, 0, 2, 2)];
     const out = distributeEntities(shapes, new Set([0, 1]), 'h');
-    expect(shapeBounds(out[1]).minX).toBe(30);
+    expect(shapeBounds(out[1])!.minX).toBe(30);
   });
 });
 
