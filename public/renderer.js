@@ -165,6 +165,14 @@ const el = {
   previewLegend: $('previewLegend'),
   lgPass: $('lgPass'),
   lgPassSwatch: $('lgPassSwatch'),
+  simBar: $('simBar'),
+  simPlay: $('simPlay'),
+  simPause: $('simPause'),
+  simSeek: $('simSeek'),
+  simSpeed: $('simSpeed'),
+  simTime: $('simTime'),
+  simStop: $('simStop'),
+  simToggle: $('simToggle'),
   ovrFeedValue: $('ovrFeedValue'),
   ovrRapidValue: $('ovrRapidValue'),
   ovrSpindleValue: $('ovrSpindleValue'),
@@ -508,8 +516,8 @@ async function openSvgImport() {
       scale: 1,
       flipY: true,
     });
-    setGcodePreview(gcode, file.name);
-    appendLine(t('file.loaded', { name: file.name, lines: gcode.split('\\n').length }), 'ok');
+    applyJobLines(file.name.replace(/\.svg$/i, '.gcode'), gcode);
+    appendLine(t('file.loaded', { name: file.name, lines: gcode.split('\n').length }), 'ok');
     try {
       const path = await window.grbl.saveGcode(gcode, file.name.replace(/\.svg$/i, '.gcode'));
       if (path) appendLine(t('file.saved', { path }), 'ok');
@@ -585,8 +593,11 @@ function generateMatTest() {
     el.matTestStatus.textContent = t('matTest.status.generating');
   const opts = readMatTestOptions();
   const result = window.GRBL_MATERIAL_TEST.generateMaterialTest(opts);
-  setGcodePreview(result.gcode, 'material-test');
+  // Carrega a grade como arquivo virtual (habilita Play e preview).
+  applyJobLines('material-test.gcode', result.gcode);
   if (el.matTestStatus) el.matTestStatus.textContent = t('matTest.status.done');
+  // Abre o modal de posicionamento para alinhar e gravar.
+  openFrameModal();
 }
 
 async function saveMatTest() {
@@ -2465,8 +2476,165 @@ function setGcodePreview(text, label) {
   previewProgram.label = label || '';
   imageState.preview = { kind: 'gcode' };
   checkWorkArea();
+  // Novo programa: a simulação anterior não faz mais sentido.
+  if (typeof simStop === 'function') simStop(true);
   renderPreview();
 }
+
+// ------------------------------------------------------------------ simulação de job (RF-PRV-7)
+const simState = {
+  running: false,
+  raf: null,
+  speed: 1,
+  time: 0,
+  total: 0,
+  index: 0,
+  cum: [],
+  moves: [],
+};
+
+function simPrepare() {
+  const moves = previewProgram.program ? previewProgram.program.moves : [];
+  simState.moves = moves;
+  simState.cum = [];
+  let acc = 0;
+  const RAPID = 3000;
+  for (const m of moves) {
+    const dx = m.x1 - m.x0;
+    const dy = m.y1 - m.y0;
+    const dist = Math.hypot(dx, dy);
+    const feed = m.rapid ? RAPID : (m.feed || 1000);
+    const t = feed > 0 ? (dist / feed) * 60 : 0;
+    acc += t;
+    simState.cum.push(acc);
+  }
+  simState.total = acc > 0 ? acc : 1;
+  simState.time = 0;
+  simState.index = 0;
+}
+
+function simFmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function simUpdateUi() {
+  if (!el.simTime) return;
+  el.simTime.textContent = `${simFmt(simState.time)} / ${simFmt(simState.total)}`;
+  if (el.simSeek) el.simSeek.value = String(Math.round((simState.time / simState.total) * 1000));
+}
+
+function simTick(ts) {
+  if (!simState.running) return;
+  if (!simState.lastTs) simState.lastTs = ts;
+  const dt = (ts - simState.lastTs) / 1000;
+  simState.lastTs = ts;
+  simState.time = Math.min(simState.total, simState.time + dt * simState.speed);
+  const moves = simState.moves;
+  while (simState.index < moves.length - 1 && simState.cum[simState.index + 1] <= simState.time) {
+    simState.index++;
+  }
+  const m = moves[simState.index];
+  if (m) {
+    previewProgram.done = m.line;
+    previewProgram.lastPos = { x: m.x1, y: m.y1 };
+  }
+  scheduleRenderPreview();
+  simUpdateUi();
+  if (simState.time >= simState.total) {
+    simState.running = false;
+    if (el.simPlay) el.simPlay.disabled = false;
+    if (el.simPause) el.simPause.disabled = true;
+    return;
+  }
+  simState.raf = requestAnimationFrame(simTick);
+}
+
+function simStart() {
+  if (!previewProgram.program || !previewProgram.program.moves.length) return;
+  simPrepare();
+  simState.running = true;
+  simState.lastTs = 0;
+  if (el.simPlay) el.simPlay.disabled = true;
+  if (el.simPause) el.simPause.disabled = false;
+  if (el.simBar) el.simBar.classList.remove('hidden');
+  simState.raf = requestAnimationFrame(simTick);
+}
+
+function simPause() {
+  if (!simState.running) return;
+  simState.running = false;
+  if (simState.raf) cancelAnimationFrame(simState.raf);
+  simState.raf = null;
+  if (el.simPlay) el.simPlay.disabled = false;
+  if (el.simPause) el.simPause.disabled = true;
+}
+
+function simStop(resetPreview) {
+  resetPreview = resetPreview !== false;
+  simState.running = false;
+  if (simState.raf) cancelAnimationFrame(simState.raf);
+  simState.raf = null;
+  simState.time = 0;
+  simState.index = 0;
+  if (el.simPlay) el.simPlay.disabled = false;
+  if (el.simPause) el.simPause.disabled = true;
+  if (el.simBar) el.simBar.classList.add('hidden');
+  if (resetPreview && previewProgram.program) {
+    previewProgram.done = 0;
+    previewProgram.lastPos = null;
+    renderPreview();
+  }
+  simUpdateUi();
+}
+
+function simSeek(val) {
+  if (!simState.moves.length) return;
+  const wasRunning = simState.running;
+  if (wasRunning) simPause();
+  simState.time = (Number(val) / 1000) * simState.total;
+  let i = 0;
+  while (i < simState.moves.length - 1 && simState.cum[i + 1] <= simState.time) i++;
+  simState.index = i;
+  const m = simState.moves[i];
+  if (m) {
+    previewProgram.done = m.line;
+    previewProgram.lastPos = { x: m.x1, y: m.y1 };
+  }
+  renderPreview();
+  simUpdateUi();
+  if (wasRunning) {
+    simState.running = true;
+    simState.lastTs = 0;
+    simState.raf = requestAnimationFrame(simTick);
+    if (el.simPlay) el.simPlay.disabled = false;
+    if (el.simPause) el.simPause.disabled = true;
+  }
+}
+
+// Wire simulation controls.
+if (el.simToggle)
+  el.simToggle.addEventListener('click', () => {
+    if (el.simBar && !el.simBar.classList.contains('hidden')) simStop();
+    else simStart();
+  });
+if (el.simPlay) el.simPlay.addEventListener('click', simStart);
+if (el.simPause) el.simPause.addEventListener('click', simPause);
+if (el.simStop) el.simStop.addEventListener('click', () => simStop());
+if (el.simSeek)
+  el.simSeek.addEventListener('input', (e) => simSeek(e.target.value));
+if (el.simSpeed)
+  el.simSpeed.addEventListener('change', (e) => {
+    simState.speed = Number(e.target.value) || 1;
+  });
+
+// Reset simulation when a new program is loaded.
+const _origSetGcodePreview = setGcodePreview;
+// (setGcodePreview is a function declaration; wrap via redefinition is not possible.
+// Instead, patch at call sites is unnecessary: simStop is invoked by the toggle.
+// We keep simState reset lightweight here.)
+
 
 /** Atualiza a área de trabalho (vem das $130/$131 — Fase 3). */
 function setWorkArea(widthMm, heightMm) {

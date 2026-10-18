@@ -328,6 +328,7 @@ export const en = {
   'preview.pass': 'Pass {n}/{total}',
   'preview.rapid': 'Travel',
   'preview.tip': 'wheel: zoom · drag: pan · double click: fit',
+  'preview.simulate': 'Simulate',
   'preview.warning.area':
     '⚠ The path exceeds the configured area ({width}×{height} mm): {problems}.',
   'preview.area.negative': 'negative coordinates',

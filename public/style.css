@@ -1400,6 +1400,44 @@ body.job-active .job-bar {
   width: 100%;
 }
 
+/* --------------------------------------------------- simulação de job (preview) */
+.sim-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--stroke);
+  background: var(--bg);
+}
+
+.sim-bar button {
+  min-width: 32px;
+  min-height: 28px;
+  padding: 2px 8px;
+}
+
+.sim-bar input[type='range'] {
+  flex: 1;
+  min-width: 60px;
+}
+
+.sim-bar select {
+  min-width: 52px;
+}
+
+.sim-time {
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-sub);
+  min-width: 5.5rem;
+  text-align: right;
+}
+
+.sim-toggle {
+  margin-left: auto;
+  min-width: 72px;
+}
+
 .appearance-label {
   display: block;
   font-size: var(--fs-12);

@@ -499,7 +499,21 @@
             <span class="lg-swatch lg-rapid"></span> <span data-i18n="preview.rapid">Deslocamento</span>
             <span class="lg-swatch hidden" id="lgPassSwatch"></span>
             <span class="hidden" id="lgPass">Passada 1/1</span>
+            <button type="button" id="simToggle" class="sim-toggle" data-i18n="preview.simulate">Simular</button>
             <span class="lg-tip" data-i18n="preview.tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
+          </div>
+          <div class="sim-bar hidden" id="simBar">
+            <button type="button" id="simPlay" title="Reproduzir">▶</button>
+            <button type="button" id="simPause" title="Pausar">⏸</button>
+            <input type="range" id="simSeek" min="0" max="1000" value="0" />
+            <select id="simSpeed">
+              <option value="1">1×</option>
+              <option value="2">2×</option>
+              <option value="5">5×</option>
+              <option value="10">10×</option>
+            </select>
+            <span id="simTime" class="sim-time">0:00 / 0:00</span>
+            <button type="button" id="simStop" title="Parar">⏹</button>
           </div>
         </div>
 

@@ -338,6 +338,7 @@ export const es = {
   'preview.pass': 'Pasada {n}/{total}',
   'preview.rapid': 'Desplazamiento',
   'preview.tip': 'rueda: zoom · arrastrar: mover · doble clic: ajustar',
+  'preview.simulate': 'Simular',
   'preview.warning.area':
     '⚠ El recorrido excede el área configurada ({width}×{height} mm): {problems}.',
   'preview.area.negative': 'coordenadas negativas',

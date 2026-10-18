@@ -346,6 +346,7 @@ export const ptBR = {
   'preview.pass': 'Passada {n}/{total}',
   'preview.rapid': 'Deslocamento',
   'preview.tip': 'roda: zoom · arrastar: mover · duplo clique: ajustar',
+  'preview.simulate': 'Simular',
   'preview.warning.area':
     '⚠ O caminho excede a área configurada ({width}×{height} mm): {problems}.',
   'preview.area.negative': 'coordenadas negativas',
