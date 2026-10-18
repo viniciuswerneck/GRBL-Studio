@@ -6,6 +6,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-18
+
 ### Added — Ferramentas: gerador de código de barras 1D (v0.6, fase S2)
 
 - **Ferramentas → Código de barras…**: gera um código de barras como G-code, no
