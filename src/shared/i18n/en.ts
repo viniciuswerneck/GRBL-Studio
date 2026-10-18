@@ -234,8 +234,9 @@ export const en = {
   'menu.qrCode': 'QR Code…',
   'qr.title': 'QR Code',
   'qr.hint':
-    'Generates a QR Code as raster G-code: pick the content, the module size ' +
-    'and engrave. The artwork origin is the bottom-left corner (X0 Y0).',
+    'Generates a QR Code as raster G-code: pick the content, the size in mm ' +
+    '(or the module size) and engrave. The artwork origin is the bottom-left ' +
+    'corner (X0 Y0).',
   'qr.content': 'Content',
   'qr.contentPlaceholder': 'https://example.com or some text',
   'qr.ecc': 'Error correction',
@@ -245,6 +246,14 @@ export const en = {
   'qr.ecc.H': 'H — 30%',
   'qr.version': 'Version',
   'qr.versionAuto': 'Automatic',
+  'qr.size': 'Size (mm)',
+  'qr.width': 'Width (mm)',
+  'qr.height': 'Height (mm)',
+  'qr.keepAspect': 'Square',
+  'qr.keepAspectHint': 'Keeps width equal to height (a QR is square).',
+  'qr.sizeHint':
+    'Blank uses the module size. Width ≠ height stretches the symbol and may ' +
+    'hurt readability.',
   'qr.module': 'Module size (mm)',
   'qr.quietZone': 'Quiet zone (modules)',
   'qr.linesPerMm': 'Scan lines per mm',
@@ -261,8 +270,8 @@ export const en = {
   'qr.status.generating': 'Generating the QR Code…',
   'qr.moduleMissing': 'QR Code generator not loaded.',
   'qr.status.done':
-    'QR generated: {version} · {size}×{size} modules · {w} × {h} mm. ' +
-    'Check the preview, then send or save.',
+    'QR generated: {version} · {size}×{size} modules · {w} × {h} mm · ' +
+    'module {module} mm. Check the preview, then send or save.',
   'qr.err.empty': 'Enter some content to generate the QR Code.',
   'qr.err.too-long': 'The content is too long for a QR Code at level {ecc}.',
   'qr.err.bad-version': 'Invalid format information version.',
@@ -275,6 +284,76 @@ export const en = {
     'Fewer than 3 scan lines per module: the fill may come out patchy.',
   'qr.warn.outside-work-area':
     'The symbol does not fit the work area from this origin.',
+  'qr.warn.stretched':
+    'Width differs from height: the symbol is stretched and scanning may fail.',
+
+  // ------------------------------------------- 1D barcode (v0.6, RF-SYM-2)
+  'menu.barCode': 'Barcode…',
+  'bar.title': 'Barcode',
+  'bar.hint':
+    'Generates a 1D barcode as G-code: pick the symbology, the content and ' +
+    'the size. Bars are filled vertically (along them) and the human-readable ' +
+    'text (HRI) is drawn with the single-stroke font. The origin is the ' +
+    'bottom-left corner (X0 Y0).',
+  'bar.symbology': 'Symbology',
+  'bar.sym.code128': 'Code 128 — free text',
+  'bar.sym.ean13': 'EAN-13 — 12 digits (+ check digit)',
+  'bar.sym.ean8': 'EAN-8 — 7 digits (+ check digit)',
+  'bar.sym.upca': 'UPC-A — 11 digits (+ check digit)',
+  'bar.sym.code39': 'Code 39 — A–Z, 0–9 and -.$/+%',
+  'bar.content': 'Content',
+  'bar.contentPlaceholder': 'GRBL-STUDIO-001',
+  'bar.checksum': 'mod 43 check (Code 39)',
+  'bar.ratio': 'Wide:narrow ratio',
+  'bar.ratio.2': '2:1 (narrower)',
+  'bar.ratio.3': '3:1 (recommended)',
+  'bar.width': 'Final width (mm)',
+  'bar.widthHint':
+    'Blank uses the X-dimension. The width includes the quiet zone.',
+  'bar.xDim': 'X-dimension (mm)',
+  'bar.barHeight': 'Bar height (mm)',
+  'bar.quietZone': 'Quiet zone (modules)',
+  'bar.linesPerMm': 'Scan lines per mm',
+  'bar.hri': 'Show the text (HRI) under the bars',
+  'bar.power': 'Power (%)',
+  'bar.feed': 'Speed (mm/min)',
+  'bar.passes': 'Passes',
+  'bar.mode': 'Laser mode',
+  'bar.mode.m4': 'M4 (dynamic)',
+  'bar.mode.m3': 'M3 (constant)',
+  'bar.overscan': 'Overscan (mm)',
+  'bar.invert': 'Inverted polarity (burn the background)',
+  'bar.generate': 'Generate and preview',
+  'bar.save': 'Save .gcode…',
+  'bar.status.generating': 'Generating the barcode…',
+  'bar.moduleMissing': 'Barcode generator not loaded.',
+  'bar.status.done':
+    '{sym} generated: {modules} modules · {w} × {h} mm · X-dim {xdim} mm. ' +
+    'Check the preview, then send or save.',
+  'bar.err.empty': 'Enter a content to generate the barcode.',
+  'bar.err.bad-chars':
+    'This symbology does not accept one of the characters (see the log).',
+  'bar.err.bad-length':
+    'The content length does not fit this symbology (see the log).',
+  'bar.err.bad-option': 'Invalid option combination for this symbology.',
+  'bar.err.check-digit':
+    'Invalid check digit: expected {expected}, got {given}.',
+  'bar.warn.module-small':
+    'X-dimension smaller than 2× the laser spot: the code may be unreadable.',
+  'bar.warn.module-tiny':
+    'X-dimension below 0.3 mm: too small for most scanners.',
+  'bar.warn.quiet-zone-small':
+    'Quiet zone smaller than the standard: makes scanning harder.',
+  'bar.warn.lines-too-few':
+    'Fewer than 3 scan lines per module: the fill may come out with gaps.',
+  'bar.warn.outside-work-area':
+    'The symbol does not fit the work area from this origin.',
+  'bar.warn.x-dim-small':
+    'X-dimension below the standard minimum: the scanner may fail.',
+  'bar.warn.bar-height-small':
+    'Bars shorter than the recommended minimum: makes scanning harder.',
+  'bar.warn.hri-chars':
+    'The HRI has characters without a glyph in the font: they print as “?”.',
 
   // ------------------------------------------------------- vector drawing
   'design.title': 'Design',

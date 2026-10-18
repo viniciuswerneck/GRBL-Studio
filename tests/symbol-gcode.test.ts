@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  barsToBands,
+  barsToVerticalSegments,
   bandsExtent,
   bandsToScanSegments,
   invertBands,
@@ -13,6 +13,7 @@ import {
 } from '../src/shared/symbol/mask';
 import {
   applyOverscan,
+  barcodeToGcode,
   qrToGcode,
   symbolToGcode,
   symbolWarnings,
@@ -144,7 +145,7 @@ describe('bandsToScanSegments', () => {
   });
 });
 
-describe('invertBands / barsToBands', () => {
+describe('invertBands / barsToVerticalSegments', () => {
   it('inverte a polaridade dentro da caixa', () => {
     const { bands, extent } = matrixToBands([[true, false, true]], {
       moduleMm: 1,
@@ -167,18 +168,69 @@ describe('invertBands / barsToBands', () => {
     expect(extent.widthMm).toBe(5);
   });
 
-  it('barras viram uma faixa com a quiet zone', () => {
-    const { bands, extent } = barsToBands(
+  it('varre as barras na vertical, com a direção alternada', () => {
+    const segments = barsToVerticalSegments(
       [
-        { x0: 0, x1: 2 },
-        { x0: 3, x1: 4 },
+        { x: 0, w: 2 },
+        { x: 3, w: 1 },
       ],
-      { xDimMm: 0.5, barHeightMm: 10, totalModules: 14, quietZoneModules: 10 },
+      {
+        xDimMm: 0.5,
+        barHeightMm: 10,
+        totalModules: 4,
+        quietZoneModules: 0,
+        linesPerMm: 10,
+      },
     );
-    expect(bands).toHaveLength(1);
-    expect(bands[0].y1).toBe(10);
-    expect(bands[0].runs[0]).toEqual({ x0: 5, x1: 6 });
-    expect(extent).toEqual({ widthMm: 17, heightMm: 10 });
+    // Barra de 1 mm → 10 linhas; barra de 0,5 mm → 5 linhas.
+    expect(segments).toHaveLength(15);
+    for (const s of segments) {
+      expect(s.x0).toBe(s.x1); // verticais
+      expect(Math.abs(s.y1 - s.y0)).toBeCloseTo(10, 9); // altura toda
+    }
+    // SoBe/desce alternado (menos G0 entre linhas).
+    expect([segments[0].y0, segments[0].y1]).toEqual([0, 10]);
+    expect([segments[1].y0, segments[1].y1]).toEqual([10, 0]);
+  });
+
+  it('respeita a quiet zone e garante 1 linha na barra estreita', () => {
+    const segments = barsToVerticalSegments([{ x: 0, w: 1 }], {
+      xDimMm: 0.25,
+      barHeightMm: 5,
+      totalModules: 1,
+      quietZoneModules: 10,
+      linesPerMm: 10,
+    });
+    expect(segments).toHaveLength(3); // 0,25 × 10 = 2,5 → 3
+    for (const s of segments) {
+      expect(s.x0).toBeGreaterThan(10 * 0.25);
+      expect(s.x0).toBeLessThan(11 * 0.25);
+    }
+  });
+
+  it('invertido queima os espaços (inclusive as quiet zones)', () => {
+    const segments = barsToVerticalSegments([{ x: 1, w: 1 }], {
+      xDimMm: 1,
+      barHeightMm: 10,
+      totalModules: 3,
+      quietZoneModules: 0,
+      linesPerMm: 10,
+      invert: true,
+    });
+    const where = [...new Set(segments.map((s) => Math.floor(s.x0)))].sort();
+    expect(where).toEqual([0, 2]);
+  });
+
+  it('parâmetros inválidos devolvem nada', () => {
+    const bad = [
+      { xDimMm: 0, barHeightMm: 10, totalModules: 4, linesPerMm: 10 },
+      { xDimMm: 0.5, barHeightMm: 0, totalModules: 4, linesPerMm: 10 },
+      { xDimMm: 0.5, barHeightMm: 10, totalModules: 0, linesPerMm: 10 },
+      { xDimMm: 0.5, barHeightMm: 10, totalModules: 4, linesPerMm: 0 },
+    ];
+    for (const opts of bad) {
+      expect(barsToVerticalSegments([{ x: 0, w: 1 }], opts)).toEqual([]);
+    }
   });
 });
 
@@ -313,6 +365,133 @@ describe('applyOverscan', () => {
     const segs = [{ x0: 0, y0: 0, x1: 1, y1: 0 }];
     expect(applyOverscan(segs, 0)).toEqual(segs);
   });
+
+  it('estende no eixo do movimento (segmento vertical)', () => {
+    expect(applyOverscan([{ x0: 2, y0: 0, x1: 2, y1: 10 }], 0.5)).toEqual([
+      { x0: 2, y0: 0, x1: 2, y1: 10.5 },
+    ]);
+    // Sentido invertido (varredura de cima para baixo).
+    expect(applyOverscan([{ x0: 2, y0: 10, x1: 2, y1: 0 }], 0.5)).toEqual([
+      { x0: 2, y0: 10.5, x1: 2, y1: 0 },
+    ]);
+  });
+
+  it('preserva a ordem quando os segmentos já vêm ordenados', () => {
+    const segments = [
+      { x0: 0, y0: 0, x1: 0, y1: 10 },
+      { x0: 0.1, y0: 10, x1: 0.1, y1: 0 },
+    ];
+    const res = symbolToGcode(
+      segments,
+      { widthMm: 1, heightMm: 10 },
+      {
+        ...baseParams,
+        presorted: true,
+      },
+    );
+    const g1 = res.gcode.split('\n').filter((l) => l.startsWith('G1'));
+    expect(g1[0]).toBe('G1 X0.000 Y10.000 F1000');
+    expect(g1[1]).toBe('G1 X0.100 Y0.000 F1000');
+  });
+});
+
+describe('barcodeToGcode (1D → G-code)', () => {
+  it('gera um Code 128 com HRI, dentro dos invariantes', () => {
+    const res = barcodeToGcode('GRBL-STUDIO', {
+      ...baseParams,
+      symbology: 'code128',
+    });
+    expect(res.barcode.symbology).toBe('code128');
+    expect(res.xDimMm).toBe(0.5);
+    expect(res.barHeightMm).toBe(10);
+    expect(res.quietZoneModules).toBe(10);
+    expect(res.linesPerModule).toBe(5);
+    expect(res.warnings).toEqual([]);
+    expect(res.gcode).toContain('; Código de barras Code 128 (GRBL Studio)');
+    expect(res.gcode).toContain('conteúdo: GRBL-STUDIO');
+    // Largura = (módulos + 2 × quiet) × X-dim.
+    expect(res.widthMm).toBeCloseTo((res.barcode.totalModules + 20) * 0.5, 6);
+    // Altura = barras + gap + HRI.
+    expect(res.heightMm).toBeGreaterThan(10);
+    // Invariantes: M5 antes de cada G0 e G0 X0 Y0 na cauda.
+    const lines = res.gcode.split('\n');
+    let armed = false;
+    for (const line of lines) {
+      if (/^M[34] S/.test(line)) armed = true;
+      else if (line.trim() === 'M5') armed = false;
+      else if (line.startsWith('G0')) expect(armed).toBe(false);
+    }
+    expect(res.gcode.trimEnd().endsWith('G0 X0 Y0')).toBe(true);
+    expect(res.gcode).not.toContain('NaN');
+  });
+
+  it('a queima fica dentro da caixa do símbolo (com a quiet zone)', () => {
+    const res = barcodeToGcode('590123412345', {
+      ...baseParams,
+      symbology: 'ean13',
+    });
+    const left = res.quietZoneModules * res.xDimMm;
+    const right = res.widthMm - left;
+    for (const line of res.gcode.split('\n')) {
+      if (!line.startsWith('G1')) continue;
+      const x = Number(line.slice(3).split(' ')[0].slice(1));
+      expect(x).toBeGreaterThanOrEqual(left - 1e-6);
+      expect(x).toBeLessThanOrEqual(right + 1e-6);
+    }
+  });
+
+  it('EAN-13 traz o dígito verificador no cabeçalho', () => {
+    const res = barcodeToGcode('590123412345', {
+      ...baseParams,
+      symbology: 'ean13',
+    });
+    expect(res.barcode.data).toBe('5901234123457');
+    expect(res.barcode.checkDigit).toBe(7);
+    expect(res.gcode).toContain('verificador 7');
+  });
+
+  it('propaga o erro de dígito verificador', () => {
+    expect(() =>
+      barcodeToGcode('5901234123458', { ...baseParams, symbology: 'ean13' }),
+    ).toThrow(/esperado 7/);
+  });
+
+  it('avisa do X-dimension pequeno e das barras baixas', () => {
+    const res = barcodeToGcode('GRBL', {
+      ...baseParams,
+      symbology: 'code128',
+      xDimMm: 0.1,
+      barHeightMm: 3,
+    });
+    expect(res.warnings).toContain('x-dim-small');
+    expect(res.warnings).toContain('bar-height-small');
+    expect(res.warnings).toContain('module-tiny');
+  });
+
+  it('o HRI pode ser desligado', () => {
+    const withHri = barcodeToGcode('GRBL', {
+      ...baseParams,
+      symbology: 'code128',
+    });
+    const without = barcodeToGcode('GRBL', {
+      ...baseParams,
+      symbology: 'code128',
+      hri: false,
+    });
+    expect(without.heightMm).toBe(10);
+    expect(withHri.heightMm).toBeGreaterThan(without.heightMm);
+    expect(withHri.segments).toBeGreaterThan(without.segments);
+  });
+
+  it('largura final manda no X-dimension', () => {
+    const res = barcodeToGcode('GRBL', {
+      ...baseParams,
+      symbology: 'code128',
+      targetWidthMm: 40,
+    });
+    expect(res.widthMm).toBeCloseTo(40, 6);
+    expect(res.xDimMm).toBeCloseTo(40 / (res.barcode.totalModules + 20), 6);
+  });
 });
 
 describe('symbolWarnings', () => {
@@ -445,5 +624,94 @@ describe('qrToGcode', () => {
     const res = qrToGcode('CONSISTENTE', { ...baseParams, mask: 3 });
     expect(res.qr.mask).toBe(3);
     expect(res.qr.size).toBe(qr.size);
+  });
+});
+
+describe('dimensionamento em mm (RF-SYM-3)', () => {
+  it('a largura alvo define o lado do símbolo (quadrado)', () => {
+    const res = qrToGcode('TAMANHO', { ...baseParams, targetWidthMm: 30 });
+    expect(res.widthMm).toBeCloseTo(30, 6);
+    expect(res.heightMm).toBeCloseTo(30, 6);
+    expect(res.moduleMm).toBeCloseTo(30 / (res.qr.size + 8), 9);
+    expect(res.moduleYMm).toBeCloseTo(res.moduleMm, 9);
+    expect(res.warnings).not.toContain('stretched');
+    expect(res.gcode).toContain(`módulo ${res.moduleMm.toFixed(3)} mm`);
+  });
+
+  it('largura × altura independentes esticam o símbolo e avisam', () => {
+    const res = qrToGcode('ESTICADO', {
+      ...baseParams,
+      targetWidthMm: 30,
+      targetHeightMm: 15,
+    });
+    expect(res.widthMm).toBeCloseTo(30, 6);
+    expect(res.heightMm).toBeCloseTo(15, 6);
+    expect(res.moduleYMm).toBeCloseTo(res.moduleMm / 2, 9);
+    expect(res.warnings).toContain('stretched');
+    expect(res.gcode).toContain(
+      `módulo ${res.moduleMm.toFixed(3)} × ${res.moduleYMm.toFixed(3)} mm`,
+    );
+  });
+
+  it('o alvo vence o lado do módulo; sem alvo, o módulo manda', () => {
+    const alvo = qrToGcode('PRIORIDADE', {
+      ...baseParams,
+      moduleMm: 0.5,
+      targetHeightMm: 20,
+    });
+    expect(alvo.heightMm).toBeCloseTo(20, 6);
+    expect(alvo.widthMm).toBeCloseTo(20, 6);
+    const modulo = qrToGcode('PRIORIDADE', { ...baseParams, moduleMm: 0.5 });
+    expect(modulo.moduleMm).toBe(0.5);
+  });
+
+  it('nunca esmaga o módulo abaixo do mínimo (0,05 mm) e avisa', () => {
+    const res = qrToGcode('x'.repeat(80), {
+      ...baseParams,
+      version: 40,
+      targetWidthMm: 5,
+    });
+    expect(res.moduleMm).toBeGreaterThanOrEqual(0.05);
+    expect(res.widthMm).toBeGreaterThan(5);
+    expect(res.warnings).toContain('module-tiny');
+  });
+
+  it('mantém o tamanho pedido mesmo quando a versão cresce', () => {
+    const pequeno = qrToGcode('A', { ...baseParams, targetWidthMm: 25 });
+    const grande = qrToGcode('A'.repeat(60), {
+      ...baseParams,
+      targetWidthMm: 25,
+    });
+    expect(grande.qr.size).toBeGreaterThan(pequeno.qr.size);
+    expect(grande.widthMm).toBeCloseTo(25, 6);
+    expect(grande.moduleMm).toBeLessThan(pequeno.moduleMm);
+  });
+});
+
+describe('matrixToBands — eixos independentes', () => {
+  it('moduleYMm estica só o eixo Y', () => {
+    const matrix = [[true]];
+    const quadrado = matrixToBands(matrix, {
+      moduleMm: 0.5,
+      quietZoneModules: 0,
+    });
+    const esticado = matrixToBands(matrix, {
+      moduleMm: 0.5,
+      moduleYMm: 1,
+      quietZoneModules: 0,
+    });
+    expect(quadrado.extent).toEqual({ widthMm: 0.5, heightMm: 0.5 });
+    expect(esticado.extent).toEqual({ widthMm: 0.5, heightMm: 1 });
+    expect(esticado.bands[0].y1 - esticado.bands[0].y0).toBeCloseTo(1, 9);
+    expect(esticado.bands[0].runs[0].x1).toBeCloseTo(0.5, 9);
+  });
+
+  it('moduleYMm inválido devolve geometria vazia', () => {
+    const geometry = matrixToBands([[true]], {
+      moduleMm: 0.5,
+      moduleYMm: 0,
+    });
+    expect(geometry.bands).toEqual([]);
+    expect(geometry.extent).toEqual({ widthMm: 0, heightMm: 0 });
   });
 });

@@ -6,6 +6,47 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Ferramentas: gerador de código de barras 1D (v0.6, fase S2)
+
+- **Ferramentas → Código de barras…**: gera um código de barras como G-code, no
+  mesmo fluxo das outras ferramentas (modal → preview → **Play** ou **Salvar
+  .gcode…**). Simbologias: **Code 128** (conjuntos A/B/C com troca automática),
+  **EAN-13**, **EAN-8**, **UPC-A** e **Code 39** (razão 2:1/3:1 e mod 43
+  opcional), com **HRI** (o texto legível sob as barras) desenhado pela fonte de
+  traço único.
+- **Encoders próprios, sem dependência de runtime** (ADR-11): os padrões das
+  normas (ISO/IEC 15417/15420/16388) vêm de `src/shared/symbol/barcode/tables.ts`,
+  **gerado** por `scripts/gen-barcode-tables.mjs` a partir do `jsbarcode` (MIT,
+  **devDependency**). A saída é comum às simbologias: `bars: { x, w }[]` em
+  módulos + `hri` + o dígito/caractere de verificação.
+- **Dígito verificador com esperado × informado**: o conteúdo pode vir com ou
+  sem o verificador — com um dígito a menos ele é calculado; com o total, é
+  conferido e o erro diz exatamente *esperado × informado* (mod 10 no EAN/UPC,
+  mod 103 no Code 128, mod 43 no Code 39).
+- **Varredura ao longo das barras**: as barras são preenchidas com linhas
+  **verticais** (direção alternada), o que garante as 3–4 linhas por barra
+  estreita com **~30× menos segmentos** que o raster horizontal — menos `G0` e
+  muito menos linhas de G-code. O overscan passa a respeitar o **eixo do
+  movimento** e trechos verticais não são mais descartados.
+- **Avisos de legibilidade**: X-dimension abaixo do mínimo da norma, barras mais
+  baixas que o recomendado e HRI com caractere sem glifo, além dos avisos que o
+  QR já tinha (quiet zone, linhas por módulo, área de trabalho).
+- **Testes**: `tests/symbol-barcode.test.ts` faz *cross-check* de módulos com o
+  `jsbarcode` (Code 128 A/B/C, EAN-13/8, UPC-A, Code 39), **decodifica** o Code
+  128 de volta (valida a troca automática de conjunto) e cobre os vetores das
+  normas e os erros; `tests/symbol-gcode.test.ts` cobre a varredura vertical, a
+  polaridade, a ordem preservada e o HRI; E2E do fluxo Ferramentas → Código de
+  barras… → gerar.
+
+### Added — QR Code: tamanho alvo em largura × altura (RF-SYM-3)
+
+- **Tamanho em mm, não só módulo**: o modal do QR ganhou **largura × altura**
+  alvo (em branco usa o lado do módulo) com o cadeado **Quadrado**. Informar só
+  um lado mantém o símbolo quadrado; informar os dois **estica** o símbolo e o
+  gerador avisa (`stretched`), porque um QR esticado pode não ler.
+- O alvo é limitado por módulo (0,05–20 mm): pedir um tamanho impossível para a
+  versão escolhida **avisa** em vez de sair do ar.
+
 ### Added — Ferramentas: gerador de QR Code (v0.6, fase S1)
 
 - **Ferramentas → QR Code…**: gera um QR Code como G-code de varredura, no mesmo
@@ -35,6 +76,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 - `docs/PLANO_QR_BARCODE.md` §15: estado da S1 (arquivos, testes, decisões
   ratificadas e o bug de *alignment pattern* × *timing* corrigido no caminho).
+- `docs/PLANO_QR_BARCODE.md` §16: estado da S2 (simbologias, varredura vertical,
+  HRI, testes e o que fica para S3).
 
 ## [0.5.2] - 2026-10-18
 

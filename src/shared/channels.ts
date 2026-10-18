@@ -72,6 +72,7 @@ export const MENU_ACTIONS = {
   openSvg: 'open-svg',
   design: 'design',
   qrCode: 'qr-code',
+  barCode: 'bar-code',
 } as const;
 
 export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

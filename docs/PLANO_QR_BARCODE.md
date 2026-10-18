@@ -1,7 +1,8 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
-> **Status: S1 (QR Code) implementada** — v0.6 em andamento (18/10/2026).
-> Ver §15 para o que foi entregue, medido e o que falta (S2/S3).
+> **Status: S1 (QR Code) e S2 (código de barras 1D) implementadas** — v0.6 em
+> andamento (18/10/2026). Ver §15 (S1) e §16 (S2) para o que foi entregue,
+> medido e o que falta (S3).
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
@@ -180,7 +181,9 @@ compromisso no MVP.
 **Entrada**
 
 - geometria: matriz binária (QR) **ou** lista de barras (1D);
-- escala: `moduleMm` / `xDimmMm`, `barHeightMm`, quiet zone;
+- escala: `targetWidthMm`/`targetHeightMm` (tamanho **final** do símbolo, quiet
+  zone inclusive — vence o resto), `moduleMm` / `xDimmMm`, `barHeightMm`,
+  quiet zone;
 - posição: `originX`, `originY`;
 - gravação: `powerPercent`→`S`, `feed`, `passes`, `mode` (`M3`/`M4`), `sMax`;
 - varredura: `linesPerMm` (padrão 10 = 0,1 mm), direção, `polarity`
@@ -225,6 +228,8 @@ compromisso no MVP.
 | `moduleMm` < ~0,3 mm (QR) / X-dim abaixo do mínimo da norma | risco de o leitor não conseguir ler. |
 | símbolo (com quiet zone) fora da área de trabalho `$130`/`$131` | não cabe na área; reposicione/redimensione. |
 | quiet zone reduzida abaixo do padrão | a leitura pode falhar. |
+| largura ≠ altura (símbolo esticado num eixo) | o QR sai retangular: a leitura pode falhar. |
+| alvo em mm esmagaria o módulo abaixo de 0,05 mm | o tamanho pedido é impossível: o módulo fica no mínimo e o símbolo maior que o alvo (o status mostra o tamanho real). |
 
 **Orçamento (RNF-11)**
 
@@ -247,12 +252,12 @@ módulo 1 mm → v10 (57 módulos) = **57 mm**.
 | Grupo | Campos |
 | :--- | :--- |
 | Conteúdo | `textarea` (texto/URL), contador de caracteres, ECC (L/M/Q/H, padrão **M**) |
-| Tamanho | "módulo (mm)" **ou** "largura total (mm)" (um calcula o outro); quiet zone (4 módulos, exibida); posição X/Y |
+| Tamanho | **largura × altura** finais em mm (quiet zone incluída); caixa "quadrado" copia a largura na altura; em branco, cai no lado do módulo (mm); quiet zone (4 módulos, exibida); posição X/Y |
 | Gravação | potência (%), velocidade (mm/min), passadas, modo M3/M4 |
 | Varredura | linhas/mm, direção, polaridade, overscan |
 | Preview | `<canvas>` nítido em `devicePixelRatio` (RNF-12) desenhando a matriz e a grade |
 | Rodapé | **Gerar e visualizar** · **Salvar .gcode…** |
-| Status | versão, ECC, máscara, nº de módulos, dimensões (L × A mm), avisos |
+| Status | versão, ECC, máscara, nº de módulos, dimensões (L × A mm), lado do módulo efetivo, avisos |
 
 ### 7.2 Modal "Código de barras…"
 
@@ -376,6 +381,9 @@ compartilham `fonts.ts`/`hatch.ts` — sem conflito, sem tocar no protocolo.
 | D | **Overscan / polaridade** | Implementar já na S1, com padrão **desligado** (barato e evita retrabalho). |
 | E | **Ponto de entrada** | 2 itens no menu **Ferramentas** (conforme pedido). Expor também como objeto no editor "Desenhar" fica para S3. |
 | F | **Versões/ECC padrão do QR** | ECC **M**, versão automática, módulo **0,5 mm** como padrão inicial. |
+| G | **Orientação da varredura 1D** | **Ao longo das barras (vertical)**, com direção alternada a cada linha. Cumpre "3–4 linhas por barra estreita" e reduz ~30× o número de segmentos em relação ao raster horizontal do plano (§6). Exige `presorted` no `symbolToGcode` (sem zigue-zague), filtro por **comprimento real** do segmento e overscan no **eixo do movimento**. |
+| H | **Quiet zone 1D** | **Um valor único** para os dois lados, igual ao mínimo da norma (10 módulos Code 128/39, 11 EAN-13, 7 EAN-8, 9 UPC-A). Reduzir dispara o aviso `quiet-zone-small`. |
+| I | **Dígito verificador** | O usuário pode informar o conteúdo **com ou sem** o verificador: com `n − 1` dígitos ele é calculado; com `n` é **conferido** e o erro diz *esperado × informado* (`check-digit`). |
 
 ---
 
@@ -498,3 +506,47 @@ módulos de sincronismo e o símbolo **não lia**. A ordem correta (alinhamento 
 **Próximo passo (S2):** `symbol/barcode/` (Code 128, EAN-13/8, UPC-A, Code 39),
 HRI com `fonts.ts`, modal `#barcodeOverlay`, `build:barcode` e o item de menu
 correspondente — sem tocar no núcleo (`mask.ts`/`gcode.ts`) já pronto.
+
+---
+
+## 16. Estado da implementação — S2 (código de barras 1D, 18/10/2026)
+
+**Entregue** (bundle `GRBL_BARCODE`, menu **Ferramentas → Código de barras…**):
+Code 128 (A/B/C com troca automática), EAN-13/EAN-8/UPC-A e Code 39, com **HRI**
+(reusa `fonts.ts`) e os mesmos avisos de legibilidade do QR.
+
+| Camada | Arquivo | O que faz |
+| :--- | :--- | :--- |
+| Tabelas | `src/shared/symbol/barcode/tables.ts` | 107 padrões Code 128 (ISO/IEC 15417), 44 do Code 39 (15420→16388), L/G/R do EAN/UPC e a paridade do EAN-13. **Geradas** por `scripts/gen-barcode-tables.mjs` a partir do `jsbarcode` (MIT, devDependency); asserts de forma na geração (Code 39 com 9 elementos e exatamente 3 largos, L/G/R de 7 módulos). |
+| Encoders | `barcode/{code128,ean,code39}.ts` | Code 128 com **mod 103** e troca automática de conjunto (`C` para sequências de dígitos); EAN/UPC com **mod 10** e paridade; Code 39 com `*`, gap de 1 módulo, razão **2:1/3:1** e **mod 43** opcional. Erros tipados (`BarcodeError`: `empty`/`bad-chars`/`bad-length`/`check-digit`/`bad-option`), com *esperado × informado* no verificador. |
+| Fachada | `barcode/index.ts` | `encodeBarcode()` devolve `bars: { x, w }[]` **em módulos**, `totalModules`, `data` (com o verificador), `hri` e `BARCODE_SPECS` (quiet zone/X-dim/altura mínimas, padrões e exemplo por simbologia). |
+| Geometria | `mask.ts` → `barsToVerticalSegments()` | Barras → segmentos de **varredura vertical** (ao longo das barras), `round(largura × linhas/mm)` linhas por barra (mínimo 1), direção alternada; `invert` queima o complemento, inclusive as quiet zones. |
+| G-code | `gcode.ts` → `barcodeToGcode()` | Barras + **HRI** (fonte de traço único) abaixo do símbolo; `presorted` (a ordem da varredura é preservada); overscan **por eixo**; filtro por comprimento real; avisos `x-dim-small`, `bar-height-small`, `hri-chars` somados aos do QR. |
+| Bundle/UI | `entry.barcode.ts` → `public/barcode.js`; `#barcodeOverlay`; item de menu | Mesmo padrão das outras ferramentas: modal → módulo puro → `applyJobLines` → preview/Play/Salvar + posicionamento. Trocar de simbologia aplica os padrões da norma (quiet zone/X-dim/altura) e mostra razão + mod 43 só no Code 39. |
+
+**Testes.** `tests/symbol-barcode.test.ts` faz **cross-check** com o `jsbarcode`
+(Code 128 A/B/C, EAN-13/8, UPC-A; Code 39 sem o gap final que a referência deixa)
+e ainda **decodifica** o Code 128 de volta (prova independente de que os
+conjuntos e a troca automática codificam o texto pedido), além dos vetores das
+normas (mod 103/10/43) e dos erros. `tests/symbol-gcode.test.ts` cobre a
+varredura vertical, a polaridade, a ordem preservada (`presorted`), o overscan
+por eixo, o HRI e os avisos.
+
+**Divergências do plano (de propósito).**
+
+- **Varredura vertical** em vez do raster horizontal do §6 (decisão G): o
+  X-dimension é pequeno e o raster horizontal geraria um número enorme de
+  segmentos; vertical, cada barra recebe o mesmo número de linhas e o total cai
+  ~30×. Por isso o núcleo **foi** tocado (`mask.ts`/`gcode.ts`), ao contrário do
+  que a §15 previa.
+- **Tamanho alvo do QR** (`targetWidthMm`/`targetHeightMm`, aviso `stretched`)
+  foi concluído junto: fecha o RF-SYM-3 (o modal já tinha largura × altura).
+- **ITF-14/Codabar** (§5.2) ficam para a continuação da S2; **Code 93/GS1-128**
+  seguem na S3, como o plano previa.
+- Os nomes de classe do modal (`#qrOverlay`/`#barcodeOverlay`) usam
+  `.sym-modal`/`.sym-fields`/`.sym-size-row`, genéricos para as duas ferramentas.
+- **Sem `Prefs.symbols`** ainda: os campos do modal já abrem com os padrões
+  certos por simbologia; persistir preferências fica para depois.
+
+**Próximo passo (S3):** Data Matrix/PDF417/Aztec (2D), Code 93/GS1-128, lote
+(vários códigos numa página) e o símbolo como **objeto** no editor "Desenhar".

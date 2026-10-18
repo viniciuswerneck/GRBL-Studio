@@ -124,4 +124,53 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await close();
     }
   });
+
+  test('gera um EAN-13 (Ferramentas → Código de barras…) e abre o posicionamento', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'bar-code',
+        );
+      });
+      await expect(page.locator('#barcodeOverlay')).toBeVisible();
+      await page.selectOption('#barSymbology', 'ean13');
+      // Trocar de simbologia aplica os padrões da norma (quiet zone 11, etc.).
+      await expect(page.locator('#barQuiet')).toHaveValue('11');
+      await page.fill('#barContent', '590123412345');
+      await page.click('#barGenerate');
+      // O status traz a simbologia, os módulos e o dígito verificador.
+      await expect(page.locator('#barStatus')).toContainText('EAN-13 gerado');
+      await expect(page.locator('#barStatus')).toContainText('95 módulos');
+      await expect(page.locator('#barStatus')).not.toContainText('⚠');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
+  test('razão e verificação mod 43 só aparecem no Code 39', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'bar-code',
+        );
+      });
+      await expect(page.locator('#barcodeOverlay')).toBeVisible();
+      await expect(page.locator('#barRatioField')).toBeHidden();
+      await page.selectOption('#barSymbology', 'code39');
+      await expect(page.locator('#barRatioField')).toBeVisible();
+      await expect(page.locator('#barChecksumField')).toBeVisible();
+      await page.fill('#barContent', 'grbl-studio');
+      await page.click('#barGenerate');
+      // Code 39 é unissex: o HRI sai em maiúsculas.
+      await expect(page.locator('#barStatus')).toContainText('Code 39 gerado');
+      await expect(page.locator('#barStatus')).not.toContainText('⚠');
+    } finally {
+      await close();
+    }
+  });
 });

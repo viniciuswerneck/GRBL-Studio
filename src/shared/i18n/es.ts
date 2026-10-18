@@ -241,8 +241,8 @@ export const es = {
   'qr.title': 'Código QR',
   'qr.hint':
     'Genera un código QR como G-code de barrido: elige el contenido, el ' +
-    'tamaño del módulo y graba. El origen del arte es la esquina inferior ' +
-    'izquierda (X0 Y0).',
+    'tamaño en mm (o el lado del módulo) y graba. El origen del arte es la ' +
+    'esquina inferior izquierda (X0 Y0).',
   'qr.content': 'Contenido',
   'qr.contentPlaceholder': 'https://ejemplo.com o un texto',
   'qr.ecc': 'Corrección de errores',
@@ -252,6 +252,14 @@ export const es = {
   'qr.ecc.H': 'H — 30%',
   'qr.version': 'Versión',
   'qr.versionAuto': 'Automática',
+  'qr.size': 'Tamaño (mm)',
+  'qr.width': 'Ancho (mm)',
+  'qr.height': 'Alto (mm)',
+  'qr.keepAspect': 'Cuadrado',
+  'qr.keepAspectHint': 'Mantiene el ancho igual al alto (el QR es cuadrado).',
+  'qr.sizeHint':
+    'En blanco usa el lado del módulo. Ancho ≠ alto deforma el símbolo y ' +
+    'puede dificultar la lectura.',
   'qr.module': 'Lado del módulo (mm)',
   'qr.quietZone': 'Zona silenciosa (módulos)',
   'qr.linesPerMm': 'Líneas de barrido por mm',
@@ -268,8 +276,8 @@ export const es = {
   'qr.status.generating': 'Generando el código QR…',
   'qr.moduleMissing': 'Generador de código QR no cargado.',
   'qr.status.done':
-    'QR generado: {version} · {size}×{size} módulos · {w} × {h} mm. ' +
-    'Revisa la vista previa y envía o guarda.',
+    'QR generado: {version} · {size}×{size} módulos · {w} × {h} mm · ' +
+    'módulo {module} mm. Revisa la vista previa y envía o guarda.',
   'qr.err.empty': 'Indica un contenido para generar el código QR.',
   'qr.err.too-long':
     'El contenido es demasiado largo para un código QR en el nivel {ecc}.',
@@ -284,6 +292,77 @@ export const es = {
     'Menos de 3 líneas de barrido por módulo: el relleno puede salir con fallas.',
   'qr.warn.outside-work-area':
     'El símbolo no cabe en el área de trabajo desde este origen.',
+  'qr.warn.stretched':
+    'El ancho es distinto del alto: el símbolo sale deformado y la lectura puede fallar.',
+
+  // ------------------------------------------- código de barras 1D (v0.6)
+  'menu.barCode': 'Código de barras…',
+  'bar.title': 'Código de barras',
+  'bar.hint':
+    'Genera un código de barras 1D como G-code: elige la simbología, el ' +
+    'contenido y el tamaño. Las barras se rellenan en vertical (a lo largo de ' +
+    'ellas) y el texto legible (HRI) se dibuja con la fuente de trazo único. ' +
+    'El origen es la esquina inferior izquierda (X0 Y0).',
+  'bar.symbology': 'Simbología',
+  'bar.sym.code128': 'Code 128 — texto libre',
+  'bar.sym.ean13': 'EAN-13 — 12 dígitos (+ verificador)',
+  'bar.sym.ean8': 'EAN-8 — 7 dígitos (+ verificador)',
+  'bar.sym.upca': 'UPC-A — 11 dígitos (+ verificador)',
+  'bar.sym.code39': 'Code 39 — A–Z, 0–9 y -.$/+%',
+  'bar.content': 'Contenido',
+  'bar.contentPlaceholder': 'GRBL-STUDIO-001',
+  'bar.checksum': 'Verificación mod 43 (Code 39)',
+  'bar.ratio': 'Relación ancho:estrecho',
+  'bar.ratio.2': '2:1 (más estrecho)',
+  'bar.ratio.3': '3:1 (recomendado)',
+  'bar.width': 'Ancho final (mm)',
+  'bar.widthHint':
+    'En blanco usa la X-dimension. El ancho incluye la zona silenciosa.',
+  'bar.xDim': 'X-dimension (mm)',
+  'bar.barHeight': 'Altura de las barras (mm)',
+  'bar.quietZone': 'Zona silenciosa (módulos)',
+  'bar.linesPerMm': 'Líneas de barrido por mm',
+  'bar.hri': 'Mostrar el texto (HRI) bajo las barras',
+  'bar.power': 'Potencia (%)',
+  'bar.feed': 'Velocidad (mm/min)',
+  'bar.passes': 'Pasadas',
+  'bar.mode': 'Modo del láser',
+  'bar.mode.m4': 'M4 (dinámico)',
+  'bar.mode.m3': 'M3 (constante)',
+  'bar.overscan': 'Overscan (mm)',
+  'bar.invert': 'Polaridad invertida (quemar el fondo)',
+  'bar.generate': 'Generar y visualizar',
+  'bar.save': 'Guardar .gcode…',
+  'bar.status.generating': 'Generando el código de barras…',
+  'bar.moduleMissing': 'Generador de código de barras no cargado.',
+  'bar.status.done':
+    '{sym} generado: {modules} módulos · {w} × {h} mm · X-dim {xdim} mm. ' +
+    'Revisa la vista previa y envía o guarda.',
+  'bar.err.empty': 'Introduce un contenido para generar el código de barras.',
+  'bar.err.bad-chars':
+    'Esta simbología no acepta uno de los caracteres (ver el registro).',
+  'bar.err.bad-length':
+    'La longitud del contenido no sirve para esta simbología (ver el registro).',
+  'bar.err.bad-option':
+    'Combinación de opciones no válida para esta simbología.',
+  'bar.err.check-digit':
+    'Dígito verificador no válido: se esperaba {expected}, se informó {given}.',
+  'bar.warn.module-small':
+    'X-dimension menor que 2× el punto del láser: el código puede salir ilegible.',
+  'bar.warn.module-tiny':
+    'X-dimension por debajo de 0,3 mm: demasiado pequeño para la mayoría de lectores.',
+  'bar.warn.quiet-zone-small':
+    'Zona silenciosa menor que la norma: dificulta la lectura.',
+  'bar.warn.lines-too-few':
+    'Menos de 3 líneas de barrido por módulo: el relleno puede salir con fallos.',
+  'bar.warn.outside-work-area':
+    'El símbolo no cabe en el área de trabajo desde este origen.',
+  'bar.warn.x-dim-small':
+    'X-dimension por debajo del mínimo de la norma: el lector puede fallar.',
+  'bar.warn.bar-height-small':
+    'Barras más bajas que el mínimo recomendado: dificulta la lectura.',
+  'bar.warn.hri-chars':
+    'El HRI tiene caracteres sin glifo en la fuente: salen como “?”.',
 
   // ------------------------------------------------------- dibujo vectorial
   'design.title': 'Dibujar',

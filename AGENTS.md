@@ -45,6 +45,10 @@ npm test               # Vitest (unit + integração)
 - Tabelas do QR Code são **geradas**: `node scripts/gen-qr-tables.mjs` reescreve
   `src/shared/symbol/qr.tables.ts` (formato já compatível com o Biome) a partir
   da referência `qrcode-generator` — não editar a tabela à mão.
+- Tabelas do código de barras 1D são **geradas**:
+  `node scripts/gen-barcode-tables.mjs` reescreve
+  `src/shared/symbol/barcode/tables.ts` (Code 128/39 + L/G/R do EAN/UPC) a partir
+  da referência `jsbarcode` (devDependency) — não editar à mão.
 
 ## Invariantes do protocolo (NUNCA quebre)
 

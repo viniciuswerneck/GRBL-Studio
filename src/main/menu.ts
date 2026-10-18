@@ -99,6 +99,10 @@ export function rebuildMenu(): void {
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.qrCode),
         },
         {
+          label: t('menu.barCode'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.barCode),
+        },
+        {
           label: t('menu.design'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.design),
         },

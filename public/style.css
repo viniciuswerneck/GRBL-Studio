@@ -1392,7 +1392,7 @@ body.job-active .job-bar {
 
 /* ---------------------------------------- Grade de teste de material (modal) */
 .mat-test-modal,
-.qr-modal {
+.sym-modal {
   width: min(640px, 94vw);
 }
 
@@ -1404,7 +1404,7 @@ body.job-active .job-bar {
 }
 
 .mat-test-fields,
-.qr-fields {
+.sym-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-2) var(--sp-3);
@@ -1412,18 +1412,40 @@ body.job-active .job-bar {
 
 .mat-test-fields .field input,
 .mat-test-fields .field select,
-.qr-fields .field input,
-.qr-fields .field select,
-.qr-fields .field textarea {
+.sym-fields .field input,
+.sym-fields .field select,
+.sym-fields .field textarea {
   width: 100%;
 }
 
 /* Conteúdo (textarea) e a caixa de polaridade ocupam a largura toda. */
-.qr-fields .field-wide {
+.sym-fields .field-wide {
   grid-column: 1 / -1;
 }
 
-.qr-fields textarea {
+/* Tamanho final do símbolo: largura × altura (+ travar proporção). */
+.sym-size-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.sym-size-row input[type="number"] {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.sym-size-times {
+  color: var(--text-sub);
+}
+
+.sym-size-row .check {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.sym-fields textarea {
   resize: vertical;
   min-height: 2.6em;
   font: inherit;

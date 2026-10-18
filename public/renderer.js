@@ -224,6 +224,9 @@ const el = {
   qrContent: $('qrContent'),
   qrEcc: $('qrEcc'),
   qrVersion: $('qrVersion'),
+  qrWidth: $('qrWidth'),
+  qrHeight: $('qrHeight'),
+  qrKeepAspect: $('qrKeepAspect'),
   qrModule: $('qrModule'),
   qrQuiet: $('qrQuiet'),
   qrLines: $('qrLines'),
@@ -236,6 +239,29 @@ const el = {
   qrStatus: $('qrStatus'),
   qrSave: $('qrSave'),
   qrGenerate: $('qrGenerate'),
+  barcodeOverlay: $('barcodeOverlay'),
+  barClose: $('barClose'),
+  barSymbology: $('barSymbology'),
+  barContent: $('barContent'),
+  barRatioField: $('barRatioField'),
+  barRatio: $('barRatio'),
+  barChecksumField: $('barChecksumField'),
+  barChecksum: $('barChecksum'),
+  barWidth: $('barWidth'),
+  barXDim: $('barXDim'),
+  barHeight: $('barHeight'),
+  barQuiet: $('barQuiet'),
+  barLines: $('barLines'),
+  barHri: $('barHri'),
+  barPower: $('barPower'),
+  barFeed: $('barFeed'),
+  barPasses: $('barPasses'),
+  barMode: $('barMode'),
+  barOverscan: $('barOverscan'),
+  barInvert: $('barInvert'),
+  barStatus: $('barStatus'),
+  barSave: $('barSave'),
+  barGenerate: $('barGenerate'),
   designOverlay: $('designOverlay'),
   designSizeOverlay: $('designSizeOverlay'),
   designArrayOverlay: $('designArrayOverlay'),
@@ -4150,10 +4176,18 @@ function readQrOptions() {
     if (!Number.isFinite(raw)) return fallback;
     return Math.max(min, Math.min(max, raw));
   };
+  /** Alvo de tamanho em mm: vazio/inválido = `undefined` (usa o módulo). */
+  const targetNum = (input) => {
+    const raw = Number(input ? input.value : Number.NaN);
+    if (!Number.isFinite(raw) || raw <= 0) return undefined;
+    return Math.max(1, Math.min(1000, raw));
+  };
   const version = clampNum(el.qrVersion, 0, 40, 0);
   return {
     ecc: el.qrEcc?.value || 'M',
     version: version > 0 ? Math.round(version) : 'auto',
+    targetWidthMm: targetNum(el.qrWidth),
+    targetHeightMm: targetNum(el.qrHeight),
     moduleMm: clampNum(el.qrModule, 0.05, 20, 0.5),
     quietZoneModules: Math.round(clampNum(el.qrQuiet, 0, 10, 4)),
     linesPerMm: Math.round(clampNum(el.qrLines, 1, 40, 10)),
@@ -4166,14 +4200,27 @@ function readQrOptions() {
   };
 }
 
+/** "Quadrado" ligado copia a largura na altura (e vice-versa) ao digitar. */
+function syncQrSize(source) {
+  if (!source || !el.qrKeepAspect?.checked) return;
+  const other = source === el.qrWidth ? el.qrHeight : el.qrWidth;
+  if (other) other.value = source.value;
+}
+
 /** Texto da linha de status: dimensões, módulo e avisos de legibilidade. */
 function qrStatusText(result) {
+  const fmt2 = (v) => v.toFixed(2);
+  const moduleText =
+    Math.abs(result.moduleMm - result.moduleYMm) < 1e-9
+      ? fmt2(result.moduleMm)
+      : `${fmt2(result.moduleMm)} × ${fmt2(result.moduleYMm)}`;
   const parts = [
     t('qr.status.done', {
       version: `v${result.qr.version}-${result.qr.ecc}`,
       size: result.qr.size,
       w: result.widthMm.toFixed(1),
       h: result.heightMm.toFixed(1),
+      module: moduleText,
     }),
   ];
   if (result.warnings?.length) {
@@ -4232,6 +4279,172 @@ async function saveQr() {
   } catch (err) {
     const key = `qr.err.${err?.code ?? 'bad-version'}`;
     appendLine(t(key, opts), 'error');
+  }
+}
+
+// -------------------------------------------------- código de barras (1D)
+
+/** Nomes das simbologias (produto, não se traduz). */
+const BAR_SYM_NAMES = {
+  code128: 'Code 128',
+  ean13: 'EAN-13',
+  ean8: 'EAN-8',
+  upca: 'UPC-A',
+  code39: 'Code 39',
+};
+
+/**
+ * `$30` da máquina para os geradores de símbolo (QR/código de barras): lido do
+ * campo da interface, como o resto do app.
+ */
+function symbolSMax() {
+  return Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
+}
+
+/** Mostra os campos que só valem para o Code 39 (razão e mod 43). */
+function syncBarSymbology() {
+  const sym = el.barSymbology ? el.barSymbology.value : 'code128';
+  const isCode39 = sym === 'code39';
+  if (el.barRatioField) el.barRatioField.classList.toggle('hidden', !isCode39);
+  if (el.barChecksumField)
+    el.barChecksumField.classList.toggle('hidden', !isCode39);
+  // A dica de conteúdo passa a ser o exemplo da simbologia escolhida.
+  const spec = window.GRBL_BARCODE?.BARCODE_SPECS?.[sym];
+  if (spec && el.barContent) el.barContent.placeholder = spec.example;
+}
+
+/**
+ * Aplica os padrões da norma ao trocar de simbologia (quiet zone, X-dimension e
+ * altura das barras): o EAN precisa de quiet zone maior que o Code 128, por
+ * exemplo. Trocar de simbologia é uma decisão explícita do usuário.
+ */
+function applyBarDefaults(sym) {
+  const spec = window.GRBL_BARCODE?.BARCODE_SPECS?.[sym];
+  if (!spec) return;
+  if (el.barQuiet) el.barQuiet.value = String(spec.quietZoneMinModules);
+  if (el.barXDim) el.barXDim.value = String(spec.defaultXDimMm);
+  if (el.barHeight) el.barHeight.value = String(spec.defaultBarHeightMm);
+}
+
+function openBarModal() {
+  if (!el.barcodeOverlay) return;
+  syncBarSymbology();
+  el.barcodeOverlay.classList.remove('hidden');
+  if (el.barStatus) el.barStatus.textContent = '';
+  if (el.barContent) el.barContent.focus();
+}
+
+function closeBarModal() {
+  if (el.barcodeOverlay) el.barcodeOverlay.classList.add('hidden');
+}
+
+function readBarOptions() {
+  const clampNum = (input, min, max, fallback) => {
+    const raw = Number(input ? input.value : Number.NaN);
+    if (!Number.isFinite(raw)) return fallback;
+    return Math.max(min, Math.min(max, raw));
+  };
+  /** Largura final em mm: vazio/inválido = `undefined` (usa o X-dimension). */
+  const target = Number(el.barWidth ? el.barWidth.value : Number.NaN);
+  const ratio = Number(el.barRatio ? el.barRatio.value : 3);
+  return {
+    symbology: el.barSymbology ? el.barSymbology.value : 'code128',
+    code128Charset: 'auto',
+    code39Ratio: ratio === 2 ? 2 : 3,
+    code39Checksum: Boolean(el.barChecksum?.checked),
+    targetWidthMm:
+      Number.isFinite(target) && target > 0
+        ? Math.max(1, Math.min(1000, target))
+        : undefined,
+    xDimMm: clampNum(el.barXDim, 0.05, 20, 0.5),
+    barHeightMm: clampNum(el.barHeight, 1, 200, 10),
+    quietZoneModules: Math.round(clampNum(el.barQuiet, 0, 30, 10)),
+    linesPerMm: Math.round(clampNum(el.barLines, 1, 40, 10)),
+    hri: Boolean(el.barHri?.checked),
+    powerPercent: clampNum(el.barPower, 0, 100, 100),
+    feed: Math.round(clampNum(el.barFeed, 1, 20000, 1000)),
+    passes: Math.round(clampNum(el.barPasses, 1, 10, 1)),
+    mode: el.barMode && el.barMode.value === 'M3' ? 'M3' : 'M4',
+    overscanMm: clampNum(el.barOverscan, 0, 5, 0),
+    invert: Boolean(el.barInvert?.checked),
+  };
+}
+
+/** Linha de status: dimensões, simbologia e avisos de legibilidade. */
+function barStatusText(result) {
+  const parts = [
+    t('bar.status.done', {
+      sym: BAR_SYM_NAMES[result.barcode.symbology] || result.barcode.symbology,
+      modules: result.barcode.totalModules,
+      w: result.widthMm.toFixed(1),
+      h: result.heightMm.toFixed(1),
+      xdim: result.xDimMm.toFixed(3),
+    }),
+  ];
+  if (result.warnings?.length) {
+    parts.push(...result.warnings.map((code) => `⚠ ${t(`bar.warn.${code}`)}`));
+  }
+  return parts.join(' ');
+}
+
+/** Mensagem de erro (o `code` do BarcodeError vira chave i18n). */
+function barErrorText(err, opts) {
+  const code = err?.code ? err.code : 'bad-option';
+  return t(`bar.err.${code}`, {
+    sym: BAR_SYM_NAMES[opts.symbology] || opts.symbology,
+    expected: err?.expected != null ? err.expected : '—',
+    given: err?.given != null ? err.given : '—',
+  });
+}
+
+function generateBar() {
+  if (!window.GRBL_BARCODE) {
+    appendLine(t('bar.moduleMissing'), 'error');
+    return;
+  }
+  const opts = readBarOptions();
+  if (el.barContent && !el.barContent.value.trim()) {
+    if (el.barStatus) el.barStatus.textContent = t('bar.err.empty');
+    return;
+  }
+  if (el.barStatus) el.barStatus.textContent = t('bar.status.generating');
+  let result;
+  try {
+    result = window.GRBL_BARCODE.barcodeToGcode(el.barContent.value.trim(), {
+      ...opts,
+      sMax: symbolSMax(),
+      travelFeed: 3000,
+    });
+  } catch (err) {
+    // Status traduzido (com o esperado × informado do verificador); o log
+    // recebe a mensagem precisa do encoder.
+    if (el.barStatus) el.barStatus.textContent = barErrorText(err, opts);
+    appendLine(err?.message ? err.message : String(err), 'error');
+    return;
+  }
+  // Carrega como arquivo virtual (habilita Play e preview).
+  applyJobLines('barcode.gcode', result.gcode);
+  if (el.barStatus) el.barStatus.textContent = barStatusText(result);
+  openFrameModal();
+}
+
+async function saveBar() {
+  if (!window.GRBL_BARCODE) return;
+  const opts = readBarOptions();
+  if (el.barContent && !el.barContent.value.trim()) {
+    if (el.barStatus) el.barStatus.textContent = t('bar.err.empty');
+    return;
+  }
+  try {
+    const result = window.GRBL_BARCODE.barcodeToGcode(
+      el.barContent.value.trim(),
+      { ...opts, sMax: symbolSMax(), travelFeed: 3000 },
+    );
+    const path = await window.grbl.saveGcode(result.gcode, 'barcode.gcode');
+    if (path) appendLine(t('file.saved', { path }), 'ok');
+  } catch (err) {
+    if (el.barStatus) el.barStatus.textContent = barErrorText(err, opts);
+    appendLine(err?.message ? err.message : String(err), 'error');
   }
 }
 
@@ -7104,6 +7317,7 @@ if (window.grbl.onAction)
       });
     else if (name === 'material-test') openMatTestModal();
     else if (name === 'qr-code') openQrModal();
+    else if (name === 'bar-code') openBarModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'design') openDesignModal();
   });
@@ -7999,6 +8213,27 @@ if (el.qrOverlay)
   });
 if (el.qrGenerate) el.qrGenerate.addEventListener('click', generateQr);
 if (el.qrSave) el.qrSave.addEventListener('click', saveQr);
+if (el.qrWidth)
+  el.qrWidth.addEventListener('input', () => syncQrSize(el.qrWidth));
+if (el.qrHeight)
+  el.qrHeight.addEventListener('input', () => syncQrSize(el.qrHeight));
+if (el.qrKeepAspect)
+  el.qrKeepAspect.addEventListener('change', () => {
+    if (!el.qrKeepAspect.checked) return;
+    syncQrSize(el.qrWidth?.value ? el.qrWidth : el.qrHeight);
+  });
+if (el.barClose) el.barClose.addEventListener('click', closeBarModal);
+if (el.barcodeOverlay)
+  el.barcodeOverlay.addEventListener('click', (e) => {
+    if (e.target === el.barcodeOverlay) closeBarModal();
+  });
+if (el.barGenerate) el.barGenerate.addEventListener('click', generateBar);
+if (el.barSave) el.barSave.addEventListener('click', saveBar);
+if (el.barSymbology)
+  el.barSymbology.addEventListener('change', () => {
+    syncBarSymbology();
+    applyBarDefaults(el.barSymbology.value);
+  });
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
 if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));

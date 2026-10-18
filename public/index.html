@@ -945,7 +945,7 @@
     </div>
 
     <div class="overlay hidden" id="qrOverlay">
-      <div class="modal qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+      <div class="modal sym-modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
         <header class="modal-head">
           <h3 id="qrTitle" data-i18n="qr.title">QR Code</h3>
           <button
@@ -962,7 +962,7 @@
             tamanho do módulo e grave. A origem da arte é o canto inferior
             esquerdo (X0 Y0).
           </p>
-          <div class="qr-fields">
+          <div class="sym-fields">
             <label class="field field-wide">
               <span data-i18n="qr.content">Conteúdo</span>
               <textarea
@@ -987,6 +987,40 @@
                 <option value="0" data-i18n="qr.versionAuto">Automática</option>
               </select>
             </label>
+            <div class="field field-wide">
+              <span data-i18n="qr.size">Tamanho (mm)</span>
+              <div class="sym-size-row">
+                <input
+                  type="number"
+                  id="qrWidth"
+                  min="5"
+                  max="1000"
+                  step="1"
+                  placeholder="—"
+                  data-i18n-title="qr.width"
+                  data-i18n-aria="qr.width"
+                />
+                <span class="sym-size-times" aria-hidden="true">×</span>
+                <input
+                  type="number"
+                  id="qrHeight"
+                  min="5"
+                  max="1000"
+                  step="1"
+                  placeholder="—"
+                  data-i18n-title="qr.height"
+                  data-i18n-aria="qr.height"
+                />
+                <label class="check" data-i18n-title="qr.keepAspectHint">
+                  <input type="checkbox" id="qrKeepAspect" checked />
+                  <span data-i18n="qr.keepAspect">Quadrado</span>
+                </label>
+              </div>
+            </div>
+            <p class="mat-test-hint field-wide" data-i18n="qr.sizeHint">
+              Em branco usa o lado do módulo. Largura ≠ altura estica o símbolo
+              e pode atrapalhar a leitura.
+            </p>
             <label class="field">
               <span data-i18n="qr.module">Lado do módulo (mm)</span>
               <input type="number" id="qrModule" min="0.05" max="20" step="0.05" value="0.5" />
@@ -1032,6 +1066,128 @@
         <footer class="modal-foot">
           <button type="button" id="qrSave" data-i18n="qr.save">Salvar .gcode…</button>
           <button type="button" id="qrGenerate" class="primary" data-i18n="qr.generate">Gerar e visualizar</button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="barcodeOverlay">
+      <div class="modal sym-modal" role="dialog" aria-modal="true" aria-labelledby="barTitle">
+        <header class="modal-head">
+          <h3 id="barTitle" data-i18n="bar.title">Código de barras</h3>
+          <button
+            type="button"
+            id="barClose"
+            class="icon-btn"
+            data-i18n-title="nav.close"
+            data-i18n-aria="nav.close"
+          >✕</button>
+        </header>
+        <div class="modal-body">
+          <p class="mat-test-hint" data-i18n="bar.hint">
+            Gera um código de barras 1D como G-code: escolha a simbologia, o
+            conteúdo e o tamanho. A origem da arte é o canto inferior esquerdo
+            (X0 Y0).
+          </p>
+          <div class="sym-fields">
+            <label class="field">
+              <span data-i18n="bar.symbology">Simbologia</span>
+              <select id="barSymbology">
+                <option value="code128" selected data-i18n="bar.sym.code128">Code 128 — texto livre</option>
+                <option value="ean13" data-i18n="bar.sym.ean13">EAN-13 — 12 dígitos (+ verificador)</option>
+                <option value="ean8" data-i18n="bar.sym.ean8">EAN-8 — 7 dígitos (+ verificador)</option>
+                <option value="upca" data-i18n="bar.sym.upca">UPC-A — 11 dígitos (+ verificador)</option>
+                <option value="code39" data-i18n="bar.sym.code39">Code 39 — A–Z, 0–9 e -.$/+%</option>
+              </select>
+            </label>
+            <label class="field field-wide">
+              <span data-i18n="bar.content">Conteúdo</span>
+              <textarea
+                id="barContent"
+                rows="2"
+                placeholder="GRBL-STUDIO-001"
+                data-i18n-placeholder="bar.contentPlaceholder"
+              ></textarea>
+            </label>
+            <label class="field hidden" id="barRatioField">
+              <span data-i18n="bar.ratio">Razão largo:estreito</span>
+              <select id="barRatio">
+                <option value="3" selected data-i18n="bar.ratio.3">3:1 (recomendado)</option>
+                <option value="2" data-i18n="bar.ratio.2">2:1 (mais estreito)</option>
+              </select>
+            </label>
+            <label class="check field hidden" id="barChecksumField">
+              <input type="checkbox" id="barChecksum" />
+              <span data-i18n="bar.checksum">Verificação mod 43 (Code 39)</span>
+            </label>
+            <label class="field">
+              <span data-i18n="bar.width">Largura final (mm)</span>
+              <input
+                type="number"
+                id="barWidth"
+                min="1"
+                max="1000"
+                step="1"
+                placeholder="—"
+                data-i18n-title="bar.width"
+                data-i18n-aria="bar.width"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.xDim">X-dimension (mm)</span>
+              <input type="number" id="barXDim" min="0.05" max="20" step="0.01" value="0.5" />
+            </label>
+            <p class="mat-test-hint field-wide" data-i18n="bar.widthHint">
+              Em branco usa o X-dimension. A largura inclui a quiet zone.
+            </p>
+            <label class="field">
+              <span data-i18n="bar.barHeight">Altura das barras (mm)</span>
+              <input type="number" id="barHeight" min="1" max="200" step="0.5" value="10" />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.quietZone">Quiet zone (módulos)</span>
+              <input type="number" id="barQuiet" min="0" max="30" step="1" value="10" />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.linesPerMm">Linhas de varredura por mm</span>
+              <input type="number" id="barLines" min="1" max="40" step="1" value="10" />
+            </label>
+            <label class="check field">
+              <input type="checkbox" id="barHri" checked />
+              <span data-i18n="bar.hri">Mostrar o texto (HRI) sob as barras</span>
+            </label>
+            <label class="field">
+              <span data-i18n="bar.power">Potência (%)</span>
+              <input type="number" id="barPower" min="0" max="100" step="5" value="100" />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.feed">Velocidade (mm/min)</span>
+              <input type="number" id="barFeed" min="1" max="20000" step="50" value="1000" />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.passes">Passadas</span>
+              <input type="number" id="barPasses" min="1" max="10" value="1" />
+            </label>
+            <label class="field">
+              <span data-i18n="bar.mode">Modo do laser</span>
+              <select id="barMode">
+                <option value="M4" data-i18n="bar.mode.m4">M4 (dinâmico)</option>
+                <option value="M3" data-i18n="bar.mode.m3">M3 (constante)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span data-i18n="bar.overscan">Overscan (mm)</span>
+              <input type="number" id="barOverscan" min="0" max="5" step="0.5" value="0" />
+            </label>
+            <label class="check field-wide">
+              <input type="checkbox" id="barInvert" />
+              <span data-i18n="bar.invert">Polaridade invertida (queimar o fundo)</span>
+            </label>
+          </div>
+          <div id="barStatus" class="hint" role="status" aria-live="polite"></div>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="barSave" data-i18n="bar.save">Salvar .gcode…</button>
+          <button type="button" id="barGenerate" class="primary" data-i18n="bar.generate">Gerar e visualizar</button>
         </footer>
       </div>
     </div>
@@ -1738,6 +1894,7 @@
     <script src="./boolean.js"></script>
     <script src="./offset.js"></script>
     <script src="./qrcode.js"></script>
+    <script src="./barcode.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

@@ -14,8 +14,11 @@ export type {
 } from './gcode';
 export {
   DEFAULT_SPOT_MM,
+  MAX_MODULE_MM,
+  MIN_MODULE_MM,
   QR_QUIET_ZONE_MODULES,
   applyOverscan,
+  qrModuleSizes,
   qrToGcode,
   symbolToGcode,
   symbolWarnings,

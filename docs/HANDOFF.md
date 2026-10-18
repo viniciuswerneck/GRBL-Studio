@@ -161,3 +161,30 @@ menu). Detalhes em `docs/PLANO_QR_BARCODE.md` §15; resumo para retomar rápido:
   velocidade baixa e ler com o celular; se sair claro demais, aumentar potência
   ou reduzir a velocidade (os avisos do modal já cobrem módulo pequeno/linhas
   insuficientes).
+
+---
+
+## 8. v0.6 S2 — código de barras 1D (18/10/2026)
+
+**Estado:** implementado e testado (QR + 1D juntos fecham a v0.6). Detalhes em
+`docs/PLANO_QR_BARCODE.md` §16; resumo para retomar rápido:
+
+- **Ferramentas → Código de barras…** (`MENU_ACTIONS.barCode` → `#barcodeOverlay`
+  → `window.GRBL_BARCODE.barcodeToGcode`). Simbologias: Code 128 (A/B/C com troca
+  automática), EAN-13, EAN-8, UPC-A e Code 39 (razão 2:1/3:1, mod 43 opcional),
+  com **HRI** desenhado pela fonte de traço único.
+- **Encoders puros** em `src/shared/symbol/barcode/`: `code128.ts`, `ean.ts` e
+  `code39.ts` sobre `tables.ts` **gerado** por `scripts/gen-barcode-tables.mjs`
+  (a partir do `jsbarcode`, devDependency MIT). A fachada `encodeBarcode()`
+  devolve `bars: { x, w }[]` em módulos, `totalModules`, `data` e `hri`.
+- **Varredura vertical** (`barsToVerticalSegments` em `mask.ts`): as linhas
+  correm **ao longo das barras**, com direção alternada. O G-code usa
+  `presorted` (sem zigue-zague), overscan por **eixo** e filtro por comprimento
+  real. O HRI sai abaixo das barras e o símbolo é deslocado para Y ≥ 0.
+- **Bundle gerado:** `public/barcode.js` (`npm run build:barcode`). Sem
+  dependência de runtime (ADR-11); `jsbarcode` é só teste (cross-check).
+- **Pendências da v0.6:** S3 (Data Matrix/PDF417/Aztec, Code 93/GS1-128, lote e
+  o símbolo como **objeto** no editor "Desenhar"); ITF-14/Codabar da S2.
+- **Validar com hardware:** gravar um Code 128 com X-dim 0,5 mm e ler com
+  leitor/celular; se não ler, aumentar a quiet zone, a altura das barras ou o
+  X-dimension (os avisos apontam qual).
