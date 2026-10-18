@@ -1443,6 +1443,23 @@ body.job-active .job-bar {
   width: min(920px, 96vw);
 }
 
+.design-modal.maximized {
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+.design-modal.maximized .design-body {
+  max-height: calc(100vh - 120px);
+}
+
+.design-modal.maximized #designCanvas {
+  aspect-ratio: auto;
+  height: calc(100vh - 260px);
+  max-height: none;
+}
+
 .design-body {
   gap: var(--sp-2);
 }

@@ -218,6 +218,7 @@ const el = {
   matTestGenerate: $('matTestGenerate'),
   designOverlay: $('designOverlay'),
   designClose: $('designClose'),
+  designMaximize: $('designMaximize'),
   designCanvas: $('designCanvas'),
   designToolSelect: $('designToolSelect'),
   designToolRect: $('designToolRect'),
@@ -246,6 +247,10 @@ const el = {
   designPasses: $('designPasses'),
   designMode: $('designMode'),
   designFont: $('designFont'),
+  designText: $('designText'),
+  designTextSize: $('designTextSize'),
+  designTextFont: $('designTextFont'),
+  designTextAdd: $('designTextAdd'),
   designStatus: $('designStatus'),
   designSave: $('designSave'),
   designGenerate: $('designGenerate'),
@@ -581,6 +586,7 @@ const designState = {
   snap: true,
   snapSize: 1,         // mm
   clipboard: null,
+  pendingTextPos: null,
   panning: false,
   panStart: null,
 };
@@ -1038,22 +1044,10 @@ async function designSave() {
       dUpdateProps();
       return;
     }
-    // ferramenta de texto: pede o texto e cria as formas
+    // ferramenta de texto: armazena o ponto de inserção e foca o campo de texto
     if (designState.tool === 'text') {
-      const txt = window.prompt('Texto:', 'GRBL');
-      if (txt && txt.trim() && window.GRBL_FONTS) {
-        const fontId = el.designFont ? el.designFont.value : 'simplex';
-        const size = 10;
-        const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pt.x, y: pt.y, letterSpacing: 0.1 });
-        for (const sh of shapes) designState.shapes.push(sh);
-        designState.selected = designState.shapes.length - 1;
-        dPushHistory();
-        dRender();
-        dUpdateProps();
-        dUpdateObjectList();
-      }
-      designState.tool = 'select';
-      designUpdateToolButtons();
+      designState.pendingTextPos = { x: pt.x, y: pt.y };
+      if (el.designText) { el.designText.focus(); el.designText.select(); }
       return;
     }
     start = pt;
@@ -1271,6 +1265,15 @@ document.addEventListener('keydown', (e) => {
   }
 });
 if (el.designClose) el.designClose.addEventListener('click', closeDesignModal);
+if (el.designMaximize) el.designMaximize.addEventListener('click', () => {
+  const m = el.designOverlay.querySelector('.design-modal');
+  if (!m) return;
+  const max = m.classList.toggle('maximized');
+  el.designMaximize.textContent = max ? ' ( ) ' : ' ( ) ';
+  el.designMaximize.title = max ? 'Restaurar' : 'Maximizar';
+  // re-render canvas to fit new size
+  setTimeout(() => dRender(), 50);
+});
 if (el.designOverlay)
   el.designOverlay.addEventListener('click', (e) => {
     if (e.target === el.designOverlay) closeDesignModal();
@@ -1285,6 +1288,22 @@ if (el.designToolSelect) el.designToolSelect.addEventListener('click', () => des
 if (el.designToolRect) el.designToolRect.addEventListener('click', () => designSetTool('rect'));
 if (el.designToolCircle) el.designToolCircle.addEventListener('click', () => designSetTool('circle'));
 if (el.designToolLine) el.designToolLine.addEventListener('click', () => designSetTool('line'));
+if (el.designTextAdd) el.designTextAdd.addEventListener('click', () => {
+  const txt = el.designText ? el.designText.value : '';
+  if (!txt || !txt.trim() || !window.GRBL_FONTS) return;
+  const fontId = el.designTextFont ? el.designTextFont.value : (el.designFont ? el.designFont.value : 'simplex');
+  const size = Number(el.designTextSize && el.designTextSize.value) || 10;
+  const pos = designState.pendingTextPos || { x: 50, y: 50 };
+  const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pos.x, y: pos.y, letterSpacing: 0.1 });
+  for (const sh of shapes) designState.shapes.push(sh);
+  designState.selected = designState.shapes.length - 1;
+  designState.pendingTextPos = null;
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  if (el.designStatus) el.designStatus.textContent = t('design.status.done');
+});
 if (el.designToolText) el.designToolText.addEventListener('click', () => designSetTool('text'));
 if (el.designUndo) el.designUndo.addEventListener('click', dUndo);
 if (el.designRedo) el.designRedo.addEventListener('click', dRedo);
@@ -1380,17 +1399,20 @@ function openDesignModal() {
   designState.drawing = null;
   designState.view = { scale: 1, tx: 20, ty: 20 };
   if (designState.history.length === 0) dPushHistory();
-  // Popula o seletor de fontes.
-  if (el.designFont && window.GRBL_FONTS) {
-    const cur = el.designFont.value;
-    el.designFont.innerHTML = '';
-    for (const f of window.GRBL_FONTS.fontOptions()) {
-      const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.textContent = f.name;
-      el.designFont.appendChild(opt);
+  // Popula os seletores de fontes.
+  if (window.GRBL_FONTS) {
+    for (const sel of [el.designFont, el.designTextFont]) {
+      if (!sel) continue;
+      const cur = sel.value;
+      sel.innerHTML = '';
+      for (const f of window.GRBL_FONTS.fontOptions()) {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = f.name;
+        sel.appendChild(opt);
+      }
+      if (cur) sel.value = cur;
     }
-    if (cur) el.designFont.value = cur;
   }
   designUpdateToolButtons();
   dRender();

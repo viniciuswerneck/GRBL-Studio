@@ -757,6 +757,7 @@
             <button type="button" id="designZoomIn" class="icon-btn" title="Zoom in">+</button>
             <button type="button" id="designZoomOut" class="icon-btn" title="Zoom out">−</button>
             <button type="button" id="designZoomFit" class="icon-btn" title="Ajustar"> ( ) </button>
+            <button type="button" id="designMaximize" class="icon-btn" data-i18n-title="design.maximize" title="Maximizar"> ( ) </button>
             <button
               type="button"
               id="designClose"
@@ -785,6 +786,12 @@
             <button type="button" id="designClear" class="design-tool" data-i18n-title="design.clear" title="Limpar tudo">🧹</button>
           </div>
           <!-- Barra de propriedades (contextual) -->
+          <div class="design-textbar">
+            <input type="text" id="designText" placeholder="Texto…" data-i18n-placeholder="design.text.placeholder" />
+            <input type="number" id="designTextSize" min="1" max="100" step="1" value="10" title="Tamanho (mm)" />
+            <select id="designTextFont"></select>
+            <button type="button" id="designTextAdd" class="primary" data-i18n="design.text.add">Adicionar</button>
+          </div>
           <div class="design-props">
             <label class="design-prop">
               <span>X</span>
