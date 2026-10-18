@@ -389,7 +389,7 @@ export const es = {
   'design.kind.line': 'Línea',
   'design.kind.text': 'Texto',
   'design.status.hint':
-    'Dibuja con las herramientas de la izquierda. Rueda del ratón = zoom; botón central = mover la vista.',
+    'Dibuja con las herramientas de la izquierda. Rueda del ratón = zoom; botón central = mover la vista. El grabado empieza en X0 Y0 (esquina inferior izquierda del dibujo): posiciona el láser y define el origen donde va a quemar.',
   'design.status.needShape': 'Dibuja al menos una forma.',
   'design.status.textEmpty': 'Escribe el texto.',
   'design.status.textFail': 'No se pudo generar el texto.',
@@ -511,6 +511,7 @@ export const es = {
   'preview.cut': 'Quemado',
   'preview.pass': 'Pasada {n}/{total}',
   'preview.rapid': 'Desplazamiento',
+  'preview.workArea': 'Área de trabajo', // referencia, no forma parte del job
   'preview.tip': 'rueda: zoom · arrastrar: mover · doble clic: ajustar',
   'preview.simulate': 'Simular',
   'preview.warning.area':

@@ -174,6 +174,32 @@ describe('designToGcode', () => {
     expect(g1).toContain('M4 S800');
     expect(g2).toContain('M4 S800');
   });
+
+  it('ancora a arte na origem: o canto inferior esquerdo vira X0 Y0', () => {
+    // Alinhamento: o usuário posiciona o laser onde vai gravar e define a
+    // origem ali. O G-code tem de começar em X0 Y0 (canto inferior esquerdo do
+    // desenho), de pé, sem deslocar o cabeçote — não em coordenadas absolutas
+    // da prancheta. O editor usa y-down (topo = 0); a máquina usa y-up.
+    const doc: DesignDocument = {
+      shapes: [{ kind: 'rect', points: makeRect(4, 1, 2, 2), closed: true }],
+      width: 10,
+      height: 10,
+    };
+    const g = designToGcode(doc, baseOpts);
+    expect(g).toContain('G0 X0.000 Y0.000'); // começa exatamente em X0 Y0
+    expect(g).toContain('G1 X0.000 Y2.000'); // topo do desenho (Y=2), de pé
+    expect(g).not.toContain('Y-'); // nada abaixo da origem
+    // Onde o objeto está na prancheta não muda o G-code: a arte é ancorada.
+    const outro = designToGcode(
+      {
+        shapes: [{ kind: 'rect', points: makeRect(7, 6, 2, 2), closed: true }],
+        width: 10,
+        height: 10,
+      },
+      baseOpts,
+    );
+    expect(outro).toBe(g);
+  });
 });
 
 describe('espessura do traço (width)', () => {
@@ -195,9 +221,9 @@ describe('espessura do traço (width)', () => {
     expect(paths(g)).toBe(21);
     // A área do cabeçalho inclui a espessura (12 × 12).
     expect(g).toContain('12.00 x 12.00 mm');
-    // As pontas da faixa aparecem nas coordenadas emitidas (eixo Y invertido).
-    expect(g).toContain('X-1.000');
-    expect(g).toContain('X11.000');
+    // Ancorada na origem, a faixa (de -1 a 11) sai de X0 a X12.
+    expect(g).toContain('X0.000');
+    expect(g).toContain('X12.000');
   });
 
   it('uma linha aberta ganha paralelas dos dois lados', () => {
@@ -217,7 +243,8 @@ describe('espessura do traço (width)', () => {
     );
     // passo 0,1 → 21 paralelas, todas retas (2 G1 cada: nada de fechar)
     expect(paths(g)).toBe(21);
-    expect(g).toContain('X10.000 Y');
+    // Ancorada na origem, a linha (de 0 a 10) sai de X1 a X11.
+    expect(g).toContain('X11.000 Y');
   });
 
   it('espessura dentro do passo do feixe não muda o traço', () => {

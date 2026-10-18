@@ -165,6 +165,8 @@ const el = {
   previewLegend: $('previewLegend'),
   lgPass: $('lgPass'),
   lgPassSwatch: $('lgPassSwatch'),
+  lgWork: $('lgWork'),
+  lgWorkSwatch: $('lgWorkSwatch'),
   simBar: $('simBar'),
   simPlay: $('simPlay'),
   simPause: $('simPause'),
@@ -6031,6 +6033,11 @@ function drawGcodePreview() {
   const prog = previewProgram.program;
 
   el.previewLegend.classList.remove('hidden');
+  // A caixa tracejada da área de trabalho ($130/$131) é só referência: rotula
+  // para não ser confundida com o caminho que será gravado.
+  const hasWorkArea = Boolean(previewProgram.workArea);
+  el.lgWork?.classList.toggle('hidden', !hasWorkArea);
+  el.lgWorkSwatch?.classList.toggle('hidden', !hasWorkArea);
   if (!prog || prog.moves.length === 0) {
     previewLayers.key = '';
     el.previewHint.classList.remove('hidden');
@@ -6151,7 +6158,11 @@ function drawGcodePreview() {
     g.globalAlpha = 1;
 
     // Queima/corte (G1/G2/G3) com brilho por potência (`S`).
-    strokePower(g, prog.burns ?? moves, accent, 0.18);
+    // Usa só os trechos que queimam (`previewProgram.burns`): `prog` é o
+    // programa interpretado e **não** tem `burns`, então `prog.burns ?? moves`
+    // pintava também os `G0` na cor de queima (a diagonal do retorno a 0,0
+    // herdava o `S` do último `M4` e parecia uma linha gravada).
+    strokePower(g, previewProgram.burns ?? prog.moves, accent, 0.18);
   }
 
   // Camada de progresso, colorida por passada (RF-PRV-5 / RF-GC-6) e pintada

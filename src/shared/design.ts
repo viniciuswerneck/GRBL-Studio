@@ -157,6 +157,20 @@ export function designToGcode(
   }
   const hasShapes = doc.shapes.length > 0;
 
+  // A arte é gravada **ancorada na origem de trabalho**: o canto inferior
+  // esquerdo do desenho vira X0 Y0. Como o usuário posiciona o laser onde o
+  // material deve ser gravado e **define a origem ali** (`G10 L20`/`G92`), o
+  // job começa a queimar exatamente sob o cabeçote — sem deslocamento — em vez
+  // de usar coordenadas absolutas da prancheta e sair andando até o desenho.
+  // O editor usa y-down (topo = 0) e o GRBL usa y-up:
+  //   machineX = pageX - minX   ·   machineY = maxY - pageY
+  const anchorX = Number.isFinite(minX) ? minX : 0;
+  const anchorY = Number.isFinite(maxY) ? maxY : 0;
+  const toMachine = (p: Point): Point => ({
+    x: p.x - anchorX,
+    y: anchorY - p.y,
+  });
+
   const lines: string[] = [];
   lines.push('; GRBL Studio — desenho vetorial');
   lines.push(`; ${doc.shapes.length} forma(s)`);
@@ -178,21 +192,43 @@ export function designToGcode(
     feed: number,
     power: number,
   ) => {
-    lines.push(
-      `G0 X${fmt(pts[0].x)} Y${fmt(minY + maxY - pts[0].y)} F${o.travelFeed}`,
-    );
+    const start = toMachine(pts[0]);
+    lines.push(`G0 X${fmt(start.x)} Y${fmt(start.y)} F${o.travelFeed}`);
     lines.push(`${arm} S${power}`);
     for (let i = 1; i < pts.length; i++) {
-      lines.push(
-        `G1 X${fmt(pts[i].x)} Y${fmt(minY + maxY - pts[i].y)} F${feed}`,
-      );
+      const m = toMachine(pts[i]);
+      lines.push(`G1 X${fmt(m.x)} Y${fmt(m.y)} F${feed}`);
     }
     if (closed && pts.length > 2) {
-      lines.push(
-        `G1 X${fmt(pts[0].x)} Y${fmt(minY + maxY - pts[0].y)} F${feed}`,
-      );
+      lines.push(`G1 X${fmt(start.x)} Y${fmt(start.y)} F${feed}`);
     }
     lines.push('M5');
+  };
+
+  // Reordena cada contorno para começar no ponto mais próximo do cabeçote (o
+  // contorno anterior termina onde o próximo começa). Assim o primeiro `G0`
+  // aponta para o canto inferior esquerdo — que já é X0 Y0 — e o contorno
+  // segue sem cruzar o próprio desenho. Em forma aberta pode começar pela
+  // outra ponta (inverte o traçado).
+  let cursor: Point = { x: 0, y: 0 };
+  const orderFrom = (pts: ReadonlyArray<Point>, closed: boolean): Point[] => {
+    const dist2 = (p: Point): number => {
+      const m = toMachine(p);
+      return (m.x - cursor.x) ** 2 + (m.y - cursor.y) ** 2;
+    };
+    let best = 0;
+    let bestDist = dist2(pts[0]);
+    for (let i = 1; i < pts.length; i++) {
+      const d = dist2(pts[i]);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    if (!closed && pts.length > 1 && dist2(pts[pts.length - 1]) < bestDist) {
+      return [...pts].reverse();
+    }
+    return best === 0 ? [...pts] : [...pts.slice(best), ...pts.slice(0, best)];
   };
 
   for (let pass = 0; pass < o.passes; pass++) {
@@ -206,9 +242,12 @@ export function designToGcode(
         sh.width && sh.width > 0
           ? strokePaths(sh.points, sh.closed, sh.width)
           : [sh.points];
-      for (const pts of paths) {
-        if (pts.length < 2) continue;
+      for (const raw of paths) {
+        if (raw.length < 2) continue;
+        const pts = orderFrom(raw, sh.closed);
         emit(pts, sh.closed, feed, power);
+        const end = sh.closed ? pts[0] : pts[pts.length - 1];
+        cursor = toMachine(end);
       }
     }
   }

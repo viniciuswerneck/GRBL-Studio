@@ -567,6 +567,13 @@ input[type="checkbox"] {
   background: var(--text-disabled);
 }
 
+/* Área de trabalho: referência da máquina, tracejada como no preview. */
+.lg-work {
+  background: none;
+  border: 1px dashed var(--text-disabled);
+  height: 6px;
+}
+
 .lg-tip {
   color: var(--text-disabled);
 }

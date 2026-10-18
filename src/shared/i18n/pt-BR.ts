@@ -396,7 +396,7 @@ export const ptBR = {
   'design.kind.line': 'Linha',
   'design.kind.text': 'Texto',
   'design.status.hint':
-    'Desenhe com as ferramentas à esquerda. Roda do mouse = zoom; botão do meio = mover a tela.',
+    'Desenhe com as ferramentas à esquerda. Roda do mouse = zoom; botão do meio = mover a tela. A gravação começa em X0 Y0 (canto inferior esquerdo do desenho): posicione o laser e defina a origem onde vai queimar.',
   'design.status.needShape': 'Desenhe ao menos uma forma.',
   'design.status.textEmpty': 'Digite o texto.',
   'design.status.textFail': 'Não foi possível gerar o texto.',
@@ -517,6 +517,7 @@ export const ptBR = {
   'preview.cut': 'Queima',
   'preview.pass': 'Passada {n}/{total}',
   'preview.rapid': 'Deslocamento',
+  'preview.workArea': 'Área de trabalho', // referência, não faz parte do job
   'preview.tip': 'roda: zoom · arrastar: mover · duplo clique: ajustar',
   'preview.simulate': 'Simular',
   'preview.warning.area':

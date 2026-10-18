@@ -140,6 +140,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **A página do desenho parte da área da máquina** (`$130`/`$131`): sem
   preferência salva, uma máquina de 400 × 400 abre com 400 × 400 em vez do
   padrão fixo de 150 × 130.
+- **A arte agora é ancorada na origem (começa em X0 Y0)**: para gravar alinhado
+  ao material, o usuário posiciona o laser onde vai queimar e **define a origem
+  ali** — então o G-code tem de começar sob o cabeçote. O `designToGcode` emitia
+  em coordenadas **absolutas da prancheta** (um 2 × 2 no meio de uma página
+  10 × 10 saía em X4/Y4), o que obrigava a máquina a sair andando em diagonal
+  até o desenho antes de queimar. Agora o **canto inferior esquerdo do desenho
+  vira X0 Y0** (`machineX = pageX − minX`, `machineY = maxY − pageY`) e cada
+  contorno começa pelo **canto mais próximo** do cabeçote — o `G0` inicial
+  aponta para o próprio X0 Y0 e o contorno segue sem cruzar o desenho. A posição
+  do objeto na prancheta continua servindo para compor a arte, mas não desloca
+  o job.
+- **O preview pintava o deslocamento (`G0`) como se fosse queima**: a caixa
+  tracejada da área de trabalho e o `G0` de retorno à origem não fazem parte do
+  job, mas o `drawGcodePreview` lia `prog.burns` (campo que não existe no
+  programa interpretado) e caía em `moves`, pintando **todas** as linhas na cor
+  de queima. Como o `G0` final roda depois do último `M4`, ele herdava o `S` e
+  virava uma **diagonal azul viva** do desenho até a origem — parecia que o
+  quadrado seria gravado com um rabisco. Agora só os trechos que realmente
+  queimam (`previewProgram.burns`) usam a cor de queima; o `G0` fica cinza
+  discreto. A caixa tracejada ganhou a entrada **"Área de trabalho"** na legenda
+  para deixar claro que é só referência.
 
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior

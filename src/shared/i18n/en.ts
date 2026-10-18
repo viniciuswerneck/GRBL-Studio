@@ -381,7 +381,7 @@ export const en = {
   'design.kind.line': 'Line',
   'design.kind.text': 'Text',
   'design.status.hint':
-    'Draw with the tools on the left. Mouse wheel = zoom; middle button = pan.',
+    'Draw with the tools on the left. Mouse wheel = zoom; middle button = pan. Engraving starts at X0 Y0 (bottom-left of the drawing): position the laser and set the origin where it will burn.',
   'design.status.needShape': 'Draw at least one shape.',
   'design.status.textEmpty': 'Type the text.',
   'design.status.textFail': 'Could not generate the text.',
@@ -499,6 +499,7 @@ export const en = {
   'preview.cut': 'Burn',
   'preview.pass': 'Pass {n}/{total}',
   'preview.rapid': 'Travel',
+  'preview.workArea': 'Work area', // reference only, not part of the job
   'preview.tip': 'wheel: zoom · drag: pan · double click: fit',
   'preview.simulate': 'Simulate',
   'preview.warning.area':
