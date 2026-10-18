@@ -1109,7 +1109,7 @@ function dApplyObjStyle() {
       if (sh) sh[key] = v;
     }
   };
-  apply('designObjPower', 'power', 1, 100);
+  apply('designObjPower', 'power', 0, 100);
   apply('designObjSpeed', 'speed', 100, 20000);
   dPushHistory();
   dRender();
