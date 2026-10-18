@@ -658,8 +658,18 @@ function moveToFrameCenter() {
   const b = frameBounds;
   const cx = (b.xMin + b.xMax) / 2;
   const cy = (b.yMin + b.yMax) / 2;
-  // M5 garante o laser desligado; G0 é um deslocamento puro até o centro.
-  for (const line of ['G90', 'M5', `G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`]) {
+  // Vai até o centro (laser desligado) e **aponta com laser bem fraco**
+  // (S=5, ~0,5 %) por um breve instante, para o usuário ver com a ponta
+  // onde será o centro — igual ao contorno, sem queimar o material.
+  const sPower = 5;
+  for (const line of [
+    'G90',
+    'M5',
+    `G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`,
+    `M4 S${sPower}`,
+    'G4 P0.4',
+    'M5',
+  ]) {
     window.grbl.writeLine(line);
   }
   if (el.frameStatus) el.frameStatus.textContent = t('frame.center.done');

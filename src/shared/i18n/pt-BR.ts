@@ -202,13 +202,13 @@ export const ptBR = {
   'frame.hint':
     'Use as setas para aproximar o laser da área. “Desenhar contorno” ' +
     'contorna a área com laser bem fraco e “Marcar centro” leva o laser ' +
-    'até o centro da imagem (laser desligado).',
+    'até o centro da imagem (laser fraco por um instante).',
   'frame.setOrigin': 'Definir origem aqui',
   'frame.origin': 'Ir para origem (0,0)',
   'frame.outline': 'Desenhar contorno',
   'frame.center': 'Marcar centro',
-  'frame.center.title': 'Leva o laser até o centro da imagem (laser desligado)',
-  'frame.center.done': 'Laser no centro da imagem (laser desligado).',
+  'frame.center.title': 'Leva o laser até o centro da imagem (laser fraco por um instante)',
+  'frame.center.done': 'Laser no centro da imagem (laser fraco).',
   'frame.start': '▶ Gravar',
   'frame.power': 'Potência da gravação (%)',
   'frame.speed': 'Velocidade de gravação (mm/min)',
