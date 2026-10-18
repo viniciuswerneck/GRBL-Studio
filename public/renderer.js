@@ -696,28 +696,32 @@ function dRender() {
     if (selected) {
       ctx.fillStyle = '#4cc2ff';
       for (const p of sh.points) {
-        ctx.beginPath(); ctx.arc(p.x, p.y, 4 / designState.view.scale, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3 / designState.view.scale, 0, Math.PI * 2); ctx.fill();
       }
-      // bounding box
-      const xs = sh.points.map((p) => p.x);
-      const ys = sh.points.map((p) => p.y);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
+    }
+  };
+
+  for (let i = 0; i < designState.shapes.length; i++) {
+    drawShape(designState.shapes[i], designSelectedIndices().includes(i));
+  }
+  if (designState.drawing) drawShape(designState.drawing, true);
+
+  // Handles + bbox do grupo selecionado (uma única vez, não por forma).
+  if (designState.selected >= 0 && designState.shapes.length) {
+    const b = designSelectedBounds();
+    if (b) {
       ctx.strokeStyle = 'rgba(76,194,255,0.6)';
       ctx.lineWidth = 1 / designState.view.scale;
       ctx.setLineDash([4 / designState.view.scale, 3 / designState.view.scale]);
-      ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+      ctx.strokeRect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
       ctx.setLineDash([]);
-      // handles
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = '#4cc2ff';
       const handles = [
-        { x: minX, y: minY }, { x: maxX, y: minY },
-        { x: maxX, y: maxY }, { x: minX, y: maxY },
-        { x: (minX + maxX) / 2, y: minY },
-        { x: maxX, y: (minY + maxY) / 2 },
-        { x: (minX + maxX) / 2, y: maxY },
-        { x: minX, y: (minY + maxY) / 2 },
+        { x: b.minX, y: b.minY }, { x: (b.minX + b.maxX) / 2, y: b.minY },
+        { x: b.maxX, y: b.minY }, { x: b.maxX, y: (b.minY + b.maxY) / 2 },
+        { x: b.maxX, y: b.maxY }, { x: (b.minX + b.maxX) / 2, y: b.maxY },
+        { x: b.minX, y: b.maxY }, { x: b.minX, y: (b.minY + b.maxY) / 2 },
       ];
       const hs = 6 / designState.view.scale;
       for (const h of handles) {
@@ -725,10 +729,10 @@ function dRender() {
         ctx.strokeRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
       }
     }
-  };
+  }
 
   for (let i = 0; i < designState.shapes.length; i++) {
-    drawShape(designState.shapes[i], i === designState.selected);
+    drawShape(designState.shapes[i], designSelectedIndices().includes(i));
   }
   if (designState.drawing) drawShape(designState.drawing, true);
 
@@ -837,6 +841,34 @@ function designHitTest(x, y) {
   return -1;
 }
 
+/** Índices de todas as formas do mesmo grupo da selecionada (ou só a selecionada). */
+function designSelectedIndices() {
+  const idx = designState.selected;
+  if (idx < 0 || idx >= designState.shapes.length) return [];
+  const g = designState.shapes[idx].group;
+  if (g === undefined || g === null) return [idx];
+  const out = [];
+  for (let i = 0; i < designState.shapes.length; i++) {
+    if (designState.shapes[i].group === g) out.push(i);
+  }
+  return out.length ? out : [idx];
+}
+
+/** Bounding box de todas as formas selecionadas (grupo). */
+function designSelectedBounds() {
+  const idxs = designSelectedIndices();
+  if (!idxs.length) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const i of idxs) {
+    const sh = designState.shapes[i];
+    for (const p of sh.points) {
+      minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+    }
+  }
+  return { minX, minY, maxX, maxY };
+}
+
 /** Retorna o índice do handle (0-7) sob (x,y) para a forma selecionada, ou -1. */
 function designHandleAt(sh, x, y) {
   if (!sh || !sh.points.length) return -1;
@@ -874,16 +906,14 @@ function dShapeBounds(sh) {
 
 function dUpdateProps() {
   if (!el.designPropX) return;
-  const idx = designState.selected;
-  if (idx < 0) {
+  const b = designSelectedBounds();
+  if (!b || designState.selected < 0) {
     el.designPropX.value = '';
     el.designPropY.value = '';
     el.designPropW.value = '';
     el.designPropH.value = '';
     return;
   }
-  const sh = designState.shapes[idx];
-  const b = dShapeBounds(sh);
   el.designPropX.value = b.minX.toFixed(1);
   el.designPropY.value = b.minY.toFixed(1);
   el.designPropW.value = (b.maxX - b.minX).toFixed(1);
@@ -1018,16 +1048,18 @@ async function designSave() {
     if (designState.tool === 'select') {
       // Primeiro: está clicando num handle da forma selecionada?
       if (designState.selected >= 0) {
-        const sh = designState.shapes[designState.selected];
-        const hi = designHandleAt(sh, pt.x, pt.y);
+        const idxs = designSelectedIndices();
+        const allPts = idxs.flatMap((i) => designState.shapes[i].points);
+        const hi = designHandleAt({ points: allPts }, pt.x, pt.y);
         if (hi >= 0) {
-          const xs = sh.points.map((p) => p.x);
-          const ys = sh.points.map((p) => p.y);
           designState.resizeHandle = hi;
           designState.resizeOrig = {
-            points: sh.points.map((p) => ({ x: p.x, y: p.y })),
-            minX: Math.min(...xs), maxX: Math.max(...xs),
-            minY: Math.min(...ys), maxY: Math.max(...ys),
+            shapes: idxs.map((i) => designState.shapes[i].points.map((p) => ({ x: p.x, y: p.y }))),
+            idxs: idxs.slice(),
+            minX: Math.min(...allPts.map((p) => p.x)),
+            maxX: Math.max(...allPts.map((p) => p.x)),
+            minY: Math.min(...allPts.map((p) => p.y)),
+            maxY: Math.max(...allPts.map((p) => p.y)),
             mouse: pt,
           };
           dRender();
@@ -1094,18 +1126,13 @@ async function designSave() {
     }
     // resize de forma selecionada via handle
     if (designState.resizeHandle >= 0 && designState.resizeOrig && designState.selected >= 0) {
-      const sh = designState.shapes[designState.selected];
       const orig = designState.resizeOrig;
       const hi = designState.resizeHandle;
       const newPt = designState.snap ? { x: dSnap(pt.x), y: dSnap(pt.y) } : pt;
-      const xs = orig.points.map((p) => p.x);
-      const ys = orig.points.map((p) => p.y);
-      const oMinX = Math.min(...xs), oMaxX = Math.max(...xs);
-      const oMinY = Math.min(...ys), oMaxY = Math.max(...ys);
-      const ow = oMaxX - oMinX || 1;
-      const oh = oMaxY - oMinY || 1;
+      const ow = orig.maxX - orig.minX || 1;
+      const oh = orig.maxY - orig.minY || 1;
       // determina novo bbox conforme o handle
-      let nMinX = oMinX, nMaxX = oMaxX, nMinY = oMinY, nMaxY = oMaxY;
+      let nMinX = orig.minX, nMaxX = orig.maxX, nMinY = orig.minY, nMaxY = orig.maxY;
       // handles: 0=TL,1=TC,2=TR,3=MR,4=BR,5=BC,6=BL,7=ML
       if (hi === 0 || hi === 6 || hi === 7) nMinX = newPt.x;
       if (hi === 2 || hi === 3 || hi === 4) nMaxX = newPt.x;
@@ -1115,10 +1142,14 @@ async function designSave() {
       if (nMaxY - nMinY < 2) { if (hi === 0 || hi === 1 || hi === 2) nMinY = nMaxY - 2; else nMaxY = nMinY + 2; }
       const sx = (nMaxX - nMinX) / ow;
       const sy = (nMaxY - nMinY) / oh;
-      for (let i = 0; i < sh.points.length; i++) {
-        const op = orig.points[i];
-        sh.points[i].x = nMinX + (op.x - oMinX) * sx;
-        sh.points[i].y = nMinY + (op.y - oMinY) * sy;
+      for (let k = 0; k < orig.idxs.length; k++) {
+        const sh2 = designState.shapes[orig.idxs[k]];
+        if (!sh2) continue;
+        const op = orig.shapes[k];
+        for (let i = 0; i < sh2.points.length; i++) {
+          sh2.points[i].x = nMinX + (op[i].x - orig.minX) * sx;
+          sh2.points[i].y = nMinY + (op[i].y - orig.minY) * sy;
+        }
       }
       dRender();
       dUpdateProps();
