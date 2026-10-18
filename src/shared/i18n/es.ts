@@ -211,6 +211,11 @@ export const es = {
     'Conecte la máquina para posicionar y dibujar el contorno.',
   'frame.outline.done': 'Contorno enviado (láser muy débil).',
   'frame.generating': 'Generando G-code con los parámetros del modal…',
+  'frame.connect': 'Conectar máquina',
+  'frame.connect.noPort':
+    'No se encontró ningún puerto serie. Revisa el cable y pulsa «Conectar máquina».',
+  'frame.ready.note':
+    'El G-code ya está listo. Conecta la máquina y usa «▶ Grabar».',
 
   // ------------------------------------------------------- rejilla de prueba de material
   'matTest.title': 'Cuadrícula de prueba de material',

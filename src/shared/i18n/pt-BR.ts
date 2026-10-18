@@ -221,6 +221,11 @@ export const ptBR = {
     'Conecte a máquina para posicionar e desenhar o contorno.',
   'frame.outline.done': 'Contorno enviado (laser bem fraco).',
   'frame.generating': 'Gerando G-code com os parâmetros do modal…',
+  'frame.connect': 'Conectar máquina',
+  'frame.connect.noPort':
+    'Nenhuma porta serial encontrada. Verifique o cabo e clique em “Conectar máquina”.',
+  'frame.ready.note':
+    'O G-code já está pronto. Conecte a máquina e use “▶ Gravar”.',
 
   // ------------------------------------------------------- teste de material
   'matTest.title': 'Grade de teste de material',

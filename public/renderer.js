@@ -194,6 +194,9 @@ const el = {
   frameStart: $('frameStart'),
   frameCancel: $('frameCancel'),
   frameStatus: $('frameStatus'),
+  frameConnect: $('frameConnect'),
+  frameGenParams: $('frameGenParams'),
+  frameReadyNote: $('frameReadyNote'),
   framePower: $('framePower'),
   framePowerValue: $('framePowerValue'),
   frameSpeed: $('frameSpeed'),
@@ -309,6 +312,13 @@ const state = {
   jobState: 'idle',
   lines: [],
   fileName: '',
+  /**
+   * De onde veio o job carregado: `image` (conversão da imagem), `design`
+   * (ferramenta de desenho), `file` (arquivo/SVG/teste de material). O modal de
+   * posicionamento usa isso para saber se “Gravar” precisa regerar o G-code da
+   * imagem ou apenas iniciar o programa já carregado.
+   */
+  jobSource: 'file',
   /** Unidade de exibição (RF-APP-3). mm é a do G-code; in é só conversão visual. */
   units: 'mm',
   /** Último status recebido (para reprocessar o DRO ao trocar a unidade). */
@@ -478,6 +488,7 @@ function setConnection(conn) {
   updateWorkflow();
   updateWizard();
   updateControls();
+  updateFrameConnectButton();
 }
 
 function setJobState(jobState) {
@@ -517,11 +528,6 @@ function openFrameModal() {
       : null);
   if (!el.frameOverlay) return;
   el.frameOverlay.classList.remove('hidden');
-  if (el.frameStatus) {
-    el.frameStatus.textContent = state.connected
-      ? t('frame.status.connected')
-      : t('frame.status.disconnected');
-  }
   // Sincroniza potência/velocidade com os parâmetros da imagem.
   if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
   if (el.framePower && el.imgSmax) {
@@ -532,6 +538,14 @@ function openFrameModal() {
     el.frameSpeedValue.textContent = `${el.frameSpeed.value} mm/min`;
   if (el.framePowerValue && el.framePower)
     el.framePowerValue.textContent = `${el.framePower.value} %`;
+  // "Conectar" no próprio modal: quem esqueceu de conectar não precisa fechar
+  // o desenho e começar tudo de novo.
+  updateFrameConnectButton();
+  // Potência/velocidade/passadas só regeram o G-code no fluxo de imagem; num
+  // desenho (ou arquivo aberto) o programa já está pronto — esconde os campos.
+  const isImage = state.jobSource === 'image';
+  if (el.frameGenParams) el.frameGenParams.classList.toggle('hidden', !isImage);
+  if (el.frameReadyNote) el.frameReadyNote.classList.toggle('hidden', isImage);
   updateFrameButtons();
 }
 
@@ -2284,7 +2298,7 @@ function designGenerate() {
     { shapes: designState.shapes, width: designState.page.w, height: designState.page.h },
     dReadEngraveOptions(),
   );
-  applyJobLines('design.gcode', gcode);
+  applyJobLines('design.gcode', gcode, 'design');
   dStatus(t('design.status.done'), 'ok');
   openFrameModal();
 }
@@ -2602,6 +2616,24 @@ function dConfirmSize() {
   });
 })();
 
+
+/** Alterna o rótulo Conectar/Desconectar do botão dentro do modal (RF-CON-1). */
+function updateFrameConnectButton() {
+  if (!el.frameConnect) return;
+  const connecting = state.connection === 'connecting';
+  el.frameConnect.textContent = state.connected
+    ? t('conn.disconnect')
+    : t('frame.connect');
+  el.frameConnect.classList.toggle('primary', !state.connected && !connecting);
+  el.frameConnect.disabled = connecting;
+  if (el.frameStatus) {
+    el.frameStatus.textContent = state.connected
+      ? t('frame.status.connected')
+      : connecting
+        ? t('conn.connecting')
+        : t('frame.status.disconnected');
+  }
+}
 
 function updateFrameButtons() {
   const busy = state.jobState === 'running' || state.jobState === 'paused';
@@ -3595,11 +3627,15 @@ el.fileOpen.addEventListener('click', async () => {
   );
 });
 
-function applyJobLines(name, text) {
+function applyJobLines(name, text, source = 'file') {
   state.lines = String(text)
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0);
   state.fileName = name;
+  state.jobSource = source;
+  // A área do modal de posicionamento deve ser a do job atual: descarta a da
+  // última imagem gerada (ela viria de `window.frameBounds`).
+  window.frameBounds = null;
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
@@ -3795,6 +3831,7 @@ function applyGenerated(gcode, stats, grid, contourPaths) {
 
   state.lines = gcode.split(/\r?\n/).filter((l) => l.trim().length > 0);
   state.fileName = `${baseName(image.name)}.gcode`;
+  state.jobSource = 'image';
   state.jobStart = 0;
   state.jobPreamble = 0;
   state.doneFile = 0;
@@ -6454,19 +6491,51 @@ if (el.framePower && el.framePowerValue) {
 }
 if (el.frameStart)
   el.frameStart.addEventListener('click', () => {
-    if (el.framePower && el.imgSmax) {
-      const pct = Math.max(0, Math.min(100, Number(el.framePower.value) || 0));
-      el.imgSmax.value = String(Math.round(pct * 10));
+    if (state.jobSource === 'image') {
+      // Fluxo de imagem: copia os parâmetros do modal e regera o G-code.
+      if (el.framePower && el.imgSmax) {
+        const pct = Math.max(0, Math.min(100, Number(el.framePower.value) || 0));
+        el.imgSmax.value = String(Math.round(pct * 10));
+      }
+      if (el.frameSpeed && el.imgSpeed) {
+        el.imgSpeed.value = String(el.frameSpeed.value);
+      }
+      if (el.framePasses && el.imgPasses) {
+        el.imgPasses.value = String(el.framePasses.value);
+      }
+      if (el.frameStatus) el.frameStatus.textContent = t('frame.generating');
+      autoStartAfterGenerate = true;
+      generateGcode(true);
+      return;
     }
-    if (el.frameSpeed && el.imgSpeed) {
-      el.imgSpeed.value = String(el.frameSpeed.value);
+    // Desenho ou arquivo aberto: o G-code já está pronto — só inicia o envio.
+    if (!state.connected) {
+      if (el.frameStatus)
+        el.frameStatus.textContent = t('frame.status.disconnected');
+      return;
     }
-    if (el.framePasses && el.imgPasses) {
-      el.imgPasses.value = String(el.framePasses.value);
+    closeFrameModal();
+    beginJob(0);
+  });
+
+// Conectar direto do modal de posicionamento (quem esqueceu de conectar antes
+// não precisa fechar o desenho e refazer tudo).
+if (el.frameConnect)
+  el.frameConnect.addEventListener('click', async () => {
+    if (state.connected) {
+      await window.grbl.disconnect();
+      return;
     }
-    if (el.frameStatus) el.frameStatus.textContent = t('frame.generating');
-    autoStartAfterGenerate = true;
-    generateGcode(true);
+    if (state.connection === 'connecting') return;
+    if (el.frameStatus) el.frameStatus.textContent = t('conn.connecting');
+    await refreshPorts();
+    const opts = connectionOptions();
+    if (!opts) {
+      if (el.frameStatus)
+        el.frameStatus.textContent = t('frame.connect.noPort');
+      return;
+    }
+    await tryConnect(opts);
   });
 
 // Assistente / guia iniciante (o antigo modo Básico/Avançado).

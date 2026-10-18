@@ -205,6 +205,11 @@ export const en = {
     'Connect the machine to position and draw the outline.',
   'frame.outline.done': 'Outline sent (very weak laser).',
   'frame.generating': 'Generating G-code with the dialog parameters…',
+  'frame.connect': 'Connect machine',
+  'frame.connect.noPort':
+    'No serial port found. Check the cable and click “Connect machine”.',
+  'frame.ready.note':
+    'The G-code is ready. Connect the machine and use “▶ Engrave”.',
 
   // ------------------------------------------------------- material test grid
   'matTest.title': 'Material test grid',

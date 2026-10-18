@@ -28,6 +28,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   (mm)**; com o cadeado travado (padrão), preencher um lado ajusta o outro na
   mesma proporção (`Esc` fecha só o diálogo). Confirmar escala a arte a partir do
   canto superior esquerdo e gera o G-code.
+- **Conectar no modal de posicionamento**: botão **Conectar máquina** (área de
+  status do modal) para quem esqueceu de conectar antes — não é mais preciso
+  fechar o desenho e refazer tudo.
 - Novo módulo **puro** `src/shared/designEditor.ts` (bounds, grupos, *hit-test*,
   z-order, simplificação RDP) + **17 testes**; bundle `public/designEditor.js`
   (`GRBL_DESIGN_EDITOR`).
@@ -45,6 +48,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   abre por cima e `Esc` fecha só ele.
 - Removido `<div>` de overlay duplicado em `public/index.html` (desbalanceava o
   DOM e escondia o restante da página).
+- **"▶ Gravar" não funcionava para o desenho**: o botão do modal de
+  posicionamento só regenerava o G-code da **imagem** (e voltava sem fazer nada
+  quando não havia imagem). Agora o app guarda a origem do job (`image`,
+  `design`, `file`): em desenho/arquivo o G-code já está pronto e o botão apenas
+  inicia o envio. Os campos de potência/velocidade/passadas (que só regeram a
+  imagem) ficam ocultos nesses casos.
 
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior
