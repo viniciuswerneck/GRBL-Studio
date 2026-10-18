@@ -27,13 +27,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Seletor de fontes**: além da lista curada e da fonte single-stroke, o campo
   Fonte lista as **famílias instaladas no sistema** (`fontconfig` via IPC
   `app:fonts:list`), em ordem alfabética, com busca pelo próprio `<datalist>`.
-- **Gravação por objeto**: a barra de propriedades tem **potência (%)** e
-  **velocidade (mm/min)** por objeto. Campo vazio = usa o parâmetro global (que
+- **Gravação por objeto**: a barra de propriedades tem **potência (%)**,
+  **velocidade (mm/min)** e **espessura do traço (mm)** por objeto. Campo vazio
+  = usa o parâmetro global (que
   aparece em cinza como `placeholder`); valores diferentes na seleção mostram
-  `—`, e a lista de Objetos exibe o que cada um sobrescreve (`35% · 600`). Os
+  `—`, e a lista de Objetos exibe o que cada um sobrescreve (`35% · 600 · 2 mm`). Os
   botões **Copiar estilo**/**Colar estilo** (`Ctrl+Shift+C`/`Ctrl+Shift+V`)
   replicam a gravação de um objeto na seleção — ex.: contorno fraco e
   preenchimento forte no mesmo desenho, sem gerar dois arquivos.
+- **Espessura do traço**: cada objeto pode gravar uma **faixa de N mm centrada
+  no caminho** (como um traço de caneta: metade para cada lado), com o campo `E`
+  da barra de propriedades. A gravação preenche a faixa com linhas paralelas
+  espaçadas de ~0,1 mm (o mesmo *kerf* do preenchimento por varredura) e o
+  desenho mostra o traço com a espessura real (WYSIWYG); `0`/vazio mantém a
+  linha simples e espessuras dentro do feixe não mudam nada. Vale para
+  retângulos, elipses, polígonos, textos e linhas — e a espessura é um
+  parâmetro de gravação em mm: **não escala** junto com o desenho (o traço
+  também não é reeditado ao reaproveitar o estilo de um objeto).
 - **Booleanas e contorno paralelo** (menu da barra de propriedades): **unir**,
   **subtrair** (o objeto de trás menos os da frente), **intersecção** e
   **exclusão** entre 2+ objetos fechados — com furos corretos (paridade de

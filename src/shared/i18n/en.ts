@@ -307,6 +307,9 @@ export const en = {
   'design.obj.speed': 'F',
   'design.obj.speed.hint':
     'Object feed (mm/min) — empty uses the engraving default',
+  'design.obj.width': 'W',
+  'design.obj.width.hint':
+    'Stroke width (mm) — engraves a band centred on the path; empty = single line',
   'design.style.copy': 'Copy style (Ctrl+Shift+C)',
   'design.style.paste': 'Paste style (Ctrl+Shift+V)',
   'design.style.copied': 'Style copied.',

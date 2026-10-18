@@ -55,7 +55,16 @@ describe('designToGcode', () => {
 
   it('forma aberta (linha) não fecha o contorno', () => {
     const doc: DesignDocument = {
-      shapes: [{ kind: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 0 }], closed: false }],
+      shapes: [
+        {
+          kind: 'line',
+          points: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+          ],
+          closed: false,
+        },
+      ],
       width: 10,
       height: 0,
     };
@@ -90,7 +99,13 @@ describe('designToGcode', () => {
   it('usa speed/power por forma quando fornecidos', () => {
     const doc: DesignDocument = {
       shapes: [
-        { kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true, speed: 500, power: 300 },
+        {
+          kind: 'rect',
+          points: makeRect(0, 0, 5, 5),
+          closed: true,
+          speed: 500,
+          power: 300,
+        },
       ],
       width: 5,
       height: 5,
@@ -103,13 +118,24 @@ describe('designToGcode', () => {
   it('mistura forma com e sem override: as demais seguem o global', () => {
     const doc: DesignDocument = {
       shapes: [
-        { kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true, speed: 500, power: 300 },
+        {
+          kind: 'rect',
+          points: makeRect(0, 0, 5, 5),
+          closed: true,
+          speed: 500,
+          power: 300,
+        },
         { kind: 'rect', points: makeRect(10, 0, 5, 5), closed: true },
       ],
       width: 15,
       height: 5,
     };
-    const g = designToGcode(doc, { feed: 1000, sMax: 1000, powerPercent: 50, travelFeed: 3000 });
+    const g = designToGcode(doc, {
+      feed: 1000,
+      sMax: 1000,
+      powerPercent: 50,
+      travelFeed: 3000,
+    });
     expect(g).toContain('S300'); // override da 1ª forma
     expect(g).toContain('S500'); // 50 % de sMax na 2ª
     expect(g).toContain('F500'); // velocidade própria
@@ -139,11 +165,78 @@ describe('designToGcode', () => {
   });
 
   it('shapesToGcode é atalho equivalente', () => {
-    const shapes: Shape[] = [{ kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true }];
+    const shapes: Shape[] = [
+      { kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true },
+    ];
     const g1 = shapesToGcode(shapes, baseOpts);
     const g2 = designToGcode({ shapes, width: 5, height: 5 }, baseOpts);
     // A área no cabeçalho difere (width/height), mas o corpo é o mesmo.
     expect(g1).toContain('M4 S800');
     expect(g2).toContain('M4 S800');
+  });
+});
+
+describe('espessura do traço (width)', () => {
+  const paths = (g: string) => (g.match(/M5/g) ?? []).length - 2; // cabeçalho + rodapé
+
+  it('cobre a faixa centrada com linhas paralelas', () => {
+    // 2 mm de espessura em passos de 0,1 = 21 caminhos (de 8×8 a 12×12)
+    const g = shapesToGcode(
+      [
+        {
+          kind: 'rect',
+          points: makeRect(0, 0, 10, 10),
+          closed: true,
+          width: 2,
+        },
+      ],
+      baseOpts,
+    );
+    expect(paths(g)).toBe(21);
+    // A área do cabeçalho inclui a espessura (12 × 12).
+    expect(g).toContain('12.00 x 12.00 mm');
+    // As pontas da faixa aparecem nas coordenadas emitidas (eixo Y invertido).
+    expect(g).toContain('X-1.000');
+    expect(g).toContain('X11.000');
+  });
+
+  it('uma linha aberta ganha paralelas dos dois lados', () => {
+    const g = shapesToGcode(
+      [
+        {
+          kind: 'line',
+          points: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+          ],
+          closed: false,
+          width: 2,
+        },
+      ],
+      baseOpts,
+    );
+    // passo 0,1 → 21 paralelas, todas retas (2 G1 cada: nada de fechar)
+    expect(paths(g)).toBe(21);
+    expect(g).toContain('X10.000 Y');
+  });
+
+  it('espessura dentro do passo do feixe não muda o traço', () => {
+    const thin = shapesToGcode(
+      [
+        {
+          kind: 'rect',
+          points: makeRect(0, 0, 10, 10),
+          closed: true,
+          width: 0.05,
+        },
+      ],
+      baseOpts,
+    );
+    const none = shapesToGcode(
+      [{ kind: 'rect', points: makeRect(0, 0, 10, 10), closed: true }],
+      baseOpts,
+    );
+    expect(thin).toBe(none);
+    expect(paths(none)).toBe(1);
   });
 });

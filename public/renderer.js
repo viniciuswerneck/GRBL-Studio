@@ -1458,7 +1458,7 @@ function dUpdateProps() {
  * valores diferentes mostram `—`.
  */
 function dUpdateObjStyleFields(selection) {
-  const set = (id, key, globalId) => {
+  const set = (id, key, globalId, digits = 0) => {
     const node = $(id);
     if (!node) return;
     if (!selection?.length) {
@@ -1467,15 +1467,28 @@ function dUpdateObjStyleFields(selection) {
       return;
     }
     const v = dCommonShapeProp(key);
-    node.value = typeof v === 'number' ? String(Math.round(v)) : '';
+    const show = (n) => (digits > 0 ? String(Number(n.toFixed(digits))) : String(Math.round(n)));
+    node.value = typeof v === 'number' ? show(v) : '';
     if (v === null) node.placeholder = '—';
-    else node.placeholder = String(Math.round(dNum(globalId, 0) || 0));
+    else node.placeholder = show(dNum(globalId, 0) || 0);
   };
   set('designObjPower', 'power', 'designPower');
   set('designObjSpeed', 'speed', 'designSpeed');
+  // Espessura: sem global (vazio = 0, traço simples).
+  const width = $('designObjWidth');
+  if (width) {
+    if (!selection?.length) {
+      width.value = '';
+      width.placeholder = '0';
+    } else {
+      const v = dCommonShapeProp('width');
+      width.value = typeof v === 'number' ? String(Number(v.toFixed(2))) : '';
+      width.placeholder = v === null ? '—' : '0';
+    }
+  }
 }
 
-/** Aplica potência/velocidade por objeto (vazio volta ao padrão global). */
+/** Aplica potência/velocidade/espessura por objeto (vazio volta ao padrão). */
 function dApplyObjStyle() {
   if (!designState.selection.length) return;
   const apply = (id, key, lo, hi) => {
@@ -1499,6 +1512,7 @@ function dApplyObjStyle() {
   };
   apply('designObjPower', 'power', 0, 100);
   apply('designObjSpeed', 'speed', 100, 20000);
+  apply('designObjWidth', 'width', 0, 100);
   dPushHistory();
   dRender();
   dUpdateProps();
@@ -1516,7 +1530,8 @@ function dCopyStyle() {
   const sh = designState.shapes[sel[0]] || {};
   const power = typeof sh.power === 'number' ? sh.power : null;
   const speed = typeof sh.speed === 'number' ? sh.speed : null;
-  dStyleClip = { power, speed };
+  const width = typeof sh.width === 'number' ? sh.width : null;
+  dStyleClip = { power, speed, width };
   dStatus(t('design.style.copied'));
   dUpdateButtons();
 }
@@ -1536,6 +1551,7 @@ function dPasteStyle() {
     if (!sh) continue;
     sh.power = dStyleClip.power === null ? undefined : dStyleClip.power;
     sh.speed = dStyleClip.speed === null ? undefined : dStyleClip.speed;
+    sh.width = dStyleClip.width === null ? undefined : dStyleClip.width;
   }
   dPushHistory();
   dRender();
@@ -1648,6 +1664,7 @@ function dUpdateObjectList() {
     const meta = [];
     if (typeof sh.power === 'number') meta.push(`${Math.round(sh.power)}%`);
     if (typeof sh.speed === 'number') meta.push(`${Math.round(sh.speed)}`);
+    if (sh.width && sh.width > 0) meta.push(`${Number(sh.width.toFixed(2))} mm`);
     const info = meta.length ? document.createElement('span') : null;
     if (info) {
       info.className = 'design-obj-meta';
@@ -1881,7 +1898,10 @@ function dPaint() {
       ctx.fill();
     }
     ctx.strokeStyle = selected ? accent : '#1b1b1b';
-    ctx.lineWidth = selected ? 2 / v.scale : baseLw;
+    // Espessura do traço em mm (mesma unidade do contexto), centrada no
+    // caminho — é exatamente a faixa que a gravação cobre.
+    const thick = sh.width && sh.width > 0 ? sh.width : 0;
+    ctx.lineWidth = Math.max(selected ? 2 / v.scale : baseLw, thick);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -2294,6 +2314,18 @@ async function dCommitText() {
   let group = edit?.group ?? `g${designState.seq++}`;
   const name = edit?.name ?? dNextName('text');
 
+  // Reeditar não pode jogar fora a gravação do bloco: potência, velocidade e
+  // espessura do traço voltam para os contornos novos.
+  let keep = null;
+  if (edit?.group) keep = designState.shapes.find((s) => s.group === edit.group) ?? null;
+  else if (edit?.indices?.length) keep = designState.shapes[edit.indices[0]] ?? null;
+  const style = {};
+  if (keep) {
+    for (const k of ['speed', 'power', 'passes', 'width']) {
+      if (keep[k] !== undefined) style[k] = keep[k];
+    }
+  }
+
   if (edit?.group) {
     // remove o bloco antigo e recria no mesmo lugar
     designState.shapes = designState.shapes.filter((s) => s.group !== edit.group);
@@ -2307,6 +2339,7 @@ async function dCommitText() {
     sh.group = group;
     sh.name = name;
     sh.text = { value, font, size, mode, bold, spacing };
+    Object.assign(sh, style);
   }
   const base = designState.shapes.length;
   designState.shapes.push(...shapes);
@@ -3342,9 +3375,10 @@ function dConfirmSize() {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyProps);
   }
-  // Potência/velocidade por objeto têm handler próprio: só agem quando o campo
-  // é realmente editado (não apagam as exceções ao mexer na geometria).
-  for (const id of ['designObjPower', 'designObjSpeed']) {
+  // Potência/velocidade/espessura por objeto têm handler próprio: só agem
+  // quando o campo é realmente editado (não apagam as exceções ao mexer na
+  // geometria).
+  for (const id of ['designObjPower', 'designObjSpeed', 'designObjWidth']) {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyObjStyle);
   }

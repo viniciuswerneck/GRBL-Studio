@@ -313,6 +313,9 @@ export const es = {
   'design.obj.speed': 'V',
   'design.obj.speed.hint':
     'Velocidad del objeto (mm/min) — vacío usa el valor de grabado',
+  'design.obj.width': 'E',
+  'design.obj.width.hint':
+    'Grosor del trazo (mm) — graba una banda centrada en el camino; vacío = trazo simple',
   'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
   'design.style.paste': 'Pegar estilo (Ctrl+Shift+V)',
   'design.style.copied': 'Estilo copiado.',

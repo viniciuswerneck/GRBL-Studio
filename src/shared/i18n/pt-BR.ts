@@ -321,6 +321,9 @@ export const ptBR = {
   'design.obj.speed': 'V',
   'design.obj.speed.hint':
     'Velocidade do objeto (mm/min) — vazio usa o padrão de gravação',
+  'design.obj.width': 'E',
+  'design.obj.width.hint':
+    'Espessura do traço (mm) — grava uma faixa centrada no caminho; vazio = traço simples',
   'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
   'design.style.paste': 'Colar estilo (Ctrl+Shift+V)',
   'design.style.copied': 'Estilo copiado.',

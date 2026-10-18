@@ -98,12 +98,12 @@ isolados por `contextIsolation`:
 
 | Módulo | Responsabilidade | Status |
 | :--- | :--- | :--- |
-| `shared/design.ts` | Formas (`Shape`), validação e `designToGcode` (contorno G0/G1 + M3/M4). | ✅ |
+| `shared/design.ts` | Formas (`Shape`), validação e `designToGcode` (contorno G0/G1 + M3/M4; **espessura do traço** = faixa centrada). | ✅ |
 | `shared/designEditor.ts` | Edição pura: hit-test, *handles*, marquee, zoom, espelhar, distribuir, matriz, agrupar. | ✅ |
 | `shared/fonts.ts` | Fonte single-stroke (Hershey Simplex) → polilinhas. | ✅ |
 | `shared/hatch.ts` | Preenchimento por varredura (`zigzagHatch`, máscara → linhas). | ✅ |
 | `shared/boolean.ts` | Clipagem booleana por **cobertura** (união/intersecção/exclusão/subtração), com furos por paridade e agrupamento de aninhados. | ✅ |
-| `shared/offset.ts` | Offset de contornos fechados (`miter`/`round`/`bevel`, passadas concêntricas) com guarda de colapso. | ✅ |
+| `shared/offset.ts` | Offset de contornos fechados (`miter`/`round`/`bevel`, passadas concêntricas) com guarda de colapso; offset de polilinha aberta e `strokePaths` (espessura centrada). | ✅ |
 
 ### Imagem → G-code (Fase 5)
 

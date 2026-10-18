@@ -208,3 +208,120 @@ export function offsetPasses(
   }
   return out;
 }
+
+// ------------------------------------------------- espessura do traço (banda)
+
+/**
+ * Espaçamento padrão entre as linhas paralelas de um traço grosso (mm):
+ * aproximadamente o *kerf* de um laser de diodo — o mesmo passo que o
+ * preenchimento por varredura usa.
+ */
+export const STROKE_STEP = 0.1;
+
+/** Máximo de linhas paralelas por traço (evita G-code patológico). */
+export const MAX_STROKE_LINES = 201;
+
+/**
+ * Distâncias das linhas paralelas que cobrem uma faixa de largura `width`
+ * **centrada** no traço: `0, ±passo, ±2·passo … ±width/2`. Como um traço de
+ * caneta — metade para cada lado. O passo nunca passa de `step` (as pontas
+ * ficam exatamente em ±width/2) e a quantidade de linhas é limitada por
+ * `maxLines`.
+ */
+export function strokeOffsets(
+  width: number,
+  step: number = STROKE_STEP,
+  maxLines: number = MAX_STROKE_LINES,
+): number[] {
+  const half = Math.abs(width) / 2;
+  if (!(half > 5e-4)) return [0];
+  const cap = Math.max(1, Math.floor(Math.max(3, maxLines) / 2));
+  const n = Math.max(1, Math.min(cap, Math.ceil(half / Math.max(1e-4, step))));
+  const s = half / n;
+  const out: number[] = [];
+  for (let k = n; k >= 1; k--) out.push(-k * s);
+  out.push(0);
+  for (let k = 1; k <= n; k++) out.push(k * s);
+  return out;
+}
+
+/**
+ * Offset de uma polilinha **aberta** para um dos lados: `distance` > 0 desloca
+ * para a esquerda do sentido do traço (as duas metades da faixa saem dos sinais
+ * ±). Cantos agudos viram chanfro a partir de `miterLimit` (evita espigões).
+ * Devolve `null` se a polilinha colapsar.
+ */
+export function offsetPolyline(
+  points: ReadonlyArray<Point>,
+  distance: number,
+  options: Pick<OffsetOptions, 'miterLimit'> = {},
+): Point[] | null {
+  const src = dedupe(points);
+  if (src.length < 2 || Math.abs(distance) < 1e-9) return null;
+  const miterLimit = options.miterLimit ?? 3;
+  const out: Point[] = [];
+  const n = src.length;
+  for (let i = 0; i < n; i++) {
+    const cur = src[i];
+    const first = i === 0;
+    const last = i === n - 1;
+    if (first || last) {
+      // Ponta: desloca na normal do único segmento ligado ao vértice (sentido
+      // do traço, para os dois lados usarem a mesma normal).
+      const d = first ? unit(cur, src[1]) : unit(src[n - 2], cur);
+      out.push({ x: cur.x + -d.y * distance, y: cur.y + d.x * distance });
+      continue;
+    }
+    const d1 = unit(src[i - 1], cur);
+    const d2 = unit(cur, src[i + 1]);
+    const a = { x: cur.x + -d1.y * distance, y: cur.y + d1.x * distance };
+    const b = { x: cur.x + -d2.y * distance, y: cur.y + d2.x * distance };
+    const cross = d1.x * d2.y - d1.y * d2.x;
+    if (Math.abs(cross) < 1e-9) {
+      out.push(a);
+      continue;
+    }
+    const mit = lineIntersect(a, d1, b, d2);
+    // Curva fechando (o lado de dentro do arco): o cruzamento das retas
+    // deslocadas é o próprio vértice; encolhe sem espigão.
+    if (!mit || cross * distance < 0) {
+      out.push(mit ?? a);
+      continue;
+    }
+    const miterLen = Math.hypot(mit.x - cur.x, mit.y - cur.y);
+    if (miterLen > miterLimit * Math.abs(distance)) out.push(a, b);
+    else out.push(mit);
+  }
+  return out.length >= 2 ? out : null;
+}
+
+/**
+ * Linhas que cobrem um traço de largura `width` mm **centrada** no caminho: o
+ * próprio caminho mais as paralelas até ±width/2 (contornos fechados geram
+ * anéis concêntricos; linhas abertas, paralelas de cada lado). Espessura menor
+ * ou igual ao passo não muda nada (fica dentro do feixe): devolve o caminho
+ * original.
+ */
+export function strokePaths(
+  points: ReadonlyArray<Point>,
+  closed: boolean,
+  width: number,
+  step: number = STROKE_STEP,
+  options: OffsetOptions = {},
+): Point[][] {
+  const src = dedupe(points);
+  if (src.length < (closed ? 3 : 2)) return [];
+  if (!(width > step)) return [src];
+  const out: Point[][] = [];
+  for (const d of strokeOffsets(width, step)) {
+    if (Math.abs(d) < 1e-9) {
+      out.push(src);
+      continue;
+    }
+    const ring = closed
+      ? offsetLoop(src, d, options)
+      : offsetPolyline(src, d, options);
+    if (ring && ring.length >= (closed ? 3 : 2)) out.push(ring);
+  }
+  return out;
+}
