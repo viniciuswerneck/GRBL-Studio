@@ -661,13 +661,19 @@ function moveToFrameCenter() {
   // Vai até o centro (laser desligado) e **aponta com laser bem fraco**
   // (S=5, ~0,5 %) por um breve instante, para o usuário ver com a ponta
   // onde será o centro — igual ao contorno, sem queimar o material.
+  // Usa M3 (potência constante): em M4 a potência é proporcional à
+  // velocidade e durante o dwell (G4) a velocidade é zero → o laser não
+  // acende. M3 mantém o laser ligado mesmo parado.
   const sPower = 5;
+  const step = 0.3;
   for (const line of [
     'G90',
     'M5',
     `G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`,
-    `M4 S${sPower}`,
-    'G4 P0.4',
+    `M3 S${sPower}`,   // M3 = potência constante (acende mesmo parado/lento)
+    `G1 X${(cx + step).toFixed(3)} Y${cy.toFixed(3)} F300`,
+    `G1 X${(cx - step).toFixed(3)} Y${cy.toFixed(3)} F300`,
+    `G1 X${cx.toFixed(3)} Y${cy.toFixed(3)} F300`,
     'M5',
   ]) {
     window.grbl.writeLine(line);
