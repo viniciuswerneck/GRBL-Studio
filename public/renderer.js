@@ -245,6 +245,7 @@ const el = {
   designPower: $('designPower'),
   designPasses: $('designPasses'),
   designMode: $('designMode'),
+  designFont: $('designFont'),
   designStatus: $('designStatus'),
   designSave: $('designSave'),
   designGenerate: $('designGenerate'),
@@ -727,6 +728,88 @@ function dRender() {
 
   ctx.restore();
 
+  // ---- réguas (screen space) ----
+  const RULER = 20;
+  const scale = designState.view.scale;
+  // major tick interval in world units, chosen so ticks are ~60-120 px apart
+  let major = 10;
+  while (major * scale < 40) major *= 2;
+  while (major * scale > 120) major /= 2;
+  const minor = major / 5;
+  const tx = designState.view.tx;
+  const ty = designState.view.ty;
+
+  // visible world range
+  const w0 = (0 - tx) / scale;
+  const w1 = (w - tx) / scale;
+  const h0 = (0 - ty) / scale;
+  const h1 = (h - ty) / scale;
+
+  // top ruler background
+  ctx.fillStyle = '#1a1a1e';
+  ctx.fillRect(0, 0, w, RULER);
+  ctx.fillRect(0, 0, RULER, h);
+  // corner
+  ctx.fillStyle = '#232328';
+  ctx.fillRect(0, 0, RULER, RULER);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '9px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.lineWidth = 1;
+
+  // top ticks
+  const firstMajorX = Math.ceil(w0 / major) * major;
+  for (let wx = firstMajorX; wx <= w1; wx += major) {
+    const sx = wx * scale + tx;
+    if (sx < RULER || sx > w) continue;
+    ctx.beginPath();
+    ctx.moveTo(sx, RULER - 8);
+    ctx.lineTo(sx, RULER);
+    ctx.stroke();
+    ctx.fillText(String(Math.round(wx)), sx, 2);
+    // minor ticks
+    for (let m = 1; m < 5; m++) {
+      const wxm = wx - major + m * minor;
+      const sxm = wxm * scale + tx;
+      if (sxm < RULER || sxm > w) continue;
+      ctx.beginPath();
+      ctx.moveTo(sxm, RULER - 4);
+      ctx.lineTo(sxm, RULER);
+      ctx.stroke();
+    }
+  }
+  // left ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const firstMajorY = Math.ceil(h0 / major) * major;
+  for (let wy = firstMajorY; wy <= h1; wy += major) {
+    const sy = wy * scale + ty;
+    if (sy < RULER || sy > h) continue;
+    ctx.beginPath();
+    ctx.moveTo(RULER - 8, sy);
+    ctx.lineTo(RULER, sy);
+    ctx.stroke();
+    ctx.fillText(String(Math.round(wy)), RULER - 10, sy);
+    for (let m = 1; m < 5; m++) {
+      const wym = wy - major + m * minor;
+      const sym = wym * scale + ty;
+      if (sym < RULER || sym > h) continue;
+      ctx.beginPath();
+      ctx.moveTo(RULER - 4, sym);
+      ctx.lineTo(RULER, sym);
+      ctx.stroke();
+    }
+  }
+  // border
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath();
+  ctx.moveTo(RULER, 0); ctx.lineTo(RULER, h);
+  ctx.moveTo(0, RULER); ctx.lineTo(w, RULER);
+  ctx.stroke();
+
   // cursor crosshair (subtle)
   // (none — keeps canvas clean)
 
@@ -839,7 +922,7 @@ function openDesignModal() {
   designState.tool = 'select';
   designState.selected = -1;
   designState.drawing = null;
-  designState.view = { scale: 1, tx: 0, ty: 0 };
+  designState.view = { scale: 1, tx: 20, ty: 20 };
   designUpdateToolButtons();
   dPushHistory();
   dRender();
@@ -850,7 +933,7 @@ function closeDesignModal() {
 }
 
 function designUpdateToolButtons() {
-  const tools = { designToolSelect: 'select', designToolRect: 'rect', designToolCircle: 'circle', designToolLine: 'line' };
+  const tools = { designToolSelect: 'select', designToolRect: 'rect', designToolCircle: 'circle', designToolLine: 'line', designToolText: 'text' };
   for (const [id, tool] of Object.entries(tools)) {
     const b = el[id];
     if (b) b.classList.toggle('active', designState.tool === tool);
@@ -953,6 +1036,24 @@ async function designSave() {
       }
       dRender();
       dUpdateProps();
+      return;
+    }
+    // ferramenta de texto: pede o texto e cria as formas
+    if (designState.tool === 'text') {
+      const txt = window.prompt('Texto:', 'GRBL');
+      if (txt && txt.trim() && window.GRBL_FONTS) {
+        const fontId = el.designFont ? el.designFont.value : 'simplex';
+        const size = 10;
+        const shapes = window.GRBL_FONTS.textToShapes({ text: txt, fontId, size, x: pt.x, y: pt.y, letterSpacing: 0.1 });
+        for (const sh of shapes) designState.shapes.push(sh);
+        designState.selected = designState.shapes.length - 1;
+        dPushHistory();
+        dRender();
+        dUpdateProps();
+        dUpdateObjectList();
+      }
+      designState.tool = 'select';
+      designUpdateToolButtons();
       return;
     }
     start = pt;
@@ -1184,11 +1285,12 @@ if (el.designToolSelect) el.designToolSelect.addEventListener('click', () => des
 if (el.designToolRect) el.designToolRect.addEventListener('click', () => designSetTool('rect'));
 if (el.designToolCircle) el.designToolCircle.addEventListener('click', () => designSetTool('circle'));
 if (el.designToolLine) el.designToolLine.addEventListener('click', () => designSetTool('line'));
+if (el.designToolText) el.designToolText.addEventListener('click', () => designSetTool('text'));
 if (el.designUndo) el.designUndo.addEventListener('click', dUndo);
 if (el.designRedo) el.designRedo.addEventListener('click', dRedo);
 if (el.designZoomIn) el.designZoomIn.addEventListener('click', () => { designState.view.scale = Math.min(8, designState.view.scale * 1.2); dRender(); });
 if (el.designZoomOut) el.designZoomOut.addEventListener('click', () => { designState.view.scale = Math.max(0.2, designState.view.scale / 1.2); dRender(); });
-if (el.designZoomFit) el.designZoomFit.addEventListener('click', () => { designState.view = { scale: 1, tx: 0, ty: 0 }; dRender(); });
+if (el.designZoomFit) el.designZoomFit.addEventListener('click', () => { designState.view = { scale: 1, tx: 20, ty: 20 }; dRender(); });
 if (el.designAlignLeft) el.designAlignLeft.addEventListener('click', () => dAlign('left'));
 if (el.designAlignCenter) el.designAlignCenter.addEventListener('click', () => dAlign('center'));
 if (el.designAlignRight) el.designAlignRight.addEventListener('click', () => dAlign('right'));
@@ -1276,8 +1378,20 @@ function openDesignModal() {
   designState.tool = 'select';
   designState.selected = -1;
   designState.drawing = null;
-  designState.view = { scale: 1, tx: 0, ty: 0 };
+  designState.view = { scale: 1, tx: 20, ty: 20 };
   if (designState.history.length === 0) dPushHistory();
+  // Popula o seletor de fontes.
+  if (el.designFont && window.GRBL_FONTS) {
+    const cur = el.designFont.value;
+    el.designFont.innerHTML = '';
+    for (const f of window.GRBL_FONTS.fontOptions()) {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      el.designFont.appendChild(opt);
+    }
+    if (cur) el.designFont.value = cur;
+  }
   designUpdateToolButtons();
   dRender();
 }

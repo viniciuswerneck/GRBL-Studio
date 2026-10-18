@@ -1,0 +1,147 @@
+/**
+ * Fontes vetoriais single-stroke (estilo Hershey) para gravação a laser.
+ *
+ * Fontes single-stroke são ideais para laser/CNC: cada letra é um conjunto de
+ * linhas (sem preenchimento), o que produz gravação rápida e limpa. Este
+ * módulo embute uma fonte "Simplex" (maiúsculas, dígitos e pontuação básica)
+ * e expõe `textToShapes()` para converter texto em formas vetoriais.
+ *
+ * A estrutura permite adicionar outras fontes (ex.: "Script", "Gothic") sem
+ * mudar a API: basta registrar em `FONTS` e escolher pelo id.
+ */
+
+export interface FontGlyph {
+  /** Largura do avanço (em unidades de fonte, altura = 1). */
+  advance: number;
+  /** Traços: cada traço é uma polilinha de pontos [x, y]. */
+  strokes: Array<Array<[number, number]>>;
+}
+
+export interface VectorFont {
+  id: string;
+  name: string;
+  /** Altura da linha de base (1 unidade). */
+  height: number;
+  glyphs: Record<string, FontGlyph>;
+  /** Glifo usado para caracteres não mapeados. */
+  fallback: string;
+}
+
+/** Fonte Simplex (maiúsculas + dígitos + pontuação). Coordenadas em unidades
+ *  de fonte; altura total ≈ 1.0, baseline em y=0, ascendente positivo. */
+const SIMPLEX_GLYPHS: Record<string, FontGlyph> = {
+  ' ': { advance: 0.4, strokes: [] },
+  'A': { advance: 0.7, strokes: [[[0.05,0],[0.35,1],[0.65,0]],[[0.18,0.45],[0.52,0.45]]] },
+  'B': { advance: 0.7, strokes: [[[0,0],[0,1]],[[0,1],[0.4,1],[0.55,0.85],[0.55,0.6],[0.4,0.45],[0,0.45]],[[0,0.45],[0.4,0.45],[0.55,0.3],[0.55,0.15],[0.4,0],[0,0]]] },
+  'C': { advance: 0.7, strokes: [[[0.6,0.1],[0.45,0],[0.15,0],[0,0.15],[0,0.85],[0.15,1],[0.45,1],[0.6,0.9]]] },
+  'D': { advance: 0.7, strokes: [[[0,0],[0,1]],[[0,1],[0.4,1],[0.6,0.8],[0.6,0.2],[0.4,0],[0,0]]] },
+  'E': { advance: 0.6, strokes: [[[0.6,0],[0,0],[0,1],[0.6,1]],[[0,0.5],[0.45,0.5]]] },
+  'F': { advance: 0.6, strokes: [[[0,0],[0,1]],[[0,1],[0.6,1]],[[0,0.5],[0.45,0.5]]] },
+  'G': { advance: 0.7, strokes: [[[0.6,0.1],[0.45,0],[0.15,0],[0,0.15],[0,0.85],[0.15,1],[0.45,1],[0.6,0.9],[0.6,0.5],[0.4,0.5]]] },
+  'H': { advance: 0.7, strokes: [[[0,0],[0,1]],[[0.6,0],[0.6,1]],[[0,0.5],[0.6,0.5]]] },
+  'I': { advance: 0.3, strokes: [[[0.15,0],[0.15,1]]] },
+  'J': { advance: 0.5, strokes: [[[0.4,1],[0.4,0.15],[0.3,0],[0.15,0],[0,0.15]]] },
+  'K': { advance: 0.7, strokes: [[[0,0],[0,1]],[[0.6,1],[0,0.45]],[[0.2,0.65],[0.6,0]]] },
+  'L': { advance: 0.6, strokes: [[[0,1],[0,0],[0.6,0]]] },
+  'M': { advance: 0.8, strokes: [[[0,0],[0,1],[0.4,0.5],[0.8,1],[0.8,0]]] },
+  'N': { advance: 0.7, strokes: [[[0,0],[0,1],[0.6,0],[0.6,1]]] },
+  'O': { advance: 0.7, strokes: [[[0.15,0],[0.45,0],[0.6,0.15],[0.6,0.85],[0.45,1],[0.15,1],[0,0.85],[0,0.15],[0.15,0]]] },
+  'P': { advance: 0.6, strokes: [[[0,0],[0,1]],[[0,1],[0.45,1],[0.6,0.85],[0.6,0.6],[0.45,0.45],[0,0.45]]] },
+  'Q': { advance: 0.7, strokes: [[[0.15,0],[0.45,0],[0.6,0.15],[0.6,0.85],[0.45,1],[0.15,1],[0,0.85],[0,0.15],[0.15,0]],[[0.35,0.6],[0.65,0.2]]] },
+  'R': { advance: 0.7, strokes: [[[0,0],[0,1]],[[0,1],[0.45,1],[0.6,0.85],[0.6,0.6],[0.45,0.45],[0,0.45]],[[0.3,0.45],[0.6,0]]] },
+  'S': { advance: 0.6, strokes: [[[0.55,0.05],[0.45,0],[0.1,0],[0,0.1],[0,0.35],[0.1,0.45],[0.45,0.45],[0.55,0.55],[0.55,0.9],[0.45,1],[0.1,1],[0,0.95]]] },
+  'T': { advance: 0.6, strokes: [[[0,1],[0.6,1]],[[0.3,1],[0.3,0]]] },
+  'U': { advance: 0.7, strokes: [[[0,1],[0,0.15],[0.15,0],[0.45,0],[0.6,0.15],[0.6,1]]] },
+  'V': { advance: 0.7, strokes: [[[0,1],[0.3,0],[0.6,1]]] },
+  'W': { advance: 0.9, strokes: [[[0,1],[0.2,0],[0.4,0.6],[0.6,0],[0.8,1]]] },
+  'X': { advance: 0.7, strokes: [[[0,0],[0.6,1]],[[0,1],[0.6,0]]] },
+  'Y': { advance: 0.7, strokes: [[[0,1],[0.3,0.5]],[[0.6,1],[0.3,0.5],[0.3,0]]] },
+  'Z': { advance: 0.6, strokes: [[[0,1],[0.6,1]],[[0.6,1],[0,0]],[[0,0],[0.6,0]]] },
+  '0': { advance: 0.6, strokes: [[[0.15,0],[0.45,0],[0.6,0.15],[0.6,0.85],[0.45,1],[0.15,1],[0,0.85],[0,0.15],[0.15,0]]] },
+  '1': { advance: 0.4, strokes: [[[0.2,0],[0.2,1],[0.1,0.85]]] },
+  '2': { advance: 0.6, strokes: [[[0,0.1],[0.1,0],[0.5,0],[0.6,0.1],[0.6,0.4],[0,1],[0.6,1]]] },
+  '3': { advance: 0.6, strokes: [[[0,0],[0.5,0],[0.6,0.1],[0.6,0.4],[0.5,0.5],[0.1,0.5]],[[0.5,0.5],[0.6,0.6],[0.6,0.9],[0.5,1],[0,1]]] },
+  '4': { advance: 0.6, strokes: [[[0.5,0],[0.5,1]],[[0,0.6],[0.6,0.6]]] },
+  '5': { advance: 0.6, strokes: [[[0.6,0],[0,0],[0,0.45],[0.5,0.45],[0.6,0.55],[0.6,0.9],[0.5,1],[0,1]]] },
+  '6': { advance: 0.6, strokes: [[[0.5,0],[0.15,0],[0,0.15],[0,0.85],[0.15,1],[0.45,1],[0.6,0.85],[0.6,0.55],[0.45,0.45],[0.15,0.45],[0,0.55]]] },
+  '7': { advance: 0.6, strokes: [[[0,1],[0.6,1],[0,0]]] },
+  '8': { advance: 0.6, strokes: [[[0.15,0],[0.45,0],[0.6,0.15],[0.6,0.4],[0.45,0.5],[0.15,0.5],[0,0.4],[0,0.15],[0.15,0]],[[0.15,0.5],[0.45,0.5],[0.6,0.6],[0.6,0.85],[0.45,1],[0.15,1],[0,0.85],[0,0.6],[0.15,0.5]]] },
+  '9': { advance: 0.6, strokes: [[[0.15,0.45],[0.45,0.45],[0.6,0.35],[0.6,0.15],[0.45,0],[0.15,0],[0,0.15],[0,0.35],[0.15,0.45]],[[0.6,0.35],[0.6,0.85],[0.45,1],[0.15,1],[0,0.85]]] },
+  '.': { advance: 0.3, strokes: [[[0.1,0],[0.15,0.05],[0.1,0.1],[0.05,0.05],[0.1,0]]] },
+  ',': { advance: 0.3, strokes: [[[0.15,0.1],[0.1,0],[0.05,0.05],[0.1,0.1]],[[0.1,0],[0.1,-0.15]]] },
+  '-': { advance: 0.4, strokes: [[[0,0.5],[0.4,0.5]]] },
+  '/': { advance: 0.4, strokes: [[[0,0],[0.4,1]]] },
+  ':': { advance: 0.3, strokes: [[[0.1,0.2],[0.15,0.25],[0.1,0.3],[0.05,0.25],[0.1,0.2]],[[0.1,0.7],[0.15,0.75],[0.1,0.8],[0.05,0.75],[0.1,0.7]]] },
+  '!': { advance: 0.3, strokes: [[[0.1,0.3],[0.15,1]],[[0.1,0],[0.15,0.05],[0.1,0.1],[0.05,0.05],[0.1,0]]] },
+  '?': { advance: 0.5, strokes: [[[0.1,0.5],[0.1,0.85],[0.2,1],[0.4,1],[0.5,0.9],[0.5,0.7],[0.3,0.5]],[[0.3,0],[0.35,0.05],[0.3,0.1],[0.25,0.05],[0.3,0]]] },
+  '(': { advance: 0.4, strokes: [[[0.3,0],[0.15,0.15],[0.1,0.4],[0.1,0.6],[0.15,0.85],[0.3,1]]] },
+  ')': { advance: 0.4, strokes: [[[0.1,0],[0.25,0.15],[0.3,0.4],[0.3,0.6],[0.25,0.85],[0.1,1]]] },
+};
+
+const SIMPLEX: VectorFont = {
+  id: 'simplex',
+  name: 'Simplex (single-stroke)',
+  height: 1,
+  glyphs: SIMPLEX_GLYPHS,
+  fallback: '?',
+};
+
+/** Catálogo de fontes disponíveis. */
+export const FONTS: VectorFont[] = [SIMPLEX];
+
+export const DEFAULT_FONT = 'simplex';
+
+export function getFont(id: string): VectorFont {
+  return FONTS.find((f) => f.id === id) ?? FONTS[0];
+}
+
+export interface TextToShapesOptions {
+  text: string;
+  fontId?: string;
+  /** Tamanho da letra (altura) em mm. */
+  size: number;
+  /** Posição do canto inferior esquerdo do texto. */
+  x: number;
+  y: number;
+  /** Espaçamento entre letras (em unidades de fonte). */
+  letterSpacing?: number;
+}
+
+/**
+ * Converte texto em formas vetoriais (uma forma por letra, fechada=false).
+ * Cada glifo vira um conjunto de polilinhas (strokes) escaladas.
+ */
+export interface TextShape {
+  kind: 'text';
+  points: Array<{ x: number; y: number }>;
+  closed: boolean;
+}
+
+export function textToShapes(opts: TextToShapesOptions): TextShape[] {
+  const font = getFont(opts.fontId ?? DEFAULT_FONT);
+  const scale = opts.size / font.height;
+  const shapes: TextShape[] = [];
+  let cx = opts.x;
+  const cy = opts.y;
+  for (const ch of opts.text) {
+    const upper = ch.toUpperCase();
+    const glyph = font.glyphs[upper] ?? font.glyphs[font.fallback];
+    if (!glyph) continue;
+    for (const stroke of glyph.strokes) {
+      const pts = stroke.map(([gx, gy]) => ({
+        x: cx + gx * scale,
+        y: cy + gy * scale,
+      }));
+      if (pts.length >= 2) {
+        shapes.push({ kind: 'text', points: pts, closed: false });
+      }
+    }
+    cx += (glyph.advance + (opts.letterSpacing ?? 0.1)) * scale;
+  }
+  return shapes;
+}
+
+/** Lista de ids/nomes de fontes (para o seletor da UI). */
+export function fontOptions(): Array<{ id: string; name: string }> {
+  return FONTS.map((f) => ({ id: f.id, name: f.name }));
+}

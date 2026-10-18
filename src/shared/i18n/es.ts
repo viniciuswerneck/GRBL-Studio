@@ -249,6 +249,7 @@ export const es = {
   'design.power': 'Potencia (%)',
   'design.passes': 'Pasadas',
   'design.mode': 'Modo',
+  'design.font': 'Fuente',
   'design.generate': 'Generar y previsualizar',
   'design.save': 'Guardar .gcode…',
   'design.status.generating': 'Generando el dibujo…',

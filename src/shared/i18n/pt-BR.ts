@@ -258,6 +258,7 @@ export const ptBR = {
   'design.power': 'Potência (%)',
   'design.passes': 'Passadas',
   'design.mode': 'Modo',
+  'design.font': 'Fonte',
   'design.generate': 'Gerar e visualizar',
   'design.save': 'Salvar .gcode…',
   'design.status.generating': 'Gerando o desenho…',

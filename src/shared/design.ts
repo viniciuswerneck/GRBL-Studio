@@ -9,7 +9,7 @@
  * Módulo puro e testável; a interação (canvas, mouse) vive no renderer.
  */
 
-export type ShapeKind = 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon';
+export type ShapeKind = 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon' | 'text';
 
 export interface Point {
   x: number;
