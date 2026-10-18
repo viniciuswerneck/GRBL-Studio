@@ -747,6 +747,106 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="designOverlay">
+      <div class="modal design-modal" role="dialog" aria-modal="true" aria-labelledby="designTitle">
+        <header class="modal-head">
+          <h3 id="designTitle" data-i18n="design.title">Desenhar</h3>
+          <div class="design-head-tools">
+            <button type="button" id="designUndo" class="icon-btn" title="Desfazer (Ctrl+Z)" data-i18n-title="design.undo">↶</button>
+            <button type="button" id="designRedo" class="icon-btn" title="Refazer (Ctrl+Y)" data-i18n-title="design.redo">↷</button>
+            <button type="button" id="designZoomIn" class="icon-btn" title="Zoom in">+</button>
+            <button type="button" id="designZoomOut" class="icon-btn" title="Zoom out">−</button>
+            <button type="button" id="designZoomFit" class="icon-btn" title="Ajustar"> ( ) </button>
+            <button
+              type="button"
+              id="designClose"
+              class="icon-btn"
+              data-i18n-title="nav.close"
+              data-i18n-aria="nav.close"
+            >✕</button>
+          </div>
+        </header>
+        <div class="modal-body design-body">
+          <!-- Barra de ferramentas (estilo CorelDRAW) -->
+          <div class="design-toolbar">
+            <button type="button" id="designToolSelect" class="design-tool active" data-i18n="design.tool.select" title="Selecionar (V)">➤</button>
+            <span class="design-sep"></span>
+            <button type="button" id="designToolRect" class="design-tool" data-i18n="design.tool.rect" title="Retângulo (R)">▭</button>
+            <button type="button" id="designToolCircle" class="design-tool" data-i18n="design.tool.circle" title="Círculo (C)">○</button>
+            <button type="button" id="designToolLine" class="design-tool" data-i18n="design.tool.line" title="Linha (L)">╱</button>
+            <span class="design-sep"></span>
+            <button type="button" id="designToolText" class="design-tool" data-i18n="design.tool.text" title="Texto (T)">T</button>
+            <span class="design-sep"></span>
+            <button type="button" id="designAlignLeft" class="design-tool" title="Alinhar à esquerda">⇤</button>
+            <button type="button" id="designAlignCenter" class="design-tool" title="Centralizar">⇔</button>
+            <button type="button" id="designAlignRight" class="design-tool" title="Alinhar à direita">⇥</button>
+            <span class="design-sep"></span>
+            <button type="button" id="designDelete" class="design-tool danger" data-i18n="design.delete" title="Excluir (Del)">🗑</button>
+            <button type="button" id="designClear" class="design-tool" data-i18n="design.clear" title="Limpar tudo">🧹</button>
+          </div>
+          <!-- Barra de propriedades (contextual) -->
+          <div class="design-props">
+            <label class="design-prop">
+              <span>X</span>
+              <input type="number" id="designPropX" step="0.1" />
+            </label>
+            <label class="design-prop">
+              <span>Y</span>
+              <input type="number" id="designPropY" step="0.1" />
+            </label>
+            <label class="design-prop">
+              <span>W</span>
+              <input type="number" id="designPropW" step="0.1" min="0" />
+            </label>
+            <label class="design-prop">
+              <span>H</span>
+              <input type="number" id="designPropH" step="0.1" min="0" />
+            </label>
+            <label class="design-prop design-prop-check">
+              <input type="checkbox" id="designSnap" checked />
+              <span data-i18n="design.snap">Snap</span>
+            </label>
+            <span class="design-prop-status" id="designCursor">0, 0 mm</span>
+          </div>
+          <div class="design-workspace">
+            <canvas id="designCanvas" width="720" height="420"></canvas>
+            <aside class="design-objects">
+              <div class="design-objects-head" data-i18n="design.objects">Objetos</div>
+              <ul id="designObjectList" class="design-object-list"></ul>
+            </aside>
+          </div>
+          <div class="design-fields">
+            <label class="field">
+              <span data-i18n="design.speed">Velocidade (mm/min)</span>
+              <input type="number" id="designSpeed" min="100" max="20000" step="50" value="1000" />
+            </label>
+            <label class="field">
+              <span data-i18n="design.power">Potência (%)</span>
+              <input type="number" id="designPower" min="0" max="100" value="100" />
+            </label>
+            <label class="field">
+              <span data-i18n="design.passes">Passadas</span>
+              <input type="number" id="designPasses" min="1" max="10" value="1" />
+            </label>
+            <label class="field">
+              <span data-i18n="design.mode">Modo</span>
+              <select id="designMode">
+                <option value="M4">M4 (dinâmico)</option>
+                <option value="M3">M3 (constante)</option>
+              </select>
+            </label>
+          </div>
+          <div id="designStatus" class="hint"></div>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designSave" data-i18n="design.save">Salvar .gcode…</button>
+          <button type="button" id="designGenerate" class="primary" data-i18n="design.generate">Gerar e visualizar</button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="settingsOverlay">
+
     <div class="overlay hidden" id="settingsOverlay">
       <div
         class="modal"
@@ -904,6 +1004,7 @@
     <script src="./macros.js"></script>
     <script src="./materialTest.js"></script>
     <script src="./svg.js"></script>
+    <script src="./design.js"></script>
     <script src="./renderer.js"></script>
   </body>
 </html>

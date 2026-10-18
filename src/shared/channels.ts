@@ -69,6 +69,7 @@ export const MENU_ACTIONS = {
   openLogs: 'open-logs',
   materialTest: 'material-test',
   openSvg: 'open-svg',
+  design: 'design',
 } as const;
 
 export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

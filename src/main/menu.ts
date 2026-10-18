@@ -94,6 +94,10 @@ export function rebuildMenu(): void {
           label: t('menu.materialTest'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.materialTest),
         },
+        {
+          label: t('menu.design'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.design),
+        },
       ],
     },
     {

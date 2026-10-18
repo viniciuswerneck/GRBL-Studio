@@ -226,6 +226,28 @@ export const en = {
   'matTest.status.done':
     'Grid generated. Check the preview, then send or save.',
 
+  // ------------------------------------------------------- vector drawing
+  'design.title': 'Design',
+  'design.tool.select': 'Select',
+  'design.tool.rect': 'Rectangle',
+  'design.tool.circle': 'Circle',
+  'design.tool.line': 'Line',
+  'design.tool.text': 'Text',
+  'design.delete': 'Delete',
+  'design.clear': 'Clear',
+  'design.undo': 'Undo',
+  'design.redo': 'Redo',
+  'design.snap': 'Snap',
+  'design.objects': 'Objects',
+  'design.speed': 'Speed (mm/min)',
+  'design.power': 'Power (%)',
+  'design.passes': 'Passes',
+  'design.mode': 'Mode',
+  'design.generate': 'Generate and preview',
+  'design.save': 'Save .gcode…',
+  'design.status.generating': 'Generating the drawing…',
+  'design.status.done': 'Drawing generated. Check the preview, then send or save.',
+
   // ------------------------------------------------- execução e arquivo
   'run.title': 'Run',
   'file.open': 'Open G-code…',
@@ -675,6 +697,7 @@ export const en = {
   'menu.view': 'View',
   'menu.tools': 'Tools',
   'menu.materialTest': 'Material test grid…',
+  'menu.design': 'Design…',
   'menu.theme': 'Theme',
   'menu.language': 'Language',
   'menu.appearance': 'Appearance and language…',

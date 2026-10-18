@@ -232,6 +232,28 @@ export const es = {
   'matTest.status.done':
     'Cuadrícula generada. Revisa la vista previa y envía o guarda.',
 
+  // ------------------------------------------------------- dibujo vectorial
+  'design.title': 'Dibujar',
+  'design.tool.select': 'Seleccionar',
+  'design.tool.rect': 'Rectángulo',
+  'design.tool.circle': 'Círculo',
+  'design.tool.line': 'Línea',
+  'design.tool.text': 'Texto',
+  'design.delete': 'Eliminar',
+  'design.clear': 'Limpiar',
+  'design.undo': 'Deshacer',
+  'design.redo': 'Rehacer',
+  'design.snap': 'Ajuste',
+  'design.objects': 'Objetos',
+  'design.speed': 'Velocidad (mm/min)',
+  'design.power': 'Potencia (%)',
+  'design.passes': 'Pasadas',
+  'design.mode': 'Modo',
+  'design.generate': 'Generar y previsualizar',
+  'design.save': 'Guardar .gcode…',
+  'design.status.generating': 'Generando el dibujo…',
+  'design.status.done': 'Dibujo generado. Revisa la vista previa y envía o guarda.',
+
   // ------------------------------------------------- ejecución y archivo
   'run.title': 'Ejecución',
   'file.open': 'Abrir G-code…',
@@ -696,6 +718,7 @@ export const es = {
   'menu.view': 'Ver',
   'menu.tools': 'Herramientas',
   'menu.materialTest': 'Cuadrícula de prueba de material…',
+  'menu.design': 'Dibujar…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
   'menu.appearance': 'Apariencia e idioma…',

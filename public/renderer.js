@@ -216,6 +216,38 @@ const el = {
   matTestStatus: $('matTestStatus'),
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
+  designOverlay: $('designOverlay'),
+  designClose: $('designClose'),
+  designCanvas: $('designCanvas'),
+  designToolSelect: $('designToolSelect'),
+  designToolRect: $('designToolRect'),
+  designToolCircle: $('designToolCircle'),
+  designToolLine: $('designToolLine'),
+  designToolText: $('designToolText'),
+  designDelete: $('designDelete'),
+  designClear: $('designClear'),
+  designUndo: $('designUndo'),
+  designRedo: $('designRedo'),
+  designZoomIn: $('designZoomIn'),
+  designZoomOut: $('designZoomOut'),
+  designZoomFit: $('designZoomFit'),
+  designAlignLeft: $('designAlignLeft'),
+  designAlignCenter: $('designAlignCenter'),
+  designAlignRight: $('designAlignRight'),
+  designPropX: $('designPropX'),
+  designPropY: $('designPropY'),
+  designPropW: $('designPropW'),
+  designPropH: $('designPropH'),
+  designSnap: $('designSnap'),
+  designCursor: $('designCursor'),
+  designObjectList: $('designObjectList'),
+  designSpeed: $('designSpeed'),
+  designPower: $('designPower'),
+  designPasses: $('designPasses'),
+  designMode: $('designMode'),
+  designStatus: $('designStatus'),
+  designSave: $('designSave'),
+  designGenerate: $('designGenerate'),
   settingsRefresh: $('settingsRefresh'),
   settingsFilter: $('settingsFilter'),
   settingsList: $('settingsList'),
@@ -527,6 +559,607 @@ async function openSvgImport() {
   } catch (err) {
     appendLine(t('err.prefix', { msg: err.message }), 'error');
   }
+}
+
+// ------------------------------------------------------------------ desenho vetorial (design tools) — premium (CorelDRAW-inspired)
+window.__designSpace = false;
+document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.__designSpace = true; });
+document.addEventListener('keyup', (e) => { if (e.code === 'Space') window.__designSpace = false; });
+const designState = {
+  tool: 'select',
+  shapes: [],          // Shape[]
+  selected: -1,
+  drawing: null,
+  dragStart: null,
+  dragMoved: false,
+  history: [],         // snapshots of shapes[]
+  historyIdx: -1,
+  view: { scale: 1, tx: 0, ty: 0 },
+  snap: true,
+  snapSize: 1,         // mm
+  clipboard: null,
+  panning: false,
+  panStart: null,
+};
+
+function designCanvas() { return el.designCanvas; }
+function designCtx() { const c = el.designCanvas; return c ? c.getContext('2d') : null; }
+function designSize() { const c = el.designCanvas; return c ? { w: c.width, h: c.height } : { w: 720, h: 420 }; }
+
+// ---- coordenadas mundo <-> canvas (com zoom/pan) ----
+function dWorldToCanvas(wx, wy) {
+  return { x: wx * designState.view.scale + designState.view.tx,
+           y: wy * designState.view.scale + designState.view.ty };
+}
+function dCanvasToWorld(cx, cy) {
+  return { x: (cx - designState.view.tx) / designState.view.scale,
+           y: (cy - designState.view.ty) / designState.view.scale };
+}
+function dSnap(v) {
+  if (!designState.snap) return v;
+  const s = designState.snapSize || 1;
+  return Math.round(v / s) * s;
+}
+
+// ---- histórico (undo/redo) ----
+function dPushHistory() {
+  const snap = JSON.stringify(designState.shapes);
+  // descarta futuro
+  designState.history = designState.history.slice(0, designState.historyIdx + 1);
+  designState.history.push(snap);
+  if (designState.history.length > 60) designState.history.shift();
+  designState.historyIdx = designState.history.length - 1;
+  dUpdateUndoButtons();
+}
+function dUndo() {
+  if (designState.historyIdx <= 0) return;
+  designState.historyIdx--;
+  designState.shapes = JSON.parse(designState.history[designState.historyIdx]);
+  designState.selected = -1;
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateUndoButtons();
+}
+function dRedo() {
+  if (designState.historyIdx >= designState.history.length - 1) return;
+  designState.historyIdx++;
+  designState.shapes = JSON.parse(designState.history[designState.historyIdx]);
+  designState.selected = -1;
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dUpdateUndoButtons();
+}
+function dUpdateUndoButtons() {
+  if (el.designUndo) el.designUndo.disabled = designState.historyIdx <= 0;
+  if (el.designRedo) el.designRedo.disabled = designState.historyIdx >= designState.history.length - 1;
+}
+
+// ---- renderização premium ----
+function dRender() {
+  const c = el.designCanvas;
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const { w, h } = designSize();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  // fundo sutil
+  ctx.fillStyle = '#0f0f12';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(designState.view.tx, designState.view.ty);
+  ctx.scale(designState.view.scale, designState.view.scale);
+
+  // grade (menor + maior)
+  const grid = 10;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1 / designState.view.scale;
+  for (let x = 0; x <= w / designState.view.scale + 100; x += grid) {
+    const wx = x;
+    ctx.beginPath(); ctx.moveTo(wx, -1000); ctx.lineTo(wx, 1000); ctx.stroke();
+  }
+  for (let y = 0; y <= h / designState.view.scale + 100; y += grid) {
+    const wy = y;
+    ctx.beginPath(); ctx.moveTo(-1000, wy); ctx.lineTo(1000, wy); ctx.stroke();
+  }
+  // eixos
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1 / designState.view.scale;
+  ctx.beginPath(); ctx.moveTo(0, -1000); ctx.lineTo(0, 1000); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-1000, 0); ctx.lineTo(1000, 0); ctx.stroke();
+
+  const drawShape = (sh, selected) => {
+    if (!sh.points.length) return;
+    ctx.strokeStyle = selected ? '#4cc2ff' : '#e6e6e6';
+    ctx.lineWidth = (selected ? 2 : 1.5) / designState.view.scale;
+    ctx.beginPath();
+    ctx.moveTo(sh.points[0].x, sh.points[0].y);
+    for (let i = 1; i < sh.points.length; i++) ctx.lineTo(sh.points[i].x, sh.points[i].y);
+    if (sh.closed) ctx.closePath();
+    ctx.stroke();
+    if (sh.closed) {
+      ctx.fillStyle = selected ? 'rgba(76,194,255,0.10)' : 'rgba(255,255,255,0.03)';
+      ctx.fill();
+    }
+    if (selected) {
+      ctx.fillStyle = '#4cc2ff';
+      for (const p of sh.points) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4 / designState.view.scale, 0, Math.PI * 2); ctx.fill();
+      }
+      // bounding box
+      const xs = sh.points.map((p) => p.x);
+      const ys = sh.points.map((p) => p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      ctx.strokeStyle = 'rgba(76,194,255,0.6)';
+      ctx.lineWidth = 1 / designState.view.scale;
+      ctx.setLineDash([4 / designState.view.scale, 3 / designState.view.scale]);
+      ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+      ctx.setLineDash([]);
+      // handles
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#4cc2ff';
+      const handles = [
+        { x: minX, y: minY }, { x: maxX, y: minY },
+        { x: maxX, y: maxY }, { x: minX, y: maxY },
+        { x: (minX + maxX) / 2, y: minY },
+        { x: maxX, y: (minY + maxY) / 2 },
+        { x: (minX + maxX) / 2, y: maxY },
+        { x: minX, y: (minY + maxY) / 2 },
+      ];
+      const hs = 6 / designState.view.scale;
+      for (const h of handles) {
+        ctx.fillRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
+        ctx.strokeRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
+      }
+    }
+  };
+
+  for (let i = 0; i < designState.shapes.length; i++) {
+    drawShape(designState.shapes[i], i === designState.selected);
+  }
+  if (designState.drawing) drawShape(designState.drawing, true);
+
+  ctx.restore();
+
+  // cursor crosshair (subtle)
+  // (none — keeps canvas clean)
+
+  dUpdateObjectList();
+  dUpdateProps();
+  dUpdateCursor();
+}
+
+function designHitTest(x, y) {
+  for (let i = designState.shapes.length - 1; i >= 0; i--) {
+    const sh = designState.shapes[i];
+    if (!sh.points.length) continue;
+    const xs = sh.points.map((p) => p.x);
+    const ys = sh.points.map((p) => p.y);
+    const minX = Math.min(...xs) - 6, maxX = Math.max(...xs) + 6;
+    const minY = Math.min(...ys) - 6, maxY = Math.max(...ys) + 6;
+    if (x >= minX && x <= maxX && y >= minY && y <= maxY) return i;
+  }
+  return -1;
+}
+
+function designCanvasCoords(e) {
+  const c = el.designCanvas;
+  const r = c.getBoundingClientRect();
+  const sx = c.width / r.width;
+  const sy = c.height / r.height;
+  const w = dCanvasToWorld((e.clientX - r.left) * sx, (e.clientY - r.top) * sy);
+  return w;
+}
+
+function dShapeBounds(sh) {
+  const xs = sh.points.map((p) => p.x);
+  const ys = sh.points.map((p) => p.y);
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+}
+
+function dUpdateProps() {
+  if (!el.designPropX) return;
+  const idx = designState.selected;
+  if (idx < 0) {
+    el.designPropX.value = '';
+    el.designPropY.value = '';
+    el.designPropW.value = '';
+    el.designPropH.value = '';
+    return;
+  }
+  const sh = designState.shapes[idx];
+  const b = dShapeBounds(sh);
+  el.designPropX.value = b.minX.toFixed(1);
+  el.designPropY.value = b.minY.toFixed(1);
+  el.designPropW.value = (b.maxX - b.minX).toFixed(1);
+  el.designPropH.value = (b.maxY - b.minY).toFixed(1);
+}
+
+function dUpdateObjectList() {
+  const ul = el.designObjectList;
+  if (!ul) return;
+  ul.innerHTML = '';
+  designState.shapes.forEach((sh, i) => {
+    const li = document.createElement('li');
+    li.className = 'design-obj' + (i === designState.selected ? ' selected' : '');
+    li.textContent = `${i + 1}. ${sh.kind}`;
+    li.addEventListener('click', () => {
+      designState.selected = i;
+      dRender();
+    });
+    const del = document.createElement('button');
+    del.className = 'design-obj-del';
+    del.textContent = '×';
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      designState.shapes.splice(i, 1);
+      designState.selected = -1;
+      dPushHistory();
+      dRender();
+    });
+    li.appendChild(del);
+    ul.appendChild(li);
+  });
+}
+
+function dUpdateCursor() {
+  if (!el.designCursor) return;
+  // updated on mousemove
+}
+
+function openDesignModal() {
+  if (!el.designOverlay) return;
+  el.designOverlay.classList.remove('hidden');
+  designState.tool = 'select';
+  designState.selected = -1;
+  designState.drawing = null;
+  designState.view = { scale: 1, tx: 0, ty: 0 };
+  designUpdateToolButtons();
+  dPushHistory();
+  dRender();
+}
+
+function closeDesignModal() {
+  if (el.designOverlay) el.designOverlay.classList.add('hidden');
+}
+
+function designUpdateToolButtons() {
+  const tools = { designToolSelect: 'select', designToolRect: 'rect', designToolCircle: 'circle', designToolLine: 'line' };
+  for (const [id, tool] of Object.entries(tools)) {
+    const b = el[id];
+    if (b) b.classList.toggle('active', designState.tool === tool);
+  }
+}
+
+function designGenerate() {
+  if (!window.GRBL_DESIGN) {
+    appendLine('Módulo de desenho não carregado.', 'error');
+    return;
+  }
+  if (!designState.shapes.length) {
+    if (el.designStatus) el.designStatus.textContent = 'Desenhe ao menos uma forma.';
+    return;
+  }
+  if (el.designStatus) el.designStatus.textContent = t('design.status.generating');
+  const sMax = Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
+  const opts = {
+    feed: Number(el.designSpeed.value) || 1000,
+    travelFeed: 3000,
+    sMax,
+    powerPercent: Number(el.designPower.value) || 100,
+    passes: Number(el.designPasses.value) || 1,
+    mode: el.designMode.value === 'M3' ? 'M3' : 'M4',
+    samples: 24,
+  };
+  const gcode = window.GRBL_DESIGN.designToGcode(
+    { shapes: designState.shapes, width: 0, height: 0 },
+    opts,
+  );
+  applyJobLines('design.gcode', gcode);
+  if (el.designStatus) el.designStatus.textContent = t('design.status.done');
+  openFrameModal();
+}
+
+async function designSave() {
+  if (!window.GRBL_DESIGN || !designState.shapes.length) return;
+  const sMax = Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
+  const opts = {
+    feed: Number(el.designSpeed.value) || 1000,
+    travelFeed: 3000,
+    sMax,
+    powerPercent: Number(el.designPower.value) || 100,
+    passes: Number(el.designPasses.value) || 1,
+    mode: el.designMode.value === 'M3' ? 'M3' : 'M4',
+    samples: 24,
+  };
+  const gcode = window.GRBL_DESIGN.designToGcode(
+    { shapes: designState.shapes, width: 0, height: 0 },
+    opts,
+  );
+  try {
+    const path = await window.grbl.saveGcode(gcode, 'design.gcode');
+    if (path) appendLine(t('file.saved', { path }), 'ok');
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
+// ---- interações do canvas ----
+(function wireDesignCanvas() {
+  const c = el.designCanvas;
+  if (!c) return;
+  let start = null;
+  let panning = false;
+  let panStart = null;
+
+  c.addEventListener('mousedown', (e) => {
+    if (e.button === 1 || (e.button === 0 && window.__designSpace)) {
+      panning = true;
+      panStart = { x: e.clientX, y: e.clientY, tx: designState.view.tx, ty: designState.view.ty };
+      c.style.cursor = 'grabbing';
+      return;
+    }
+    const pt = designCanvasCoords(e);
+    if (designState.tool === 'select') {
+      const idx = designHitTest(pt.x, pt.y);
+      designState.selected = idx;
+      if (idx >= 0) {
+        designState.dragStart = pt;
+      }
+      dRender();
+      dUpdateProps();
+      return;
+    }
+    start = pt;
+    designState.drawing = null;
+    if (designState.tool === 'rect') {
+      const sx = designState.snap ? dSnap(pt.x) : pt.x;
+      const sy = designState.snap ? dSnap(pt.y) : pt.y;
+      designState.drawing = { kind: 'rect', points: [{ x: sx, y: sy }, { x: sx, y: sy }, { x: sx, y: sy }, { x: sx, y: sy }], closed: true, _start: { x: sx, y: sy } };
+    } else if (designState.tool === 'circle') {
+      const sx = designState.snap ? dSnap(pt.x) : pt.x;
+      const sy = designState.snap ? dSnap(pt.y) : pt.y;
+      designState.drawing = { kind: 'circle', points: [{ x: sx, y: sy }], closed: true, _center: { x: sx, y: sy }, _r: 0 };
+    } else if (designState.tool === 'line') {
+      const sx = designState.snap ? dSnap(pt.x) : pt.x;
+      const sy = designState.snap ? dSnap(pt.y) : pt.y;
+      designState.drawing = { kind: 'line', points: [{ x: sx, y: sy }, { x: sx, y: sy }], closed: false };
+    }
+  });
+
+  c.addEventListener('mousemove', (e) => {
+    const pt = designCanvasCoords(e);
+    // cursor status
+    if (el.designCursor) el.designCursor.textContent = `${pt.x.toFixed(1)}, ${pt.y.toFixed(1)} mm`;
+    if (panning && panStart) {
+      designState.view.tx = panStart.tx + (e.clientX - panStart.x);
+      designState.view.ty = panStart.ty + (e.clientY - panStart.y);
+      dRender();
+      return;
+    }
+    if (designState.drawing) {
+      const s = designState.drawing._start || designState.drawing.points[0];
+      const x = designState.snap ? dSnap(pt.x) : pt.x;
+      const y = designState.snap ? dSnap(pt.y) : pt.y;
+      if (designState.tool === 'rect') {
+        designState.drawing.points = [s, { x, y: s.y }, { x, y }, { x: s.x, y }];
+      } else if (designState.tool === 'circle') {
+        const center = designState.drawing._center;
+        const r = Math.hypot(x - center.x, y - center.y);
+        designState.drawing.points = window.GRBL_DESIGN.makeCircle(center.x, center.y, r, 32);
+        designState.drawing._r = r;
+      } else if (designState.tool === 'line') {
+        designState.drawing.points = [designState.drawing.points[0], { x, y }];
+      }
+      dRender();
+      return;
+    }
+    // move selected
+    if (designState.selected >= 0 && designState.dragStart) {
+      const sh = designState.shapes[designState.selected];
+      const dx = pt.x - designState.dragStart.x;
+      const dy = pt.y - designState.dragStart.y;
+      if (dx === 0 && dy === 0) return;
+      for (const p of sh.points) { p.x += dx; p.y += dy; }
+      designState.dragStart = pt;
+      dRender();
+      dUpdateProps();
+    }
+  });
+
+  c.addEventListener('mouseup', (e) => {
+    if (panning) {
+      panning = false;
+      panStart = null;
+      c.style.cursor = designState.tool === 'select' ? 'default' : 'crosshair';
+      return;
+    }
+    if (designState.drawing) {
+      const sh = designState.drawing;
+      delete sh._center; delete sh._r; delete sh._start;
+      const xs = sh.points.map((p) => p.x);
+      const ys = sh.points.map((p) => p.y);
+      const w = Math.max(...xs) - Math.min(...xs);
+      const h = Math.max(...ys) - Math.min(...ys);
+      if (w > 1 || h > 1 || sh.kind === 'line') {
+        designState.shapes.push(sh);
+        designState.selected = designState.shapes.length - 1;
+        dPushHistory();
+      }
+      designState.drawing = null;
+      dRender();
+      dUpdateProps();
+      dUpdateObjectList();
+    }
+    designState.dragStart = null;
+  });
+
+  c.addEventListener('mouseleave', () => {
+    if (designState.drawing) {
+      designState.drawing = null;
+      dRender();
+    }
+    designState.dragStart = null;
+  });
+
+  // wheel zoom
+  c.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = c.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (c.width / rect.width);
+    const cy = (e.clientY - rect.top) * (c.height / rect.height);
+    const before = dCanvasToWorld(cx, cy);
+    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    designState.view.scale = Math.max(0.2, Math.min(8, designState.view.scale * factor));
+    const after = dWorldToCanvas(before.x, before.y);
+    designState.view.tx += cx - after.x;
+    designState.view.ty += cy - after.y;
+    dRender();
+  }, { passive: false });
+
+  // keyboard
+  c.addEventListener('keydown', (e) => {});
+})();
+
+// space-key tracking for pan
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !e.repeat) {
+    const c = el.designCanvas;
+    if (c && document.activeElement === c) {
+      c.dataset.space = '1';
+    }
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    const c = el.designCanvas;
+    if (c) delete c.dataset.space;
+  }
+});
+
+// Patch mousedown to detect space for panning (already handled via e.spaceKey check above is unreliable; use dataset)
+// We'll just rely on middle mouse (button 1) for pan, already handled.
+
+// Wire design modal buttons.
+if (el.designClose) el.designClose.addEventListener('click', closeDesignModal);
+if (el.designOverlay)
+  el.designOverlay.addEventListener('click', (e) => {
+    if (e.target === el.designOverlay) closeDesignModal();
+  });
+function designSetTool(t) {
+  designState.tool = t;
+  designState.drawing = null;
+  designUpdateToolButtons();
+  dRender();
+}
+if (el.designToolSelect) el.designToolSelect.addEventListener('click', () => designSetTool('select'));
+if (el.designToolRect) el.designToolRect.addEventListener('click', () => designSetTool('rect'));
+if (el.designToolCircle) el.designToolCircle.addEventListener('click', () => designSetTool('circle'));
+if (el.designToolLine) el.designToolLine.addEventListener('click', () => designSetTool('line'));
+if (el.designUndo) el.designUndo.addEventListener('click', dUndo);
+if (el.designRedo) el.designRedo.addEventListener('click', dRedo);
+if (el.designZoomIn) el.designZoomIn.addEventListener('click', () => { designState.view.scale = Math.min(8, designState.view.scale * 1.2); dRender(); });
+if (el.designZoomOut) el.designZoomOut.addEventListener('click', () => { designState.view.scale = Math.max(0.2, designState.view.scale / 1.2); dRender(); });
+if (el.designZoomFit) el.designZoomFit.addEventListener('click', () => { designState.view = { scale: 1, tx: 0, ty: 0 }; dRender(); });
+if (el.designAlignLeft) el.designAlignLeft.addEventListener('click', () => dAlign('left'));
+if (el.designAlignCenter) el.designAlignCenter.addEventListener('click', () => dAlign('center'));
+if (el.designAlignRight) el.designAlignRight.addEventListener('click', () => dAlign('right'));
+if (el.designDelete) el.designDelete.addEventListener('click', () => {
+  if (designState.selected >= 0) {
+    designState.shapes.splice(designState.selected, 1);
+    designState.selected = -1;
+    dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
+  }
+});
+if (el.designClear) el.designClear.addEventListener('click', () => {
+  if (!designState.shapes.length) return;
+  designState.shapes = [];
+  designState.selected = -1;
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+});
+if (el.designGenerate) el.designGenerate.addEventListener('click', designGenerate);
+if (el.designSave) el.designSave.addEventListener('click', designSave);
+if (el.designSnap) el.designSnap.addEventListener('change', (e) => { designState.snap = e.target.checked; });
+// Properties bar -> apply to selected shape (translate/scale)
+function dApplyProps() {
+  const idx = designState.selected;
+  if (idx < 0) return;
+  const sh = designState.shapes[idx];
+  const b = dShapeBounds(sh);
+  const newX = Number(el.designPropX.value);
+  const newY = Number(el.designPropY.value);
+  const newW = Number(el.designPropW.value);
+  const newH = Number(el.designPropH.value);
+  if (!Number.isFinite(newX) || !Number.isFinite(newY) || !Number.isFinite(newW) || !Number.isFinite(newH)) return;
+  const dx = newX - b.minX;
+  const dy = newY - b.minY;
+  const sx = (b.maxX - b.minX) > 0 ? newW / (b.maxX - b.minX) : 1;
+  const sy = (b.maxY - b.minY) > 0 ? newH / (b.maxY - b.minY) : 1;
+  // scale around (minX, minY) then translate
+  for (const p of sh.points) {
+    p.x = newX + (p.x - b.minX) * sx;
+    p.y = newY + (p.y - b.minY) * sy;
+  }
+  // also apply the base translate (already included above via newX/newY)
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+}
+for (const id of ['designPropX', 'designPropY', 'designPropW', 'designPropH']) {
+  if (el[id]) el[id].addEventListener('change', dApplyProps);
+}
+
+function dAlign(mode) {
+  if (designState.selected < 0) return;
+  const sh = designState.shapes[designState.selected];
+  const b = dShapeBounds(sh);
+  const cx = (b.minX + b.maxX) / 2;
+  const cy = (b.minY + b.maxY) / 2;
+  const dx = mode === 'left' ? -b.minX : mode === 'right' ? -b.maxX : mode === 'center' ? -cx : 0;
+  const dy = mode === 'top' ? -b.minY : mode === 'bottom' ? -b.maxY : mode === 'middle' ? -cy : 0;
+  // align to canvas center
+  const { w, h } = designSize();
+  const targetX = mode === 'left' ? 0 : mode === 'right' ? w : mode === 'center' ? w / 2 : 0;
+  const targetY = mode === 'top' ? 0 : mode === 'bottom' ? h : mode === 'middle' ? h / 2 : 0;
+  // simpler: align shape's bbox edge to canvas edge/center
+  let tx = 0, ty = 0;
+  if (mode === 'left') tx = -b.minX;
+  else if (mode === 'right') tx = w - b.maxX;
+  else if (mode === 'center') tx = w / 2 - cx;
+  if (mode === 'top') ty = -b.minY;
+  else if (mode === 'bottom') ty = h - b.maxY;
+  else if (mode === 'middle') ty = h / 2 - cy;
+  for (const p of sh.points) { p.x += tx; p.y += ty; }
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+}
+
+function openDesignModal() {
+  if (!el.designOverlay) return;
+  el.designOverlay.classList.remove('hidden');
+  designState.tool = 'select';
+  designState.selected = -1;
+  designState.drawing = null;
+  designState.view = { scale: 1, tx: 0, ty: 0 };
+  if (designState.history.length === 0) dPushHistory();
+  designUpdateToolButtons();
+  dRender();
+}
+
+function closeDesignModal() {
+  if (el.designOverlay) el.designOverlay.classList.add('hidden');
 }
 
 function updateFrameButtons() {
@@ -1431,6 +2064,7 @@ document.addEventListener('keydown', (e) => {
       el.aboutOverlay,
       el.frameOverlay,
       el.matTestOverlay,
+      el.designOverlay,
     ].some(overlayOpen)
   ) {
     return;
@@ -3381,6 +4015,7 @@ for (const overlay of [
   el.settingsOverlay,
   el.frameOverlay,
   el.matTestOverlay,
+  el.designOverlay,
 ]) {
   if (!overlay) continue;
   overlay.addEventListener('click', (e) => {
@@ -3413,6 +4048,8 @@ document.addEventListener('keydown', (e) => {
     el.aboutOverlay,
     el.settingsOverlay,
     el.frameOverlay,
+    el.matTestOverlay,
+    el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
   if (overlays.length) {
     for (const overlay of overlays) overlay.classList.add('hidden');
@@ -3444,6 +4081,7 @@ if (window.grbl.onAction)
       });
     else if (name === 'material-test') openMatTestModal();
     else if (name === 'open-svg') openSvgImport();
+    else if (name === 'design') openDesignModal();
   });
 
 // ----------------------------------------------------- unidades (RF-APP-3)

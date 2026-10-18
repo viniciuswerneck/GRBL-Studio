@@ -81,7 +81,7 @@ Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
 
 | # | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
-| P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | Criar/editar vetores na UI; exportar para o pipeline. |
+| P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | ✅ Parcial (retângulo/círculo/linha + mover/excluir + gerar G-code; texto/offset/booleanas pendentes). |
 | P2.2 | **Camadas (layers)** com parâmetros por camada | M | Gravar + cortar numa execução; reordenação. |
 | P2.3 | **Simulação de job** (playback visual + tempo) | M | Play/pause/seek do caminho com velocidade real. |
 | P2.4 | **Importação DXF** | M | Parser + conversão para paths. |

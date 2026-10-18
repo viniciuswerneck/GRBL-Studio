@@ -1438,6 +1438,205 @@ body.job-active .job-bar {
   min-width: 72px;
 }
 
+/* ---------------------------------------- Desenho vetorial (modal) */
+.design-modal {
+  width: min(920px, 96vw);
+}
+
+.design-body {
+  gap: var(--sp-2);
+}
+
+/* Barra de ferramentas (estilo CorelDRAW: grupos separados por separador). */
+.design-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: var(--bg);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+
+.design-toolbar .design-tool {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: var(--fs-14);
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-sub);
+}
+
+.design-toolbar .design-tool:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.design-toolbar .design-tool.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: transparent;
+}
+
+.design-toolbar .design-tool.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+.design-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--stroke);
+  margin: 0 var(--sp-1);
+}
+
+/* Barra de propriedades (contextual). */
+.design-props {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  flex-wrap: wrap;
+}
+
+.design-prop {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+}
+
+.design-prop span {
+  min-width: 1rem;
+}
+
+.design-prop input[type='number'] {
+  width: 4.2rem;
+  text-align: center;
+}
+
+.design-prop-check {
+  gap: var(--sp-1);
+}
+
+.design-prop-check input {
+  width: auto;
+}
+
+.design-prop-status {
+  margin-left: auto;
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-disabled);
+}
+
+/* Área de trabalho: canvas + lista de objetos. */
+.design-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+
+#designCanvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 720 / 420;
+  background: #0a0a0d;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* Lista de objetos (estilo painel de camadas do CorelDRAW). */
+.design-objects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: var(--bg);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.design-objects-head {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  padding-bottom: var(--sp-1);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.design-object-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.design-obj {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-12);
+  cursor: pointer;
+  color: var(--text-sub);
+}
+
+.design-obj:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.design-obj.selected {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+.design-obj-del {
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-disabled);
+}
+
+.design-obj-del:hover:not(:disabled) {
+  color: var(--danger);
+  background: transparent;
+}
+
+/* Campos de parâmetros. */
+.design-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.design-fields .field input,
+.design-fields .field select {
+  width: 100%;
+}
+
 .appearance-label {
   display: block;
   font-size: var(--fs-12);
