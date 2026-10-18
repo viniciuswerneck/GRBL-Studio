@@ -218,11 +218,20 @@ Paleta de referência do tema padrão:
 | **Arquivo** | Nome, linhas, tempo estimado, Play, progresso; Pausar/Retomar/Cancelar na **barra flutuante** (sempre visível no job) | Barra de progresso + botões âmbar/verde/vermelho |
 | **Preview** | Canvas 2D + crosshair (posição de trabalho) + zoom/pan + caixa de trabalho; trecho gravado colorido **por passada** e brilho proporcional ao `S` | Fundo `#202020`, caminho corte `#4CC2FF`, rápido `#5D5D5D` |
 | **Posicionar** | Jog + **Definir origem** + **Contorno** (laser bem fraco) + **Marcar centro** (laser desligado) + **Conectar/Desconectar** + parâmetros (potência/velocidade/passadas) + **Gravar** | Diálogo em duas colunas (sem rolagem): “Mover a cabeça” (pad + origem) e “Conferir a área” (contorno/centro + parâmetros); rodapé com status + Conectar + Cancelar/Gravar. Em imagem os parâmetros regeram a conversão; em desenho alimentam a prancheta e regeram o G-code; em arquivo já estão prontos. |
-| **Desenhar** | Prancheta em mm com réguas, caixa de ferramentas (seleção, retângulo, elipse, linha, texto, excluir) e barra de propriedades: X/Y/L/A/R + **potência/velocidade do objeto** + alinhamento + ordem Z + agrupar + **matriz de cópias/espelhar/distribuir**; painéis Objetos / Documento / Gravação | Modal de tela cheia com grade, **snap a objetos e à página com guias** e zoom (roda do mouse, `F`, `0`); **Gerar e visualizar** pergunta o tamanho da arte, abre o posicionamento (contorno/centro/parâmetros) e grava; parâmetros de gravação e do último texto são lembrados entre sessões |
+| **Desenhar** | Prancheta em mm com réguas, caixa de ferramentas (seleção, retângulo, elipse, linha, caneta, editar nós, texto) e barra de propriedades: X/Y/L/A/R + **potência/velocidade/espessura do objeto** + alinhamento + ordem Z + agrupar + **matriz de cópias/espelhar/distribuir** + **booleanas** e **contorno paralelo**; painéis Objetos / Documento / Gravação | Modal de tela cheia com grade, **snap a objetos e à página com guias** e zoom (roda do mouse, `F`, `0`); **Gerar e visualizar** pergunta o tamanho da arte, abre o posicionamento (contorno/centro/parâmetros) e grava; parâmetros de gravação e do último texto são lembrados entre sessões; o G-code sai **ancorado na origem (X0 Y0)** |
 | **Console** | Log virtualizado (enviado / resposta / erro) com cores | Mono, scroll automático com pausa |
 | **Config** | Tabela `$$` editável + ajuda contextual | Tabela Win11 com header fixo e linhas zebra |
 | **Imagem** | Pipeline: imagem → ajustes → modo → parâmetros → gerar; **Bidirecional** e **Velocidade no claro (×)** no grupo Gravação; aviso quando a velocidade passa de `$110`/`$111` | Stepper estilo Win11 |
 | **Status** | Estado, DRO, feed/S, overrides, alarmes | Card direito, sticky |
+
+**Ancoragem da arte na origem (RF-DSN-9).** O G-code do desenho **não** usa as
+coordenadas da prancheta: o **canto inferior esquerdo da arte vira `X0 Y0`**
+(`machineX = pageX − minX`, `machineY = maxY − pageY`) e cada contorno começa
+pelo canto mais próximo do cabeçote, de modo que o primeiro `G0` aponta para o
+próprio `X0 Y0`. O fluxo é: posicionar o laser no material → **Definir origem** →
+Play. A posição do objeto na prancheta serve para **compor a arte** (e para o
+preview), nunca para deslocar o job. A caixa tracejada da área de trabalho e o
+`G0` de retorno são apenas referência — não são queima.
 
 ---
 

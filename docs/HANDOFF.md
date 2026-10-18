@@ -106,15 +106,16 @@ npx electron --no-sandbox .    # abre o app
 
 ## 5. Decisões em aberto / próximos passos
 
-- [ ] Validar na máquina real: posicionar o laser, **Definir origem** e gravar
+- [x] Validar na máquina real: posicionar o laser, **Definir origem** e gravar
       — confirmar que o cabeçote não se desloca antes de queimar.
-- [ ] Confirmar se a **ancoragem na origem** é o comportamento definitivo.
-      Se o usuário preferir **coordenadas absolutas** (arte posicionada conforme
-      a prancheta/área da máquina), reverter o item 1 de `src/shared/design.ts`
-      (o histórico tem a versão anterior; ver `git log`).
-- [ ] Documentar a decisão de forma permanente em `docs/PRODUCT_SPEC.md`/
+      *(validado pelo usuário: “funciona bem, acabei de gravar para testar”)*
+- [x] Confirmar se a **ancoragem na origem** é o comportamento definitivo.
+      *(confirmada na v0.5.1; a alternativa de coordenadas absolutas foi
+      descartada — `git log` tem a versão anterior se for preciso)*
+- [x] Documentar a decisão de forma permanente em `docs/PRODUCT_SPEC.md`/
       `docs/DESIGN.md` (requisito `RF-DSN-*`), já que hoje o comportamento não
-      está especificado.
+      está especificado. *(feito: módulo **M13 — Editor vetorial** com
+      **RF-DSN-9** e nota de ancoragem em `DESIGN.md`)*
 
 ---
 
@@ -128,7 +129,10 @@ npx electron --no-sandbox .    # abre o app
 - `tests/design.test.ts`
 - `CHANGELOG.md`
 
-> **Não faz parte deste trabalho:** as alterações em `docs/ARCHITECTURE.md`,
+> **Atualização (18/10/2026):** as alterações em `docs/ARCHITECTURE.md`,
 > `docs/FEATURES_COMPARISON.md`, `docs/PLANO_PREMIUM.md`, `docs/PRODUCT_SPEC.md`,
 > `docs/README.md`, `docs/ROADMAP.md` e o novo `docs/PLANO_QR_BARCODE.md`
-> (plano de QR Code / código de barras). Ficaram **intocadas** e **sem commit**.
+> (plano de QR Code / código de barras) foram **commitadas** em
+> `docs: planejamento dos geradores de QR Code e código de barras (v0.6)`. A
+> ancoragem na origem foi especificada como **RF-DSN-9** (módulo M13) e o
+> script `test:e2e` foi restaurado — ver `CHANGELOG.md` (`[Unreleased]`).

@@ -91,7 +91,9 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
   apenas como comandos/valores genéricos de `$$`.
 - CAM 3D / fresagem por eixo Z.
 - Controle de câmera/visão computacional (avaliado como "Could", futuro).
-- Edição vetorial completa (desenho/CAD) — não competimos com Inkscape/LightBurn.
+- Edição vetorial completa (desenho/CAD) — o editor do **M13** cobre o que o
+  laser precisa (formas, texto, traço, booleanas, offset); não competimos com
+  Inkscape/LightBurn em recursos de ilustração/CAD.
 
 ---
 
@@ -245,6 +247,27 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-SYM-8 | **Salvar `.gcode`** ou enviar direto para a área de execução (preview + Play), sem IPC novo. | Should | ⬜ |
 | RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ⬜ |
 
+### M13 — Editor vetorial ("Desenhar")
+
+> Prancheta de desenho própria (Fase P2.1 do `PLANO_PREMIUM.md`), integrada ao
+> mesmo pipeline de gravação (posicionar → preview → Play/Salvar). Detalhes de
+> interface em [`DESIGN.md`](DESIGN.md) §4.
+
+| ID | Requisito | Prioridade | Status |
+| :--- | :--- | :--- | :--- |
+| RF-DSN-1 | **Prancheta em mm** com réguas, grade e área inicial vinda da máquina (`$130`/`$131`), com zoom (roda do mouse, `F`, `0`) e pan. | Must | ✅ |
+| RF-DSN-2 | **Formas**: retângulo, elipse, linha, **caneta** (desenho livre com simplificação RDP e fechamento automático) e **texto vetorial** (traço ou preenchido, fontes do sistema). | Must | ✅ |
+| RF-DSN-3 | **Seleção e transformação**: seleção múltipla (marquee), mover, redimensionar, rotacionar (com travar proporção), ordem Z, agrupar/desagrupar e duplicar. | Must | ✅ |
+| RF-DSN-4 | **Snap e alinhamento**: snap a objetos e à página com guias; alinhar à página; **matriz de cópias**, **espelhar** (H/V) e **distribuir** espaçamento. | Should | ✅ |
+| RF-DSN-5 | **Parâmetros de gravação por objeto**: potência em **% do `$30`**, velocidade (`F`) e **espessura do traço** (`E`, em mm — faixa centrada no caminho), com copiar/colar estilo. | Should | ✅ |
+| RF-DSN-6 | **Booleanas** (unir/subtrair/intersecção/exclusão) com **furos por paridade** e contornos aninhados andando juntos. | Should | ✅ |
+| RF-DSN-7 | **Contorno paralelo (offset)**: distância ± (mm), passadas concêntricas, cantos `miter`/`round`/`bevel` e opção de manter o original. | Should | ✅ |
+| RF-DSN-8 | **Edição de nós**: mover nó, inserir nó em segmento e remover (respeitando o mínimo de 2/3 pontos). | Could | ✅ |
+| RF-DSN-9 | **G-code do desenho ancorado na origem da máquina (X0 Y0)**: o **canto inferior esquerdo da arte vira X0 Y0**; a posição do objeto na prancheta compõe a arte mas **não desloca o job**; cada contorno começa pelo **canto mais próximo** do cabeçote. O usuário posiciona o laser no material e **define a origem** ali (`G10 L20`/`G92`). | Must | ✅ |
+| RF-DSN-10 | **G-code do desenho sempre válido**: `F` > 0, `0 ≤ S ≤ $30`, `passes ≥ 1` e nenhuma coordenada `NaN`/`Infinity` — entradas inválidas caem em padrão seguro em vez de gerar `error:` no meio do job. | Must | ✅ |
+| RF-DSN-11 | **Preferências do desenho** lembradas entre sessões (velocidade, potência, passadas, modo M3/M4, grade e último texto). | Should | ✅ |
+| RF-DSN-12 | **"Gerar e visualizar"**: perguntar o tamanho da arte, abrir o posicionamento (contorno/centro + parâmetros) e regerar o G-code; o preview pinta **só a queima** (a caixa da área de trabalho é referência). | Must | ✅ |
+
 ---
 
 ## 7. Requisitos não-funcionais
@@ -327,6 +350,7 @@ Campos: `MPos` (posição máquina), `WPos` (posição de trabalho), `FS` (feed/
 | Configuração (`$$`) | ✅ | Paridade |
 | Machine status e alarmes | ✅ | Paridade |
 | Geradores de **QR Code** / **código de barras** (RF-SYM-*) | ❌ (não possui) | Beyond (2 ferramentas dedicadas, integradas ao preview/gravação) |
+| **Editor vetorial** próprio (RF-DSN-*: formas, texto, traço, booleanas, offset, nós) | ❌ (não possui) | Beyond (prancheta em mm integrada ao fluxo de gravação) |
 | Distribuição | Windows (Mono no Linux) | Nativa: AppImage/deb/Flatpak |
 
 ---
@@ -347,6 +371,10 @@ Campos: `MPos` (posição máquina), `WPos` (posição de trabalho), `FS` (feed/
 8. O usuário gera um **QR Code** e um **código de barras (Code 128)** pelo menu
    Ferramentas, vê o preview, grava na peça e ambos são lidos por um aplicativo
    leitor de celular (RF-SYM-1/2/5).
+9. Um desenho feito na prancheta (por exemplo um quadrado 2 × 2 no meio de uma
+   página 10 × 10) é gravado **começando em X0 Y0**, sem a máquina se deslocar em
+   diagonal até a arte: o usuário posiciona o laser no material, define a origem
+   ali e dá Play (RF-DSN-9).
 
 ---
 

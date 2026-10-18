@@ -6,6 +6,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — documentação e CI
+
+- **Módulo M13 — Editor vetorial ("Desenhar")** no `PRODUCT_SPEC.md`: 12
+  requisitos `RF-DSN-1…12` (prancheta em mm, formas, transformações, snap,
+  parâmetros por objeto, booleanas, contorno paralelo, nós, geração de G-code,
+  preferências e preview), linha na matriz de paridade e critério de aceite 9.
+- **Ancoragem da arte na origem (RF-DSN-9)**: a decisão virou requisito e está
+  documentada em `DESIGN.md` §4 — a prancheta compõe a arte, mas o G-code começa
+  em `X0 Y0`, com o fluxo "posicionar o laser → Definir origem → Play".
+- **Planejamento das ferramentas de QR Code e código de barras** (v0.6, fases
+  S1–S3, `RF-SYM-1…9`, módulo M12): novo `docs/PLANO_QR_BARCODE.md` e atualização
+  de `ARCHITECTURE`, `FEATURES_COMPARISON`, `PLANO_PREMIUM`, `ROADMAP` e índice.
+
+### Fixed — CI (job E2E)
+
+- O script `test:e2e` havia sumido do `package.json`, então o job **E2E
+  (Playwright)** falhava sempre com `Missing script: "test:e2e"` — a suíte já
+  existia (`e2e/app.spec.ts`) e passa. Os workflows também deixaram de baixar os
+  navegadores do Playwright (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD`): o E2E usa o
+  Electron do projeto.
+
 ## [0.5.1] - 2026-10-18
 
 ### Fixed — gravação ancorada na origem e preview (X0 Y0)
