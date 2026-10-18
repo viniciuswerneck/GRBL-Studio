@@ -2015,6 +2015,10 @@ html[data-theme="sand"] .design-canvas-wrap {
   align-items: center;
 }
 
+.design-menu.hidden {
+  display: none;
+}
+
 .design-menu {
   position: absolute;
   top: calc(100% + 4px);

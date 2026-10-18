@@ -81,6 +81,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   zig-zague) + **9 testes**; bundle `public/hatch.js` (`GRBL_HATCH`).
 
 ### Fixed — editor de desenho
+- **Menu de booleanas nascia aberto** ao abrir "Desenhar": a regra
+  `.design-menu { display: flex }` vinha depois de `.hidden` no CSS e ganhava
+  pela ordem (mesma especificidade). Agora há `.design-menu.hidden`, como nos
+  demais overlays.
 - "Gerar e visualizar" não produzia G-code: `designToGcode` recebia o array de
   formas em vez do documento (`{ shapes, width, height }`).
 - O conteúdo era pintado duas vezes por quadro e a lista de objetos era
