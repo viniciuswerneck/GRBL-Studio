@@ -51,6 +51,9 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+        env:
+          # O app não usa navegadores do Playwright (o E2E usa o Electron).
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Qualidade (lint + tipos + testes)
         if: matrix.os == 'ubuntu-latest'

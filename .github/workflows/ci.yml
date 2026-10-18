@@ -29,11 +29,13 @@ jobs:
           cache: npm
 
       # O Electron não é necessário para lint/testes/build: pula o download
-      # (~100 MB) para deixar o job mais rápido.
+      # (~100 MB) para deixar o job mais rápido. Idem para os navegadores do
+      # Playwright (o E2E usa o Electron do projeto).
       - name: Instalar dependências
         run: npm ci
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       # Habilita o teste de integração real via PTY (tests/serial-integration).
       - name: Instalar socat
@@ -69,6 +71,9 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+        env:
+          # O E2E usa o Electron do projeto (`_electron`), não navegadores.
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Build
         run: npm run build
@@ -93,6 +98,8 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Build
         run: npm run build
