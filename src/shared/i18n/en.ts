@@ -250,7 +250,6 @@ export const en = {
   'design.power': 'Power (%)',
   'design.passes': 'Passes',
   'design.mode': 'Mode',
-  'design.font': 'Font',
   'design.text.placeholder': 'Text…',
   'design.text.add': 'Add',
   'design.generate': 'Generate and preview',
@@ -299,7 +298,6 @@ export const en = {
   'design.text.bold': 'Bold',
   'design.text.noContour': 'Contour module not loaded.',
   'design.sel.none': 'No object selected',
-  'design.sel.count': '{n} object(s) selected',
   'design.sel.one': '1 object selected',
   'design.sel.blocks': '{n} objects selected',
   'design.sel.all': 'All {n} objects selected',
@@ -309,6 +307,8 @@ export const en = {
   'design.obj.speed': 'F',
   'design.obj.speed.hint':
     'Object feed (mm/min) — empty uses the engraving default',
+  'design.obj.passes': 'N',
+  'design.obj.passes.hint': 'Object passes — empty uses the engraving default',
   'design.obj.width': 'W',
   'design.obj.width.hint':
     'Stroke width (mm) — engraves a band centred on the path; empty = single line',

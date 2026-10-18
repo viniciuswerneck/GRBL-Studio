@@ -73,8 +73,6 @@ export interface DesignToGcodeOptions {
   powerPercent: number; // % do S-max
   passes: number;
   mode: 'M3' | 'M4';
-  /** Amostras por curva (círculos/elipses). */
-  samples: number;
 }
 
 const DEFAULT_OPTS: DesignToGcodeOptions = {
@@ -84,9 +82,15 @@ const DEFAULT_OPTS: DesignToGcodeOptions = {
   powerPercent: 100,
   passes: 1,
   mode: 'M4',
-  samples: 24,
 };
 
+/**
+ * Formata uma coordenada para o G-code com **3 casas (1 µm)**, a mesma
+ * resolução do DRO (RNF-12): o GRBL não ganha nada com mais casas e valores
+ * longos só incham o arquivo. Note que a resolução do editor é o pixel da
+ * prancheta (0,25 mm), então a coordenada original já vem com muito mais
+ * precisão do que o laser consegue posicionar.
+ */
 function fmt(v: number): string {
   return v.toFixed(3);
 }
@@ -217,7 +221,7 @@ export function designToGcode(
   lines.push('M5');
 
   // Emite um caminho: deslocamento a laser desligado, seguimento ligado e
-  // desligamento no fim (nunca arredonda as coordenadas).
+  // desligamento no fim (coordenadas com 3 casas — ver `fmt`).
   const emit = (
     pts: ReadonlyArray<Point>,
     closed: boolean,
@@ -282,12 +286,19 @@ export function designToGcode(
       // Traço grosso: cobre a faixa de `width` mm centrada no caminho.
       const paths =
         sh.width && sh.width > 0 ? strokePaths(src, closed, sh.width) : [src];
-      for (const raw of paths) {
-        if (raw.length < 2) continue;
-        const pts = orderFrom(raw, closed);
-        emit(pts, closed, shapeFeed, power);
-        const end = closed ? pts[0] : pts[pts.length - 1];
-        cursor = toMachine(end);
+      // Passadas do próprio objeto, além das globais (`opts.passes`).
+      const shapePasses =
+        typeof sh.passes === 'number' && Number.isFinite(sh.passes)
+          ? Math.max(1, Math.floor(sh.passes))
+          : 1;
+      for (let sp = 0; sp < shapePasses; sp++) {
+        for (const raw of paths) {
+          if (raw.length < 2) continue;
+          const pts = orderFrom(raw, closed);
+          emit(pts, closed, shapeFeed, power);
+          const end = closed ? pts[0] : pts[pts.length - 1];
+          cursor = toMachine(end);
+        }
       }
     }
   }

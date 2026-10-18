@@ -16,7 +16,6 @@ const baseOpts = {
   powerPercent: 80,
   passes: 1,
   mode: 'M4' as const,
-  samples: 12,
 };
 
 describe('makeRect / makeCircle / makeEllipse', () => {
@@ -83,6 +82,30 @@ describe('designToGcode', () => {
     const g = designToGcode(doc, { ...baseOpts, passes: 2 });
     expect(g).toContain('; pass 1/2');
     expect(g).toContain('; pass 2/2');
+  });
+
+  it('respeita as passadas do próprio objeto (shape.passes)', () => {
+    const doc: DesignDocument = {
+      shapes: [
+        {
+          kind: 'line',
+          points: [
+            { x: 0, y: 0 },
+            { x: 5, y: 0 },
+          ],
+          closed: false,
+        },
+        { kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true, passes: 3 },
+      ],
+      width: 5,
+      height: 5,
+    };
+    const g = designToGcode(doc, baseOpts);
+    // 1 volta na linha + 3 no retângulo (o global `passes` continua sendo 1)
+    expect(g.match(/^M4 S800$/gm)).toHaveLength(4);
+    expect(
+      shapesToGcode([{ ...doc.shapes[1], passes: 0 }], baseOpts),
+    ).toContain('M4 S800');
   });
 
   it('respeita mode M3', () => {

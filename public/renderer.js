@@ -1466,6 +1466,28 @@ function dCommonShapeProp(key) {
   return value;
 }
 
+/** Campos da barra de propriedades que só fazem sentido com algo selecionado. */
+const D_PROP_FIELDS = [
+  'designPropX',
+  'designPropY',
+  'designPropW',
+  'designPropH',
+  'designPropRot',
+  'designObjPower',
+  'designObjSpeed',
+  'designObjPasses',
+  'designObjWidth',
+  'designObjWidthPx',
+];
+
+/** Liga/desliga os campos de propriedades (sem seleção, ficam inertes). */
+function dSetPropsEnabled(on) {
+  for (const id of D_PROP_FIELDS) {
+    const node = $(id);
+    if (node) node.disabled = !on;
+  }
+}
+
 function dUpdateProps() {
   const px = $('designPropX');
   if (!px) return;
@@ -1482,8 +1504,10 @@ function dUpdateProps() {
       if (node) node.value = '';
     }
     dUpdateObjStyleFields(null);
+    dSetPropsEnabled(false);
     return;
   }
+  dSetPropsEnabled(true);
   px.value = b.minX.toFixed(1);
   const py = $('designPropY');
   if (py) py.value = b.minY.toFixed(1);
@@ -1519,6 +1543,7 @@ function dUpdateObjStyleFields(selection) {
   };
   set('designObjPower', 'power', 'designPower');
   set('designObjSpeed', 'speed', 'designSpeed');
+  set('designObjPasses', 'passes', 'designPasses');
   // Espessura: sem global (vazio = 0, traço simples). Os dois campos (mm e px)
   // mostram a mesma medida — 1 px = 0,25 mm.
   const width = $('designObjWidth');
@@ -1563,6 +1588,7 @@ function dApplyObjStyle() {
   };
   apply('designObjPower', 'power', 0, 100);
   apply('designObjSpeed', 'speed', 100, 20000);
+  apply('designObjPasses', 'passes', 1, 99);
   apply('designObjWidth', 'width', 0, 100);
   dPushHistory();
   dRender();
@@ -1603,8 +1629,9 @@ function dCopyStyle() {
   const sh = designState.shapes[sel[0]] || {};
   const power = typeof sh.power === 'number' ? sh.power : null;
   const speed = typeof sh.speed === 'number' ? sh.speed : null;
+  const passes = typeof sh.passes === 'number' ? sh.passes : null;
   const width = typeof sh.width === 'number' ? sh.width : null;
-  dStyleClip = { power, speed, width };
+  dStyleClip = { power, speed, passes, width };
   dStatus(t('design.style.copied'));
   dUpdateButtons();
 }
@@ -1624,6 +1651,7 @@ function dPasteStyle() {
     if (!sh) continue;
     sh.power = dStyleClip.power === null ? undefined : dStyleClip.power;
     sh.speed = dStyleClip.speed === null ? undefined : dStyleClip.speed;
+    sh.passes = dStyleClip.passes === null ? undefined : dStyleClip.passes;
     sh.width = dStyleClip.width === null ? undefined : dStyleClip.width;
   }
   dPushHistory();
@@ -3440,7 +3468,6 @@ function dReadEngraveOptions() {
     powerPercent: dNum('designPower', 100) || 100,
     passes: dNum('designPasses', 1) || 1,
     mode: $('designMode') && $('designMode').value === 'M3' ? 'M3' : 'M4',
-    samples: 24,
   };
 }
 
@@ -3749,10 +3776,15 @@ function dConfirmSize() {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyProps);
   }
-  // Potência/velocidade/espessura por objeto têm handler próprio: só agem
-  // quando o campo é realmente editado (não apagam as exceções ao mexer na
+  // Potência/velocidade/passadas/espessura por objeto têm handler próprio: só
+  // agem quando o campo é realmente editado (não apagam as exceções ao mexer na
   // geometria).
-  for (const id of ['designObjPower', 'designObjSpeed', 'designObjWidth']) {
+  for (const id of [
+    'designObjPower',
+    'designObjSpeed',
+    'designObjPasses',
+    'designObjWidth',
+  ]) {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyObjStyle);
   }

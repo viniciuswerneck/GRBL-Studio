@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { signedArea as signedAreaOf } from '../src/shared/boolean';
 import {
   arrayEntities,
   boundsIntersect,
@@ -16,6 +17,7 @@ import {
   moveNode,
   pointInPolygon,
   reorderEntities,
+  shapeHit,
   removeNode,
   rotatePoint,
   selectedEntities,
@@ -154,6 +156,15 @@ describe('grupos / entidades', () => {
   it('entityIndices agrupa e preserva a ordem', () => {
     expect(entityIndices(shapes)).toEqual([[0], [1, 2], [3]]);
   });
+
+  it('grupo vazio não junta formas soltas num bloco', () => {
+    const soltas = [
+      rect(0, 0, 1, 1, { group: '' }),
+      rect(2, 0, 1, 1, { group: '' }),
+      rect(4, 0, 1, 1),
+    ];
+    expect(entityIndices(soltas)).toEqual([[0], [1], [2]]);
+  });
 });
 
 describe('reorderEntities', () => {
@@ -256,13 +267,40 @@ describe('mirrorEntities', () => {
     };
     const other = rect(6, 0, 2, 2);
     const out = mirrorEntities([tri, other], new Set([0]), 'h');
+    // Triângulo simétrico em relação ao centro (cx = 1): o espelho devolve a
+    // mesma geometria — e, com o winding preservado (pontos invertidos), a
+    // mesma ordem.
     expect(out[0].points).toEqual([
-      { x: 2, y: 0 },
-      { x: 1, y: 2 },
       { x: 0, y: 0 },
+      { x: 1, y: 2 },
+      { x: 2, y: 0 },
     ]);
+    expect(Math.sign(signedAreaOf(out[0].points))).toBe(
+      Math.sign(signedAreaOf(tri.points)),
+    );
     // a forma não selecionada é reaproveitada
     expect(out[1]).toBe(other);
+  });
+
+  it('preserva o sentido (winding) dos contornos fechados', () => {
+    // Espelhar inverte a ordem dos pontos: sem corrigir, a área muda de sinal e
+    // um furo passaria a "engordar" no offset (`offsetLoop` usa o sinal).
+    const quad: Shape = {
+      kind: 'polygon',
+      points: [
+        { x: 0, y: 0 },
+        { x: 4, y: 0 },
+        { x: 4, y: 3 },
+        { x: 0, y: 3 },
+      ],
+      closed: true,
+    };
+    const out = mirrorEntities([quad], new Set([0]), 'h');
+    const pts = out[0].points;
+    expect(Math.sign(signedAreaOf(pts))).toBe(
+      Math.sign(signedAreaOf(quad.points)),
+    );
+    expect(shapeBounds(out[0])).toEqual(shapeBounds(quad));
   });
 
   it('espelha em Y em torno do centro da seleção', () => {
@@ -275,6 +313,22 @@ describe('mirrorEntities', () => {
       maxY: 10,
     });
     expect(shapeBounds(out[1])).toEqual({ minX: 0, minY: 0, maxX: 2, maxY: 2 });
+  });
+
+  it('atinge a espessura do traço (banda), não só a linha do meio', () => {
+    const sh: Shape = {
+      kind: 'line',
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
+      closed: false,
+      width: 2,
+    };
+    // O que se vê é a faixa de 2 mm: 0,5 mm acima da linha ainda está nela.
+    expect(shapeHit(sh, 5, 0.5, 0)).toBe(true);
+    expect(shapeHit(sh, 5, 1.5, 0)).toBe(false);
+    expect(shapeHit({ ...sh, width: 0 }, 5, 0.5, 0)).toBe(false);
   });
 
   it('sem seleção não muda nada', () => {

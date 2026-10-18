@@ -241,9 +241,17 @@ export function strokeOffsets(
 ): number[] {
   const half = Math.abs(width) / 2;
   if (!(half > 5e-4)) return [0];
+  const gap = Math.max(1e-4, step);
   const cap = Math.max(1, Math.floor(Math.max(3, maxLines) / 2));
-  const n = Math.max(1, Math.min(cap, Math.ceil(half / Math.max(1e-4, step))));
-  const s = half / n;
+  // Quantas passadas cabem na faixa mantendo o passo: a lateral mais externa
+  // nunca passa da borda (±width/2). Uma faixa com até um `step` de largura
+  // inteira já é uma linha só — `strokeOffsets(0.1, 0.1)` não vira 3 passadas.
+  const nSteps = Math.floor(half / gap);
+  if (nSteps < 1) return [0];
+  // Estourado o limite de linhas, as passadas se espalham até a borda (o passo
+  // "elástico" ~width/(2·n) fica maior que `step`, mas o traço é coberto todo).
+  const n = Math.min(cap, nSteps);
+  const s = n >= cap && nSteps > cap ? half / n : gap;
   const out: number[] = [];
   for (let k = n; k >= 1; k--) out.push(-k * s);
   out.push(0);

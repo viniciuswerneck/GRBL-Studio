@@ -184,6 +184,20 @@ describe('strokeOffsets', () => {
     expect(strokeOffsets(-2)).toEqual(strokeOffsets(2));
   });
 
+  it('faixa com até um passo de largura é uma passada só', () => {
+    // Antes: `strokeOffsets(0.1, 0.1)` devolvia 3 passadas (espaçamento 0,05),
+    // queimando a faixa com o dobro da densidade pedida.
+    expect(strokeOffsets(0.1, 0.1)).toEqual([0]);
+    expect(strokeOffsets(0.099, 0.1)).toEqual([0]);
+    // Acima de um passo, a lateral mais externa encosta na borda.
+    expect(strokeOffsets(0.2, 0.1)).toEqual([-0.1, 0, 0.1]);
+    // 0,21 mm: as pontas ficam a 0,1 mm (5 µm da borda — dentro do kerf).
+    expect(strokeOffsets(0.21, 0.1)).toEqual([-0.1, 0, 0.1]);
+    // 0,25 mm (1 px de traço): passo real de 0,1 (as bordas ficam cobertas
+    // pelo kerf do feixe, como no preenchimento).
+    expect(strokeOffsets(0.25, 0.1)).toEqual([-0.1, 0, 0.1]);
+  });
+
   it('limita a quantidade de linhas mantendo as pontas', () => {
     const d = strokeOffsets(1000, 0.05, 41);
     expect(d.length).toBeLessThanOrEqual(41);

@@ -114,6 +114,8 @@ export function pointInPolygon(
 /**
  * `true` se (x, y) atinge a forma, dentro da tolerância `tol` (unidades do
  * mundo): interior (formas fechadas) **ou** proximidade de qualquer aresta.
+ * A espessura do traço entra na conta — o que o usuário vê é a faixa de
+ * `width` mm, não uma linha fina no meio dela.
  */
 export function shapeHit(
   shape: Shape,
@@ -124,11 +126,16 @@ export function shapeHit(
   const pts = shape.points;
   if (pts.length === 0) return false;
   if (shape.closed && pts.length >= 3 && pointInPolygon(pts, x, y)) return true;
-  if (pts.length === 1) return Math.hypot(x - pts[0].x, y - pts[0].y) <= tol;
+  const band =
+    typeof shape.width === 'number' && Number.isFinite(shape.width)
+      ? Math.abs(shape.width) / 2
+      : 0;
+  const reach = Math.max(0, tol) + band;
+  if (pts.length === 1) return Math.hypot(x - pts[0].x, y - pts[0].y) <= reach;
   for (let i = 1; i < pts.length; i++) {
     if (
       distanceToSegment(x, y, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y) <=
-      tol
+      reach
     ) {
       return true;
     }
@@ -136,7 +143,7 @@ export function shapeHit(
   if (shape.closed && pts.length >= 3) {
     const first = pts[0];
     const last = pts[pts.length - 1];
-    if (distanceToSegment(x, y, last.x, last.y, first.x, first.y) <= tol)
+    if (distanceToSegment(x, y, last.x, last.y, first.x, first.y) <= reach)
       return true;
   }
   return false;
@@ -181,7 +188,9 @@ export function entityIndices(shapes: ReadonlyArray<Shape>): number[][] {
   const entities: number[][] = [];
   for (let i = 0; i < shapes.length; i++) {
     const g = shapes[i].group;
-    if (g === undefined || g === null) {
+    // Grupo vazio/nulo = forma solta. Sem isso, todas as formas com `group: ''`
+    // cairiam no mesmo balde e virariam um bloco único.
+    if (g === undefined || g === null || g === '') {
       entities.push([i]);
       continue;
     }
@@ -293,7 +302,14 @@ export function mirrorEntities(
       axis === 'h'
         ? sh.points.map((p) => ({ x: 2 * cx - p.x, y: p.y }))
         : sh.points.map((p) => ({ x: p.x, y: 2 * cy - p.y }));
-    return { ...sh, points };
+    // Espelhar inverte o sentido do contorno (winding). Num contorno fechado
+    // isso muda o que é "dentro" e "fora": `offsetLoop` decide crescer/encolher
+    // pelo sinal da área (`signedArea`), então um furo espelhado passaria a
+    // engordar como peça. Invertemos a ordem dos pontos para preservar a
+    // orientação — em forma aberta o sentido só muda o lado do deslocamento,
+    // que não é usado na geração (o traço usa os dois lados).
+    const closed = Boolean(sh.closed) && points.length > 2;
+    return { ...sh, points: closed ? points.slice().reverse() : points };
   });
 }
 

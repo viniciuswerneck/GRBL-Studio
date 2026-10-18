@@ -265,7 +265,6 @@ export const ptBR = {
   'design.power': 'Potência (%)',
   'design.passes': 'Passadas',
   'design.mode': 'Modo',
-  'design.font': 'Fonte',
   'design.text.placeholder': 'Texto…',
   'design.text.add': 'Adicionar',
   'design.generate': 'Gerar e visualizar',
@@ -313,7 +312,6 @@ export const ptBR = {
   'design.text.bold': 'Negrito',
   'design.text.noContour': 'Módulo de contorno não carregado.',
   'design.sel.none': 'Nenhum objeto selecionado',
-  'design.sel.count': '{n} objeto(s) selecionado(s)',
   'design.sel.one': '1 objeto selecionado',
   'design.sel.blocks': '{n} objetos selecionados',
   'design.sel.all': 'Todos os {n} objetos selecionados',
@@ -323,6 +321,9 @@ export const ptBR = {
   'design.obj.speed': 'V',
   'design.obj.speed.hint':
     'Velocidade do objeto (mm/min) — vazio usa o padrão de gravação',
+  'design.obj.passes': 'N',
+  'design.obj.passes.hint':
+    'Passadas do objeto — vazio usa o padrão de gravação',
   'design.obj.width': 'E',
   'design.obj.width.hint':
     'Espessura do traço (mm) — grava uma faixa centrada no caminho; vazio = traço simples',

@@ -256,7 +256,6 @@ export const es = {
   'design.power': 'Potencia (%)',
   'design.passes': 'Pasadas',
   'design.mode': 'Modo',
-  'design.font': 'Fuente',
   'design.text.placeholder': 'Texto…',
   'design.text.add': 'Añadir',
   'design.generate': 'Generar y previsualizar',
@@ -305,7 +304,6 @@ export const es = {
   'design.text.bold': 'Negrita',
   'design.text.noContour': 'Módulo de contorno no cargado.',
   'design.sel.none': 'Ningún objeto seleccionado',
-  'design.sel.count': '{n} objeto(s) seleccionado(s)',
   'design.sel.one': '1 objeto seleccionado',
   'design.sel.blocks': '{n} objetos seleccionados',
   'design.sel.all': 'Los {n} objetos seleccionados',
@@ -315,6 +313,9 @@ export const es = {
   'design.obj.speed': 'V',
   'design.obj.speed.hint':
     'Velocidad del objeto (mm/min) — vacío usa el valor de grabado',
+  'design.obj.passes': 'N',
+  'design.obj.passes.hint':
+    'Pasadas del objeto — vacío usa el valor de grabado',
   'design.obj.width': 'E',
   'design.obj.width.hint':
     'Grosor del trazo (mm) — graba una banda centrada en el camino; vacío = trazo simple',
