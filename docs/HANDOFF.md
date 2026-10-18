@@ -3,6 +3,8 @@
 **Data:** 2026-10-18
 **Branch:** `main`
 **Estado:** código pronto, testado e commitado. App rodando na sessão Wayland.
+A **v0.6.0** (ferramentas de símbolo: QR Code + código de barras 1D) está
+**publicada** — ver §8.
 
 ---
 
@@ -155,8 +157,8 @@ menu). Detalhes em `docs/PLANO_QR_BARCODE.md` §15; resumo para retomar rápido:
 - **Sem dependência de runtime** (ADR-11). `qrcode-generator` e `jsqr` são só
   `devDependencies`, usadas em `tests/symbol-qr.test.ts` (cross-check de matriz +
   decodificação real).
-- **Pendências da v0.6:** S2 (código de barras 1D + HRI: `symbol/barcode/`,
-  modal `#barcodeOverlay`, `build:barcode`) e S3 (2D/lote/objeto no editor).
+- **Pendências da v0.6:** S2 (código de barras 1D + HRI) — **fechada na §8** —
+  e S3 (2D/lote/objeto no editor).
 - **Validar com hardware:** gerar um QR de 0,5 mm em papel/madeira com
   velocidade baixa e ler com o celular; se sair claro demais, aumentar potência
   ou reduzir a velocidade (os avisos do modal já cobrem módulo pequeno/linhas
@@ -166,8 +168,9 @@ menu). Detalhes em `docs/PLANO_QR_BARCODE.md` §15; resumo para retomar rápido:
 
 ## 8. v0.6 S2 — código de barras 1D (18/10/2026)
 
-**Estado:** implementado e testado (QR + 1D juntos fecham a v0.6). Detalhes em
-`docs/PLANO_QR_BARCODE.md` §16; resumo para retomar rápido:
+**Estado:** implementado, testado e **publicado na v0.6.0** (commits `37d640b`
+S2 + tamanho alvo do QR e `5d2dbc1` bump/tag; release com 6 artefatos).
+Detalhes em `docs/PLANO_QR_BARCODE.md` §16; resumo para retomar rápido:
 
 - **Ferramentas → Código de barras…** (`MENU_ACTIONS.barCode` → `#barcodeOverlay`
   → `window.GRBL_BARCODE.barcodeToGcode`). Simbologias: Code 128 (A/B/C com troca
@@ -183,8 +186,8 @@ menu). Detalhes em `docs/PLANO_QR_BARCODE.md` §15; resumo para retomar rápido:
   real. O HRI sai abaixo das barras e o símbolo é deslocado para Y ≥ 0.
 - **Bundle gerado:** `public/barcode.js` (`npm run build:barcode`). Sem
   dependência de runtime (ADR-11); `jsbarcode` é só teste (cross-check).
-- **Pendências da v0.6:** S3 (Data Matrix/PDF417/Aztec, Code 93/GS1-128, lote e
-  o símbolo como **objeto** no editor "Desenhar"); ITF-14/Codabar da S2.
+- **Pendências seguintes (S3, v0.7):** Data Matrix/PDF417/Aztec, Code 93/GS1-128,
+  lote e o símbolo como **objeto** no editor "Desenhar"; ITF-14/Codabar da S2.
 - **Validar com hardware:** gravar um Code 128 com X-dim 0,5 mm e ler com
   leitor/celular; se não ler, aumentar a quiet zone, a altura das barras ou o
   X-dimension (os avisos apontam qual).

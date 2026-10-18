@@ -1,7 +1,7 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
-> **Status: S1 (QR Code) e S2 (código de barras 1D) implementadas** — v0.6 em
-> andamento (18/10/2026). Ver §15 (S1) e §16 (S2) para o que foi entregue,
+> **Status: S1 (QR Code) e S2 (código de barras 1D) implementadas e publicadas
+> na v0.6.0** (18/10/2026). Ver §15 (S1) e §16 (S2) para o que foi entregue,
 > medido e o que falta (S3).
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
@@ -511,7 +511,8 @@ correspondente — sem tocar no núcleo (`mask.ts`/`gcode.ts`) já pronto.
 
 ## 16. Estado da implementação — S2 (código de barras 1D, 18/10/2026)
 
-**Entregue** (bundle `GRBL_BARCODE`, menu **Ferramentas → Código de barras…**):
+**Entregue** (bundle `GRBL_BARCODE`, menu **Ferramentas → Código de barras…**),
+e **publicada na v0.6.0** junto com a S1:
 Code 128 (A/B/C com troca automática), EAN-13/EAN-8/UPC-A e Code 39, com **HRI**
 (reusa `fonts.ts`) e os mesmos avisos de legibilidade do QR.
 
