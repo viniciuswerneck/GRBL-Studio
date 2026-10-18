@@ -442,3 +442,237 @@ export function simplifyPolyline(
   for (let i = 0; i < n; i++) if (keep[i]) out.push({ ...points[i] });
   return out;
 }
+
+// --------------------------------------------------- caneta (freehand)
+
+/**
+ * Cria uma forma a partir de pontos de desenho livre.
+ * Aplica simplificação RDP (`tolerance`) e remove pontos duplicados.
+ * `kind` default = 'polygon' (fechado) se o traço voltar ao início;
+ * caso contrário 'polygon' aberto (linha).
+ */
+export function createFreehandShape(
+  rawPoints: ReadonlyArray<Point>,
+  options: {
+    tolerance?: number;
+    closeThreshold?: number;
+    kind?: 'polygon' | 'line';
+  } = {},
+): Shape | null {
+  const tolerance = options.tolerance ?? 0.5;
+  const closeThreshold = options.closeThreshold ?? 1.0;
+  if (!rawPoints.length) return null;
+
+  // Remove pontos consecutivos idênticos
+  const cleaned: Point[] = [];
+  for (const p of rawPoints) {
+    const last = cleaned[cleaned.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 1e-4) {
+      cleaned.push({ ...p });
+    }
+  }
+  if (cleaned.length < 2) return null;
+
+  // Simplifica (RDP)
+  const simple = simplifyPolyline(cleaned, tolerance);
+  if (simple.length < 2) return null;
+
+  // Detecta fechamento (último próximo do primeiro)
+  const first = simple[0];
+  const last = simple[simple.length - 1];
+  const closed = simple.length >= 3 &&
+    Math.hypot(last.x - first.x, last.y - first.y) <= closeThreshold;
+
+  // Se fecha, garante que o último = primeiro (não duplicado no array)
+  const points = closed ? simple.slice(0, -1) : simple;
+
+  return {
+    kind: options.kind ?? 'polygon',
+    points,
+    closed,
+    name: closed ? 'Forma' : 'Linha',
+  };
+}
+
+// --------------------------------------------------- edição de nós
+
+/** Tipo de alvo de hit-test para edição de nós. */
+export interface NodeHit {
+  /** Índice do nó (0 = primeiro ponto). */
+  nodeIndex: number;
+  /** Se é o primeiro nó de um caminho fechado. */
+  isFirst: boolean;
+}
+
+/** Tipo de alvo de segmento para inserção de nó. */
+export interface SegmentHit {
+  /** Índice do segmento (0 = entre ponto 0 e 1). */
+  segmentIndex: number;
+  /** Ponto mais próximo no segmento. */
+  point: Point;
+}
+
+/**
+ * Testa se (x, y) atinge algum nó da polilinha.
+ * Retorna o NodeHit do nó mais próximo (dentro de `tol`), ou null.
+ */
+export function hitTestNode(
+  points: ReadonlyArray<Point>,
+  x: number,
+  y: number,
+  tol: number,
+): NodeHit | null {
+  let best: NodeHit | null = null;
+  let bestDist = tol;
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const d = Math.hypot(x - p.x, y - p.y);
+    if (d < bestDist) {
+      bestDist = d;
+      best = { nodeIndex: i, isFirst: i === 0 };
+    }
+  }
+  return best;
+}
+
+/**
+ * Testa se (x, y) atinge algum segmento da polilinha.
+ * Retorna o SegmentHit do segmento mais próximo (dentro de `tol`), ou null.
+ */
+export function hitTestSegment(
+  points: ReadonlyArray<Point>,
+  x: number,
+  y: number,
+  tol: number,
+  closed: boolean,
+): SegmentHit | null {
+  const n = points.length;
+  if (n < 2) return null;
+  let best: SegmentHit | null = null;
+  let bestDist = tol;
+  for (let i = 1; i < n; i++) {
+    const d = distanceToSegment(x, y, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+    if (d < bestDist) {
+      bestDist = d;
+      // Projeção no segmento
+      const ax = points[i - 1].x;
+      const ay = points[i - 1].y;
+      const bx = points[i].x;
+      const by = points[i].y;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
+      best = {
+        segmentIndex: i - 1,
+        point: { x: ax + t * dx, y: ay + t * dy },
+      };
+    }
+  }
+  // Segmento de fechamento (último → primeiro)
+  if (closed && n >= 3) {
+    const d = distanceToSegment(x, y, points[n - 1].x, points[n - 1].y, points[0].x, points[0].y);
+    if (d < bestDist) {
+      bestDist = d;
+      const ax = points[n - 1].x;
+      const ay = points[n - 1].y;
+      const bx = points[0].x;
+      const by = points[0].y;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / len2));
+      best = {
+        segmentIndex: n - 1,
+        point: { x: ax + t * dx, y: ay + t * dy },
+      };
+    }
+  }
+  return best;
+}
+
+/**
+ * Insere um nó no segmento `segmentIndex` (antes do ponto `segmentIndex + 1`).
+ * `newPoint` é a posição do novo nó (geralmente a projeção no segmento).
+ * Retorna novo array de pontos.
+ */
+export function insertNode(
+  points: ReadonlyArray<Point>,
+  segmentIndex: number,
+  newPoint: Point,
+): Point[] {
+  const out = points.map((p) => ({ ...p }));
+  // segmentIndex = 0 → antes do ponto 1; ou seja, insere no índice 1
+  out.splice(segmentIndex + 1, 0, { ...newPoint });
+  return out;
+}
+
+/**
+ * Remove o nó em `nodeIndex`.
+ * Se ficar com < 2 pontos (aberto) ou < 3 (fechado), retorna o array original inalterado.
+ */
+export function removeNode(
+  points: ReadonlyArray<Point>,
+  nodeIndex: number,
+  closed: boolean,
+): Point[] {
+  const minPts = closed ? 3 : 2;
+  if (points.length <= minPts) return points.map((p) => ({ ...p }));
+  const out = points.map((p) => ({ ...p }));
+  out.splice(nodeIndex, 1);
+  return out;
+}
+
+/**
+ * Move o nó em `nodeIndex` para `(x, y)`.
+ */
+export function moveNode(
+  points: ReadonlyArray<Point>,
+  nodeIndex: number,
+  x: number,
+  y: number,
+): Point[] {
+  if (nodeIndex < 0 || nodeIndex >= points.length) return points.map((p) => ({ ...p }));
+  const out = points.map((p) => ({ ...p }));
+  out[nodeIndex] = { x, y };
+  return out;
+}
+
+/**
+ * Divide uma polilinha aberta em duas no nó `nodeIndex` (0 < index < n-1).
+ * Retorna [parteA, parteB] onde parteA termina no nó e parteB começa nele
+ * (o nó aparece em ambas). Se não for divisível, retorna [original, null].
+ */
+export function splitPolyline(
+  points: ReadonlyArray<Point>,
+  nodeIndex: number,
+): [Point[], Point[] | null] {
+  const n = points.length;
+  if (nodeIndex <= 0 || nodeIndex >= n - 1) return [points.map((p) => ({ ...p })), null];
+  const a = points.slice(0, nodeIndex + 1).map((p) => ({ ...p }));
+  const b = points.slice(nodeIndex).map((p) => ({ ...p }));
+  return [a, b];
+}
+
+/**
+ * Junta duas polilinhas abertas se a ponta de `a` coincidir com a ponta de `b`
+ * (dentro de `tol`). Retorna a polilinha unida ou null.
+ */
+export function tryJoinPolylines(
+  a: ReadonlyArray<Point>,
+  b: ReadonlyArray<Point>,
+  tol = 1e-4,
+): Point[] | null {
+  if (!a.length || !b.length) return null;
+  const aEnd = a[a.length - 1];
+  const bStart = b[0];
+  if (Math.hypot(aEnd.x - bStart.x, aEnd.y - bStart.y) <= tol) {
+    return [...a.map((p) => ({ ...p })), ...b.slice(1).map((p) => ({ ...p }))];
+  }
+  const aStart = a[0];
+  const bEnd = b[b.length - 1];
+  if (Math.hypot(aStart.x - bEnd.x, aStart.y - bEnd.y) <= tol) {
+    return [...b.map((p) => ({ ...p })), ...a.slice(1).map((p) => ({ ...p }))];
+  }
+  return null;
+}

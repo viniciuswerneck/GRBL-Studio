@@ -36,14 +36,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   replicam a gravação de um objeto na seleção — ex.: contorno fraco e
   preenchimento forte no mesmo desenho, sem gerar dois arquivos.
 - **Espessura do traço**: cada objeto pode gravar uma **faixa de N mm centrada
-  no caminho** (como um traço de caneta: metade para cada lado), com o campo `E`
-  da barra de propriedades. A gravação preenche a faixa com linhas paralelas
-  espaçadas de ~0,1 mm (o mesmo *kerf* do preenchimento por varredura) e o
-  desenho mostra o traço com a espessura real (WYSIWYG); `0`/vazio mantém a
-  linha simples e espessuras dentro do feixe não mudam nada. Vale para
-  retângulos, elipses, polígonos, textos e linhas — e a espessura é um
-  parâmetro de gravação em mm: **não escala** junto com o desenho (o traço
-  também não é reeditado ao reaproveitar o estilo de um objeto).
+  no caminho** (como um traço de caneta: metade para cada lado), com os campos
+  `E` (mm) e `px` da barra de propriedades — os dois são a mesma medida
+  (**1 px = 0,25 mm**, como o traço aparece na tela em zoom normal), então dá
+  para digitar `2px`/`3px` e ver o valor em mm equivalente. A gravação preenche
+  a faixa com linhas paralelas espaçadas de ~0,1 mm (o mesmo *kerf* do
+  preenchimento por varredura) e o desenho mostra o traço com a espessura real
+  (WYSIWYG); `0`/vazio mantém a linha simples e espessuras dentro do feixe não
+  mudam nada. Vale para retângulos, elipses, polígonos, textos e linhas — e a
+  espessura é um parâmetro de gravação em mm: **não escala** junto com o
+  desenho (o traço também não é reeditado ao reaproveitar o estilo de um
+  objeto).
+- **Caneta (desenho livre)**: nova ferramenta `P` na barra de ferramentas —
+  clique e arraste para criar traços livres; ao soltar, os pontos são
+  simplificados (RDP, tolerância 0,5 mm) e, se o traço voltar perto do início,
+  a forma fecha automaticamente.
+- **Edição de nós**: botão `N` na barra de ferramentas — com um objeto
+  selecionado, entra no modo edição; clique num nó para arrastar, clique num
+  segmento para inserir nó, `Delete`/`Backspace` remove nó, `Esc` sai do modo.
+  Os nós são desenhados sobre a forma (círculo azul no nó ativo) com a mesma
+  escala do zoom.
 - **Booleanas e contorno paralelo** (menu da barra de propriedades): **unir**,
   **subtrair** (o objeto de trás menos os da frente), **intersecção** e
   **exclusão** entre 2+ objetos fechados — com furos corretos (paridade de

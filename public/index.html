@@ -30,6 +30,17 @@
         <symbol id="ic-text" viewBox="0 0 24 24">
           <path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </symbol>
+        <symbol id="ic-pen" viewBox="0 0 24 24">
+          <path d="M12 19l7-7 3 3-7 7-3-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M18 13l-1.5-7.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </symbol>
+        <symbol id="ic-node-edit" viewBox="0 0 24 24">
+          <circle cx="6" cy="6" r="2.5" fill="currentColor" />
+          <circle cx="18" cy="6" r="2.5" fill="currentColor" />
+          <circle cx="6" cy="18" r="2.5" fill="currentColor" />
+          <circle cx="18" cy="18" r="2.5" fill="currentColor" />
+          <path d="M6 6h12v12H6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" />
+        </symbol>
         <symbol id="ic-undo" viewBox="0 0 24 24">
           <path d="M9 6L4 11l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M4 11h10a5 5 0 0 1 0 10h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -1007,9 +1018,13 @@
               <span data-i18n="design.obj.speed">V</span>
               <input type="number" id="designObjSpeed" min="100" max="20000" step="50" placeholder="—" />
             </label>
-            <label class="design-mini" data-i18n-title="design.obj.width.hint" title="Espessura do traço (mm) — grava uma faixa centrada no caminho">
+            <label class="design-mini" data-i18n-title="design.obj.width.hint" title="Espessura do traço em mm — grava uma faixa centrada no caminho">
               <span data-i18n="design.obj.width">E</span>
-              <input type="number" id="designObjWidth" min="0" max="100" step="0.1" placeholder="0" />
+              <input type="number" id="designObjWidth" min="0" max="100" step="0.05" placeholder="0" />
+            </label>
+            <label class="design-mini" data-i18n-title="design.obj.widthPx.hint" title="Espessura do traço em pixels (1 px = 0,25 mm)">
+              <span data-i18n="design.obj.widthPx">px</span>
+              <input type="number" id="designObjWidthPx" min="0" max="400" step="1" placeholder="0" />
             </label>
             <button type="button" id="designCopyStyle" class="icon-btn" data-i18n-title="design.style.copy" title="Copiar estilo (Ctrl+Shift+C)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-style-copy" /></svg>
@@ -1148,6 +1163,12 @@
             </button>
             <button type="button" id="designToolLine" class="design-tool" data-i18n-title="design.tool.line" title="Linha (L)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-line" /></svg>
+            </button>
+            <button type="button" id="designToolPen" class="design-tool" data-i18n-title="design.tool.pen" title="Caneta (P)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-pen" /></svg>
+            </button>
+            <button type="button" id="designToolNode" class="design-tool" data-i18n-title="design.tool.node" title="Editar nós (N)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-node-edit" /></svg>
             </button>
             <button type="button" id="designToolText" class="design-tool" data-i18n-title="design.tool.text" title="Texto (T)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-text" /></svg>

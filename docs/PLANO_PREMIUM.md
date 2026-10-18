@@ -82,6 +82,7 @@ Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
 | # | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
 | P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | ✅ Formas (retângulo/elipse/linha), **texto** (vetor/preenchido/traço) como bloco, seleção múltipla + marquee, mover/redimensionar/rotacionar, ordem Z, agrupar, duplicar, **matriz de cópias**, **espelhar** H/V, **distribuir** espaçamento, **snap a objetos** com guias, alinhamento à página, réguas, undo/redo; fontes do sistema; **potência/velocidade/espessura do traço por objeto** + copiar estilo; **booleanas** (unir/subtrair/intersecção/exclusão com furos por paridade) e **contorno paralelo** (distância/passadas/cantos). |
+| P2.1b | **Caneta + edição de nós** | M | ✅ Ferramenta **caneta** (desenho livre `P`, simplificação RDP, fechamento automático); **edição de nós** (`N`) — mover nós, inserir em segmentos (`clique`), remover (`Del`), `Esc` para sair; nós desenhados com zoom (WYSIWYG). |
 | P2.2 | **Camadas (layers)** com parâmetros por camada | M | Gravar + cortar numa execução; reordenação. |
 | P2.3 | **Simulação de job** (playback visual + tempo) | M | Play/pause/seek do caminho com velocidade real. |
 | P2.4 | **Importação DXF** | M | Parser + conversão para paths. |

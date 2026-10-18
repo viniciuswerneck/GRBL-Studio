@@ -251,6 +251,8 @@ export const ptBR = {
   'design.tool.rect': 'Retângulo',
   'design.tool.circle': 'Círculo',
   'design.tool.line': 'Linha',
+  'design.tool.pen': 'Caneta',
+  'design.tool.node': 'Editar nós',
   'design.tool.text': 'Texto',
   'design.delete': 'Excluir',
   'design.clear': 'Limpar',
@@ -324,6 +326,9 @@ export const ptBR = {
   'design.obj.width': 'E',
   'design.obj.width.hint':
     'Espessura do traço (mm) — grava uma faixa centrada no caminho; vazio = traço simples',
+  'design.obj.widthPx': 'px',
+  'design.obj.widthPx.hint':
+    'Espessura do traço em pixels (1 px = 0,25 mm) — mesma medida do campo em mm',
   'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
   'design.style.paste': 'Colar estilo (Ctrl+Shift+V)',
   'design.style.copied': 'Estilo copiado.',

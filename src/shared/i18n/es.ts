@@ -242,6 +242,8 @@ export const es = {
   'design.tool.rect': 'Rectángulo',
   'design.tool.circle': 'Círculo',
   'design.tool.line': 'Línea',
+  'design.tool.pen': 'Pluma',
+  'design.tool.node': 'Editar nodos',
   'design.tool.text': 'Texto',
   'design.delete': 'Eliminar',
   'design.clear': 'Limpiar',
@@ -316,6 +318,9 @@ export const es = {
   'design.obj.width': 'E',
   'design.obj.width.hint':
     'Grosor del trazo (mm) — graba una banda centrada en el camino; vacío = trazo simple',
+  'design.obj.widthPx': 'px',
+  'design.obj.widthPx.hint':
+    'Grosor del trazo en píxeles (1 px = 0,25 mm) — misma medida que el campo en mm',
   'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
   'design.style.paste': 'Pegar estilo (Ctrl+Shift+V)',
   'design.style.copied': 'Estilo copiado.',

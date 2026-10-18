@@ -236,6 +236,8 @@ export const en = {
   'design.tool.rect': 'Rectangle',
   'design.tool.circle': 'Circle',
   'design.tool.line': 'Line',
+  'design.tool.pen': 'Pen',
+  'design.tool.node': 'Edit nodes',
   'design.tool.text': 'Text',
   'design.delete': 'Delete',
   'design.clear': 'Clear',
@@ -310,6 +312,9 @@ export const en = {
   'design.obj.width': 'W',
   'design.obj.width.hint':
     'Stroke width (mm) — engraves a band centred on the path; empty = single line',
+  'design.obj.widthPx': 'px',
+  'design.obj.widthPx.hint':
+    'Stroke width in pixels (1 px = 0.25 mm) — same measure as the mm field',
   'design.style.copy': 'Copy style (Ctrl+Shift+C)',
   'design.style.paste': 'Paste style (Ctrl+Shift+V)',
   'design.style.copied': 'Style copied.',

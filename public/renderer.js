@@ -230,6 +230,8 @@ const el = {
   designToolRect: $('designToolRect'),
   designToolCircle: $('designToolCircle'),
   designToolLine: $('designToolLine'),
+  designToolPen: $('designToolPen'),
+  designToolNode: $('designToolNode'),
   designToolText: $('designToolText'),
   designDelete: $('designDelete'),
   designClear: $('designClear'),
@@ -607,6 +609,9 @@ const BOOL = window.GRBL_BOOLEAN;
 const OFFSET = window.GRBL_OFFSET;
 const RULER = 22; // espessura das réguas (px)
 const D_MARGIN = 18; // margem do "ajustar à página" (px)
+// Espessura do traço: relação px ↔ mm do campo de propriedades do objeto
+// (4 px/mm ≈ 100 dpi — perto de como o traço aparece na tela em zoom normal).
+const D_PX_MM = 0.25;
 const HANDLE = 3.5; // meia-aresta do handle (px)
 const HIT_PX = 3; // tolerância de clique (px)
 const SNAP_PX = 8; // tolerância do snap a objetos (px)
@@ -616,6 +621,8 @@ const designState = {
   shapes: [],
   selection: [],
   drawing: null,
+  freehandPoints: [],
+  nodeEdit: null,
   history: [],
   historyIdx: -1,
   view: { scale: 4, tx: 40, ty: 40 },
@@ -1474,17 +1481,22 @@ function dUpdateObjStyleFields(selection) {
   };
   set('designObjPower', 'power', 'designPower');
   set('designObjSpeed', 'speed', 'designSpeed');
-  // Espessura: sem global (vazio = 0, traço simples).
+  // Espessura: sem global (vazio = 0, traço simples). Os dois campos (mm e px)
+  // mostram a mesma medida — 1 px = 0,25 mm.
   const width = $('designObjWidth');
+  const widthPx = $('designObjWidthPx');
+  const v = selection?.length ? dCommonShapeProp('width') : undefined;
+  const mm = typeof v === 'number' ? v : v === null ? null : 0;
   if (width) {
-    if (!selection?.length) {
-      width.value = '';
-      width.placeholder = '0';
-    } else {
-      const v = dCommonShapeProp('width');
-      width.value = typeof v === 'number' ? String(Number(v.toFixed(2))) : '';
-      width.placeholder = v === null ? '—' : '0';
-    }
+    width.value = typeof mm === 'number' && mm > 0 ? String(Number(mm.toFixed(2))) : '';
+    width.placeholder = mm === null ? '—' : '0';
+  }
+  if (widthPx) {
+    widthPx.value =
+      typeof mm === 'number' && mm > 0
+        ? String(Number((mm / D_PX_MM).toFixed(1)))
+        : '';
+    widthPx.placeholder = mm === null ? '—' : '0';
   }
 }
 
@@ -1513,6 +1525,28 @@ function dApplyObjStyle() {
   apply('designObjPower', 'power', 0, 100);
   apply('designObjSpeed', 'speed', 100, 20000);
   apply('designObjWidth', 'width', 0, 100);
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+}
+
+/**
+ * Espessura digitada em **px** (1 px = 0,25 mm): grava a mesma faixa do campo
+ * em mm, só com outra unidade. Vazio = traço simples.
+ */
+function dApplyObjWidthPx() {
+  if (!designState.selection.length) return;
+  const node = $('designObjWidthPx');
+  if (!node) return;
+  const raw = node.value.trim();
+  const px = raw === '' ? 0 : Number(raw.replace(',', '.'));
+  if (!Number.isFinite(px)) return;
+  const mm = dClamp(px * D_PX_MM, 0, 100);
+  for (const i of designState.selection) {
+    const sh = designState.shapes[i];
+    if (sh) sh.width = mm > 0 ? mm : undefined;
+  }
   dPushHistory();
   dRender();
   dUpdateProps();
@@ -1912,6 +1946,54 @@ function dPaint() {
     ctx.lineWidth = 1.8 / v.scale;
     ctx.stroke();
   }
+
+  // Caneta: prévia do traço livre (espaço do mundo)
+  if (designState.tool === 'pen' && designState.freehandPoints.length >= 2) {
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5 / v.scale;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    const first = dW2S(designState.freehandPoints[0].x, designState.freehandPoints[0].y);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < designState.freehandPoints.length; i++) {
+      const p = dW2S(designState.freehandPoints[i].x, designState.freehandPoints[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Edição de nós: desenha os nós do shape em edição
+  if (designState.nodeEdit) {
+    const ne = designState.nodeEdit;
+    const sh = designState.shapes[ne.shapeIndex];
+    if (sh) {
+      const NODE_R = 6 / v.scale;
+      for (let i = 0; i < sh.points.length; i++) {
+        const p = dW2S(sh.points[i].x, sh.points[i].y);
+        const isActive = i === ne.nodeIndex;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, NODE_R, 0, Math.PI * 2);
+        ctx.fillStyle = isActive ? '#0a84ff' : '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = isActive ? '#0a84ff' : '#1b1b1b';
+        ctx.lineWidth = 2 / v.scale;
+        ctx.stroke();
+      }
+      // Linha pontilhada entre nós (contorno)
+      ctx.strokeStyle = '#0a84ff';
+      ctx.lineWidth = 1 / v.scale;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      dPath(ctx, sh);
+      if (sh.closed) ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
   ctx.restore();
 
   // seleção (espaço da tela)
@@ -2361,6 +2443,8 @@ function dSetTool(tool) {
     designToolRect: 'rect',
     designToolCircle: 'circle',
     designToolLine: 'line',
+    designToolPen: 'pen',
+    designToolNode: 'node',
     designToolText: 'text',
   };
   for (const [id, name] of Object.entries(map)) {
@@ -2473,19 +2557,52 @@ function dOnPointerDown(e) {
     return;
   }
 
-  // ferramentas de criação
+  // Modo edição de nós: precisa vir ANTES das ferramentas de criação para
+  // evitar que o drag seja inicializado como 'create'.
+  if (designState.tool === 'node' && designState.selection.length === 1) {
+    const idx = designState.selection[0];
+    const sh = designState.shapes[idx];
+    if (sh && sh.points.length >= 2) {
+      const tol = HIT_PX / designState.view.scale;
+      const nodeHit = DE.hitTestNode(sh.points, pt.wx, pt.wy, tol);
+      if (nodeHit) {
+        designState.nodeEdit = { shapeIndex: idx, nodeIndex: nodeHit.nodeIndex, dragging: true };
+        designState.drag = { mode: 'node-edit', nodeIndex: nodeHit.nodeIndex };
+        try { c.setPointerCapture(e.pointerId); } catch { /* synthetic event */ }
+        return;
+      }
+      const segHit = DE.hitTestSegment(sh.points, pt.wx, pt.wy, tol, sh.closed);
+      if (segHit) {
+        // Clicou num segmento: insere nó e começa a arrastar
+        const newPoints = DE.insertNode(sh.points, segHit.segmentIndex, segHit.point);
+        const newSh = { ...sh, points: newPoints };
+        designState.shapes[idx] = newSh;
+        designState.nodeEdit = { shapeIndex: idx, nodeIndex: segHit.segmentIndex + 1, dragging: true };
+        designState.drag = { mode: 'node-edit', nodeIndex: segHit.segmentIndex + 1 };
+        dPushHistory();
+        try { c.setPointerCapture(e.pointerId); } catch { /* synthetic event */ }
+        return;
+      }
+    }
+  }
+
+  // ferramentas de criação (rect, circle, line, pen)
   const sx = dSnapV(pt.wx);
   const sy = dSnapV(pt.wy);
   designState.drag = { mode: 'create', start: { x: sx, y: sy } };
   designState.drawing = null;
+  designState.freehandPoints = [];
   if (designState.tool === 'rect') {
     designState.drawing = { kind: 'rect', points: [], closed: true };
   } else if (designState.tool === 'circle') {
     designState.drawing = { kind: 'ellipse', points: [], closed: true };
   } else if (designState.tool === 'line') {
     designState.drawing = { kind: 'line', points: [], closed: false };
+  } else if (designState.tool === 'pen') {
+    // Caneta: inicia coleta de pontos livres
+    designState.freehandPoints = [{ x: sx, y: sy }];
   }
-  if (designState.drawing) c.setPointerCapture(e.pointerId);
+  if (designState.drawing || designState.tool === 'pen') c.setPointerCapture(e.pointerId);
 }
 
 function dOnPointerMove(e) {
@@ -2675,6 +2792,33 @@ function dOnPointerMove(e) {
     return;
   }
 
+  // Caneta (freehand): acumula pontos durante o arrasto
+  if (d && d.mode === 'create' && designState.tool === 'pen') {
+    let x = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    let y = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    // Evita pontos duplicados muito próximos (filtro leve)
+    const last = designState.freehandPoints[designState.freehandPoints.length - 1];
+    if (!last || Math.hypot(x - last.x, y - last.y) > 0.5) {
+      designState.freehandPoints.push({ x, y });
+    }
+    dRender();
+    return;
+  }
+
+  // Edição de nós: arrasta o nó selecionado
+  if (d && d.mode === 'node-edit' && designState.nodeEdit?.dragging) {
+    const ne = designState.nodeEdit;
+    let x = designState.snap ? dSnapV(pt.wx) : pt.wx;
+    let y = designState.snap ? dSnapV(pt.wy) : pt.wy;
+    const sh = designState.shapes[ne.shapeIndex];
+    if (sh && ne.nodeIndex >= 0 && ne.nodeIndex < sh.points.length) {
+      sh.points = DE.moveNode(sh.points, ne.nodeIndex, x, y);
+      dRender();
+      dUpdateProps();
+    }
+    return;
+  }
+
   // cursor ocioso
   if (!d) {
     c.style.cursor = designState.tool === 'select' ? dCursorForSelect(pt.sx, pt.sy) : 'crosshair';
@@ -2695,6 +2839,33 @@ function dOnPointerUp(e) {
   }
   if (d && d.mode === 'pan') {
     c.style.cursor = designState.tool === 'select' ? 'default' : 'crosshair';
+    return;
+  }
+
+  if (d && d.mode === 'create' && designState.tool === 'pen') {
+    designState.drag = null;
+    const pts = designState.freehandPoints;
+    designState.freehandPoints = [];
+    if (pts.length >= 3) {
+      const sh = window.GRBL_DESIGN_EDITOR
+        ? window.GRBL_DESIGN_EDITOR.createFreehandShape(pts, { tolerance: 0.5, closeThreshold: 1.0 })
+        : null;
+      if (sh) {
+        sh.name = dNextName(sh.closed ? 'polygon' : 'line');
+        dAddShape(sh);
+      }
+    }
+    dUpdateButtons();
+    return;
+  }
+
+  if (d && d.mode === 'node-edit' && designState.nodeEdit?.dragging) {
+    designState.nodeEdit = null;
+    designState.drag = null;
+    dPushHistory();
+    dRender();
+    dUpdateProps();
+    dUpdateObjectList();
     return;
   }
 
@@ -2793,6 +2964,14 @@ function dOnKeyDown(e) {
       e.stopImmediatePropagation();
       return;
     }
+    // Modo edição de nós: Esc sai do modo
+    if (designState.nodeEdit) {
+      designState.nodeEdit = null;
+      dRender();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
     // O modal de posicionamento ("frame") abre por cima do editor: Esc fecha
     // só ele, mantendo o desenho à vista.
     if (el.frameOverlay && !el.frameOverlay.classList.contains('hidden')) {
@@ -2876,6 +3055,25 @@ function dOnKeyDown(e) {
   }
 
   if (key === 'Delete' || key === 'Backspace') {
+    // No modo edição de nós: remove o nó ativo
+    if (designState.nodeEdit) {
+      const ne = designState.nodeEdit;
+      const sh = designState.shapes[ne.shapeIndex];
+      if (sh) {
+        const minPts = sh.closed ? 3 : 2;
+        if (sh.points.length > minPts) {
+          sh.points = DE.removeNode(sh.points, ne.nodeIndex, sh.closed);
+          // Ajusta o índice se removeu o último
+          if (ne.nodeIndex >= sh.points.length) ne.nodeIndex = sh.points.length - 1;
+          dPushHistory();
+          dRender();
+          dUpdateProps();
+          dUpdateObjectList();
+        }
+      }
+      e.preventDefault();
+      return;
+    }
     if (designState.selection.length) {
       e.preventDefault();
       dDeleteSelection();
@@ -2910,6 +3108,8 @@ function dOnKeyDown(e) {
   else if (key === 'r' || key === 'R') dSetTool('rect');
   else if (key === 'e' || key === 'E') dSetTool('circle');
   else if (key === 'l' || key === 'L') dSetTool('line');
+  else if (key === 'p' || key === 'P') dSetTool('pen');
+  else if (key === 'n' || key === 'N') dSetTool('node');
   else if (key === 't' || key === 'T') dSetTool('text');
   else if (key === '+' || key === '=') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
   else if (key === '-' || key === '_') dZoomAt(designState.pxW / 2, designState.pxH / 2, 1 / 1.2);
@@ -3294,6 +3494,8 @@ function dConfirmSize() {
     designToolRect: 'rect',
     designToolCircle: 'circle',
     designToolLine: 'line',
+    designToolPen: 'pen',
+    designToolNode: 'node',
     designToolText: 'text',
   };
   for (const [id, tool] of Object.entries(toolTools)) {
@@ -3382,6 +3584,9 @@ function dConfirmSize() {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyObjStyle);
   }
+  // O campo em px é outra unidade da mesma espessura (1 px = 0,25 mm).
+  const widthPx = $('designObjWidthPx');
+  if (widthPx) widthPx.addEventListener('change', dApplyObjWidthPx);
   const styleCopy = $('designCopyStyle');
   if (styleCopy) styleCopy.addEventListener('click', dCopyStyle);
   const stylePaste = $('designPasteStyle');

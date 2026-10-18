@@ -2,23 +2,31 @@ import { describe, expect, it } from 'vitest';
 import {
   arrayEntities,
   boundsIntersect,
+  createFreehandShape,
   distanceToSegment,
   distributeEntities,
   entityBounds,
   entityIndices,
   expandSelection,
   hitTest,
+  hitTestNode,
+  hitTestSegment,
+  insertNode,
   mirrorEntities,
+  moveNode,
   pointInPolygon,
   reorderEntities,
+  removeNode,
   rotatePoint,
   selectedEntities,
   selectionBounds,
   shapeBounds,
   simplifyPolyline,
+  splitPolyline,
+  tryJoinPolylines,
   unionBounds,
 } from '../src/shared/designEditor';
-import type { Shape } from '../src/shared/design';
+import type { Shape, Point } from '../src/shared/design';
 
 const rect = (
   x: number,
@@ -344,5 +352,144 @@ describe('arrayEntities', () => {
     expect(
       arrayEntities([rect(0, 0, 1, 1)], new Set([0]), 1, 1, 5, 5, () => 'g'),
     ).toEqual([]);
+  });
+});
+
+describe('createFreehandShape', () => {
+  it('retorna null para menos de 2 pontos', () => {
+    expect(createFreehandShape([])).toBeNull();
+    expect(createFreehandShape([{ x: 1, y: 1 }])).toBeNull();
+  });
+
+  it('retângulo fechado detectado pelo threshold', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+      { x: 0, y: 10 },
+      { x: 0.2, y: 0.2 }, // volta ao início
+    ];
+    const sh = createFreehandShape(pts, { closeThreshold: 1 });
+    expect(sh).not.toBeNull();
+    expect(sh?.closed).toBe(true);
+    expect(sh?.points.length).toBe(4);
+  });
+
+  it('linha aberta quando não fecha', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ];
+    const sh = createFreehandShape(pts);
+    expect(sh).not.toBeNull();
+    expect(sh?.closed).toBe(false);
+    expect(sh?.points.length).toBe(3);
+  });
+
+  it('remove duplicados consecutivos', () => {
+    const pts = [
+      { x: 0, y: 0 },
+      { x: 0, y: 0 }, // duplicado
+      { x: 10, y: 0 },
+    ];
+    const sh = createFreehandShape(pts);
+    expect(sh).not.toBeNull();
+    expect(sh?.points.length).toBe(2);
+  });
+
+  it('aplica simplificação RDP', () => {
+    // Linha com zig-zag que deve simplificar para 2 pontos
+    const pts: Point[] = [];
+    for (let i = 0; i <= 10; i++) {
+      pts.push({ x: i, y: i % 2 });
+    }
+    const sh = createFreehandShape(pts, { tolerance: 1 });
+    expect(sh).not.toBeNull();
+    expect(sh!.points.length).toBeLessThan(pts.length);
+  });
+});
+
+describe('edição de nós (hitTestNode / hitTestSegment / insertNode / removeNode / moveNode / splitPolyline)', () => {
+  const poly: Point[] = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 0, y: 10 },
+  ];
+
+  it('hitTestNode encontra o nó correto', () => {
+    const hit = hitTestNode(poly, 10, 0, 2);
+    expect(hit).not.toBeNull();
+    expect(hit!.nodeIndex).toBe(1);
+    const miss = hitTestNode(poly, 5, 5, 2);
+    expect(miss).toBeNull();
+  });
+
+  it('hitTestSegment encontra o segmento correto', () => {
+    const hit = hitTestSegment(poly, 5, 0, 2, false);
+    expect(hit).not.toBeNull();
+    expect(hit!.segmentIndex).toBe(0);
+    expect(hit!.point.x).toBeCloseTo(5);
+    expect(hit!.point.y).toBeCloseTo(0);
+  });
+
+  it('hitTestSegment em caminho fechado inclui o segmento de fechamento', () => {
+    // Segmentos: 0: (0,0)-(10,0), 1: (10,0)-(10,10), 2: (10,10)-(0,10), 3: (0,10)-(0,0)
+    const hit = hitTestSegment(poly, 5, 10, 2, true);
+    expect(hit).not.toBeNull();
+    expect(hit!.segmentIndex).toBe(2); // segmento 2: (10,10) → (0,10)
+    expect(hit!.point.x).toBeCloseTo(5);
+    expect(hit!.point.y).toBeCloseTo(10);
+  });
+
+  it('insertNode insere no índice correto', () => {
+    const out = insertNode(poly, 0, { x: 5, y: 0 });
+    expect(out).toHaveLength(5);
+    expect(out[1].x).toBeCloseTo(5);
+  });
+
+  it('removeNode remove o nó e mantém o mínimo', () => {
+    const out = removeNode(poly, 1, false);
+    expect(out).toHaveLength(3);
+    // Fechado: precisa de 3+
+    const closed = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }];
+    expect(removeNode(closed, 1, true)).toHaveLength(3); // não remove (min 3)
+    expect(removeNode(closed, 1, false)).toHaveLength(2);
+  });
+
+  it('moveNode move o nó para a posição', () => {
+    const out = moveNode(poly, 2, 20, 20);
+    expect(out[2].x).toBe(20);
+    expect(out[2].y).toBe(20);
+  });
+
+  it('splitPolyline divide no nó (polilinha aberta)', () => {
+    const open: Point[] = [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ];
+    const [a, b] = splitPolyline(open, 2);
+    expect(a).toHaveLength(3); // 0,1,2
+    expect(b).not.toBeNull();
+    expect(b).toHaveLength(2); // 2,3 (o nó dividido aparece nas duas partes)
+    expect(a[2].x).toBe(10);
+    expect(b![0].x).toBe(10);
+  });
+
+  it('tryJoinPolylines junta pontas coincidentes', () => {
+    const a: Point[] = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ];
+    const b: Point[] = [
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ];
+    const joined = tryJoinPolylines(a, b);
+    expect(joined).not.toBeNull();
+    expect(joined!.length).toBe(3);
   });
 });
