@@ -128,13 +128,13 @@ export function designToGcode(doc: DesignDocument, opts: Partial<DesignToGcodeOp
       const power = sh.power ?? powerS;
       const pts = sh.points;
       // Deslocamento até o início (laser desligado).
-      lines.push(`G0 X${fmt(pts[0].x)} Y${fmt(pts[0].y)} F${o.travelFeed}`);
+      lines.push(`G0 X${fmt(pts[0].x)} Y${fmt(minY + maxY - pts[0].y)} F${o.travelFeed}`);
       lines.push(`${arm} S${power}`);
       for (let i = 1; i < pts.length; i++) {
-        lines.push(`G1 X${fmt(pts[i].x)} Y${fmt(pts[i].y)} F${feed}`);
+        lines.push(`G1 X${fmt(pts[i].x)} Y${fmt(minY + maxY - pts[i].y)} F${feed}`);
       }
       if (sh.closed && pts.length > 2) {
-        lines.push(`G1 X${fmt(pts[0].x)} Y${fmt(pts[0].y)} F${feed}`);
+        lines.push(`G1 X${fmt(pts[0].x)} Y${fmt(minY + maxY - pts[0].y)} F${feed}`);
       }
       lines.push('M5');
     }

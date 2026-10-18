@@ -130,7 +130,7 @@ export function textToShapes(opts: TextToShapesOptions): TextShape[] {
     for (const stroke of glyph.strokes) {
       const pts = stroke.map(([gx, gy]) => ({
         x: cx + gx * scale,
-        y: cy + gy * scale,
+        y: cy + (1 - gy) * scale,   // fonte y-up -> canvas y-down
       }));
       if (pts.length >= 2) {
         shapes.push({ kind: 'text', points: pts, closed: false });
