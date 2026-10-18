@@ -315,6 +315,18 @@ export const ptBR = {
   'design.sel.one': '1 objeto selecionado',
   'design.sel.blocks': '{n} objetos selecionados',
   'design.sel.all': 'Todos os {n} objetos selecionados',
+  'design.obj.power': 'P',
+  'design.obj.power.hint':
+    'Potência do objeto (%) — vazio usa o padrão de gravação',
+  'design.obj.speed': 'V',
+  'design.obj.speed.hint':
+    'Velocidade do objeto (mm/min) — vazio usa o padrão de gravação',
+  'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
+  'design.style.paste': 'Colar estilo (Ctrl+Shift+V)',
+  'design.style.copied': 'Estilo copiado.',
+  'design.style.pasted': 'Estilo aplicado à seleção.',
+  'design.style.none': 'Selecione um objeto primeiro.',
+  'design.style.empty': 'Nenhum estilo copiado.',
   'design.objects.empty': 'Nenhum objeto ainda.',
   'design.kind.rect': 'Retângulo',
   'design.kind.ellipse': 'Elipse',

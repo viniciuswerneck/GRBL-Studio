@@ -27,6 +27,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Seletor de fontes**: além da lista curada e da fonte single-stroke, o campo
   Fonte lista as **famílias instaladas no sistema** (`fontconfig` via IPC
   `app:fonts:list`), em ordem alfabética, com busca pelo próprio `<datalist>`.
+- **Gravação por objeto**: a barra de propriedades tem **potência (%)** e
+  **velocidade (mm/min)** por objeto. Campo vazio = usa o parâmetro global (que
+  aparece em cinza como `placeholder`); valores diferentes na seleção mostram
+  `—`, e a lista de Objetos exibe o que cada um sobrescreve (`35% · 600`). Os
+  botões **Copiar estilo**/**Colar estilo** (`Ctrl+Shift+C`/`Ctrl+Shift+V`)
+  replicam a gravação de um objeto na seleção — ex.: contorno fraco e
+  preenchimento forte no mesmo desenho, sem gerar dois arquivos.
 - **Navegação**: roda do mouse = zoom no cursor, botão do meio / `Space`+arraste
   = mover a tela, `F` ajustar à página, `0` voltar a 100 %, `+`/`-` zoom.
 - **Tamanho da arte**: "Gerar e visualizar" abre um diálogo de **largura × altura

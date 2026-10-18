@@ -301,6 +301,18 @@ export const en = {
   'design.sel.one': '1 object selected',
   'design.sel.blocks': '{n} objects selected',
   'design.sel.all': 'All {n} objects selected',
+  'design.obj.power': 'P',
+  'design.obj.power.hint':
+    'Object power (%) — empty uses the engraving default',
+  'design.obj.speed': 'F',
+  'design.obj.speed.hint':
+    'Object feed (mm/min) — empty uses the engraving default',
+  'design.style.copy': 'Copy style (Ctrl+Shift+C)',
+  'design.style.paste': 'Paste style (Ctrl+Shift+V)',
+  'design.style.copied': 'Style copied.',
+  'design.style.pasted': 'Style applied to the selection.',
+  'design.style.none': 'Select an object first.',
+  'design.style.empty': 'No style copied.',
   'design.objects.empty': 'No objects yet.',
   'design.kind.rect': 'Rectangle',
   'design.kind.ellipse': 'Ellipse',

@@ -1023,6 +1023,23 @@ function dNudge(dx, dy) {
 
 // -------------------------------------------------------------- propriedades
 
+/**
+ * Valor comum de uma propriedade opcional na seleção.
+ * `undefined` = nada selecionado; `null` = valores misturados.
+ */
+function dCommonShapeProp(key) {
+  const sel = designState.selection;
+  if (!sel.length) return undefined;
+  let value;
+  for (let i = 0; i < sel.length; i++) {
+    const sh = designState.shapes[sel[i]];
+    const v = sh && typeof sh[key] === 'number' ? sh[key] : undefined;
+    if (i === 0) value = v;
+    else if (v !== value) return null;
+  }
+  return value;
+}
+
 function dUpdateProps() {
   const px = $('designPropX');
   if (!px) return;
@@ -1032,6 +1049,7 @@ function dUpdateProps() {
       const node = $(id);
       if (node) node.value = '';
     }
+    dUpdateObjStyleFields(null);
     return;
   }
   px.value = b.minX.toFixed(1);
@@ -1043,6 +1061,99 @@ function dUpdateProps() {
   if (ph) ph.value = (b.maxY - b.minY).toFixed(1);
   const pr = $('designPropRot');
   if (pr) pr.value = String(Math.round(designState.rotApplied));
+  dUpdateObjStyleFields(designState.selection);
+}
+
+/**
+ * Mostra a potência/velocidade do objeto selecionado. Campo vazio = usa o
+ * parâmetro global, que aparece como `placeholder` (em cinza); seleções com
+ * valores diferentes mostram `—`.
+ */
+function dUpdateObjStyleFields(selection) {
+  const set = (id, key, globalId) => {
+    const node = $(id);
+    if (!node) return;
+    if (!selection?.length) {
+      node.value = '';
+      node.placeholder = '—';
+      return;
+    }
+    const v = dCommonShapeProp(key);
+    node.value = typeof v === 'number' ? String(Math.round(v)) : '';
+    if (v === null) node.placeholder = '—';
+    else node.placeholder = String(Math.round(dNum(globalId, 0) || 0));
+  };
+  set('designObjPower', 'power', 'designPower');
+  set('designObjSpeed', 'speed', 'designSpeed');
+}
+
+/** Aplica potência/velocidade por objeto (vazio volta ao padrão global). */
+function dApplyObjStyle() {
+  if (!designState.selection.length) return;
+  const apply = (id, key, lo, hi) => {
+    const node = $(id);
+    if (!node) return;
+    const raw = node.value.trim();
+    if (raw === '') {
+      for (const i of designState.selection) {
+        const sh = designState.shapes[i];
+        if (sh) sh[key] = undefined;
+      }
+      return;
+    }
+    const n = Number(raw.replace(',', '.'));
+    if (!Number.isFinite(n)) return;
+    const v = dClamp(n, lo, hi);
+    for (const i of designState.selection) {
+      const sh = designState.shapes[i];
+      if (sh) sh[key] = v;
+    }
+  };
+  apply('designObjPower', 'power', 1, 100);
+  apply('designObjSpeed', 'speed', 100, 20000);
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+}
+
+/** Copia o estilo de gravação (potência/velocidade) do primeiro objeto. */
+let dStyleClip = null;
+function dCopyStyle() {
+  const sel = designState.selection;
+  if (!sel.length) {
+    dStatus(t('design.style.none'), 'error');
+    return;
+  }
+  const sh = designState.shapes[sel[0]] || {};
+  const power = typeof sh.power === 'number' ? sh.power : null;
+  const speed = typeof sh.speed === 'number' ? sh.speed : null;
+  dStyleClip = { power, speed };
+  dStatus(t('design.style.copied'));
+  dUpdateButtons();
+}
+
+/** Aplica o estilo copiado a toda a seleção (Ctrl+Shift+V). */
+function dPasteStyle() {
+  if (!dStyleClip) {
+    dStatus(t('design.style.empty'), 'error');
+    return;
+  }
+  if (!designState.selection.length) {
+    dStatus(t('design.style.none'), 'error');
+    return;
+  }
+  for (const i of designState.selection) {
+    const sh = designState.shapes[i];
+    if (!sh) continue;
+    sh.power = dStyleClip.power === null ? undefined : dStyleClip.power;
+    sh.speed = dStyleClip.speed === null ? undefined : dStyleClip.speed;
+  }
+  dPushHistory();
+  dRender();
+  dUpdateProps();
+  dUpdateObjectList();
+  dStatus(t('design.style.pasted'));
 }
 
 function dApplyProps() {
@@ -1144,6 +1255,17 @@ function dUpdateObjectList() {
     label.className = 'design-obj-label';
     label.textContent = sh.name || sh.kind;
 
+    // Gravação própria do objeto (potência/velocidade), se houver. Fica fora do
+    // rótulo para não ser cortado pelo `ellipsis`.
+    const meta = [];
+    if (typeof sh.power === 'number') meta.push(`${Math.round(sh.power)}%`);
+    if (typeof sh.speed === 'number') meta.push(`${Math.round(sh.speed)}`);
+    const info = meta.length ? document.createElement('span') : null;
+    if (info) {
+      info.className = 'design-obj-meta';
+      info.textContent = meta.join(' · ');
+    }
+
     const del = document.createElement('button');
     del.type = 'button';
     del.className = 'design-obj-del';
@@ -1165,6 +1287,7 @@ function dUpdateObjectList() {
     li.addEventListener('click', (e) => dSelectShape(idxs[0], e.shiftKey));
     li.appendChild(ic);
     li.appendChild(label);
+    if (info) li.appendChild(info);
     li.appendChild(del);
     ul.appendChild(li);
   }
@@ -1211,10 +1334,13 @@ function dUpdateButtons() {
     'designForward',
     'designBackward',
     'designBack',
+    'designCopyStyle',
   ]) {
     const node = $(id);
     if (node) node.disabled = !hasSel;
   }
+  const pasteStyle = $('designPasteStyle');
+  if (pasteStyle) pasteStyle.disabled = !hasSel || !dStyleClip;
   const g = $('designGroup');
   if (g) g.disabled = !multi;
   const u = $('designUngroup');
@@ -2225,12 +2351,14 @@ function dOnKeyDown(e) {
     }
     if (k === 'c') {
       e.preventDefault();
-      dCopySelection();
+      if (e.shiftKey) dCopyStyle();
+      else dCopySelection();
       return;
     }
     if (k === 'v') {
       e.preventDefault();
-      dPasteClipboard();
+      if (e.shiftKey) dPasteStyle();
+      else dPasteClipboard();
       return;
     }
     if (k === 'g') {
@@ -2406,7 +2534,7 @@ function dLoadPrefs() {
   }
   // Sem preferência salva, a página parte da área real da máquina ($130/$131):
   // quem tem 400 × 400 não precisa corrigir o tamanho toda vez.
-  const wa = previewProgram && previewProgram.workArea;
+  const wa = previewProgram?.workArea;
   if (!page && wa && wa.widthMm > 0 && wa.heightMm > 0) {
     page = { w: Math.round(wa.widthMm), h: Math.round(wa.heightMm) };
   }
@@ -2744,6 +2872,16 @@ function dConfirmSize() {
     const node = $(id);
     if (node) node.addEventListener('change', dApplyProps);
   }
+  // Potência/velocidade por objeto têm handler próprio: só agem quando o campo
+  // é realmente editado (não apagam as exceções ao mexer na geometria).
+  for (const id of ['designObjPower', 'designObjSpeed']) {
+    const node = $(id);
+    if (node) node.addEventListener('change', dApplyObjStyle);
+  }
+  const styleCopy = $('designCopyStyle');
+  if (styleCopy) styleCopy.addEventListener('click', dCopyStyle);
+  const stylePaste = $('designPasteStyle');
+  if (stylePaste) stylePaste.addEventListener('click', dPasteStyle);
 
   const genBtn = $('designGenerate');
   if (genBtn) genBtn.addEventListener('click', dOpenSizeDialog);
@@ -2812,7 +2950,7 @@ function dConfirmSize() {
   // Lembra parâmetros de gravação/texto entre sessões (abrir → desenhar → gravar).
   if (el.designOverlay) {
     el.designOverlay.addEventListener('change', (e) => {
-      const id = e.target && e.target.id;
+      const id = e.target?.id;
       if (id && D_PREF_IDS.has(id)) dSaveDesignPrefs();
     });
   }

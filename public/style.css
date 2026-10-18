@@ -1838,6 +1838,16 @@ html[data-theme="sand"] .design-canvas-wrap {
   white-space: nowrap;
 }
 
+/* Gravação própria do objeto (potência/velocidade) na lista de objetos. */
+.design-obj-meta {
+  flex: 0 0 auto;
+  margin-left: 0.5rem;
+  color: var(--accent);
+  font-size: var(--fs-11, 11px);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
 .design-obj-del {
   width: 20px;
   height: 20px;

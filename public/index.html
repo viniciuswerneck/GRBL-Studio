@@ -63,6 +63,15 @@
           <rect x="9" y="9" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
           <path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
         </symbol>
+        <symbol id="ic-style-copy" viewBox="0 0 24 24">
+          <path d="M8.5 13.2L15.6 6a2.1 2.1 0 0 1 3 3l-7.2 7.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+          <path d="M8.5 13.2l2.3 2.3-1.6 4.1a1.6 1.6 0 0 1-2.2.9 1.6 1.6 0 0 1-.7-2.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-style-paste" viewBox="0 0 24 24">
+          <path d="M7.5 11.2L13.6 5a2 2 0 0 1 2.9 2.9l-6.1 6.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+          <path d="M7.5 11.2l2.1 2.1-1.5 3.8a1.5 1.5 0 0 1-2.7-1.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+          <path d="M14 19l2.2 2.2L21 16.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+        </symbol>
         <symbol id="ic-align-left" viewBox="0 0 24 24">
           <path d="M4 4v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           <rect x="7" y="7" width="12" height="4" rx="1" fill="currentColor" />
@@ -936,6 +945,26 @@
             </label>
             <button type="button" id="designLockAspect" class="design-toggle" data-i18n-title="design.lockAspect" title="Travar proporção">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-lock" /></svg>
+            </button>
+          </div>
+
+          <span class="design-prop-sep"></span>
+
+          <!-- Gravação por objeto: vazio = usa os parâmetros globais (RNF…) -->
+          <div class="design-prop-group">
+            <label class="design-mini" data-i18n-title="design.obj.power.hint" title="Potência do objeto (%)">
+              <span data-i18n="design.obj.power">P</span>
+              <input type="number" id="designObjPower" min="0" max="100" step="1" placeholder="—" />
+            </label>
+            <label class="design-mini" data-i18n-title="design.obj.speed.hint" title="Velocidade do objeto (mm/min)">
+              <span data-i18n="design.obj.speed">V</span>
+              <input type="number" id="designObjSpeed" min="100" max="20000" step="50" placeholder="—" />
+            </label>
+            <button type="button" id="designCopyStyle" class="icon-btn" data-i18n-title="design.style.copy" title="Copiar estilo (Ctrl+Shift+C)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-style-copy" /></svg>
+            </button>
+            <button type="button" id="designPasteStyle" class="icon-btn" data-i18n-title="design.style.paste" title="Colar estilo (Ctrl+Shift+V)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-style-paste" /></svg>
             </button>
           </div>
 

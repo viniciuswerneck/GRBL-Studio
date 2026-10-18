@@ -307,6 +307,18 @@ export const es = {
   'design.sel.one': '1 objeto seleccionado',
   'design.sel.blocks': '{n} objetos seleccionados',
   'design.sel.all': 'Los {n} objetos seleccionados',
+  'design.obj.power': 'P',
+  'design.obj.power.hint':
+    'Potencia del objeto (%) — vacío usa el valor de grabado',
+  'design.obj.speed': 'V',
+  'design.obj.speed.hint':
+    'Velocidad del objeto (mm/min) — vacío usa el valor de grabado',
+  'design.style.copy': 'Copiar estilo (Ctrl+Shift+C)',
+  'design.style.paste': 'Pegar estilo (Ctrl+Shift+V)',
+  'design.style.copied': 'Estilo copiado.',
+  'design.style.pasted': 'Estilo aplicado a la selección.',
+  'design.style.none': 'Seleccione un objeto primero.',
+  'design.style.empty': 'Ningún estilo copiado.',
   'design.objects.empty': 'Aún no hay objetos.',
   'design.kind.rect': 'Rectángulo',
   'design.kind.ellipse': 'Elipse',

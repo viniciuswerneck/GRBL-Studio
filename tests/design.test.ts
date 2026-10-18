@@ -100,6 +100,22 @@ describe('designToGcode', () => {
     expect(g).toContain('S300');
   });
 
+  it('mistura forma com e sem override: as demais seguem o global', () => {
+    const doc: DesignDocument = {
+      shapes: [
+        { kind: 'rect', points: makeRect(0, 0, 5, 5), closed: true, speed: 500, power: 300 },
+        { kind: 'rect', points: makeRect(10, 0, 5, 5), closed: true },
+      ],
+      width: 15,
+      height: 5,
+    };
+    const g = designToGcode(doc, { feed: 1000, sMax: 1000, powerPercent: 50, travelFeed: 3000 });
+    expect(g).toContain('S300'); // override da 1ª forma
+    expect(g).toContain('S500'); // 50 % de sMax na 2ª
+    expect(g).toContain('F500'); // velocidade própria
+    expect(g).toContain('F1000'); // velocidade global
+  });
+
   it('ignora formas com menos de 2 pontos', () => {
     const doc: DesignDocument = {
       shapes: [{ kind: 'line', points: [{ x: 0, y: 0 }], closed: false }],
