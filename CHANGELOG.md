@@ -6,6 +6,78 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-18
+
+### Fixed — gravação ancorada na origem e preview (X0 Y0)
+
+- **A arte agora é ancorada na origem (começa em X0 Y0)**: para gravar alinhado
+  ao material, o usuário posiciona o laser onde vai queimar e **define a origem
+  ali** — então o G-code tem de começar sob o cabeçote. O `designToGcode` emitia
+  em coordenadas **absolutas da prancheta** (um 2 × 2 no meio de uma página
+  10 × 10 saía em X4/Y4), o que obrigava a máquina a sair andando em diagonal
+  até o desenho antes de queimar. Agora o **canto inferior esquerdo do desenho
+  vira X0 Y0** (`machineX = pageX − minX`, `machineY = maxY − pageY`) e cada
+  contorno começa pelo **canto mais próximo** do cabeçote — o `G0` inicial
+  aponta para o próprio X0 Y0 e o contorno segue sem cruzar o desenho. A posição
+  do objeto na prancheta continua servindo para compor a arte, mas não desloca
+  o job.
+- **O preview pintava o deslocamento (`G0`) como se fosse queima**: a caixa
+  tracejada da área de trabalho e o `G0` de retorno à origem não fazem parte do
+  job, mas o `drawGcodePreview` lia `prog.burns` (campo que não existe no
+  programa interpretado) e caía em `moves`, pintando **todas** as linhas na cor
+  de queima. Como o `G0` final roda depois do último `M4`, ele herdava o `S` e
+  virava uma **diagonal azul viva** do desenho até a origem — parecia que o
+  quadrado seria gravado com um rabisco. Agora só os trechos que realmente
+  queimam (`previewProgram.burns`) usam a cor de queima; o `G0` fica cinza
+  discreto. A caixa tracejada ganhou a entrada **"Área de trabalho"** na legenda
+  para deixar claro que é só referência.
+
+
+### Fixed — revisão do módulo de desenho (P2.1 / §11)
+- **Potência por objeto saía quase apagada**: o campo “P” da barra de
+  propriedades grava **porcentagem** (0–100), mas `designToGcode` emitia o valor
+  cru como `S` — um objeto a 80 % virava `M4 S80` (≈ 8 % do `$30`) em vez de
+  `S800`. Agora `power` é percentual (igual ao `powerPercent` global), derivado do
+  `$30` da máquina na hora de gerar.
+- **Parâmetros inválidos quebravam o job no meio**: `F0`/`F-500` (velocidade) e
+  `S-50`/`S2000` (potência acima do `$30`) fazem o GRBL responder `error:` e
+  abortar a gravação — com material já queimado. Agora `feed`, `travelFeed`,
+  `sMax` e `passes` caem em padrões seguros quando não-finitos/inválidos, a
+  potência fica em 0–100 % e `passes < 1` gera uma passada.
+- **Coordenadas `NaN`/`Infinity` iam para o G-code** (`G1 XNaN`, `; área NaN ×
+  5,00 mm`). Agora pontos não-finitos são descartados e uma forma sem 2 pontos
+  válidos não entra no cabeçalho nem no corpo.
+- **Contorno "fechado" de 2 pontos sumia ao ganhar espessura** (`strokePaths`
+  exige 3 pontos) e deixava o `cursor` no canto errado, jogando o próximo `G0`
+  para longe. Agora um "fechado" de 2 pontos é tratado como linha — na geração
+  **e** na caneta (que não fecha mais um laço que ficaria com 2 pontos).
+- **Espigão de centenas de mm ao encolher contorno fino** (`offsetLoop`): com
+  arestas quase colineares a intersecção das retas deslocadas caía a ~200 mm do
+  vértice — **fora da peça** — e o traço grosso saía queimando longe da arte
+  (ex.: `G1 X-189.005`). Agora a passada é descartada quando o contorno
+  encolhido não fica **dentro** do original; quinas agudas legítimas (o vértice
+  real do inset) continuam intactas.
+- **Rótulo de zoom 4× maior**: `scale` é px/mm (100 % = 4 px/mm), mas o rótulo
+  fazia `scale × 100` — com a página ajustada aparecia "490 %" em vez de "123 %".
+- **Nomes crus na lista de Objetos**: "Subtrair"/"Intersecção" procuravam
+  `design.bool.difference`/`design.bool.intersection` e a caneta fechada,
+  `design.kind.polygon` — chaves que não existiam, então o objeto nascia como
+  `design.bool.difference 1`. As três chaves foram adicionadas (pt/en/es).
+- **Atalhos sumiam dos tooltips**: o i18n reescreve o `title` dos botões e as
+  traduções não traziam o atalho, apagando "(Ctrl+Z)", "(R)", "(Del)" etc. Agora
+  os textos incluem o atalho real — e o botão Desagrupar anuncia
+  **Ctrl+Shift+G** (o código sempre foi `Ctrl+Shift+G`; o tooltip dizia Ctrl+U).
+- **Diálogos travados ao fechar o editor**: fechar "Desenhar" pelo `Esc` global
+  escondia o overlay sem a desmontagem própria (`closeDesignModal`), deixando o
+  menu de booleanas/diálogos de tamanho e matriz "abertos" para a próxima
+  abertura.
+- **Atalhos agindo no desenho escondido**: com o modal "Posicionar a gravadora"
+  por cima, `Del`/setas/`R`… ainda mexiam no desenho; agora só o `Esc` age
+  enquanto ele estiver aberto.
+
+
+## [0.5.0] - 2026-10-18
+
 ### Added — editor de desenho estilo CorelDRAW (P2.1)
 - **Workspace novo**: caixa de ferramentas vertical com **ícones SVG**, barra de
   propriedades contextual (X/Y/L/A/rotação, travar proporção, alinhamento à
@@ -140,70 +212,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **A página do desenho parte da área da máquina** (`$130`/`$131`): sem
   preferência salva, uma máquina de 400 × 400 abre com 400 × 400 em vez do
   padrão fixo de 150 × 130.
-- **A arte agora é ancorada na origem (começa em X0 Y0)**: para gravar alinhado
-  ao material, o usuário posiciona o laser onde vai queimar e **define a origem
-  ali** — então o G-code tem de começar sob o cabeçote. O `designToGcode` emitia
-  em coordenadas **absolutas da prancheta** (um 2 × 2 no meio de uma página
-  10 × 10 saía em X4/Y4), o que obrigava a máquina a sair andando em diagonal
-  até o desenho antes de queimar. Agora o **canto inferior esquerdo do desenho
-  vira X0 Y0** (`machineX = pageX − minX`, `machineY = maxY − pageY`) e cada
-  contorno começa pelo **canto mais próximo** do cabeçote — o `G0` inicial
-  aponta para o próprio X0 Y0 e o contorno segue sem cruzar o desenho. A posição
-  do objeto na prancheta continua servindo para compor a arte, mas não desloca
-  o job.
-- **O preview pintava o deslocamento (`G0`) como se fosse queima**: a caixa
-  tracejada da área de trabalho e o `G0` de retorno à origem não fazem parte do
-  job, mas o `drawGcodePreview` lia `prog.burns` (campo que não existe no
-  programa interpretado) e caía em `moves`, pintando **todas** as linhas na cor
-  de queima. Como o `G0` final roda depois do último `M4`, ele herdava o `S` e
-  virava uma **diagonal azul viva** do desenho até a origem — parecia que o
-  quadrado seria gravado com um rabisco. Agora só os trechos que realmente
-  queimam (`previewProgram.burns`) usam a cor de queima; o `G0` fica cinza
-  discreto. A caixa tracejada ganhou a entrada **"Área de trabalho"** na legenda
-  para deixar claro que é só referência.
-
-### Fixed — revisão do módulo de desenho (P2.1 / §11)
-- **Potência por objeto saía quase apagada**: o campo “P” da barra de
-  propriedades grava **porcentagem** (0–100), mas `designToGcode` emitia o valor
-  cru como `S` — um objeto a 80 % virava `M4 S80` (≈ 8 % do `$30`) em vez de
-  `S800`. Agora `power` é percentual (igual ao `powerPercent` global), derivado do
-  `$30` da máquina na hora de gerar.
-- **Parâmetros inválidos quebravam o job no meio**: `F0`/`F-500` (velocidade) e
-  `S-50`/`S2000` (potência acima do `$30`) fazem o GRBL responder `error:` e
-  abortar a gravação — com material já queimado. Agora `feed`, `travelFeed`,
-  `sMax` e `passes` caem em padrões seguros quando não-finitos/inválidos, a
-  potência fica em 0–100 % e `passes < 1` gera uma passada.
-- **Coordenadas `NaN`/`Infinity` iam para o G-code** (`G1 XNaN`, `; área NaN ×
-  5,00 mm`). Agora pontos não-finitos são descartados e uma forma sem 2 pontos
-  válidos não entra no cabeçalho nem no corpo.
-- **Contorno "fechado" de 2 pontos sumia ao ganhar espessura** (`strokePaths`
-  exige 3 pontos) e deixava o `cursor` no canto errado, jogando o próximo `G0`
-  para longe. Agora um "fechado" de 2 pontos é tratado como linha — na geração
-  **e** na caneta (que não fecha mais um laço que ficaria com 2 pontos).
-- **Espigão de centenas de mm ao encolher contorno fino** (`offsetLoop`): com
-  arestas quase colineares a intersecção das retas deslocadas caía a ~200 mm do
-  vértice — **fora da peça** — e o traço grosso saía queimando longe da arte
-  (ex.: `G1 X-189.005`). Agora a passada é descartada quando o contorno
-  encolhido não fica **dentro** do original; quinas agudas legítimas (o vértice
-  real do inset) continuam intactas.
-- **Rótulo de zoom 4× maior**: `scale` é px/mm (100 % = 4 px/mm), mas o rótulo
-  fazia `scale × 100` — com a página ajustada aparecia "490 %" em vez de "123 %".
-- **Nomes crus na lista de Objetos**: "Subtrair"/"Intersecção" procuravam
-  `design.bool.difference`/`design.bool.intersection` e a caneta fechada,
-  `design.kind.polygon` — chaves que não existiam, então o objeto nascia como
-  `design.bool.difference 1`. As três chaves foram adicionadas (pt/en/es).
-- **Atalhos sumiam dos tooltips**: o i18n reescreve o `title` dos botões e as
-  traduções não traziam o atalho, apagando "(Ctrl+Z)", "(R)", "(Del)" etc. Agora
-  os textos incluem o atalho real — e o botão Desagrupar anuncia
-  **Ctrl+Shift+G** (o código sempre foi `Ctrl+Shift+G`; o tooltip dizia Ctrl+U).
-- **Diálogos travados ao fechar o editor**: fechar "Desenhar" pelo `Esc` global
-  escondia o overlay sem a desmontagem própria (`closeDesignModal`), deixando o
-  menu de booleanas/diálogos de tamanho e matriz "abertos" para a próxima
-  abertura.
-- **Atalhos agindo no desenho escondido**: com o modal "Posicionar a gravadora"
-  por cima, `Del`/setas/`R`… ainda mexiam no desenho; agora só o `Esc` age
-  enquanto ele estiver aberto.
-
 ### Performance — o PC não interfere mais na gravação (RF-IMG-11 / RNF-11/12)
 - **Preview em camadas**: redesenhar o caminho inteiro a cada quadro era o maior
   gasto de CPU do app durante a gravação (medido com um raster de 270 mil

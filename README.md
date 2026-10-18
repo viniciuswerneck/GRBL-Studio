@@ -22,6 +22,11 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 - **Configuração `$$`**: viewer/editor com ajuda contextual, `$#`, `$I` e `$G`.
 - **Importação de imagem → G-code**: PNG/JPG/BMP/GIF/WebP/AVIF com ajustes,
   raster (linha/dither) ou vetorização (contorno/recorte), perfis de material.
+- **Editor vetorial próprio** (aba Desenhar): prancheta em mm com retângulos,
+  elipses, polígonos, caneta, texto vetorial e desenho livre; edição de nós,
+  espessura de traço, booleanas (unir/subtrair/intersectar/excluir), contorno
+  paralelo, matriz de cópias, espelhar, agrupar e alinhar. O G-code sai
+  **ancorado na origem (X0 Y0)**, pronto para gravar com a peça já posicionada.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado
   completo.
 - **Macros** e botões customizados, retomada de job interrompido.
@@ -31,6 +36,15 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
   DRO em 0,001 mm (ver `docs/DESIGN.md`).
 
 ## Instalação
+
+Pacotes prontos (**AppImage** e **`.deb`**) na página de
+[Releases](https://github.com/viniciuswerneck/GRBL-Studio/releases):
+
+```bash
+chmod +x GRBL-Studio-*.AppImage && ./GRBL-Studio-*.AppImage
+```
+
+Ou a partir do código:
 
 ```bash
 cd "GRBL Studio"

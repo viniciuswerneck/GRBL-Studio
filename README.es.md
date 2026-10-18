@@ -24,6 +24,11 @@ firmware **GRBL 1.1**.
   `$G`.
 - **Importación de imagen → G-code**: PNG/JPG/BMP/GIF/WebP/AVIF con ajustes,
   raster (línea/dither) o vectorización (contorno/corte), perfiles de material.
+- **Editor vectorial propio** (pestaña Dibujar): mesa de trabajo en mm con
+  rectángulos, elipses, polígonos, pluma, texto vectorial y dibujo libre; edición
+  de nodos, grosor de trazo, booleanas (unir/restar/intersección/excluir),
+  contorno paralelo, matriz de copias, espejo, agrupar y alinear. El G-code sale
+  **anclado al origen (X0 Y0)**, listo para grabar con la pieza ya posicionada.
 - **Modo Básico** con un asistente de 6 pasos para principiantes; modo Avanzado
   completo.
 - **Macros** y botones personalizados, y reanudación de un trabajo interrumpido.
@@ -33,6 +38,15 @@ firmware **GRBL 1.1**.
   ≤ 200 MB, DRO de 0,001 mm (ver `docs/DESIGN.md`).
 
 ## Instalación
+
+Paquetes listos (**AppImage** y **`.deb`**) en la página de
+[Releases](https://github.com/viniciuswerneck/GRBL-Studio/releases):
+
+```bash
+chmod +x GRBL-Studio-*.AppImage && ./GRBL-Studio-*.AppImage
+```
+
+O desde el código:
 
 ```bash
 cd "GRBL Studio"

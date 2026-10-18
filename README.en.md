@@ -23,6 +23,11 @@ firmware.
   `$G`.
 - **Image → G-code import**: PNG/JPG/BMP/GIF/WebP/AVIF with adjustments, raster
   (line/dither) or vector tracing (outline/cut), material profiles.
+- **Built-in vector editor** (Draw tab): mm workspace with rectangles, ellipses,
+  polygons, pen, vector text and freehand drawing; node editing, stroke width,
+  booleans (union/subtract/intersect/exclude), parallel contour, copy matrix,
+  mirror, group and align. The G-code comes out **anchored at the origin
+  (X0 Y0)**, ready to engrave with the workpiece already in place.
 - **Basic Mode** with a 6-step wizard for beginners; a full Advanced mode.
 - **Macros** and custom buttons, plus job resume after an interruption.
 - **11 themes** (5 light, 4 dark, 2 high contrast) and a UI in **pt-BR, en and
@@ -31,6 +36,15 @@ firmware.
   0.001 mm DRO (see `docs/DESIGN.md`).
 
 ## Installation
+
+Prebuilt packages (**AppImage** and **`.deb`**) are on the
+[Releases](https://github.com/viniciuswerneck/GRBL-Studio/releases) page:
+
+```bash
+chmod +x GRBL-Studio-*.AppImage && ./GRBL-Studio-*.AppImage
+```
+
+Or from source:
 
 ```bash
 cd "GRBL Studio"
