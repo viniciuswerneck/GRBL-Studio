@@ -313,8 +313,7 @@ export const es = {
   'dm.err.bad-chars':
     'El Data Matrix ECC200 solo acepta Latin-1 (sin emoji ni otro UTF-8).',
   'dm.err.bad-size': 'Tamaño de Data Matrix no válido.',
-  'dm.err.unknown':
-    'No se pudo generar el Data Matrix con estos parámetros.',
+  'dm.err.unknown': 'No se pudo generar el Data Matrix con estos parámetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':

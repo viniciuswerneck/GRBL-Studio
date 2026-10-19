@@ -7382,7 +7382,12 @@ document.addEventListener('keydown', (e) => {
   // foco no console (ou num campo do modal) quando precisa abortar — Ctrl+X
   // vale em qualquer foco (DESIGN §5). Sem job rodando ele devolve `false` e o
   // recortar nativo continua funcionando.
-  if (e.ctrlKey && !e.altKey && !e.metaKey && (e.key === 'x' || e.key === 'X')) {
+  if (
+    e.ctrlKey &&
+    !e.altKey &&
+    !e.metaKey &&
+    (e.key === 'x' || e.key === 'X')
+  ) {
     if (emergencyStopFromKeyboard(e)) return;
   }
   // Esc para o job mesmo com o foco num campo — mas só sem diálogo aberto: com

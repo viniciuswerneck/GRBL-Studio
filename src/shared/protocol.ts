@@ -293,7 +293,7 @@ export function splitLines(buffer: string): { lines: string[]; rest: string } {
   // **fecha** um `<...>` de status (a forma do GRBL: `<Idle`, `<Run`, `<[…`):
   // um `>` dentro de uma mensagem (`[MSG:ferramenta > 3 mm]`) não divide linha.
   const normalized = buffer.replace(
-    /<([A-Za-z\[])([^<>\n]*)>(?!\n)/g,
+    /<([A-Za-z[])([^<>\n]*)>(?!\n)/g,
     '<$1$2>\n',
   );
   const parts = normalized.split('\n');
