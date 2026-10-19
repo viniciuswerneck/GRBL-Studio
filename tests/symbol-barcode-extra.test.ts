@@ -226,11 +226,13 @@ describe('Code 93 (AIM USS-93)', () => {
     expect(encodeCode93('A').modules).toHaveLength(46);
   });
 
-  it('recusa vazio e caracteres fora do alfabeto básico', () => {
+  it('recusa vazio e caracteres fora do ASCII (0–127)', () => {
     expect(() => encodeCode93('')).toThrow(BarcodeError);
-    expect(() => encodeCode93('abc')).toThrow(/Code 93 básico/);
-    expect(() => encodeCode93('A@B')).toThrow(/Code 93 básico/);
+    // Minúsculas e pontuação agora entram em Full ASCII (com shift).
+    expect(encodeCode93('abc').data).toBe('abc');
+    expect(encodeCode93('A@B').data).toBe('A@B');
     expect(() => encodeCode93('AÇÃO')).toThrow(BarcodeError);
+    expect(() => encodeCode93('\u00e9')).toThrow(/fora do ASCII/);
   });
 });
 

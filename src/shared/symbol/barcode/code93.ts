@@ -6,11 +6,16 @@
  * (pesos 1–15 sobre os dados + C, mod 47). O símbolo termina com uma barra de
  * terminação de 1 módulo.
  *
- * Esta fase implementa o **alfabeto básico** (maiúsculas, dígitos e
- * `- . espaço $ / + %`). A expansão *Full ASCII* pelos símbolos de shift fica
- * fora do escopo — o texto não é convertido para maiúsculas para não mudar o
- * dado em silêncio. O HRI mostra o texto do usuário, **sem** os verificadores
- * (eles são símbolos internos, não caracteres do conteúdo).
+ * O **alfabeto básico** (maiúsculas, dígitos e `- . espaço $ / + %`) usa um
+ * símbolo por caractere. O restante do **ASCII 0–127** é codificado em
+ * *Full ASCII* por um par **shift + base**: `($)` (controle `0x01`–`0x1A`),
+ * `(%)` (`0x00`, `0x1B`–`0x1F` e parte da pontuação), `(/)` (pontuação `!`–`:`,
+ * fora do básico) e `(+)` (minúsculas). Os verificadores C/K cobrem os símbolos
+ * **já expandidos**, inclusive os shifts.
+ *
+ * Caracteres fora do ASCII 0–127 são recusados (`bad-chars`). O HRI mostra o
+ * texto do usuário, **sem** os verificadores (eles são símbolos internos, não
+ * caracteres do conteúdo).
  *
  * A norma pede quiet zone de 10 módulos, X-dimension ≥ 0,19 mm e altura
  * ≥ 5 mm (ver `BARCODE_SPECS`).
@@ -25,6 +30,25 @@ export const CODE93_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
 const CODE93_MODULO = 47;
 const CHECK_C_MAX_WEIGHT = 20;
 const CHECK_K_MAX_WEIGHT = 15;
+const MAX_ASCII = 0x7f;
+
+/** Valor do símbolo base `A` no alfabeto básico (referência dos shifts). */
+const LETTER_A_VALUE = CODE93_ALPHABET.indexOf('A');
+
+/**
+ * Índices dos quatro símbolos de **shift** na tabela gerada (43–46). Cada um
+ * desloca a leitura para uma faixa do ASCII que não cabe no alfabeto básico.
+ */
+const SHIFT = {
+  /** `($)` — caracteres de controle `0x01`–`0x1A` (mapeados em `A`–`Z`). */
+  dollar: CODE93_SYMBOLS.indexOf('($)'),
+  /** `(%)` — `0x00`, controle `0x1B`–`0x1F` e pontuação `;`–`_`, `{`–`\x7F`. */
+  percent: CODE93_SYMBOLS.indexOf('(%)'),
+  /** `(/)` — pontuação `!`–`:` que não pertence ao alfabeto básico. */
+  slash: CODE93_SYMBOLS.indexOf('(/)'),
+  /** `(+)` — minúsculas `a`–`z` (mapeadas em `A`–`Z`). */
+  plus: CODE93_SYMBOLS.indexOf('(+)'),
+} as const;
 
 export interface Code93Result {
   /** Módulos do símbolo completo (`1` = barra), sem a quiet zone. */
@@ -49,18 +73,49 @@ function weightedSum(values: readonly number[], maxWeight: number): number {
   return sum % CODE93_MODULO;
 }
 
-/** Valores 0–42 do conteúdo, validando o alfabeto básico. */
+/**
+ * Valores de símbolo (0–46) de um caractere ASCII (0–127) em **Full ASCII**.
+ * O alfabeto básico rende um símbolo; os demais, um par shift + base segundo a
+ * tabela da norma. Fora do ASCII 0–127, erro de `bad-chars`.
+ */
+function asciiSymbolValues(ch: string): number[] {
+  const basic = CODE93_ALPHABET.indexOf(ch);
+  if (basic >= 0) return [basic];
+
+  const code = ch.codePointAt(0) ?? -1;
+  if (code < 0 || code > MAX_ASCII) {
+    throw new BarcodeError(
+      'bad-chars',
+      `o caractere "${ch}" está fora do ASCII (0–127) do Code 93 Full ASCII`,
+    );
+  }
+
+  const base = LETTER_A_VALUE;
+  // 0x00 → (%)U.
+  if (code === 0x00) return [SHIFT.percent, base + 20];
+  // 0x01–0x1A → ($)A–Z; 0x1B–0x1F → (%)A–E.
+  if (code <= 0x1a) return [SHIFT.dollar, base + (code - 0x01)];
+  if (code <= 0x1f) return [SHIFT.percent, base + (code - 0x1b)];
+  // 0x21–0x3A (fora do básico) → (/)A–Z (cobre ! " # & ' ( ) * , :).
+  if (code <= 0x3a) return [SHIFT.slash, base + (code - 0x21)];
+  // 0x3B–0x3F → (%)F–J; 0x40 (@) → (%)V.
+  if (code <= 0x3f) return [SHIFT.percent, base + 5 + (code - 0x3b)];
+  if (code === 0x40) return [SHIFT.percent, base + 21];
+  // 0x5B–0x5F → (%)K–O; 0x60 (`) → (%)W.
+  if (code <= 0x5f) return [SHIFT.percent, base + 10 + (code - 0x5b)];
+  if (code === 0x60) return [SHIFT.percent, base + 22];
+  // 0x61–0x7A → (+)A–Z (minúsculas).
+  if (code <= 0x7a) return [SHIFT.plus, base + (code - 0x61)];
+  // 0x7B–0x7E → (%)P–S; 0x7F → (%)T.
+  if (code <= 0x7e) return [SHIFT.percent, base + 15 + (code - 0x7b)];
+  return [SHIFT.percent, base + 19];
+}
+
+/** Valores 0–46 do conteúdo, em Full ASCII (ASCII 0–127). */
 function symbolValues(data: string): number[] {
-  return [...data].map((ch) => {
-    const value = CODE93_ALPHABET.indexOf(ch);
-    if (value < 0) {
-      throw new BarcodeError(
-        'bad-chars',
-        `o caractere "${ch}" não existe no Code 93 básico (maiúsculas, dígitos e " -.$/+%")`,
-      );
-    }
-    return value;
-  });
+  const values: number[] = [];
+  for (const ch of data) values.push(...asciiSymbolValues(ch));
+  return values;
 }
 
 /**
@@ -75,8 +130,8 @@ export function code93Checks(data: string): { c: string; k: string } {
 }
 
 /**
- * Codifica `text` em Code 93 (alfabeto básico). Lança {@link BarcodeError}
- * (`empty`, `bad-chars`).
+ * Codifica `text` em Code 93 **Full ASCII** (ASCII 0–127). Lança
+ * {@link BarcodeError} (`empty`, `bad-chars`).
  */
 export function encodeCode93(text: string): Code93Result {
   if (text.length === 0) {

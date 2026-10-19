@@ -324,5 +324,7 @@ export type { Code39Options, Code39Ratio, Code39Result } from './code39';
 export type { EanResult, EanSymbology } from './ean';
 export { eanCheckDigit } from './ean';
 export { BarcodeError, type BarcodeErrorCode, checkDigitError } from './error';
+export type { Gs1ErrorCode, Gs1Validation } from './gs1';
+export { validateGs1 } from './gs1';
 export type { Itf14Result } from './itf';
 export { encodeItf14, itf14CheckDigit } from './itf';
