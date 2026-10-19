@@ -275,22 +275,47 @@ function tickMap(rootPid) {
   return map;
 }
 
+/** Igual a `tickMap`, mas com o tipo de cada processo (para atribuir a CPU). */
+function tickMapTyped(rootPid) {
+  const map = new Map();
+  for (const stat of listProcessTree(rootPid)) {
+    const cmdline = readText(`/proc/${stat.pid}/cmdline`).split('\0').join(' ');
+    map.set(stat.pid, {
+      ticks: stat.ticks,
+      type: processType(stat.pid, rootPid, cmdline),
+    });
+  }
+  return map;
+}
+
 async function sampleIdleCpu(rootPid, windows = 5, windowMs = 1000) {
   const samples = [];
+  const ticksByType = new Map();
   for (let i = 0; i < windows; i += 1) {
-    const before = tickMap(rootPid);
+    const before = tickMapTyped(rootPid);
     await delay(windowMs);
-    const after = tickMap(rootPid);
+    const after = tickMapTyped(rootPid);
     let delta = 0;
-    for (const [pid, ticks] of after) {
+    for (const [pid, info] of after) {
       const previous = before.get(pid);
-      if (previous !== undefined) delta += Math.max(0, ticks - previous);
+      if (previous === undefined) continue;
+      const spent = Math.max(0, info.ticks - previous.ticks);
+      delta += spent;
+      ticksByType.set(info.type, (ticksByType.get(info.type) ?? 0) + spent);
     }
     const percent = (delta / CLK_TCK / (windowMs / 1000)) * 100;
     samples.push(percent);
   }
   const avg = samples.reduce((sum, value) => sum + value, 0) / samples.length;
   const max = Math.max(...samples);
+  // A CPU da árvore inteira soma vários processos; sem esta quebra, um pico no
+  // GPU ou no renderer fica indistinguível de um pico no main.
+  const byTypePercent = {};
+  for (const [type, ticks] of ticksByType) {
+    byTypePercent[type] = Number(
+      ((ticks / CLK_TCK / ((windowMs * windows) / 1000)) * 100).toFixed(3),
+    );
+  }
   return {
     windows: samples.length,
     windowMs,
@@ -298,6 +323,56 @@ async function sampleIdleCpu(rootPid, windows = 5, windowMs = 1000) {
     avgPercent: Number(avg.toFixed(3)),
     maxPercent: Number(max.toFixed(3)),
     avgPercentMachine: Number((avg / os.cpus().length).toFixed(4)),
+    byTypePercent,
+  };
+}
+
+/**
+ * CPU ociosa **ao longo do dwell** (uma janela a cada `everyMs`).
+ *
+ * Uma única janela de 5 s no fim do dwell não distingue "ocioso o tempo todo"
+ * de "pico que caiu justo na medição" — e foi assim que a 0.8.0 registrou
+ * 7,40 % depois de 10 min (ver `docs/BENCHMARK.md` §6.4): sem a linha do tempo
+ * não dá para saber se a CPU cresce (timer/vazamento) ou se o número veio de um
+ * evento isolado. As amostras ficam no JSON (`cpu.timeline`).
+ */
+function startCpuTimeline(rootPid, everyMs = 30_000, windowMs = 1000) {
+  const samples = [];
+  const startedAt = performance.now();
+  let stopped = false;
+  let timer = null;
+  const sleep = (ms) =>
+    new Promise((resolve) => {
+      timer = setTimeout(resolve, ms);
+    });
+  const tick = async () => {
+    const before = tickMap(rootPid);
+    await sleep(windowMs);
+    if (stopped) return;
+    const after = tickMap(rootPid);
+    let delta = 0;
+    for (const [pid, ticks] of after) {
+      const previous = before.get(pid);
+      if (previous !== undefined) delta += Math.max(0, ticks - previous);
+    }
+    samples.push({
+      atMs: Math.round(performance.now() - startedAt),
+      percent: Number(((delta / CLK_TCK / (windowMs / 1000)) * 100).toFixed(3)),
+    });
+    await sleep(Math.max(0, everyMs - windowMs));
+    if (stopped) return;
+    void tick();
+  };
+  void tick();
+  return {
+    windowMs,
+    everyMs,
+    samples,
+    stop: () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      return samples;
+    },
   };
 }
 
@@ -441,9 +516,18 @@ async function measure(options) {
       .catch((err) => ({ ok: false, error: err.message }));
 
     // A RAM é medida exatamente após `--dwell` a partir da janela pronta.
+    // Durante o dwell a CPU é amostrada a cada 30 s (linha do tempo): a janela
+    // única do fim não mostra se o consumo cresce com o tempo.
+    const timeline = startCpuTimeline(rootPid);
     await delay(options.dwellMs);
+    timeline.stop();
     const memory = snapshotProcesses(rootPid);
     const cpu = await sampleIdleCpu(rootPid);
+    cpu.timeline = {
+      everyMs: timeline.everyMs,
+      windowMs: timeline.windowMs,
+      samples: timeline.samples,
+    };
     const latencyOutcome = await latencyResult;
 
     if (appExited) throw new Error(exitMessage());
@@ -725,6 +809,34 @@ function markdown(report) {
   lines.push(
     `| CPU machine-wide | ${number(report.cpu.avgPercentMachine, 3)} % |`,
   );
+  const timeline = report.cpu.timeline?.samples ?? [];
+  if (timeline.length > 0) {
+    const avgOf = (list) =>
+      list.length > 0
+        ? list.reduce((sum, sample) => sum + sample.percent, 0) / list.length
+        : 0;
+    const head = timeline.filter((sample) => sample.atMs <= 60_000);
+    const tail = timeline.filter((sample) => sample.atMs > 60_000);
+    const peak = Math.max(...timeline.map((sample) => sample.percent));
+    const windowS = report.cpu.timeline.windowMs / 1000;
+    const detail =
+      tail.length > 0
+        ? `${number(avgOf(head), 2)} % no 1º min → ${number(avgOf(tail), 2)} % depois (pico ${number(peak, 2)} %)`
+        : `${number(avgOf(head), 2)} %`;
+    lines.push(
+      `| CPU ociosa ao longo do dwell | ${detail} — ${timeline.length} amostras de ${windowS} s |`,
+    );
+  }
+  const byType = Object.entries(report.cpu.byTypePercent ?? {}).sort(
+    (a, b) => b[1] - a[1],
+  );
+  if (byType.length > 0) {
+    lines.push(
+      `| CPU por processo | ${byType
+        .map(([type, value]) => `${type} ${number(value, 2)} %`)
+        .join(' · ')} |`,
+    );
+  }
   if (report.latency.p95Ms !== undefined) {
     lines.push(
       `| Latência min / p50 / p95 / máx | ${number(report.latency.minMs, 1)} / ${number(report.latency.p50Ms, 1)} / ${number(report.latency.p95Ms, 1)} / ${number(report.latency.maxMs, 1)} ms |`,

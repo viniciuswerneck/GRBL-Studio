@@ -124,6 +124,11 @@ Sem porta serial aberta e sem job, o script amostra `utime + stime` de
 número principal é percentual de **um core** (100 % = 1 core saturado); o
 percentual machine-wide (dividido pelo número de núcleos) também é impresso.
 
+Além dessa janela final, o script amostra **1 s a cada 30 s durante todo o
+dwell** (`cpu.timeline` no JSON; a linha do tempo aparece nos detalhes do
+relatório). Isso separa "ocioso o tempo todo" de "pico que caiu justo na
+medição final" — foi a dúvida que ficou da medição da 0.8.0 (§6.4).
+
 ### Latência de interação
 
 Cada amostra mede o round trip completo no main:
