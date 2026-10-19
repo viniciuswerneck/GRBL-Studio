@@ -187,6 +187,13 @@ export interface ErrorPayload {
   code?: number;
   /** Ação recomendada para alarmes conhecidos (RF-STA-4). */
   solution?: string;
+  /**
+   * Linha que a máquina recusou (ex.: `$J=G91 X1 F1000`). Vai para o histórico
+   * e para o diagnóstico copiável: sem ela, um `error:3` não diz **o quê** falhou.
+   */
+  command?: string;
+  /** `alarm` = `ALARM:` reportado pela máquina · `error` = `error:` do parser. */
+  kind?: 'alarm' | 'error';
 }
 
 /** Entrada do histórico de alarmes/erros da sessão (RF-STA-7). */
@@ -198,6 +205,10 @@ export interface AlarmEntry {
   message: string;
   /** Ação recomendada (RF-STA-4), quando conhecida. */
   solution?: string;
+  /** Linha recusada pela máquina (`error:3` sem ela é indecifrável). */
+  command?: string;
+  /** `alarm` (`ALARM:n`) × `error` (`error:n`) — evita confundir os dois. */
+  kind?: 'alarm' | 'error';
 }
 
 /** Perfil de configuração `$$` salvo pelo usuário (RF-CFG-4). */

@@ -40,6 +40,7 @@ describe('parseFirmware', () => {
       variableSpindle: true,
       coreXY: false,
       mist: false,
+      raw: 'V',
     });
     expect(fw.plannerBlocks).toBe(15);
     expect(fw.rxBufferSize).toBe(128);
@@ -55,6 +56,9 @@ describe('parseFirmware', () => {
       variableSpindle: false,
       coreXY: false,
       mist: false,
+      // Regressão (coleta real, 18/10): as letras cruas eram descartadas e o
+      // diagnóstico saía com `firmware.options=` vazio.
+      raw: 'H',
     });
     expect(fw.plannerBlocks).toBeUndefined();
     expect(fw.rxBufferSize).toBeUndefined();
@@ -67,6 +71,7 @@ describe('parseFirmware', () => {
       variableSpindle: true,
       coreXY: true,
       mist: true,
+      raw: 'VCM',
     });
     expect(fw.plannerBlocks).toBe(16);
     expect(fw.rxBufferSize).toBe(256);
@@ -299,7 +304,8 @@ describe('buildMachineReport', () => {
     expect(report).toContain('transport=serial /dev/ttyACM0 @115200');
     expect(report).toContain('firmware.version=1.3a');
     expect(report).toContain('firmware.build=20250324');
-    expect(report).toContain('firmware.options=');
+    // `[OPT:H]` da máquina real: o campo não pode sair vazio.
+    expect(report).toContain('firmware.options=H');
     expect(report).toContain('modal.wcs=G54');
     expect(report).toContain('facts.travel=150,130,45');
     expect(report).toContain('facts.laserMode=1');

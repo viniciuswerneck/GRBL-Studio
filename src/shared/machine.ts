@@ -31,8 +31,13 @@ export interface FirmwareInfo {
   build?: string;
   /** Plataforma/variante quando o firmware informa (`[VER:1.1h:…]`). */
   platform?: string;
-  /** `[OPT:V,15,128]` → PWM/spindle variável (`V`), CoreXY (`C`), mist (`M`). */
+  /**
+   * `[OPT:V,15,128]` → PWM/spindle variável (`V`), CoreXY (`C`), mist (`M`).
+   * `raw` guarda as letras **como o firmware mandou** (ex.: `H` no Sculpfun C1):
+   * descartá-las fazia o diagnóstico sair com `firmware.options=` vazio.
+   */
   options?: {
+    raw?: string;
     variableSpindle?: boolean;
     coreXY?: boolean;
     mist?: boolean;
@@ -316,6 +321,9 @@ export function parseFirmware(lines: string[]): FirmwareInfo {
         coreXY: flags.includes('C'),
         mist: flags.includes('M'),
       };
+      // As letras cruas (`H`, `S`, `L`…) não têm significado padronizado entre
+      // os firmwares — preservamos o texto original para o diagnóstico.
+      if (flags !== '') info.options.raw = flags;
       const planner = Number.parseInt(fields[1] ?? '', 10);
       if (Number.isFinite(planner)) info.plannerBlocks = planner;
       const rx = Number.parseInt(fields[2] ?? '', 10);
@@ -554,10 +562,12 @@ export function buildMachineReport(input: MachineReportInput): string {
     push('firmware.build', firmware.build);
     push('firmware.platform', firmware.platform);
     if (firmware.options) {
-      const flags = `${firmware.options.variableSpindle ? 'V' : ''}${
+      // As letras cruas primeiro (`[OPT:H]` → `H`); o V/C/M derivado é só o
+      // caso canônico do GRBL 1.1 e não deve apagar o que o firmware mandou.
+      const derived = `${firmware.options.variableSpindle ? 'V' : ''}${
         firmware.options.coreXY ? 'C' : ''
       }${firmware.options.mist ? 'M' : ''}`;
-      push('firmware.options', flags);
+      push('firmware.options', firmware.options.raw || derived || undefined);
     }
     push('firmware.planner', firmware.plannerBlocks);
     push('firmware.rx', firmware.rxBufferSize);

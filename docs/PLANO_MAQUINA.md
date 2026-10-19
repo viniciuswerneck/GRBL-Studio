@@ -231,7 +231,7 @@ máquina **Sculpfun C1** (`src/shared/machines.ts` → `public/machines.js`), e
 | Sem banner `Grbl 1.1` | o connect não pode depender do banner | já tolerante |
 | `[MSG:…]` antes do `ok` | canal de recados do firmware (aqui: **auto-identificação**) | mostrar no console; base do *smart connect* (P2.5) |
 | `$N0=` e `$N1=` **vazios** | "2 blocos de inicialização" seria falso positivo | `parseStartupBlocks` ignora valor vazio |
-| `error:3` esporádico na 1ª leitura | sobra/ruído de linha depois do reset | erro isolado ≠ falha de connect |
+| `error:3` esporádico na 1ª leitura | sobra/ruído de linha depois do reset | repetir a leitura **uma vez** e não marcar alarme (§11.7) |
 | `$$` **sem** `$27`, `$28/$29`, `$33`, `$37/$39/$40/$43-47` | firmware enxuto: vários settings não existem | todo campo é opcional (`—` + "não informado") |
 | Status **sem** `Pn` e **sem** `Bf` (`$10=1`) | pinos e saturação de buffer invisíveis | chip de pinos desabilitado **com explicação** (RF-MAQ-7) |
 | `WCO` e `Ov` aparecem **só quando mudam** | o relatório varia entre leituras | manter o último valor conhecido (o app já cacheia `state.wco`) |
@@ -309,6 +309,43 @@ porta** ainda não é detectada.
    `$X`/`$H` até o usuário destravar).
 5. **Park position**: ao terminar o job, não parquear em `X0 Y0` (MX-15); deixar
    o usuário escolher um ponto de repouso dentro do curso, longe das chaves.
+
+### 11.7 A primeira leitura depois de conectar: `$I` → `error:3` (18/10/2026)
+
+Segunda coleta — o relatório copiado do painel em **0.8.0** trouxe
+`firmware.options=` **vazio** e **8 × `code 3`** no histórico. Como o histórico é
+persistido entre sessões (limite de 100), a pergunta era **de onde** vinham
+esses `error:3`. Os logs de sessão do app (`~/.config/grbl-studio/logs/`)
+respondem sem margem para dúvida:
+
+| Fato | Evidência (9 sessões) |
+| :--- | :--- |
+| É sempre a **mesma linha** | `>> $I` logo após `[conn] connected` (7 ms) e `<< error:3` 3 ms depois |
+| É sempre a **primeira** | `$G` vem em seguida e responde `ok` |
+| O firmware fica **sem ser lido** | nesses logs, `[VER:…]` e `[OPT:…]` aparecem **0 vezes** |
+| **Não é o jog** | as 9 ocorrências têm `$I` antes; nenhum `$J=` foi enviado nesses logs |
+
+Leitura: a primeira linha escrita depois de abrir a porta cai no lixo que ficou
+no parser do firmware (sessão anterior encerrada no meio de uma linha, `?`
+pendente…) e este firmware responde `error:3` (comando de sistema `$` não
+reconhecido) ao que não conseguiu interpretar. Como o app **abandonava** a
+leitura, o painel saía **sem firmware** e o operador ficava com um `code 3` que
+não dizia o que falhou.
+
+O que o app passou a fazer:
+
+1. **Repetir uma vez** a `$I` quando ela volta `error:3` — é leitura idempotente,
+   uma vez por conexão, com aviso no console. **Sem** entrada no histórico:
+   a RF-STA-7 é para o que o operador pode remediar, não para ruído do enlace.
+2. **Registrar a linha recusada** em todo `error:`/`ALARM:` (histórico e
+   "copiar diagnóstico", na forma `(cmd: $I)`) — a próxima coleta não precisa de
+   arqueologia.
+3. Preservar as letras cruas de `[OPT:…]` (`H`), que sumiam do relatório.
+
+Ainda **sem evidência** (defesa implementada, sintoma não observado): firmware
+que recuse `$J=`. Na C1 o jog dedicado funciona (§11.3) — o `useDollarJog` era
+documentado e ignorado, agora é respeitado, e há degradação automática para
+`G91`/`G0`/`G90` se algum firmware recusar.
 
 ---
 

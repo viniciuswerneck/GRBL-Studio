@@ -893,6 +893,10 @@ export const es = {
   'client.stopped': 'Detenido por el usuario.',
   'client.queryJobStarted':
     'Consulta cancelada: un job comenzó mientras seguía en la cola.',
+  'client.jogDollarUnsupported':
+    'Este firmware no implementa el jog dedicado ($J=). Se rechazó "{line}"; se moverá con G91/G0/G90.',
+  'client.queryRetry':
+    'La máquina rechazó la primera lectura tras conectar ("{line}") — reintentando una vez.',
   'client.lineTooLong':
     'Línea demasiado larga ({bytes} B) para el búfer de la máquina ({max} B) — envío detenido para no corromper el G-code. Extracto: {line}',
   'client.reset': 'Reset por el usuario.',
@@ -1098,6 +1102,7 @@ export const es = {
   'status.alarmHint': 'Alarma activa: use Unlock ($X) o Reset antes de mover.',
   'status.history.title': 'Historial de alarmas',
   'status.history.empty': 'Ninguna alarma registrada.',
+  'status.history.command': 'Comando rechazado:',
   'status.history.clear': 'Limpiar historial',
   'alarmfix.1':
     'Revise el final de carrera y haga homing ($H) o envíe Unlock ($X).',

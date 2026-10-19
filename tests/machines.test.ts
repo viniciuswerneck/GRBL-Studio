@@ -121,4 +121,35 @@ describe('perfil Sculpfun C1 × máquina real', () => {
     expect(profile.module).toBe('3W');
     expect(profile.sMax).toBe(1000);
   });
+
+  it('só escreve `$` que o firmware da máquina realmente tem', () => {
+    // Aplicar o perfil **escreve** na máquina: um código que o firmware não
+    // conhece responde `error:3` — foi assim que a coleta real registrou uma
+    // avalanche de `code 3` no histórico do usuário.
+    const available = new Set(
+      (fixture.responses.$$ ?? [])
+        .map((line) => /^\$(\d+)=/.exec(line)?.[1])
+        .filter((code): code is string => code !== undefined)
+        .map((code) => Number(code)),
+    );
+    expect(available.size).toBeGreaterThan(20);
+    for (const machine of MACHINE_PROFILES) {
+      for (const code of Object.keys(machine.settings).map(Number)) {
+        expect(
+          available.has(code),
+          `perfil ${machine.id} escreve $${code}, que a máquina não tem`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('conhece o firmware "enxuto" da C1: sem $27, $33, $37-40 nem $43-47', () => {
+    // `$$` real da C1: 32 linhas, sem os settings de spindle/PWM e sem os
+    // extras do grblHAL. O app degrada para "não informado" em vez de inventar.
+    for (const code of [27, 28, 29, 33, 37, 38, 39, 40, 43, 44, 45, 46, 47]) {
+      expect(machineSetting(code), `$${code}`).toBeUndefined();
+    }
+    expect(machineSetting(130)).toBe(150);
+    expect(machineSetting(131)).toBe(130);
+  });
 });

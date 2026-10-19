@@ -869,6 +869,10 @@ export const en = {
   'client.stopped': 'Stopped by the user.',
   'client.queryJobStarted':
     'Query cancelled: a job started while it was still queued.',
+  'client.jogDollarUnsupported':
+    'This firmware does not implement dedicated jog ($J=). "{line}" was rejected; moving with G91/G0/G90 instead.',
+  'client.queryRetry':
+    'The machine refused the first read after connecting ("{line}") — retrying once.',
   'client.lineTooLong':
     'Line too long ({bytes} B) for the machine buffer ({max} B) — sending stopped to avoid corrupting the G-code. Excerpt: {line}',
   'client.reset': 'Reset by the user.',
@@ -1068,6 +1072,7 @@ export const en = {
   'status.alarmHint': 'Alarm active: use Unlock ($X) or Reset before moving.',
   'status.history.title': 'Alarm history',
   'status.history.empty': 'No alarm recorded.',
+  'status.history.command': 'Rejected command:',
   'status.history.clear': 'Clear history',
   'alarmfix.1': 'Check the limit switch and home ($H) or send Unlock ($X).',
   'alarmfix.2':

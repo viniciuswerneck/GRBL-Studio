@@ -7893,9 +7893,12 @@ async function refreshMachine() {
       modal: data.modal,
       offsets: data.offsets,
       status,
-      alarms: (state.alarms ?? [])
-        .slice(-10)
-        .map((a) => `code ${a.code}: ${a.message}`),
+      alarms: (state.alarms ?? []).slice(-10).map((a) => {
+        const kind = a.kind === 'alarm' ? 'ALARM' : 'error';
+        const head = a.code !== undefined ? `${kind} ${a.code}` : kind;
+        const cmd = a.command ? ` (cmd: ${a.command})` : '';
+        return `${head}: ${a.message}${cmd}`;
+      }),
     });
     el.machineStatus.textContent = '';
   } catch (err) {
@@ -8679,6 +8682,9 @@ function recordAlarm(err) {
       code: err.code,
       message: err.message,
       solution: err.solution,
+      // Sem a linha recusada, `error:3` no diagnóstico não diz o que falhou.
+      command: err.command,
+      kind: err.kind,
     },
   ].slice(-100);
   renderAlarmHistory();
@@ -8700,8 +8706,15 @@ function renderAlarmHistory() {
     const row = document.createElement('div');
     row.className = 'alarm-entry';
     const time = new Date(entry.ts).toLocaleTimeString();
-    const code = entry.code !== undefined ? ` [${entry.code}]` : '';
+    const kind = entry.kind === 'alarm' ? 'ALARM' : 'error';
+    const code = entry.code !== undefined ? ` ${kind} [${entry.code}]` : '';
     row.textContent = `${time}${code} ${entry.message}`;
+    if (entry.command) {
+      const cmd = document.createElement('div');
+      cmd.className = 'alarm-cmd';
+      cmd.textContent = `${t('status.history.command')} ${entry.command}`;
+      row.appendChild(cmd);
+    }
     if (entry.solution) {
       const fix = document.createElement('div');
       fix.className = 'alarm-fix';

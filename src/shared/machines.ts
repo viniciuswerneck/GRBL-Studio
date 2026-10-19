@@ -71,8 +71,14 @@ export const MACHINE_PROFILES: readonly MachineProfile[] = [
    * (`$22=1`), limites por hardware (`$21=1`), limites por software
    * desligados (`$20=0`) e modo laser ligado (`$32=1`).
    *
-   * Sem banner e com `[OPT:H]` (sem planner/buffer): a janela de envio usa o
-   * padrão e o painel da máquina diz "não informado" em vez de inventar.
+   * Coleta do app 0.8.0 (mesma máquina, `$$` idêntico linha a linha) confirmou
+   * o perfil e revelou o que o app **não** deve prometer: `[OPT:H]` (sem
+   * planner/buffer) e nenhuma garantia sobre o 1º comando depois de conectar —
+   * nesse firmware a primeira leitura (`$I`) pode voltar `error:3`
+   * (`PLANO_MAQUINA.md` §11.7). A lista de `settings` é mínima de propósito:
+   * só o que o app garante escrever, e **só códigos que este firmware tem**
+   * (`tests/machines.test.ts` confere contra a coleta — escrever `$` inexistente
+   * responde `error:3`).
    */
   {
     id: 'sculpfun-c1',

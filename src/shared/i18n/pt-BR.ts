@@ -893,6 +893,10 @@ export const ptBR = {
   'client.stopped': 'Interrompido pelo usuário.',
   'client.queryJobStarted':
     'Consulta cancelada: um job começou enquanto ela ainda estava na fila.',
+  'client.jogDollarUnsupported':
+    'Este firmware não implementa o jog dedicado ($J=). "{line}" foi recusada; passando a mover com G91/G0/G90.',
+  'client.queryRetry':
+    'A máquina recusou a primeira leitura após conectar ("{line}") — repetindo uma vez.',
   'client.lineTooLong':
     'Linha longa demais ({bytes} B) para o buffer da máquina ({max} B) — envio interrompido para não corromper o G-code. Trecho: {line}',
   'client.reset': 'Reset pelo usuário.',
@@ -1096,6 +1100,7 @@ export const ptBR = {
   'status.alarmHint': 'Alarme ativo: use Unlock ($X) ou Reset antes de mover.',
   'status.history.title': 'Histórico de alarmes',
   'status.history.empty': 'Nenhum alarme registrado.',
+  'status.history.command': 'Comando recusado:',
   'status.history.clear': 'Limpar histórico',
   'alarmfix.1':
     'Verifique a chave de fim de curso e faça homing ($H) ou envie Unlock ($X).',

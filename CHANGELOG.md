@@ -69,6 +69,30 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   **1 846 → 1 779 ms**. No melhor par, 1 337 ms. Continua acima do orçamento de
   1 500 ms nesta máquina — números e ressalvas em `docs/BENCHMARK.md`.
 
+### Fixed — máquina real: a 1ª leitura, o diagnóstico e o perfil (Sculpfun C1, 18/10)
+
+- **`$I` recusado na 1ª leitura depois de conectar.** Evidência dos logs de
+  sessão do usuário: em **9 de 9** conexões a primeira linha (`$I`) voltou
+  `error:3` e `[VER:]`/`[OPT:]` **nunca chegaram** — o painel Máquina saía sem
+  firmware e o histórico ganhava um `code 3` que não dizia o que falhou
+  (`PLANO_MAQUINA.md` §11.7). Como é leitura idempotente, o cliente agora
+  **repete essa linha uma vez** (e só ela) e registra o aviso no console — sem
+  alarme no histórico.
+- **O diagnóstico diz o que falhou.** `error:`/`ALARM:` no histórico e no
+  "copiar diagnóstico" passam a guardar a **linha recusada** (`(cmd: $I)`) e a
+  distinguir `ALARM n` de `error n` — antes os dois saíam como `code n`,
+  indistinguíveis.
+- **`firmware.options` não sai mais vazio.** As letras cruas de `[OPT:…]`
+  (`H` na C1) eram descartadas e o relatório imprimia `firmware.options=`.
+- **`useDollarJog` era documentado e ignorado.** O `$J=` é opcional no GRBL 1.1:
+  a opção passou a ser respeitada e, se o firmware recusar o modo dedicado, o
+  jog cai para `G91`/`G0`/`G90` (**três linhas**, cada uma com o seu `ok`) pelo
+  resto da conexão — um aviso em vez de um erro por jog. **Na C1 o jog dedicado
+  funciona** (§11.3): isto é defesa, não sintoma observado.
+- **Perfil da C1 conferido contra a coleta:** `tests/machines.test.ts` agora
+  falha se um perfil prometer escrever um `$` que a máquina não tem (escrever
+  código inexistente responde `error:3`).
+
 ## [0.7.0] - 2026-10-18
 
 ### Added — Simbologias: 1D extras e Data Matrix (S2/S3, RF-SYM-7)

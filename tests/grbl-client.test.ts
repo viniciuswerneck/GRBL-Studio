@@ -4,7 +4,7 @@ import {
   GrblClient,
   type TransportLike,
 } from '../src/main/services/GrblClient';
-import type { GrblStatus, JobInfo } from '../src/shared/types';
+import type { ErrorPayload, GrblStatus, JobInfo } from '../src/shared/types';
 
 /** Transporte falso: registra escritas e permite injetar dados. */
 class FakeTransport extends EventEmitter implements TransportLike {
@@ -357,6 +357,123 @@ describe('GrblClient — tempo real', () => {
     await client.connect(CONNECT);
     client.cancelJog();
     expect(fake.realtime).toEqual([0x85]);
+  });
+
+  it('jog usa o modo dedicado ($J=) por padrão', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    client.jog({ x: 1, y: -2, feed: 500 });
+    expect(fake.written).toEqual(['$J=G91 X1 Y-2 F500']);
+  });
+
+  it('`useDollarJog: false` manda G91 / G0 / G90 em três linhas', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    client.jog({ x: 5, feed: 500, useDollarJog: false });
+    // Uma linha por vez: o GRBL não garante a ordem modal se vierem juntas.
+    expect(fake.written).toEqual(['G91']);
+    fake.feed('ok\n');
+    expect(fake.written).toEqual(['G91', 'G0 X5 F500']);
+    fake.feed('ok\n');
+    expect(fake.written).toEqual(['G91', 'G0 X5 F500', 'G90']);
+  });
+
+  it('cai para G91/G0/G90 quando o firmware recusa `$J=` (error:3)', async () => {
+    // O `$J=` é **opcional** no GRBL 1.1. Não foi observado na C1 (o jog
+    // dedicado funciona lá, `PLANO_MAQUINA` §11.3), mas a opção documentada
+    // `useDollarJog` não podia continuar sendo ignorada, e um firmware que
+    // recuse o modo dedicado não pode repetir o erro a cada jog.
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const errors: ErrorPayload[] = [];
+    client.on('error', (err) => errors.push(err));
+
+    client.jog({ x: 1, feed: 500 });
+    expect(fake.written).toEqual(['$J=G91 X1 F500']);
+    fake.feed('error:3\n');
+
+    const last = errors.at(-1)!;
+    expect(last.code).toBe(3);
+    expect(last.kind).toBe('error');
+    expect(last.command).toBe('$J=G91 X1 F500');
+    expect(last.message).toMatch(/não implementa o jog dedicado/i);
+
+    // Da segunda vez em diante vai direto no modo relativo — sem novo erro.
+    fake.written.length = 0;
+    errors.length = 0;
+    client.jog({ x: 2, feed: 500 });
+    expect(fake.written).toEqual(['G91']);
+    fake.feed('ok\n');
+    fake.feed('ok\n');
+    expect(fake.written).toEqual(['G91', 'G0 X2 F500', 'G90']);
+    expect(errors).toEqual([]);
+  });
+
+  it('repete a primeira leitura recusada depois de conectar (coleta real: `$I` → `error:3`)', async () => {
+    // Evidência da máquina real: em 9 de 9 sessões o `$I` (1ª linha depois de
+    // conectar) voltou `error:3`, o painel Máquina saía sem firmware e o
+    // histórico ganhava um `code 3` indecifrável.
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const errors: ErrorPayload[] = [];
+    const notes: string[] = [];
+    client.on('error', (err) => errors.push(err));
+    client.on('console', (line) => notes.push(line.text));
+
+    const snapshot = client.snapshot();
+
+    expect(fake.written).toEqual(['$I']);
+    fake.feed('error:3\n');
+    // Reenviada — e sem virar alarme no histórico.
+    expect(fake.written).toEqual(['$I', '$I']);
+    fake.feed('[VER:1.3a.20250324:]\n[OPT:H]\nok\n');
+
+    // O resto da coleta segue normalmente.
+    const flush = () => new Promise((resolve) => setImmediate(resolve));
+    await flush();
+    expect(fake.written.at(-1)).toBe('$$');
+    fake.feed('$0=3\n$130=150.000\nok\n');
+    await flush();
+    expect(fake.written.at(-1)).toBe('$#');
+    fake.feed('[G54:0.000,0.000,0.000]\nok\n');
+    await flush();
+    expect(fake.written.at(-1)).toBe('$G');
+    fake.feed('[GC:G0 G54]\nok\n');
+    await flush();
+    expect(fake.written.at(-1)).toBe('$N');
+    fake.feed('ok\n');
+
+    const snap = await snapshot;
+    expect(snap.build).toEqual(['[VER:1.3a.20250324:]', '[OPT:H]']);
+    expect(errors).toEqual([]);
+    expect(notes.some((text) => /repetindo uma vez/i.test(text))).toBe(true);
+  });
+
+  it('repete a primeira leitura uma única vez por conexão', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const errors: ErrorPayload[] = [];
+    client.on('error', (err) => errors.push(err));
+
+    const snapshot = client.snapshot();
+    fake.feed('error:3\n'); // 1ª: repetida
+    fake.feed('error:3\n'); // 2ª: é erro mesmo
+
+    await expect(snapshot).rejects.toThrow();
+    expect(errors).toHaveLength(1);
+    expect(errors[0]!.command).toBe('$I');
+    expect(errors[0]!.kind).toBe('error');
+  });
+
+  it('alarme da máquina marca `kind: "alarm"` (× `error:` do parser)', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const errors: ErrorPayload[] = [];
+    client.on('error', (err) => errors.push(err));
+
+    fake.feed('ALARM:1\n');
+    expect(errors.at(-1)!.kind).toBe('alarm');
+    expect(errors.at(-1)!.code).toBe(1);
   });
 });
 

@@ -28,6 +28,7 @@ import {
 import type {
   ConnectOptions,
   ConnectionState,
+  ErrorPayload,
   GrblStatus,
   JogCommand,
   JobInfo,
@@ -171,6 +172,19 @@ export class GrblClient extends EventEmitter {
   /** Linhas do job confirmadas por `ok` (≠ `sent`, que conta as enviadas). */
   private jobDone = 0;
   private stalled = false;
+  /**
+   * O firmware aceita o modo de jog dedicado (`$J=`)? O `$J` é **opcional** no
+   * GRBL 1.1: se o firmware recusar, caímos para `G91`/`G0`/`G90` (três linhas,
+   * nunca uma) **pelo resto da conexão** — sem repetir o erro a cada jog.
+   */
+  private dollarJogSupported = true;
+  /**
+   * Já "acordamos" a máquina nesta conexão? A **primeira leitura** depois de
+   * abrir a porta pode cair no lixo que ficou no parser do firmware (coleta
+   * real, 18/10: em 9 de 9 sessões o `$I` virou `error:3` e o painel saía sem
+   * firmware). Uma linha de leitura é idempotente: repetimos **uma vez**.
+   */
+  private awokeMachine = false;
   private watchdog: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
 
@@ -199,6 +213,9 @@ export class GrblClient extends EventEmitter {
   async connect(opts: ConnectOptions): Promise<void> {
     if (this.transport) await this.disconnect();
 
+    // Capacidades do firmware valem por conexão (a máquina pode ser trocada).
+    this.dollarJogSupported = true;
+    this.awokeMachine = false;
     this.setConnection('connecting');
     const transport = this.transportFactory(opts);
     transport.on('data', (chunk: string) => this.onData(chunk));
@@ -411,7 +428,13 @@ export class GrblClient extends EventEmitter {
     this.sendLine('G90 G0 X0 Y0');
   }
 
-  /** Jog via modo dedicado do GRBL ($J=) — recomendado. */
+  /**
+   * Jog. Prefere o modo dedicado (`$J=`), que o GRBL cancela sozinho no
+   * `0x85`; se o firmware não o implementar (ou o chamador pedir
+   * `useDollarJog: false`), cai para o modo relativo em **três linhas
+   * separadas** — `G91`, o `G0` e `G90` —, cada uma com o seu `ok`. Nunca
+   * empilhar os três num só envio (o GRBL não garante a ordem modal).
+   */
   jog(cmd: JogCommand): void {
     const feed = cmd.feed ?? 1000;
     const parts: string[] = [];
@@ -419,7 +442,13 @@ export class GrblClient extends EventEmitter {
     if (cmd.y) parts.push(`Y${cmd.y}`);
     if (cmd.z) parts.push(`Z${cmd.z}`);
     if (parts.length === 0) return;
-    this.sendLine(`$J=G91 ${parts.join(' ')} F${feed}`);
+    if (this.dollarJogSupported && cmd.useDollarJog !== false) {
+      this.sendLine(`$J=G91 ${parts.join(' ')} F${feed}`);
+      return;
+    }
+    this.sendLine('G91');
+    this.sendLine(`G0 ${parts.join(' ')} F${feed}`);
+    this.sendLine('G90');
   }
 
   /** Cancela um jog em andamento (0x85) — usado pelo jog contínuo (RF-JOG-2). */
@@ -480,7 +509,7 @@ export class GrblClient extends EventEmitter {
   }
 
   private emitError(message: string, code?: number): void {
-    this.emit('error', { message, code });
+    this.emit('error', { message, code, kind: 'error' });
     this.emit('console', {
       direction: 'in' as const,
       kind: 'error' as const,
@@ -694,6 +723,38 @@ export class GrblClient extends EventEmitter {
   }
 
   private onNack(message: string, code?: number): void {
+    // Drible do lixo na primeira leitura depois de conectar (`PLANO_MAQUINA` §11.7):
+    // em 9 de 9 sessões reais o `$I` voltou `error:3` — o painel Máquina saía
+    // **sem firmware** (nenhum `[VER:]`/`[OPT:]`) e o histórico ganhava um
+    // `code 3` que não dizia o que falhou. Como é leitura idempotente,
+    // repetimos **uma vez** por conexão, e sem alarme: é ruído do enlace na
+    // primeira troca, não ação do operador. Nada mais é repetido — uma recusa
+    // de outro comando continua sendo erro na hora, como sempre foi.
+    const refused = this.inFlight[0]?.item;
+    if (
+      !this.awokeMachine &&
+      code === 3 &&
+      refused?.query === true &&
+      refused.line === '$I' &&
+      this.pendingQuery
+    ) {
+      this.awokeMachine = true;
+      const item = this.inFlight.shift();
+      if (item)
+        this.inFlightBytes = Math.max(0, this.inFlightBytes - item.bytes);
+      // Resposta parcial da tentativa recusada não vale: começa limpo.
+      this.pendingQuery.lines = [];
+      this.queue.unshift(refused);
+      this.emit('console', {
+        direction: 'in' as const,
+        kind: 'message' as const,
+        text: t('client.queryRetry', { line: refused.line }),
+        ts: Date.now(),
+      });
+      this.armWatchdog();
+      if (!this.stalled) this.pump();
+      return;
+    }
     this.failQuery(new Error(message));
     // Só aborta quando a linha rejeitada faz parte do job. Um `error:` de um
     // comando avulso/consulta (ex.: `$$` durante a gravação) **não** pode
@@ -709,10 +770,36 @@ export class GrblClient extends EventEmitter {
     ) {
       this.abortJob(message);
     }
-    this.emit('error', { message, code });
+    this.emit('error', this.describeFailure(message, code, acked?.item.line));
     // As linhas seguintes da janela ainda serão executadas (o GRBL descarta só
     // a linha com erro); os `ok` delas continuam alimentando o envio.
     if (!this.stalled) this.pump();
+  }
+
+  /**
+   * Traduz a recusa da máquina para o evento da UI: **qual** linha falhou
+   * (`error:3` sozinho não diz nada) e — quando o `$J=` é o culpado — a queda
+   * para o jog relativo, avisando uma única vez em vez de repetir a cada jog.
+   */
+  private describeFailure(
+    message: string,
+    code: number | undefined,
+    line: string | undefined,
+  ): ErrorPayload {
+    const base: ErrorPayload = {
+      message,
+      code,
+      command: line,
+      kind: 'error',
+    };
+    if (code === 3 && line !== undefined && line.startsWith('$J=')) {
+      this.dollarJogSupported = false;
+      return {
+        ...base,
+        message: t('client.jogDollarUnsupported', { line }),
+      };
+    }
+    return base;
   }
 
   private onAlarm(code: number | undefined, message: string): void {
@@ -722,7 +809,12 @@ export class GrblClient extends EventEmitter {
     this.clearInFlight();
     this.queue = [];
     if (this.job.state !== 'idle') this.abortJob(message);
-    this.emit('error', { message, code, solution: alarmSolution(code) });
+    this.emit('error', {
+      message,
+      code,
+      solution: alarmSolution(code),
+      kind: 'alarm',
+    });
   }
 
   private abortJob(reason: string): void {
