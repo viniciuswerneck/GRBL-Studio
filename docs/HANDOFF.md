@@ -255,6 +255,14 @@ O que entrou desde a 0.7.0:
   core no fim do dwell (❌; 0 % nos primeiros 20 s), latência p95 2,59 ms (✅).
   **Nada foi maquiado:** `docs/BENCHMARK.md` §1 e §6.3 têm os números e as
   ressalvas. FPS, latência de `?` e DPI continuam manuais.
+- **Re-medição de 10 min (19/10, com linha do tempo e quebra por processo):**
+  a CPU ociosa aos 10 min deu **0,00 %** (16 amostras consecutivas de 0 % entre
+  2 e 10 min) e o perfil CDP do renderer confirmou 99,9 % idle — o 7,40 % de
+  18/10 **não se reproduz**. O que existe é uma **cauda de aquecimento de ~90 s**
+  (33 % → 18 % → 23 % → 1 % → 0 %) que a janela única de 5 s não mostrava.
+  Startup 1 581,3 ms (carga 4,34) e PSS 298,8 MB na mesma corrida. Detalhes e a
+  ressalva de que o valor antigo fica como **não reproduzido** (não como erro)
+  em `docs/BENCHMARK.md` §6.4. FPS, latência de `?` e DPI continuam manuais.
 
 ### P0.7 — painel "Máquina"
 

@@ -108,14 +108,14 @@ Paleta de referência do tema padrão:
 
 ### 3.1 Performance (RNF obrigatórios)
 
-| Métrica | Orçamento | Como medir | Medido (17/10/2026) |
+| Métrica | Orçamento | Como medir | Medido (19/10/2026) |
 | :--- | :--- | :--- | :--- |
-| Tempo de startup (janela pronta) | ≤ 1,5 s | `performance.now()` no bootstrap | SMOKE_OK (~1,2 s) |
-| Memória residente (RAM) | ≤ 200 MB após 10 min | `process.memoryUsage()` / `ps` | a medir em hardware |
-| CPU ociosa (sem job) | ≈ 0 % | DevTools Performance | a medir |
-| Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) | a medir |
-| Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint | a medir |
-| Frame rate da UI durante job | ≥ 55 fps | DevTools Rendering FPS meter | a medir |
+| Tempo de startup (janela pronta) | ≤ 1,5 s | `performance.now()` no bootstrap | **1 581,3 ms** (`BENCHMARK.md` §6.4; melhor par do A/B **1 337 ms** — piso da máquina 1,27–1,77 s) |
+| Memória residente (RAM) | ≤ 200 MB após 10 min | `process.memoryUsage()` / `ps` | RSS **740,4 MB** / PSS **298,8 MB** (§6.4; o PSS inclui a GPU) |
+| CPU ociosa (sem job) | ≈ 0 % | DevTools Performance | **0,00 %** (§6.4; cauda de aquecimento de ~90 s após abrir) |
+| Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) | p95 **4,49 ms** no handler (§6.4); clique/paint real é manual |
+| Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint | a medir (manual, precisa de hardware) |
+| Frame rate da UI durante job | ≥ 55 fps | DevTools Rendering FPS meter | a medir (manual) |
 | Render do preview (50k linhas) | ≤ 2 s no primeiro desenho; **≤ 16 ms por quadro durante o job** (camadas em cache) | `performance.now()` no draw / `npm run bench:preview` | **3 ms** (quente, 270k trechos) vs 300 ms antes |
 | Abertura da janela | < 3 reflows principais | DevTools Layout Shift | a medir |
 

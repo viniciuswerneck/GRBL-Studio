@@ -116,6 +116,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   5 s no fim do dwell não distinguia "ocioso o tempo todo" de "pico que caiu
   justo na medição" — e foi essa a dúvida que ficou da 0.8.0
   (`docs/BENCHMARK.md` §6.4).
+- **Re-medição de 10 min (19/10/2026):** CPU ociosa **0,00 %** no regime (16
+  amostras consecutivas de 0 % entre 2 e 10 min; o 7,40 % de 18/10 **não se
+  reproduz**) e cauda de aquecimento de ~90 s. Startup 1 581,3 ms (carga 4,34)
+  e PSS 298,8 MB na mesma corrida.
 
 ## [0.7.0] - 2026-10-18
 

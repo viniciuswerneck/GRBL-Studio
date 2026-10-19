@@ -94,12 +94,13 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
-> **Estado (18/10/2026, v0.8.0):** **P0.2**, **P0.4**, **P0.5**
+> **Estado (19/10/2026, v0.8.0):** **P0.2**, **P0.4**, **P0.5**
 > (`docs/COMPARATIVO.md`), **P0.6**, **P0.7** (painel "Máquina") e **P0.8**
 > (pré-voo MX-1…MX-15 + chip) **entregues**. **P0.1** segue só na **parte
-> Linux** e com resultado honesto — CPU ociosa e latência dentro, **startup e
-> RAM acima do orçamento** nesta máquina (`docs/BENCHMARK.md`), FPS/DPI/`?`
-> manuais e Windows/macOS sem medir. Aberto: **P0.3** (Flatpak/winget/brew/AUR).
+> Linux** e com resultado honesto — CPU ociosa (**0,00 %** aos 10 min, com
+> linha do tempo) e latência dentro, **startup e RAM acima do orçamento** nesta
+> máquina (`docs/BENCHMARK.md` §6.4), FPS/DPI/`?` manuais e Windows/macOS sem
+> medir. Aberto: **P0.3** (Flatpak/winget/brew/AUR).
 
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |

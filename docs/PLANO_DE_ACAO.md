@@ -94,6 +94,12 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > **manuais**; Windows/macOS não foram medidos. Otimizar startup/RAM é trabalho
 > de performance aberto (não bloqueia a 0.7.0, mas o orçamento do RNF-11 segue
 > não atendido).
+>
+> **Re-medição (19/10/2026, `BENCHMARK.md` §6.4):** startup 1 581,3 ms (A/B:
+> melhor par 1 337 ms — o piso da máquina é 1,27–1,77 s) e PSS 298,8 MB;
+> **CPU ociosa 0,00 %** aos 10 min (o 7,40 % de 18/10 não se reproduz; há uma
+> cauda de aquecimento de ~90 s). O `bench.mjs` agora mede a CPU **ao longo do
+> dwell** e **por processo**, para o número não ser uma foto de 5 s.
 
 ---
 

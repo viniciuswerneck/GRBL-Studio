@@ -13,28 +13,28 @@ job, latência de status com hardware e DPI).
 
 ## 1. Resumo
 
-Medição em 18/10/2026 (Ubuntu 26.04.1, Intel Core i3-5015U, 4 threads,
-Electron 44.8.0, o mesmo do `package-lock.json`). A referência de RAM/CPU/
-latência usa **10 min de dwell** numa sessão **X11** (`DISPLAY=:0`, XWayland);
-o startup tem também o **A/B intercalado** com a 0.7.0 (§6.3). A máquina estava
-com carga ~3–5 (outros processos de desenvolvimento).
+Medição em **19/10/2026** (Ubuntu 26.04.1, Intel Core i3-5015U, 4 threads,
+Electron 44.8.0, o mesmo do `package-lock.json`), complementando a de 18/10
+(**§6.4** tem as duas e o que mudou). A referência de RAM/CPU/latência usa
+**10 min de dwell** numa sessão **X11** (`DISPLAY=:0`, XWayland); o startup tem
+também o **A/B intercalado** com a 0.7.0 (§6.3). A máquina estava com carga
+~2,5–4,3 (outros processos de desenvolvimento) nas duas medições.
 
-> **Tentativas que não concluíram:** duas execuções de 10 min em **Wayland
-> nativo** terminaram com o processo encerrado durante o dwell (a janela fica
-> visível e foi fechada/interrompida) e uma terceira em **Xvfb** foi cancelada
-> por SIGTERM. Os números de 10 min abaixo são os da sessão X11 que concluiu;
-> não há número de 10 min em Wayland nativo nesta versão.
+> **Tentativas que não concluíram (18/10):** duas execuções de 10 min em
+> **Wayland nativo** terminaram com o processo encerrado durante o dwell (a
+> janela fica visível e foi fechada/interrompida) e uma terceira em **Xvfb** foi
+> cancelada por SIGTERM. A medição de 19/10 usou a mesma sessão X11 e concluiu.
 
 | Métrica | Medido | Orçamento | Status |
 | :--- | ---: | ---: | :---: |
-| Startup (execução de 10 min, X11) | **1 720,6 ms** | ≤ 1 500 ms | ⚠ |
+| Startup (execução de 10 min, X11) | **1 581,3 ms** | ≤ 1 500 ms | ⚠ |
 | Startup (A/B, mediana, carga ~4,7) | **1 779 ms** | ≤ 1 500 ms | ⚠ |
 | Melhor par do A/B | **1 337 ms** | ≤ 1 500 ms | ✅ |
-| RAM (RSS total após 10 min) | **826,7 MB** | ≤ 200 MB | ❌ |
-| RAM (PSS total após 10 min, inclui GPU) | **366,3 MB** | ≤ 200 MB | ❌ |
-| CPU ociosa (média de 5 s aos 10 min) | **7,40 %** de 1 core | ≈ 0 % | ❌ |
-| CPU ociosa (primeiros 20 s) | **0,00 %** de 1 core | ≈ 0 % | ✅ |
-| Latência de interação (p95) | **2,59 ms** | ≤ 100 ms | ✅ |
+| RAM (RSS total após 10 min) | **740,4 MB** | ≤ 200 MB | ❌ |
+| RAM (PSS total após 10 min, inclui GPU) | **298,8 MB** | ≤ 200 MB | ❌ |
+| CPU ociosa (média de 5 s aos 10 min) | **0,00 %** de 1 core | ≈ 0 % | ✅ |
+| CPU ociosa (durante todo o dwell) | 33 % → 18 % → 23 % → 1 % → **0 %** | ≈ 0 % | ⚠ nos ~90 s |
+| Latência de interação (p95) | **4,49 ms** | ≤ 100 ms | ✅ |
 | FPS durante job | — | ≥ 55 fps | manual |
 | Latência de status (`?`) | — | ≤ 200 ms | manual |
 | DPI 100/125/150/200 % | — | nítido | manual |
@@ -43,17 +43,18 @@ com carga ~3–5 (outros processos de desenvolvimento).
 RSS ≤ 220 MB, CPU ≤ 3 %, p95 ≤ 150 ms); ❌ acima disso; `manual` = fora do
 escopo automático.
 
-**Leitura:** os orçamentos de startup e RAM **não** são atendidos nesta
-máquina/versão. O startup de 10 min (1 720,6 ms) fica ~15 % acima de 1,5 s; o
-A/B mostra a mediana em 1 779 ms e o melhor par em 1 337 ms — a variância da
-máquina é grande. O **PSS** agora inclui o processo GPU (366,3 MB; antes
-227,3 MB sem ele), então os dois números **não são comparáveis**; de todo modo,
-366,3 MB excede 200 MB. O RSS total (826,7 MB) soma páginas compartilhadas e só
-o main já tem 208 MB. A **CPU ociosa é 0 % nos primeiros 20 s**, mas sobe para
-7,40 % de um core depois de 10 min (compositor/GPU em software e o renderer
-crescendo de 135 para 202 MB de RSS) — **fora** do "≈ 0 %" no repouso longo.
-A latência de handler (p95 2,59 ms) está bem dentro. FPS, latência de status e
-DPI continuam pendentes de procedimento manual (§7–§9).
+**Leitura:** o startup (1 581,3 ms) fica ~5 % acima de 1,5 s **com a carga da
+máquina em 4,3** (o A/B mostra o melhor par em 1 337 ms e a mediana em
+1 779 ms): o piso desta máquina, medida com HTML vazio, é de 1 268–1 769 ms —
+não há o que "otimizar" além do que já foi feito (§6.3). A RAM continua acima:
+PSS 298,8 MB (**inclui o processo GPU**; os 227,3 MB antigos não incluíam, não
+são comparáveis) e RSS 740,4 MB, que soma páginas compartilhadas em cada
+processo — o main sozinho tem 199,8 MB. A **CPU ociosa é 0,00 % no repouso
+longo** (16 amostras consecutivas de 0 % entre 2 e 10 min) e o orçamento é
+atendido; o que existe é uma **cauda de aquecimento de ~90 s** (§6.4). A
+medição de 18/10 (7,40 %) **não se reproduz** e está documentada com a
+ressalva no §6.4. A latência de handler (p95 4,49 ms) está bem dentro. FPS,
+latência de status e DPI continuam pendentes de procedimento manual (§7–§9).
 
 ## 2. O que é medido × o que é manual
 
@@ -274,7 +275,60 @@ paint) — HTML + layout + compositor. Nenhuma tarefa longa (> 50 ms) aparece no
 renderer; o custo é distribuído. O startup total segue acima de 1,5 s nesta
 máquina.
 
+## 6.4 CPU ociosa — re-medição de 10 min (19/10/2026)
+
+A medição de 18/10 registrou **7,40 %** de 1 core na janela única de 5 s do fim
+do dwell (`❌`) e a leitura atribuiu o consumo ao "compositor/GPU em software e
+o renderer crescendo de 135 para 202 MB". Como esse número não tinha nem
+**quando** (uma foto de 5 s não mostra evolução) nem **qual processo**, ele foi
+re-medido com o instrumento novo (§3, "CPU ociosa"):
+
+| | 18/10/2026 | 19/10/2026 |
+| :--- | ---: | ---: |
+| Startup (spawn → janela pronta) | 1 720,6 ms | **1 581,3 ms** |
+| Carga da máquina (início → fim) | 4,94 → 3,12 | 4,34 → 2,55 |
+| RSS total / PSS | 826,7 / 366,3 MB | **740,4 / 298,8 MB** |
+| RSS do renderer | 201,7 MB | **140,9 MB** |
+| **CPU ociosa aos 10 min** | **7,40 %** | **0,00 %** |
+| Latência de interação (p95) | 2,59 ms | 4,49 ms |
+
+Linha do tempo da CPU (1 s amostrado a cada 30 s, do início ao fim do dwell):
+
+| Tempo | 1 s | 31 s | 61 s | 91 s | 121 s … 572 s |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| CPU | 33 % | 18 % | 23 % | 1 % | **0 %** (16 amostras) |
+
+Quebra por processo na janela final (5 s): main 0 %, renderer 0 %, GPU 0 %,
+utility 0 %, zygote 0 %.
+
+**Evidência independente** (perfil CDP do renderer aos 9,5–10,5 min de uptime):
+99,9 % idle em 60 s de amostragem (97 039 amostras, 61 ms de trabalho), heap JS
+em 10 MB, 1462 nós de DOM e RSS do renderer estável em ~141 MB — **sem** o
+crescimento de 135 → 202 MB registrado em 18/10.
+
+**O que isso explica:**
+
+- O app **não** consome CPU ocioso no regime: 16 amostras consecutivas de 0 %
+  entre 2 min e 10 min, com o perfil do renderer confirmando. O orçamento
+  "CPU ociosa ≈ 0 %" é **atendido**.
+- Existe uma **cauda de aquecimento de ~90 s** (33 % → 18 % → 23 % → 1 % → 0 %)
+  que a janela única do fim do dwell nunca mostrou e que não é ociosidade: é o
+  aquecimento do Chromium (primeiro paint, pré-aquecimento dos bundles de
+  símbolos, compilação V8, caches). Numa corrida de 30 s o mesmo app mediu
+  **28,8 %** (renderer 13 % + GPU 11,2 % + main 4,6 %) — o mesmo fenômeno, ainda
+  no começo.
+- **Hipótese descartada:** "renderer crescendo sem parar". Em 19/10 o renderer
+  ficou estável (141 MB de RSS, heap de 10 MB, DOM fixo).
+
+**O que não fica explicado e fica registrado como tal:** o valor de 18/10
+(7,40 %, carga e app equivalentes) **não se reproduz**. A causa provável é
+contensão da máquina (carga ~5 em 4 threads) com o renderer 60 MB maior — mas
+não há evidência suficiente para afirmar, então fica como medição não
+reproduzida, não como "erro". O instrumento novo (linha do tempo + quebra por
+processo) existe justamente para que a próxima ocorrência seja diagnosticável.
+
 ## 7. Procedimento manual — FPS durante job (≥ 55 fps)
+
 
 Não há número automático: é preciso um job rodando. Para não depender de
 hardware, use o emulador GRBL:
