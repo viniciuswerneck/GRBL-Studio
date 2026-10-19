@@ -2465,3 +2465,85 @@ html[data-theme^="hc-"] a:focus-visible {
   font-size: var(--fs-12);
   resize: vertical;
 }
+
+/* ------------------------------------------------ pré-voo MX (P0.8) */
+.chip {
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-pill);
+  background: var(--bg-card);
+  color: var(--text-sub);
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.chip.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.preflight-modal {
+  width: min(760px, 94vw);
+  max-height: 86vh;
+  overflow: auto;
+}
+
+.preflight-list {
+  list-style: none;
+  margin: var(--sp-2) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.preflight-item {
+  border: 1px solid var(--stroke);
+  border-left: 4px solid var(--text-sub);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.preflight-item.block {
+  border-left-color: var(--danger);
+}
+
+.preflight-item.warn {
+  border-left-color: var(--warn);
+}
+
+.preflight-item.info {
+  border-left-color: var(--accent);
+}
+
+.preflight-item-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.preflight-sev {
+  font-size: var(--fs-12);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-sub);
+}
+
+.preflight-item.block .preflight-sev {
+  color: var(--danger);
+}
+
+.preflight-item.warn .preflight-sev {
+  color: var(--warn);
+}
+
+.preflight-item p {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-sub);
+}

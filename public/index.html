@@ -594,6 +594,12 @@
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
             <button type="button" id="playBtn" disabled data-i18n="run.play">▶ Iniciar</button>
+            <button
+              type="button"
+              id="preflightChip"
+              class="chip hidden"
+              data-i18n-title="preflight.chipHint"
+            ></button>
           </div>
           <div id="runHint" class="hint">Gere o G-code (Imagem → G-code) ou abra um arquivo .gcode.</div>
 
@@ -1835,6 +1841,37 @@
           <button type="button" id="designOffsetCancel" data-i18n="design.cancel">Cancelar</button>
           <button type="button" id="designOffsetConfirm" class="primary" data-i18n="design.offset.create">
             Criar contornos
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="preflightOverlay">
+      <div
+        class="modal preflight-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preflightTitle"
+      >
+        <header class="modal-head">
+          <h3 id="preflightTitle" data-i18n="preflight.title">Pré-voo</h3>
+          <button type="button" id="preflightClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+        <p class="hint" id="preflightIntro"></p>
+        <ul class="preflight-list" id="preflightList"></ul>
+        <footer class="modal-foot">
+          <button type="button" id="preflightCancel" data-i18n="nav.cancel">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="preflightGo"
+            class="primary hidden"
+            data-i18n="preflight.startAnyway"
+          >
+            Gravar assim mesmo
           </button>
         </footer>
       </div>

@@ -504,3 +504,58 @@ test.describe('GRBL Studio — painel "Máquina" (P0.7)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — pré-voo (P0.8)', () => {
+  test('bloqueia G1 sem F e deixa gravar após confirmação', async () => {
+    const emulator = await startGrblTcp();
+    const { app, page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-gcode-'));
+    const file = path.join(dir, 'bloco.nc');
+    // `G1` sem `F` e sem feed anterior → MX-6 (block).
+    writeFileSync(file, 'G21\nG90\nM3 S500\nG1 X10 Y10\nG1 X20 Y20\n', 'utf8');
+    try {
+      await app.evaluate(({ dialog }, pathToFile) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [pathToFile],
+        });
+      }, file);
+
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      // O cartão "Execução" só aparece com G-code carregado; o caminho real
+      // para abrir é o menu (Arquivo → Abrir G-code).
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'open-gcode',
+        );
+      });
+      await expect(page.locator('#fileInfo')).toContainText('bloco.nc');
+
+      await page.click('[data-tab="run"]');
+      await page.click('#playBtn');
+      await expect(page.locator('#preflightOverlay')).toBeVisible();
+      await expect(page.locator('#preflightList')).toContainText(
+        'Movimento sem velocidade',
+      );
+      await expect(page.locator('#preflightIntro')).toContainText(
+        'impedimento',
+      );
+
+      await page.click('#preflightGo');
+      await expect(page.locator('#preflightOverlay')).toBeHidden();
+    } finally {
+      await close();
+      emulator.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

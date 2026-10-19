@@ -1187,4 +1187,69 @@ export const en = {
   'machine.unit.hz': 'Hz',
   'machine.unit.bytes': 'B',
   'machine.unit.blocks': 'blocks',
+
+  // ---------------------------------------------- preflight MX-1…MX-15
+  'preflight.title': 'Preflight',
+  'preflight.chip': '{n} warning(s)',
+  'preflight.chipHint': 'See the preflight checks',
+  'preflight.intro': 'Checks before burning. Nothing was sent to the machine.',
+  'preflight.startAnyway': 'Burn anyway',
+  'preflight.blocked':
+    '{n} blocker(s). Burning anyway may cut wrong or be rejected by GRBL.',
+  'preflight.sev.block': 'blocks',
+  'preflight.sev.warn': 'warning',
+  'preflight.sev.info': 'info',
+  'preflight.fix.setting':
+    'Suggestion: set {code} to {value} (with confirmation).',
+  'preflight.fix.action': 'Suggestion: {action}.',
+  'preflight.action.open-machine': 'open the Machine panel',
+  'preflight.action.fit-preview': 'review size/origin in the preview',
+  'preflight.action.reduce-power': 'reduce power to the machine ceiling',
+  'preflight.action.change-route': 'adjust the G-code before burning',
+  'preflight.action.park': 'park a few mm away from zero',
+  'preflight.MX-1.title': 'Power above the machine ceiling',
+  'preflight.MX-1.detail':
+    'The job asks for S={s}, but the machine caps at $30={smax}. Effective power will be lower.',
+  'preflight.MX-2.title': 'Laser mode off',
+  'preflight.MX-2.detail':
+    'The job uses M3/M4 while the machine has $32=0 — GRBL answers error:17.',
+  'preflight.MX-3.title': 'Job larger than travel',
+  'preflight.MX-3.detail':
+    'The job box exceeds travel by {x} mm in X and {y} mm in Y.',
+  'preflight.MX-4.title': 'Soft limits without homing',
+  'preflight.MX-4.detail':
+    '$20=1 with $22=0 — GRBL answers error:10. Enable homing or disable soft limits.',
+  'preflight.MX-5.title': 'G28/G30 without homing',
+  'preflight.MX-5.detail':
+    'The machine has $22=0 and the job uses G28/G30 — the position may not be what you expect.',
+  'preflight.MX-6.title': 'Move without feed',
+  'preflight.MX-6.detail':
+    'Line {line} uses G1 without F and with no previous feed — GRBL answers error:22.',
+  'preflight.MX-7.title': 'Safety input active',
+  'preflight.MX-7.detail':
+    'Active pins: {pin}. Clear the door/limit switch before burning.',
+  'preflight.MX-8.title': 'No coolant output',
+  'preflight.MX-8.detail':
+    'The job uses {codes}, but this firmware has no mist output (no M in [OPT]).',
+  'preflight.MX-9.title': 'Job in inches',
+  'preflight.MX-9.detail':
+    'The job uses G20 while the machine reports in mm ($13=0) — double-check dimensions.',
+  'preflight.MX-10.title': 'Startup blocks',
+  'preflight.MX-10.detail':
+    '{n} $N block(s) run on every reset and may change state before the job.',
+  'preflight.MX-11.title': 'Jog out of range',
+  'preflight.MX-11.detail':
+    'The jog asks for {step} mm / {feed} mm/min, above travel ({area} mm) or max rate ({maxRate} mm/min).',
+  'preflight.MX-12.title': 'First cut without S',
+  'preflight.MX-12.detail':
+    'Line {line} enables the laser without setting S; GRBL keeps the previous job S and may burn with the old power.',
+  'preflight.MX-13.title': 'Profile S-max differs from $30',
+  'preflight.MX-13.detail':
+    'The app uses 100% = {profile}, the machine uses $30={machine}. Effective power differs from the request.',
+  'preflight.MX-14.title': 'RX buffer not reported',
+  'preflight.MX-14.detail':
+    'The firmware does not report the RX buffer in [OPT]; the send window uses the 128 B default.',
+  'preflight.MX-15.title': 'Return to zero with hard limits',
+  'preflight.MX-15.detail':
+    'The job parks at X0 Y0 with $21=1 — the switch may trigger ALARM:1 and reset the controller.',
 } satisfies Record<keyof typeof ptBR, string>;

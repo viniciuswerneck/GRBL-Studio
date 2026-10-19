@@ -1223,4 +1223,70 @@ export const es = {
   'machine.unit.hz': 'Hz',
   'machine.unit.bytes': 'B',
   'machine.unit.blocks': 'bloques',
+
+  // -------------------------------------------- pre-vuelo MX-1…MX-15
+  'preflight.title': 'Pre-vuelo',
+  'preflight.chip': '{n} aviso(s)',
+  'preflight.chipHint': 'Ver las comprobaciones de pre-vuelo',
+  'preflight.intro':
+    'Comprobaciones antes de grabar. No se envió nada a la máquina.',
+  'preflight.startAnyway': 'Grabar de todos modos',
+  'preflight.blocked':
+    'Hay {n} impedimento(s). Grabar así puede quemar mal o ser rechazado por GRBL.',
+  'preflight.sev.block': 'impide',
+  'preflight.sev.warn': 'atención',
+  'preflight.sev.info': 'información',
+  'preflight.fix.setting':
+    'Sugerencia: ajustar {code} a {value} (con confirmación).',
+  'preflight.fix.action': 'Sugerencia: {action}.',
+  'preflight.action.open-machine': 'abrir el panel Máquina',
+  'preflight.action.fit-preview': 'revisar tamaño/origen en la vista previa',
+  'preflight.action.reduce-power': 'reducir la potencia al tope de la máquina',
+  'preflight.action.change-route': 'ajustar el G-code antes de grabar',
+  'preflight.action.park': 'aparcar unos mm fuera del cero',
+  'preflight.MX-1.title': 'Potencia por encima del tope',
+  'preflight.MX-1.detail':
+    'El trabajo pide S={s}, pero la máquina limita en $30={smax}. La potencia efectiva será menor.',
+  'preflight.MX-2.title': 'Sin modo láser',
+  'preflight.MX-2.detail':
+    'El trabajo usa M3/M4 y la máquina tiene $32=0 — GRBL responde error:17.',
+  'preflight.MX-3.title': 'Trabajo mayor que el recorrido',
+  'preflight.MX-3.detail':
+    'La caja del trabajo excede el recorrido en {x} mm en X y {y} mm en Y.',
+  'preflight.MX-4.title': 'Soft limits sin homing',
+  'preflight.MX-4.detail':
+    '$20=1 con $22=0 — GRBL responde error:10. Active el homing o desactive los soft limits.',
+  'preflight.MX-5.title': 'G28/G30 sin home',
+  'preflight.MX-5.detail':
+    'La máquina tiene $22=0 y el trabajo usa G28/G30 — la posición puede no ser la esperada.',
+  'preflight.MX-6.title': 'Movimiento sin velocidad',
+  'preflight.MX-6.detail':
+    'La línea {line} usa G1 sin F y sin avance previo — GRBL responde error:22.',
+  'preflight.MX-7.title': 'Entrada de seguridad activa',
+  'preflight.MX-7.detail':
+    'Pines activos: {pin}. Libere la puerta/final de carrera antes de grabar.',
+  'preflight.MX-8.title': 'Sin refrigeración',
+  'preflight.MX-8.detail':
+    'El trabajo usa {codes}, pero este firmware no tiene salida mist (sin M en [OPT]).',
+  'preflight.MX-9.title': 'Trabajo en pulgadas',
+  'preflight.MX-9.detail':
+    'El trabajo usa G20 y la máquina informa en mm ($13=0) — revise las medidas.',
+  'preflight.MX-10.title': 'Bloques de inicio',
+  'preflight.MX-10.detail':
+    'Hay {n} bloque(s) $N que se ejecutan en cada reset y pueden cambiar el estado antes del trabajo.',
+  'preflight.MX-11.title': 'Jog fuera del límite',
+  'preflight.MX-11.detail':
+    'El jog pide {step} mm / {feed} mm/min, por encima del recorrido ({area} mm) o de la velocidad máxima ({maxRate} mm/min).',
+  'preflight.MX-12.title': 'Primer corte sin S',
+  'preflight.MX-12.detail':
+    'La línea {line} enciende el láser sin definir S; GRBL mantiene el S anterior y puede quemar con la potencia vieja.',
+  'preflight.MX-13.title': 'S-max del perfil difiere de $30',
+  'preflight.MX-13.detail':
+    'La app usa 100 % = {profile}, la máquina usa $30={machine}. La potencia efectiva sale distinta.',
+  'preflight.MX-14.title': 'Búfer no informado',
+  'preflight.MX-14.detail':
+    'El firmware no informa el búfer RX en [OPT]; la ventana de envío usa 128 B por defecto.',
+  'preflight.MX-15.title': 'Retorno al cero con hard limits',
+  'preflight.MX-15.detail':
+    'El trabajo aparca en X0 Y0 con $21=1 — el interruptor puede disparar ALARM:1 y reiniciar el controlador.',
 } satisfies Record<keyof typeof ptBR, string>;

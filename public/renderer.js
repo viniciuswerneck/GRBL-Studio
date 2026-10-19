@@ -217,6 +217,13 @@ const el = {
   machineStatus: $('machineStatus'),
   machineGrid: $('machineGrid'),
   machineReport: $('machineReport'),
+  preflightOverlay: $('preflightOverlay'),
+  preflightClose: $('preflightClose'),
+  preflightIntro: $('preflightIntro'),
+  preflightList: $('preflightList'),
+  preflightCancel: $('preflightCancel'),
+  preflightGo: $('preflightGo'),
+  preflightChip: $('preflightChip'),
   frameOverlay: $('frameOverlay'),
   frameClose: $('frameClose'),
   frameYp: $('frameYp'),
@@ -5578,8 +5585,9 @@ function applyJobLines(name, text, source = 'file') {
  * Inicia o envio a partir de `startIndex` no arquivo. Em retomada (> 0),
  * injeta o preâmbulo que reafirma o estado modal (RF-GC-7, `shared/resume.ts`).
  */
-function beginJob(startIndex = 0) {
+async function beginJob(startIndex = 0) {
   if (!state.connected || !state.lines.length) return;
+  if (!(await confirmPreflight(state.lines))) return;
   const total = state.lines.length;
   const start = Math.max(0, Math.min(Math.trunc(startIndex), total));
   const resume = window.GRBL_RESUME;
@@ -7413,6 +7421,7 @@ for (const overlay of [
   el.aboutOverlay,
   el.settingsOverlay,
   el.machineOverlay,
+  el.preflightOverlay,
   el.frameOverlay,
   el.matTestOverlay,
   el.qrOverlay,
@@ -7438,6 +7447,7 @@ function openOverlays() {
     el.aboutOverlay,
     el.settingsOverlay,
     el.machineOverlay,
+    el.preflightOverlay,
     el.frameOverlay,
     el.matTestOverlay,
     el.qrOverlay,
@@ -7834,47 +7844,54 @@ function renderMachineCards(snap, parsed) {
   el.machineGrid.replaceChildren(...cards);
 }
 
+/** Snapshot da máquina convertido para os tipos da UI (sem tocar no DOM). */
+async function readMachine() {
+  const snap = await window.grbl.machineSnapshot();
+  await loadBundle('machine.js');
+  const M = window.GRBL_MACHINE;
+  if (!M) throw new Error('bundle machine.js indisponível');
+  const settingsMap = M.parseSettings(snap.settings ?? []);
+  const startup = M.parseStartupBlocks(snap.startup ?? []);
+  const parsed = {
+    firmware: M.parseFirmware(snap.build ?? []),
+    facts: M.deriveFacts(settingsMap, startup),
+    modal: M.parseModalState(snap.modal ?? []),
+    offsets: M.parseOffsets(snap.offsets ?? []),
+    startup,
+  };
+  return { ...parsed, snap, settingsMap, M };
+}
+
 async function refreshMachine() {
   el.machineStatus.textContent = t('machine.reading');
   el.machineRefresh.disabled = true;
   try {
-    const snap = await window.grbl.machineSnapshot();
-    await loadBundle('machine.js');
-    const M = window.GRBL_MACHINE;
-    if (!M) throw new Error('bundle machine.js indisponível');
-    const settingsMap = M.parseSettings(snap.settings ?? []);
-    const startup = M.parseStartupBlocks(snap.startup ?? []);
-    const parsed = {
-      firmware: M.parseFirmware(snap.build ?? []),
-      facts: M.deriveFacts(settingsMap, startup),
-      modal: M.parseModalState(snap.modal ?? []),
-      offsets: M.parseOffsets(snap.offsets ?? []),
-      startup,
-    };
-    state.machine = { ...parsed, snap };
-    renderMachineCards(snap, parsed);
+    const data = await readMachine();
+    state.machine = data;
+    renderMachineCards(data.snap, data);
 
     const settingsRecord = {};
-    for (const [code, row] of settingsMap) settingsRecord[code] = row.value;
-    const status = snap.status
+    for (const [code, row] of data.settingsMap)
+      settingsRecord[code] = row.value;
+    const status = data.snap.status
       ? {
-          state: snap.status.state,
-          pin: snap.status.pn,
-          mpos: snap.status.mpos,
-          wpos: snap.status.wpos,
+          state: data.snap.status.state,
+          pin: data.snap.status.pn,
+          mpos: data.snap.status.mpos,
+          wpos: data.snap.status.wpos,
         }
       : undefined;
-    el.machineReport.value = M.buildMachineReport({
+    el.machineReport.value = data.M.buildMachineReport({
       app: {
         name: APP_INFO.name || 'GRBL Studio',
         version: APP_INFO.version || '',
       },
       transport: machineTransportLabel(),
-      firmware: parsed.firmware,
+      firmware: data.firmware,
       settings: settingsRecord,
-      facts: parsed.facts,
-      modal: parsed.modal,
-      offsets: parsed.offsets,
+      facts: data.facts,
+      modal: data.modal,
+      offsets: data.offsets,
       status,
       alarms: (state.alarms ?? [])
         .slice(-10)
@@ -7902,6 +7919,138 @@ async function openMachineModal() {
 
 function closeMachineModal() {
   el.machineOverlay.classList.add('hidden');
+}
+
+// ------------------------------------------------- pré-voo (P0.8, MX-1…15)
+
+/** Resolve a confirmação do overlay; `null` = nenhum overlay aberto. */
+let preflightResolve = null;
+
+/** Fatos da máquina para as regras; lê uma vez e reaproveita (painel/pré-voo). */
+async function ensureMachineFacts() {
+  if (state.machine?.facts) return state.machine;
+  state.machine = await readMachine();
+  return state.machine;
+}
+
+/** Status atual no formato do contrato de pré-voo. */
+function preflightStatus() {
+  const s = state.lastStatus;
+  if (!s) return undefined;
+  return { state: s.state, pin: s.pn, mpos: s.mpos, wpos: s.wpos };
+}
+
+/** Contexto do app: perfil de potência e dados do firmware. */
+function preflightContext(data) {
+  const firmware = data?.firmware;
+  return {
+    profile: { sMax: machineSMax() },
+    firmware: firmware
+      ? {
+          options: firmware.options,
+          rxBufferSize: firmware.rxBufferSize,
+          plannerBlocks: firmware.plannerBlocks,
+        }
+      : undefined,
+  };
+}
+
+/** Monta a lista do overlay (i18n no renderer — o contrato não tem texto). */
+function renderPreflight(issues) {
+  const list = el.preflightList;
+  list.replaceChildren();
+  for (const issue of issues) {
+    const item = document.createElement('li');
+    item.className = `preflight-item ${issue.severity}`;
+
+    const head = document.createElement('div');
+    head.className = 'preflight-item-head';
+    const severity = document.createElement('span');
+    severity.className = 'preflight-sev';
+    severity.textContent = t(`preflight.sev.${issue.severity}`);
+    const title = document.createElement('strong');
+    title.textContent = t(`preflight.${issue.id}.title`);
+    head.append(severity, title);
+
+    const detail = document.createElement('p');
+    detail.textContent = t(`preflight.${issue.id}.detail`, issue.params ?? {});
+
+    item.append(head, detail);
+    if (issue.fix) {
+      const fix = document.createElement('p');
+      fix.className = 'hint';
+      fix.textContent =
+        issue.fix.kind === 'setting'
+          ? t('preflight.fix.setting', {
+              code: `$${issue.fix.code}`,
+              value: issue.fix.value,
+            })
+          : t('preflight.fix.action', {
+              action: t(`preflight.action.${issue.fix.action}`),
+            });
+      item.appendChild(fix);
+    }
+    list.appendChild(item);
+  }
+
+  const blocks = issues.filter((i) => i.severity === 'block').length;
+  el.preflightIntro.textContent = blocks
+    ? t('preflight.blocked', { n: blocks })
+    : t('preflight.intro');
+  el.preflightGo.classList.toggle('hidden', blocks === 0);
+  el.preflightCancel.textContent = blocks ? t('nav.cancel') : t('nav.close');
+}
+
+/** Chip da barra de execução: contagem de avisos (some quando não há). */
+function updatePreflightChip(issues) {
+  state.preflight = issues;
+  const visible = issues.length > 0;
+  el.preflightChip.classList.toggle('hidden', !visible);
+  el.preflightChip.classList.toggle(
+    'danger',
+    issues.some((i) => i.severity === 'block'),
+  );
+  el.preflightChip.textContent = visible
+    ? t('preflight.chip', { n: issues.length })
+    : '';
+}
+
+function closePreflight(result) {
+  el.preflightOverlay.classList.add('hidden');
+  const resolve = preflightResolve;
+  preflightResolve = null;
+  if (resolve) resolve(result);
+}
+
+/** Roda as regras e, se houver impedimento, pede confirmação antes de gravar. */
+async function confirmPreflight(lines) {
+  try {
+    await loadBundle('preflight.js');
+    const P = window.GRBL_PREFLIGHT;
+    if (!P) throw new Error('bundle preflight.js indisponível');
+    const data = await ensureMachineFacts();
+    const issues = P.runPreflight(
+      {
+        lines,
+        facts: data?.facts,
+        status: preflightStatus(),
+        useWorkCoords: true,
+      },
+      preflightContext(data),
+    );
+    updatePreflightChip(issues);
+    if (!issues.some((i) => i.severity === 'block')) return true;
+
+    renderPreflight(issues);
+    el.preflightOverlay.classList.remove('hidden');
+    return await new Promise((resolve) => {
+      preflightResolve = resolve;
+    });
+  } catch (err) {
+    // Pré-voo é consultivo: falha da checagem não pode impedir o job.
+    console.warn('pré-voo:', err);
+    return true;
+  }
 }
 
 function openSettings() {
@@ -8142,6 +8291,17 @@ async function applySetting(row, input) {
 el.settingsBtn.addEventListener('click', openSettings);
 el.settingsClose.addEventListener('click', closeSettings);
 el.machineClose.addEventListener('click', closeMachineModal);
+el.preflightClose.addEventListener('click', () => closePreflight(false));
+el.preflightCancel.addEventListener('click', () => closePreflight(false));
+el.preflightGo.addEventListener('click', () => closePreflight(true));
+el.preflightChip.addEventListener('click', () => {
+  const issues = state.preflight ?? [];
+  if (!issues.length) return;
+  renderPreflight(issues);
+  el.preflightGo.classList.add('hidden');
+  el.preflightCancel.textContent = t('nav.close');
+  el.preflightOverlay.classList.remove('hidden');
+});
 el.machineRefresh.addEventListener('click', () => {
   if (state.connected) refreshMachine();
   else el.machineStatus.textContent = t('machine.connectFirst');
