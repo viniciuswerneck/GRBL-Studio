@@ -240,7 +240,7 @@ function vec3FromSettings(
   const y = settingNumber(settings, codes[1]);
   const z = settingNumber(settings, codes[2]);
   if (x === undefined || y === undefined || z === undefined) return undefined;
-  return [x, y, z];
+  return { x, y, z };
 }
 
 /** `"1.000,2.000,3.000"` → `[1, 2, 3]` (aceita 2 eixos; `z` cai em 0). */
@@ -249,7 +249,7 @@ function parseVec3(text: string): Vec3 | undefined {
   if (parts.length < 2 || parts.some((n) => !Number.isFinite(n))) {
     return undefined;
   }
-  return [parts[0]!, parts[1]!, parts[2] ?? 0];
+  return { x: parts[0]!, y: parts[1]!, z: parts[2] ?? 0 };
 }
 
 /**
@@ -522,9 +522,9 @@ export function deriveFacts(
   return facts;
 }
 
-/** `[1, 2, 3]` → `1,2,3`. */
+/** `{x,y,z}` → `1,2,3`. */
 function vecToText(vec: Vec3): string {
-  return vec.join(',');
+  return [vec.x, vec.y, vec.z].join(',');
 }
 
 /**

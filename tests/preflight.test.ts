@@ -8,8 +8,8 @@ import { runPreflight } from '../src/shared/preflight';
  * dispara nada e cada regra tem um teste isolado.
  */
 const FACTS: MachineFacts = {
-  travel: [150, 130, 45],
-  maxRate: [10000, 10000, 500],
+  travel: { x: 150, y: 130, z: 45 },
+  maxRate: { x: 10000, y: 10000, z: 500 },
   laserMode: true,
   sMax: 1000,
   softLimits: false,
@@ -58,7 +58,7 @@ describe('runPreflight — regras MX-1…MX-15 (RF-MAQ-6)', () => {
 
   it('MX-3: bloqueia quando a caixa do job não cabe no curso', () => {
     const issues = run(['M4 S500', 'G1 X30 Y5 F500'], {
-      facts: { ...FACTS, travel: [20, 20, 45] },
+      facts: { ...FACTS, travel: { x: 20, y: 20, z: 45 } },
     });
     expect(ids(issues)).toEqual(['MX-3']);
     expect(issues[0]!.severity).toBe('block');

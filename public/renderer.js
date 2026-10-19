@@ -7782,7 +7782,10 @@ function renderMachineCards(snap, parsed) {
       ['machine.motion.steps', machineVec(facts.stepsPerMm, 3, '')],
     ]),
     machineCard('machine.section.modal', [
-      ['machine.status', snap.status?.state ?? t('machine.notInformed')],
+      [
+        'machine.status',
+        snap.status ? stateLabel(snap.status.state) : t('machine.notInformed'),
+      ],
       ['machine.modal.motion', modal.motion ?? t('machine.notInformed')],
       ['machine.modal.wcs', modal.wcs ?? t('machine.notInformed')],
       ['machine.modal.units', modal.units ?? t('machine.notInformed')],

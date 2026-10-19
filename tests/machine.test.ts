@@ -156,17 +156,17 @@ describe('parseModalState', () => {
 describe('parseOffsets', () => {
   it('lê todos os offsets zerados da C1 (inclusive PRB e TLO)', () => {
     expect(parseOffsets(response('$#'))).toEqual({
-      g54: [0, 0, 0],
-      g55: [0, 0, 0],
-      g56: [0, 0, 0],
-      g57: [0, 0, 0],
-      g58: [0, 0, 0],
-      g59: [0, 0, 0],
-      g28: [0, 0, 0],
-      g30: [0, 0, 0],
-      g92: [0, 0, 0],
+      g54: { x: 0, y: 0, z: 0 },
+      g55: { x: 0, y: 0, z: 0 },
+      g56: { x: 0, y: 0, z: 0 },
+      g57: { x: 0, y: 0, z: 0 },
+      g58: { x: 0, y: 0, z: 0 },
+      g59: { x: 0, y: 0, z: 0 },
+      g28: { x: 0, y: 0, z: 0 },
+      g30: { x: 0, y: 0, z: 0 },
+      g92: { x: 0, y: 0, z: 0 },
       tlo: 0,
-      prb: [0, 0, 0],
+      prb: { x: 0, y: 0, z: 0 },
     });
   });
 
@@ -178,10 +178,10 @@ describe('parseOffsets', () => {
       '[PRB:1.234,5.678,9.012:1]',
     ]);
 
-    expect(offsets.g54).toEqual([10, -5.5, 1.25]);
-    expect(offsets.g92).toEqual([1, 2, 3]);
+    expect(offsets.g54).toEqual({ x: 10, y: -5.5, z: 1.25 });
+    expect(offsets.g92).toEqual({ x: 1, y: 2, z: 3 });
     expect(offsets.tlo).toBeCloseTo(-12.345);
-    expect(offsets.prb).toEqual([1.234, 5.678, 9.012]);
+    expect(offsets.prb).toEqual({ x: 1.234, y: 5.678, z: 9.012 });
     expect(offsets.g55).toBeUndefined();
   });
 
@@ -222,10 +222,10 @@ describe('deriveFacts', () => {
   it('deriva a C1 a partir de parseSettings($$)', () => {
     const facts = deriveFacts(parseSettings(response('$$')));
 
-    expect(facts.travel).toEqual([150, 130, 45]);
-    expect(facts.maxRate).toEqual([10000, 10000, 500]);
-    expect(facts.accel).toEqual([200, 200, 200]);
-    expect(facts.stepsPerMm).toEqual([80, 80, 1600]);
+    expect(facts.travel).toEqual({ x: 150, y: 130, z: 45 });
+    expect(facts.maxRate).toEqual({ x: 10000, y: 10000, z: 500 });
+    expect(facts.accel).toEqual({ x: 200, y: 200, z: 200 });
+    expect(facts.stepsPerMm).toEqual({ x: 80, y: 80, z: 1600 });
     expect(facts.laserMode).toBe(true);
     expect(facts.sMax).toBe(1000);
     expect(facts.sMin).toBe(0);
@@ -250,7 +250,7 @@ describe('deriveFacts', () => {
 
     expect(facts.sMax).toBe(255);
     expect(facts.laserMode).toBe(false);
-    expect(facts.travel).toEqual([10, 20, 30]);
+    expect(facts.travel).toEqual({ x: 10, y: 20, z: 30 });
   });
 
   it('não inventa 0: campo ausente fica undefined', () => {
@@ -288,7 +288,7 @@ describe('buildMachineReport', () => {
     facts: deriveFacts(parsed, parseStartupBlocks(response('$N'))),
     modal: parseModalState(response('$G')),
     offsets: parseOffsets(response('$#')),
-    status: { state: 'Idle', mpos: [0, 0, 0] },
+    status: { state: 'Idle', mpos: { x: 0, y: 0, z: 0 } },
     alarms: ['ALARM:1'],
   };
 

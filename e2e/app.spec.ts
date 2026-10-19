@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { _electron as electron, expect, test } from '@playwright/test';
@@ -15,14 +16,16 @@ const APP_ROOT = path.join(__dirname, '..');
  * Sobe o app Electron real e devolve a janela principal. Usa um `userData`
  * temporário para não tocar nas preferências do ambiente.
  */
-async function launchApp(options: { onboarding?: boolean } = {}) {
+async function launchApp(
+  options: { onboarding?: boolean; prefs?: Record<string, unknown> } = {},
+) {
   const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-'));
   // O tour de boas-vindas (P0.4) só aparece na primeira execução; nos testes
   // ele é dispensado — exceto no teste próprio do tour (`onboarding: true`).
   if (options.onboarding !== true) {
     writeFileSync(
       path.join(userData, 'prefs.json'),
-      JSON.stringify({ onboarding: 1 }),
+      JSON.stringify({ onboarding: 1, ...(options.prefs ?? {}) }),
       'utf8',
     );
   }
@@ -278,7 +281,7 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     // Sem tour: este teste olha só `Prefs.symbols`.
     writeFileSync(
       path.join(userData, 'prefs.json'),
-      JSON.stringify({ onboarding: 1 }),
+      JSON.stringify({ onboarding: 1, ...(options.prefs ?? {}) }),
       'utf8',
     );
     const launch = () =>
@@ -387,6 +390,117 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await expect(page.locator('#designCanvas')).toBeVisible();
     } finally {
       await close();
+    }
+  });
+});
+
+/**
+ * Emulador GRBL mínimo via TCP — o app fala `serial-over-TCP` (RF-CON-7), então
+ * dá para exercitar o fluxo real (main → IPC → renderer) sem hardware.
+ * Responde só o que o painel "Máquina" consome; qualquer outro comando leva
+ * `ok`.
+ */
+function startGrblTcp(): Promise<{ port: number; close: () => void }> {
+  const settings = [
+    '$0=10',
+    '$1=25',
+    '$3=0',
+    '$10=1',
+    '$13=0',
+    '$20=0',
+    '$21=0',
+    '$22=1',
+    '$30=1000',
+    '$31=0',
+    '$32=1',
+    '$33=5000',
+    '$100=80.000',
+    '$101=80.000',
+    '$102=1600.000',
+    '$110=10000.000',
+    '$111=10000.000',
+    '$112=500.000',
+    '$120=200.000',
+    '$121=200.000',
+    '$122=200.000',
+    '$130=400.000',
+    '$131=400.000',
+    '$132=45.000',
+  ];
+  const replies: Record<string, string> = {
+    $I: '[VER:1.1h.20190825:]\r\n[OPT:V,15,128]\r\nok\r\n',
+    $G: '[GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0]\r\nok\r\n',
+    '$#':
+      '[G54:0.000,0.000,0.000]\r\n[G55:1.000,2.000,3.000]\r\n' +
+      '[G28:0.000,0.000,0.000]\r\n[G30:0.000,0.000,0.000]\r\n' +
+      '[G92:0.000,0.000,0.000]\r\n[TLO:0.000]\r\n[PRB:0.000,0.000,0.000:0]\r\nok\r\n',
+    $N: '$N0=G21\r\n$N1=G90\r\nok\r\n',
+    $$: `${settings.join('\r\n')}\r\nok\r\n`,
+  };
+  const server = createServer((socket) => {
+    let buffer = '';
+    socket.write('Grbl 1.1h ["$" for help]\r\n');
+    socket.on('data', (chunk) => {
+      const text = chunk.toString('utf8');
+      // `?` é comando de tempo real: byte único, sem `\n`.
+      for (const byte of text) {
+        if (byte === '?') {
+          socket.write('<Idle|MPos:1.500,2.250,0.000|FS:0,0>\r\n');
+        }
+      }
+      buffer += text.replace(/\?/g, '');
+      let index = buffer.indexOf('\n');
+      while (index >= 0) {
+        const line = buffer.slice(0, index).replace(/\r$/, '').trim();
+        buffer = buffer.slice(index + 1);
+        index = buffer.indexOf('\n');
+        if (!line) continue;
+        socket.write(replies[line] ?? 'ok\r\n');
+      }
+    });
+    socket.on('error', () => {});
+  });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const port = (server.address() as { port: number }).port;
+      resolve({ port, close: () => server.close() });
+    });
+  });
+}
+
+test.describe('GRBL Studio — painel "Máquina" (P0.7)', () => {
+  test('lê $I/$$/$#/$G/$N e gera o diagnóstico copiável', async () => {
+    const emulator = await startGrblTcp();
+    const { app, page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'machine',
+        );
+      });
+
+      const grid = page.locator('#machineGrid');
+      await expect(page.locator('#machineOverlay')).toBeVisible();
+      await expect(grid).toContainText('1.1h');
+      await expect(grid).toContainText('400');
+      await expect(grid).toContainText('1000');
+      await expect(grid).toContainText('G55');
+      await expect(page.locator('#machineReport')).toHaveValue(
+        /firmware\.version=1\.1h/,
+      );
+      await expect(page.locator('#machineStatus')).toHaveText('');
+    } finally {
+      await close();
+      emulator.close();
     }
   });
 });

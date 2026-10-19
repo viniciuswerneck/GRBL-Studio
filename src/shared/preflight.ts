@@ -329,8 +329,8 @@ export function runPreflight(
 
   // MX-3 — caixa do job maior que o curso (`$130`/`$131`).
   if (scan.bounds && facts?.travel) {
-    const travelX = facts.travel[0];
-    const travelY = facts.travel[1];
+    const travelX = facts.travel.x;
+    const travelY = facts.travel.y;
     const overX =
       travelX > 0 ? scan.bounds.xMax - scan.bounds.xMin - travelX : 0;
     const overY =
@@ -421,7 +421,7 @@ export function runPreflight(
     const params: Record<string, number> = {};
     let exceeds = false;
     if (step !== undefined && travel) {
-      const limit = Math.min(travel[0], travel[1]);
+      const limit = Math.min(travel.x, travel.y);
       if (limit > 0 && step > limit) {
         exceeds = true;
         params.step = step;
@@ -429,7 +429,7 @@ export function runPreflight(
       }
     }
     if (feed !== undefined && maxRate) {
-      const limit = Math.min(maxRate[0], maxRate[1]);
+      const limit = Math.min(maxRate.x, maxRate.y);
       if (limit > 0 && feed > limit) {
         exceeds = true;
         params.feed = feed;
