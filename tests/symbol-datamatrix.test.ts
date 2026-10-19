@@ -188,7 +188,9 @@ describe('encodeDataMatrix — decodificação real (ZXing)', () => {
       expect(result.size).toBe(size);
       expect(decode(result.matrix)).toBe(text);
     }
-  });
+    // 24 decodificações (até 144×144) com o ZXing: sob instrumentação de
+    // cobertura passa dos 5 s padrão — não é regressão, é custo do teste.
+  }, 30_000);
 });
 
 describe('encodeDataMatrix — estrutura', () => {
