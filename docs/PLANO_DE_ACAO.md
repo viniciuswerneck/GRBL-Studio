@@ -47,6 +47,7 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | ID | Status | O que falta |
 | :--- | :--- | :--- |
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
+| RF-SYM-7 | 🟡 | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; falta PDF417/Aztec |
 
 > **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,
 > RF-CFG-4/5 e RNF-9 foram **implementados** nesta data: log de sessão
@@ -70,6 +71,21 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > checkboxes da Fase 2 e vários status do `PRODUCT_SPEC.md` estavam defasados e
 > foram **reconciliados com o código** nesta data — a partir de agora, marque-os
 > apenas quando o requisito for de fato atendido.
+
+> **Nota (18/10/2026):** o corte da **v0.7.0** fechou **P0.2** (E2E de job por
+> PTY/socat), **P0.4** (tour de boas-vindas), **P0.6** (fuzz determinístico +
+> cobertura 90 %/95 %) e as simbologias extras da S2/S3 (ITF-14, Codabar, Code
+> 93, GS1-128 e **Data Matrix ECC200**), além do catálogo de perfis de máquina
+> (RF-MAQ-10) e de `Prefs.symbols`.
+>
+> **P0.1 (benchmark) ficou parcial e com resultado honesto:** o script
+> (`npm run bench`, Linux) e a tabela estão em [`BENCHMARK.md`](BENCHMARK.md),
+> mas **startup e RAM não atingem o orçamento nesta máquina** (melhor startup
+> 1 827 ms contra ≤ 1 500 ms; PSS 227,3 MB contra ≤ 200 MB); CPU ociosa e
+> latência estão dentro. FPS durante job, latência de status e DPI continuam
+> **manuais**; Windows/macOS não foram medidos. Otimizar startup/RAM é trabalho
+> de performance aberto (não bloqueia a 0.7.0, mas o orçamento do RNF-11 segue
+> não atendido).
 
 ---
 

@@ -29,8 +29,15 @@ firmware **GRBL 1.1**.
   de nodos, grosor de trazo, booleanas (unir/restar/intersección/excluir),
   contorno paralelo, matriz de copias, espejo, agrupar y alinear. El G-code sale
   **anclado al origen (X0 Y0)**, listo para grabar con la pieza ya posicionada.
+- **Herramientas de símbolos**: **QR Code** y **Data Matrix ECC200** (ECC
+  L/M/Q/H, tamaño en mm, quiet zone, avisos de legibilidad) y **códigos de
+  barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar y
+  Code 93 — con HRI; todo se convierte en G-code en el mismo flujo de
+  vista previa/Play.
+- **Perfiles de máquina** de 22 modelos + Genérico GRBL (área de trabajo, homing,
+  módulo láser y techo de `S`) como dato, no fijado en el código.
 - **Modo Básico** con un asistente de 6 pasos para principiantes; modo Avanzado
-  completo.
+  completo y un **tour de bienvenida** de 5 pasos en el primer arranque.
 - **Macros** y botones personalizados, y reanudación de un trabajo interrumpido.
 - **11 temas** (5 claros, 4 oscuros, 2 de alto contraste) e interfaz en
   **pt-BR, en y es** (detecta el idioma del sistema en el primer arranque).

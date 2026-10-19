@@ -27,8 +27,14 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
   espessura de traço, booleanas (unir/subtrair/intersectar/excluir), contorno
   paralelo, matriz de cópias, espelhar, agrupar e alinhar. O G-code sai
   **ancorado na origem (X0 Y0)**, pronto para gravar com a peça já posicionada.
+- **Ferramentas de símbolos**: **QR Code** e **Data Matrix ECC200** (ECC
+  L/M/Q/H, tamanho em mm, quiet zone, avisos de legibilidade) e **código de
+  barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar e
+  Code 93 — com HRI; tudo vira G-code no mesmo preview/Play.
+- **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
+  laser e teto de `S`) como dado, não chumbado no código.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado
-  completo.
+  completo e **tour de boas-vindas** de 5 passos na primeira execução.
 - **Macros** e botões customizados, retomada de job interrompido.
 - **11 temas** (5 claros, 4 escuros, 2 de alto contraste) e **interface em
   pt-BR, en e es** (detecta o idioma do sistema na 1ª execução).

@@ -1,8 +1,9 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
-> **Status: S1 (QR Code) e S2 (código de barras 1D) implementadas e publicadas
-> na v0.6.0** (18/10/2026). Ver §15 (S1) e §16 (S2) para o que foi entregue,
-> medido e o que falta (S3).
+> **Status: S1 (QR Code), S2 (código de barras 1D) e S3 parcial (1D extras +
+> Data Matrix) implementadas** — S1/S2 publicadas na v0.6.0 e a continuação na
+> v0.7.0 (18/10/2026). Ver §15 (S1), §16 (S2) e §17 (S2 restante + S3 parcial)
+> para o que foi entregue, medido e o que ainda falta.
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
@@ -542,12 +543,43 @@ por eixo, o HRI e os avisos.
   que a §15 previa.
 - **Tamanho alvo do QR** (`targetWidthMm`/`targetHeightMm`, aviso `stretched`)
   foi concluído junto: fecha o RF-SYM-3 (o modal já tinha largura × altura).
-- **ITF-14/Codabar** (§5.2) ficam para a continuação da S2; **Code 93/GS1-128**
-  seguem na S3, como o plano previa.
+- **ITF-14/Codabar** (§5.2) ficaram para a continuação da S2 (entregues na
+  v0.7.0 — ver §17); **Code 93/GS1-128** seguiram na S3, como o plano previa.
 - Os nomes de classe do modal (`#qrOverlay`/`#barcodeOverlay`) usam
   `.sym-modal`/`.sym-fields`/`.sym-size-row`, genéricos para as duas ferramentas.
-- **Sem `Prefs.symbols`** ainda: os campos do modal já abrem com os padrões
-  certos por simbologia; persistir preferências fica para depois.
+- **Sem `Prefs.symbols`** na v0.6.0: os campos do modal abriam com os padrões
+  certos por simbologia; a persistência entrou na v0.7.0 (§17).
 
-**Próximo passo (S3):** Data Matrix/PDF417/Aztec (2D), Code 93/GS1-128, lote
-(vários códigos numa página) e o símbolo como **objeto** no editor "Desenhar".
+**Próximo passo (S3, na época):** Data Matrix/PDF417/Aztec (2D), Code
+93/GS1-128, lote (vários códigos numa página) e o símbolo como **objeto** no
+editor "Desenhar".
+
+---
+
+## 17. Estado da implementação — S2 restante + S3 parcial (v0.7.0, 18/10/2026)
+
+**Entregue** (mesmos bundles/modais, sem IPC novo):
+
+| Item | Onde | O que foi feito |
+| :--- | :--- | :--- |
+| **ITF-14** | `barcode/itf.ts` + tabelas geradas | 13 dígitos → calcula o **mod 10 GS1**; 14 → confere (erro `check-digit` com esperado × informado). 5 barras por par, start/stop próprios; quiet zone de 10 módulos e X-dim mínimo da norma. |
+| **Codabar** | `barcode/codabar.ts` | Guards `A–D`, padrão `A…A`, alfabeto `0–9 -$:/.+`; HRI sai **sem** os guards. |
+| **Code 93** | `barcode/code93.ts` | Alfabeto básico (47 símbolos), verificadores **C e K** (mod 47) automáticos, start/stop e terminação. *Full ASCII* (shifts) ficou fora. |
+| **GS1-128** | `barcode/code128.ts` (`gs1: true`) | **FNC1** logo após o start e `^` no conteúdo → FNC1 (separador de campo). **Não valida AIs** (decisão: tabela de AIs fica para quando houver caso real). |
+| **Data Matrix ECC200** | `symbol/datamatrix.ts` + `gcode.ts` | 24 tamanhos quadrados (10…144), modo ASCII (par de dígitos + Upper Shift Latin-1), RS em **GF(256) 0x12D**, intercalação (inclui o caso especial do 144×144), colocação Utah e quiet zone de 1 módulo. `dataMatrixToGcode()` reusa o pipeline 2D do QR. |
+| **UI 2D** | modal **Código 2D** (Ferramentas) | Seletor **QR Code × Data Matrix**: campos exclusivos aparecem sozinhos (ECC/versão × tamanho do símbolo); quiet zone do DM fixa em 1. |
+| **UI 1D** | `#barcodeOverlay` | As 4 simbologias novas no `select`, com dica de conteúdo por simbologia e padrões da norma aplicados ao trocar. |
+| **Preferências** | `Prefs.symbols` + `PrefsStore` | O modal reabre com os últimos ajustes (símbolo, ECC/tamanho, módulo, quiet zone, potência/velocidade/passadas…). Sanitizado: só enums/números/booleanos conhecidos, **nunca o conteúdo**. |
+
+**Validação.** `tests/symbol-barcode-extra.test.ts` (26 testes) faz cross-check
+de módulos com o `jsbarcode` (ITF/ITF14, Codabar, Code 93) e vetores de mod 10 /
+mod 47; `tests/symbol-datamatrix.test.ts` (24) compara o vetor `"123456"` com a
+referência e **decodifica** com o `DataMatrixReader` do **ZXing**
+(`@zxing/library`, Apache-2.0, **devDependency**) em 9 tamanhos, do 10×10 ao
+144×144, incluindo acentos Latin-1 e 2/6/10 blocos intercalados. Há ainda testes
+de G-code do DM/ITF-14 e E2E dos dois modais e da persistência.
+
+**Fora do escopo (segue aberto).** PDF417 e Aztec; Data Matrix retangular e os
+modos C40/Text/X12/EDIFACT/Base256/ECI; Code 93 Full ASCII; validação de AIs do
+GS1; **lote/grade** de símbolos (RF-SYM-9) e o símbolo como **objeto** no editor
+"Desenhar" (S3).

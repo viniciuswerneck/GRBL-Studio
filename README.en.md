@@ -28,7 +28,14 @@ firmware.
   booleans (union/subtract/intersect/exclude), parallel contour, copy matrix,
   mirror, group and align. The G-code comes out **anchored at the origin
   (X0 Y0)**, ready to engrave with the workpiece already in place.
-- **Basic Mode** with a 6-step wizard for beginners; a full Advanced mode.
+- **Symbol tools**: **QR Code** and **Data Matrix ECC200** (ECC L/M/Q/H, size in
+  mm, quiet zone, legibility warnings) and **1D barcodes** — Code 128/GS1-128,
+  EAN-13/8, UPC-A, Code 39, ITF-14, Codabar and Code 93 — with HRI; all of it
+  becomes G-code in the same preview/Play flow.
+- **Machine profiles** for 22 models + Generic GRBL (work area, homing, laser
+  module and `S` ceiling) as data, not hardcoded.
+- **Basic Mode** with a 6-step wizard for beginners; a full Advanced mode and a
+  5-step **welcome tour** on first run.
 - **Macros** and custom buttons, plus job resume after an interruption.
 - **11 themes** (5 light, 4 dark, 2 high contrast) and a UI in **pt-BR, en and
   es** (auto-detects the system language on first run).

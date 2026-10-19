@@ -84,8 +84,10 @@ Cobertura atual:
 ### Cobertura (Fase 8)
 
 `vitest.config.ts` mede a cobertura do **núcleo do protocolo**
-(`src/shared/protocol.ts` e `src/shared/preview.ts`) com limiar de **80 %** em
-linhas/funções/branches/statements. `npm run test:coverage` falha se cair abaixo.
+(`src/shared/protocol.ts` e `src/shared/preview.ts`) com limiar de **90 %** em
+linhas/funções/branches/statements e **95 %** em `src/shared/protocol.ts` (P0.6).
+`npm run test:coverage` falha se cair abaixo. Estado atual: 96,3 % statements,
+93,9 % branches, 100 % funções — `protocol.ts` em 100/97,8/100/100.
 
 ### E2E (Playwright + Electron)
 
@@ -116,6 +118,26 @@ maquinário de E2E:
 ```bash
 SMOKE_EVAL="$(cat probe.js)" GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .
 ```
+
+### Benchmark dos orçamentos (P0.1)
+
+Mede, com o app Electron real e sem hardware, os orçamentos de **RNF-11**:
+startup (spawn → primeiro frame), RAM (RSS/PSS da árvore de processos), CPU
+ociosa e latência de ida e volta main → renderer → IPC.
+
+```bash
+npm run build
+npm run bench                              # 10 min de dwell, tabela markdown
+node scripts/bench.mjs --dwell=2000        # execução curta
+node scripts/bench.mjs --json > bench.json # JSON (para comparar versões)
+```
+
+O script exige `dist/` compilado e um display (X11/Wayland) — use `xvfb-run -a`
+no headless. Ele liga `GRBL_BENCH=1` no main, que só então registra os marcos de
+tempo (fora disso, nada muda no app) e é **Linux-only** (`/proc`). FPS durante
+job, latência de status com hardware e DPI são **procedimentos manuais** — ver
+[`BENCHMARK.md`](BENCHMARK.md), que traz a metodologia, os números medidos e a
+leitura honesta de onde os orçamentos **não** são atendidos.
 
 ## Lint e formatação (Biome)
 

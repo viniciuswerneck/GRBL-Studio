@@ -6,6 +6,74 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — Simbologias: 1D extras e Data Matrix (S2/S3, RF-SYM-7)
+
+- **ITF-14**, **Codabar**, **Code 93** e **GS1-128** no gerador de código de
+  barras, com as mesmas garantias das simbologias da 0.6.0: tabelas **geradas**
+  (`scripts/gen-barcode-tables.mjs`, cross-check com o `jsbarcode`), verificador
+  com *esperado × informado* (mod 10 do ITF-14, C/K mod 47 do Code 93) e dica de
+  conteúdo por simbologia. No GS1-128 o **FNC1** vai logo após o start e `^`
+  separa campos; a validação de AIs fica por conta do usuário.
+- **Data Matrix ECC200** (ISO/IEC 16022): encoder próprio com 24 tamanhos
+  quadrados (10×10 a 144×144), modo ASCII com par de dígitos e Latin-1, RS em
+  **GF(256) 0x12D**, blocos intercalados (inclusive o caso especial do 144×144)
+  e quiet zone de 1 módulo. O modal 2D agora escolhe **QR Code × Data Matrix**;
+  a matriz é **decodificada no teste** com o `DataMatrixReader` do ZXing
+  (`@zxing/library`, Apache-2.0, **devDependency** — não vai ao bundle).
+- **`Prefs.symbols`**: o modal reabre com os últimos ajustes (símbolo, ECC ou
+  tamanho, módulo, quiet zone, potência, velocidade, passadas, modo…). O
+  `PrefsStore` sanitiza no main — só enums/números/booleanos conhecidos; o
+  **conteúdo digitado nunca é persistido**.
+
+### Added — Onboarding de primeira execução (P0.4, RF-ONB-1)
+
+- **Tour de 5 passos** na primeira abertura: conectar → perfil da máquina →
+  abrir a arte → pré-visualizar → gravar com segurança, cada passo com "onde
+  fica" na interface. Reabrível em **Ajuda → Tour de boas-vindas**; a pref
+  `onboarding` guarda a versão vista ("Não mostrar na próxima abertura").
+- Esc fecha o tour e o modal de código de barras (que faltava na lista).
+
+### Added — Testes de protocolo e cobertura (P0.2, P0.6)
+
+- **E2E de job por PTY** (`tests/job-integration.test.ts`): `GrblClient` →
+  `SerialTransport` → par de PTYs (`socat`) → emulador GRBL, cobrindo job de 30
+  linhas com a janela de 128 B/16 blocos respeitada, **pausa/retomada**,
+  **cancelamento** (`0x18`), **alarme** e `error:9`, além de provar que `?`,
+  `!`, `~` e `0x18` vão como **byte único, sem `\n`**.
+- **Fuzz determinístico** (`tests/protocol-fuzz.test.ts`, 6.000 casos) no parser
+  e cobertura mínima de **90 %** (global) e **95 %** em `protocol.ts`.
+- **Cinco bugs reais corrigidos** pelo fuzz: `Ov:abc` e `Bf:x` propagavam
+  `NaN`; `MPos/WPos/WCO:1e999` viravam `Infinity` no DRO; `error:`/`ALARM:` com
+  número absurdo viravam `Infinity`; `$<400 dígitos>` virava chave `Infinity`.
+
+### Added — Catálogo de perfis de máquina (RF-MAQ-10)
+
+- `src/shared/machines.ts`: **22 perfis** (Sculpfun, Ortur, AtomStack, TwoTrees,
+  FoxAlien, Genmitsu, Wainlux, Comgrow, xTool) + **Genérico GRBL**, com curso,
+  homing, módulo do laser, teto de `S` (`$30`) e o conjunto mínimo de `$` que o
+  app aplica — nada disso chumbado no renderer. Origem: coleta real da
+  Sculpfun C1 (`docs/PLANO_MAQUINA.md` §11) e fixture de teste.
+
+### Added — Benchmark dos orçamentos (P0.1, Linux)
+
+- **`npm run bench`** (`scripts/bench.mjs`) mede, com o app Electron real e sem
+  hardware: startup (spawn → primeiro frame), RAM (RSS/PSS da árvore de
+  processos), CPU ociosa e latência de ida e volta main → renderer → IPC. O main
+  só registra os marcos com `GRBL_BENCH=1`. Metodologia, comandos e leitura em
+  [`docs/BENCHMARK.md`](docs/BENCHMARK.md).
+- **Resultado honesto:** CPU ociosa (~0 %) e latência de interação (p95 ~1 ms)
+  **dentro** do orçamento; **startup (≥ 1 827 ms) e RAM (PSS 227,3 MB) acima**
+  do RNF-11 na máquina de referência (Intel i3-5015U, carga ~3–4). FPS durante
+  job, latência de `?` e DPI continuam manuais; Windows/macOS não medidos.
+  Otimizar startup/RAM segue aberto.
+
+### Changed — documentos
+
+- `PLANO_DE_ACAO.md` §1.1, `ROADMAP.md`, `PRODUCT_SPEC.md` (RF-SYM-7 🟡,
+  RF-ONB-1 ✅), `ARCHITECTURE.md`, `PLANO_QR_BARCODE.md` §17 e `DEVELOPMENT.md`
+  reconciliados com o corte; `README.md`/`README.en.md`/`README.es.md` com as
+  ferramentas de símbolos, os perfis de máquina e o tour.
+
 ## [0.6.0] - 2026-10-18
 
 ### Added — Ferramentas: gerador de código de barras 1D (v0.6, fase S2)

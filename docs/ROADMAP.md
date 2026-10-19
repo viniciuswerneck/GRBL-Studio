@@ -11,6 +11,10 @@
 > porquê.
 >
 > Esforço: **S** ≤ 3 dias · **M** ≈ 1 semana · **L** ≈ 2–3 semanas · **XL** > 1 mês.
+>
+> No fim do arquivo há um **Anexo — glossário em linguagem simples** (o que é ·
+> onde usa · onde entra) que explica todo recurso citado aqui sem jargão e diz a
+> qual item/versão ele pertence.
 
 ---
 
@@ -95,8 +99,16 @@ Já entregue (não repetir no planejamento):
 diferencial que nenhum concorrente grátis tem.
 
 > **Já entregue na 0.6.0:** **P2.7** (QR Code), **P2.8** (código de barras 1D)
-> e os **avisos de legibilidade**. O que segue na tabela ainda está aberto — e a
-> ordem dele é a ordem de execução.
+> e os **avisos de legibilidade**.
+>
+> **Entregue depois da 0.6.0 (na 0.7.0):** **P0.2** (E2E de job por PTY),
+> **P0.4** (tour de boas-vindas), **P0.6** (fuzz + cobertura ≥ 90 %),
+> **P0.1** na **parte Linux** (benchmark — `npm run bench`; resultado honesto em
+> `BENCHMARK.md`: CPU ociosa e latência dentro, **startup e RAM acima do
+> orçamento** nesta máquina, e Windows/macOS ainda não medidos) e
+> **RF-MAQ-10** (catálogo de perfis de máquina). Na mesma versão vieram as
+> simbologias extras (S2/S3: ITF-14, Codabar, Code 93, GS1-128 e Data Matrix).
+> O que segue na tabela ainda está aberto — e a ordem dele é a ordem de execução.
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
@@ -117,6 +129,12 @@ diferencial que nenhum concorrente grátis tem.
 ### v0.7 — Paridade de produção
 
 **Objetivo:** fechar o que hoje *trava o uso* e nos separa do LightBurn/Rayforge.
+
+> **Já entregue na 0.7.0:** as **simbologias extras** da S2/S3 (ITF-14, Codabar,
+> Code 93, GS1-128 e **Data Matrix ECC200**), `Prefs.symbols`, o **tour de
+> boas-vindas** (P0.4), o **E2E de job por PTY** (P0.2), **fuzz + cobertura
+> ≥ 90 %** (P0.6), o **benchmark Linux** (P0.1) e o **catálogo de perfis de
+> máquina** (RF-MAQ-10). Os itens abaixo continuam abertos.
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
@@ -141,7 +159,7 @@ diferencial que nenhum concorrente grátis tem.
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
-| — | **S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93 | M | Simbologias com testes vetoriais. |
+| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0**; restam PDF417/Aztec | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. |
 
@@ -216,10 +234,16 @@ da API. Justificativa: `PLANO_PREMIUM.md` §10.
 
 Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico). Resumo:
 
-1. **v0.6 (agora)** — P0.1 benchmark, P0.2 E2E de job, P0.3 Flatpak/winget/brew/AUR,
-   P0.4 onboarding, P0.5 comparativo, P0.6 fuzz, **P0.7 painel "Máquina" e P0.8
-   pré-voo MX-1…MX-15** — ver [`PLANO_MAQUINA.md`](PLANO_MAQUINA.md); e **QR Code
-   (S1) → código de barras (S2)** — ver
+1. **v0.6/v0.7 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) e os
+   avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
+   P0.4 (onboarding), P0.6 (fuzz + cobertura), as simbologias extras da S2/S3
+   (1D + **Data Matrix**) e o catálogo de perfis de máquina (RF-MAQ-10). O
+   **P0.1** saiu só na parte Linux e **startup/RAM ainda estão acima do
+   orçamento** — otimizar performance é trabalho aberto. Continuam abertos
+   **P0.3** (Flatpak/winget/brew/AUR), **P0.5** (comparativo público), e o
+   **P0.7/P0.8** (painel "Máquina" e pré-voo MX-1…MX-15) — ver
+   [`PLANO_MAQUINA.md`](PLANO_MAQUINA.md); o que falta das ferramentas de
+   símbolos (PDF417/Aztec, lote) está em
    [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 2. **v0.7** — camadas/multi-operação, simulação, DXF/PDF, catálogo 30+ + `.lbdev`,
    editor de G-code, biblioteca de jobs e validação Win/macOS.
@@ -227,7 +251,152 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    simbologias extras.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
+5. **Candidatos novos do Anexo** — as regras de oficina (kerf, abas), tiling e
+   registro, geradores e o kit de segurança/monitor; versões e esforço
+   **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
 > persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
 > `PLANO_DE_ACAO.md` §1.1.
+
+---
+
+## Anexo — glossário em linguagem simples (o que é · onde usa · onde entra)
+
+> Adicionado em 18/10/2026. Explica **sem jargão** cada recurso do roadmap.
+> A coluna **Onde entra** aponta para o item já planejado (`P…`), para o que já
+> está **✅ entregue**, ou marca **⬜ novo** — e, no caso dos novos, a versão
+> sugerida na tabela do fim (§Anexo B). O anexo **não muda sozinho** o escopo nem
+> a ordem das versões acima: é insumo para priorizar.
+
+### Anexo A — o que é e onde usa
+
+**A. Receitas de material e testes**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 1 | **Receita de material (preset)** | "Receita de bolo" salva: potência, velocidade e passadas que deram certo. | Acertou o MDF 3 mm uma vez → repete sem testar de novo. | `P2.12` (RF-IMG-8) |
+| 2 | **Dose (energia por área)** | Quanto "calor" o laser entrega por pedacinho — como temperatura × tempo de forno. | Levar uma receita de uma máquina para outra. | RF-IMG-10 · `P2.12` |
+| 3 | **Grade de teste de material** | Tabela gravada com vários quadradinhos de potência/velocidade. | Material novo, sem receita → escolher o melhor quadradinho. | ✅ entregue (P1.7) |
+| 4 | **Tira de teste de código** | O mesmo código de barras/QR em tamanhos diferentes. | Descobrir o menor código que o leitor lê naquele material. | ⬜ novo |
+| 5 | **Kit de foco / rampa** | Teste para achar a altura do foco. | Laser sem auto-foco, ajustar na mão. | `P2.13` (parcial) |
+
+**B. Produção em série (quem vende)**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 6 | **Número de série / contador** | Número diferente em cada peça (001, 002…). | Peça numerada, controle de lote. | `P2.10` |
+| 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | `P2.10` (RF-SYM-9) |
+| 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | Nesting simples (v0.7) · `P3.7` |
+| 9 | **Abas de retenção** | "Pestanhas" que seguram a peça pra ela não cair/voar. | Peça pequena que se solta no meio do corte. | ⬜ novo |
+| 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ⬜ novo |
+| 11 | **Entrada/saída do corte** | Ajustar onde o corte entra/sai e refazer o canto. | Canto limpo, sem "bico" queimado. | ⬜ novo |
+| 12 | **Custo e tempo por peça** | Quanto tempo leva e quanto custou (luz, material). | Dar orçamento pro cliente. | tempo ✅ · custo ⬜ novo |
+| 13 | **Fila / agenda de trabalhos** | Vários trabalhos enfileirados, rodando em sequência. | Programar a noite inteira de gravação. | `P2.9`/`P2.11` · agenda ⬜ novo |
+
+**C. Posicionar e repetir na peça**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 14 | **Tiling (maior que a mesa)** | Dividir o desenho grande e mover a peça entre as partes. | Placa/quadro grande num laser pequeno. | ⬜ novo |
+| 15 | **Marcas de registro** | Marquinhas nas bordas pra alinhar a peça sempre igual. | Alinhar a 2ª peça ou virar a peça. | ⬜ novo |
+| 16 | **Gravar dos dois lados** | Um lado, vira, e o outro bem alinhado. | Placa com arte dos dois lados. | ⬜ novo |
+| 17 | **Gravar em peça já pronta** | Gravar em cima de algo comprado, no lugar exato. | Logo em caneca/placa/troféu prontos. | ⬜ novo |
+| 18 | **Gabarito (jig / molde)** | Molde do formato da peça pra encaixar sempre no mesmo ponto. | Repetir 100 peças iguais no mesmo lugar. | ⬜ novo |
+| 19 | **Imprimir e cortar (print-and-cut)** | Imprime colorido e o laser recorta o contorno. | Adesivo/cartão impresso + recorte. | ⬜ novo |
+| 20 | **Câmera (posicionar vendo)** | Câmera na mesa pra arrastar o desenho sobre a peça. | Não errar o lugar numa peça existente. | `P3.1` |
+
+**D. Ficar de olho e segurança**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 21 | **Ver de longe** | Acompanhar o trabalho por celular/outro PC. | Sair de perto e saber se está tudo bem. | `P4.5` (avaliar) |
+| 22 | **Webcam + aviso de término** | Câmera ao vivo e mensagem quando acaba. | Fazer outra coisa enquanto grava. | ⬜ novo |
+| 23 | **Parar de longe** | Botão de parar no celular. | Ver fumaça de longe e parar na hora. | ⬜ novo |
+| 24 | **Sensor de chama/fumaça + trava** | Pausa sozinho se pegar fogo ou abrir a tampa. | Segurança: não queimar a oficina. | ⬜ novo |
+| 25 | **Retomar depois de queda** | Continuar se faltar luz ou cair o USB. | Trabalho longo que morreu no meio. | ✅ parcial (job resume) |
+| 26 | **Ventilação/exaustão** | Ligar e regular o exaustor junto com a máquina. | Ambiente fechado e cheio de fumaça. | ⬜ novo |
+
+**E. Superfície e profundidade**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 27 | **Foco automático / rampa** | A máquina acha a altura certa do foco. | Maioria dos lasers não tem auto-foco. | `P2.13` (parcial) |
+| 28 | **Mapa de altura** | Mede a superfície e ajusta o foco ponto a ponto. | Madeira empenada, placa irregular. | ⬜ novo |
+| 29 | **LiDAR** | Sensor que "escaneia" a superfície pra medir altura. | O mesmo do mapa de altura, só que rápido. | ⬜ novo |
+| 30 | **Relevo (profundidade / 3D)** | Variar a potência pra afundar mais/menos e criar relevo. | Foto/desenho em pedra, madeira, relevo. | ⬜ novo |
+| 31 | **Rotativa (eixo que gira)** | Acessório que gira o objeto pra gravar em volta. | Caneca, copo, anel, garrafa. | `P3.2` |
+| 32 | **Compensação cônica** | Ajustar quando o objeto afina na ponta. | Copo cônico, taça, cone. | ⬜ novo |
+| 33 | **Desdobrar arte em cilindro** | "Abrir" o desenho pra caber na volta do copo. | Gravar em volta sem rotativa. | ⬜ novo |
+
+**F. Fazer o desenho (arte)**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 34 | **Vetorização (imagem → linha)** | Transforma foto/logo em linhas. | Logo em JPG → contorno de corte. | ✅ RF-IMG-6 |
+| 35 | **Puxar o risco do meio (centerline)** | Tira só o "esqueleto" de um desenho grosso. | Letra/desenho de contorno → linha única. | ⬜ novo |
+| 36 | **Texto em curva / arco** | Escrever acompanhando uma curva ou círculo. | Nome em volta de um selo, texto curvado. | ⬜ novo |
+| 37 | **Preenchimentos e texturas** | Encher a área com linhas/ondas/pontos. | Textura numa área grande, em vez de sólido. | 🟡 parcial (hatch) |
+| 38 | **Biblioteca de símbolos** | Setas, réguas, marcas e ícones prontos pra arrastar. | Não desenhar do zero no Inkscape. | ⬜ novo |
+| 39 | **Geradores (caixas, engrenagens)** | Escolhe o tamanho e ele monta caixa com encaixe/engrenagem. | Caixa que fecha sozinha, engrenagem. | ⬜ novo |
+
+**G. Arquivos e máquinas**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 40 | **Camadas / multi-operação** | Grupos de objetos, cada grupo com sua potência. | Gravar e cortar numa única rodada. | `P2.2` |
+| 41 | **Abrir arquivos de outros programas** | SVG, DXF, PDF, AI e os do LightBurn (`.lbrn2`). | Reaproveitar algo feito no Inkscape/AutoCAD. | `P2.4` · `P2.5` |
+| 42 | **Perfil da máquina** | Cadastro da máquina (curso, potência) pra não reconfigurar. | Trocar de máquina ou ajudar outro modelo. | ✅ RF-MAQ-10 · catálogo `P2.5` |
+| 43 | **Catálogo de materiais com avisos** | Lista de materiais com dica de segurança. | Saber se pode cortar certo plástico. | ⬜ novo |
+| 44 | **Galvo / fibra / DSP** | Tipos de laser de indústria (metal, fibra). | **Não se aplica** ao laser de bancada (diodo). | ❌ fora de escopo |
+
+**H. Bônus — os códigos que já grava**
+
+| # | Item | O que é | Onde usa | Onde entra |
+| :-- | :-- | :-- | :-- | :-- |
+| 45 | **HRI** | Texto legível embaixo do código de barras. | Etiqueta que uma pessoa também lê. | ✅ RF-SYM-6 |
+| 46 | **Quiet zone** | Margem em branco em volta do código. | Sem ela, o leitor não lê. | ✅ RF-SYM-2 |
+| 47 | **X-dimension** | Largura da barrinha mais fina. | Dimensionar o código em mm. | ✅ RF-SYM-2/3 |
+| 48 | **Data Matrix** | O quadradinho 2D (junto do QR). | Peça pequena, marcação industrial. | ✅ RF-SYM-7 (parcial) |
+| 49 | **Versão/máscara do QR** | Quão grande e "denso" o QR fica. | Caber no espaço e ainda ler. | ✅ RF-SYM-1 |
+
+### Anexo B — candidatos novos (proposta, a ratificar)
+
+> Só os itens marcados **⬜ novo** no Anexo A. Versão e esforço são **sugestões**
+> (S/M/L conforme o topo deste arquivo); a ordem só vale depois de aceita.
+
+| Item | Versão sugerida | Esf. | Resumo do critério (DoD) |
+| :-- | :-- | :-- | :-- |
+| Abas de retenção | v0.7 | S | Peça pequena presa por N abas configuráveis; testado. |
+| Kerf / folga de corte | v0.7 | S | Offset de kerf por camada; encaixe demonstrado. |
+| Entrada/saída do corte | v0.7 | S | Lead-in/lead-out e canto sem "bico" no corte. |
+| Biblioteca de símbolos | v0.7 | S | Catálogo de ícones/formas arrastáveis, sem rede. |
+| Custo por peça | v0.8 | S | Custo estimado (tempo × tarifa + material) exibido. |
+| Tira de teste de código | v0.8 | S | Mesmo símbolo em N tamanhos; registro do mínimo legível. |
+| Geradores paramétricos | v0.8 | M | Caixa com encaixe + engrenagem (paramétrico, sem rede). |
+| Catálogo de materiais com avisos | v0.8 | M | Material com notas de segurança e presets ligados. |
+| Agenda / fila de trabalhos | v1.0 | S | Fila persistida rodando em sequência com emergência acessível. |
+| Marcas de registro | v0.9 | S | Fiduciais desenhados + alinhamento no preview. |
+| Tiling (maior que a mesa) | v0.9 | M | Job fatiado em tiles com sobreposição e numeração. |
+| Gravar dos dois lados | v0.9 | M | Espelhamento + registro para o 2º lado. |
+| Gravar em peça já pronta | v0.9 | S | Alinhar desenho ao alvo existente (fiducial/visão simples). |
+| Gabarito (jig / molde) | v0.9 | S | Gerar molde de encaixe a partir da peça. |
+| Imprimir e cortar | v0.9 | M | Corte sobre impresso com marcas de registro. |
+| Centerline (imagem → linha única) | v0.9 | M | Traço do meio por esqueletização; teste com logos. |
+| Texto em curva / arco | v0.9 | S | Texto ao longo de caminho/arco no editor 2D. |
+| Mapa de altura | v0.9 | L | Correção de foco por superfície (entrada de altura). |
+| Relevo (3D / depth map) | v0.9 | M | Potência por profundidade a partir de mapa de cinza. |
+| Compensação cônica | v0.9 | S | Rotativa com diâmetro variável (taper). |
+| Desdobrar arte em cilindro | v0.9 | M | Mapeamento arte → cilindro sem rotativa. |
+| Webcam + aviso de término | v1.0 | S | Imagem ao vivo + notificação local (sem nuvem). |
+| Parar de longe / emergência remota | v1.0 | S | Cliente local com emergência (usa a API, `P4.1`). |
+| Sensor de chama/fumaça + trava | v1.0 | M | Entrada externa pausa o job; testado com simulador. |
+| Ventilação/exaustão | v1.0 | S | Saída auxiliar ligada ao início/fim do job. |
+| LiDAR de superfície | v1.0 | L | Varredura de altura (depende de hardware). |
+| Foco automático / rampa automática | v1.0 | M | Rotina de rampa de foco medida na máquina. |
+
+> **Nota de escopo:** itens ⬜ novos que exijam **hardware** (LiDAR, sensor de
+> chama, exaustão, rotativa) entram como **integração opcional** — o app segue
+> funcional sem eles. Nada aqui quebra os invariantes do topo (sem nuvem
+> obrigatória, offline, ≤ 3 cliques no fluxo principal, emergência sempre
+> acessível).

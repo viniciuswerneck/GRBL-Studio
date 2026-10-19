@@ -1,5 +1,5 @@
 /**
- * Entrada do bundle `public/qr.js` (esbuild, IIFE, global `GRBL_QR`).
+ * Entrada do bundle `public/qrcode.js` (esbuild, IIFE, global `GRBL_QR`).
  *
  * É só a fachada: agrupa os encoders **2D** (`qr.ts` e `datamatrix.ts`), a
  * geometria de varredura (`mask.ts`) e o G-code (`gcode.ts`) para o renderer,
