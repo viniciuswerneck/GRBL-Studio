@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { _electron as electron, expect, test } from '@playwright/test';
@@ -15,8 +15,17 @@ const APP_ROOT = path.join(__dirname, '..');
  * Sobe o app Electron real e devolve a janela principal. Usa um `userData`
  * temporário para não tocar nas preferências do ambiente.
  */
-async function launchApp() {
+async function launchApp(options: { onboarding?: boolean } = {}) {
   const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-'));
+  // O tour de boas-vindas (P0.4) só aparece na primeira execução; nos testes
+  // ele é dispensado — exceto no teste próprio do tour (`onboarding: true`).
+  if (options.onboarding !== true) {
+    writeFileSync(
+      path.join(userData, 'prefs.json'),
+      JSON.stringify({ onboarding: 1 }),
+      'utf8',
+    );
+  }
   const app = await electron.launch({
     args: [APP_ROOT, `--user-data-dir=${userData}`, '--no-sandbox'],
     // Sem splash: `firstWindow()` precisa ser a janela principal.
@@ -100,6 +109,64 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await expect(button).not.toHaveClass(/active/);
     } finally {
       await close();
+    }
+  });
+
+  test('primeira execução mostra o tour de 5 passos (P0.4)', async () => {
+    const { app, page, close } = await launchApp({ onboarding: true });
+    try {
+      await expect(page.locator('#tourOverlay')).toBeVisible();
+      await expect(page.locator('#tourStepLabel')).toContainText(
+        'Passo 1 de 5',
+      );
+      await expect(page.locator('.tour-slide[data-step="1"]')).toBeVisible();
+      for (let i = 0; i < 4; i++) await page.click('#tourNext');
+      await expect(page.locator('#tourStepLabel')).toContainText(
+        'Passo 5 de 5',
+      );
+      await expect(page.locator('#tourNext')).toHaveText('Concluir');
+      await page.click('#tourNext');
+      await expect(page.locator('#tourOverlay')).toBeHidden();
+      // Dá para reabrir pelo menu Ajuda → Tour de boas-vindas.
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'tour',
+        );
+      });
+      await expect(page.locator('#tourOverlay')).toBeVisible();
+      await page.click('#tourSkip');
+      await expect(page.locator('#tourOverlay')).toBeHidden();
+    } finally {
+      await close();
+    }
+  });
+
+  test('o tour não volta depois de concluído (onboarding nas prefs)', async () => {
+    const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-tour-'));
+    const launch = () =>
+      electron.launch({
+        args: [APP_ROOT, `--user-data-dir=${userData}`, '--no-sandbox'],
+        env: { ...process.env, GRBL_E2E: '1' },
+      });
+    try {
+      let app = await launch();
+      let page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+      await expect(page.locator('#tourOverlay')).toBeVisible();
+      await page.click('#tourSkip');
+      await expect(page.locator('#tourOverlay')).toBeHidden();
+      await app.close();
+
+      app = await launch();
+      page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+      // A janela está pronta e o tour não voltou.
+      await expect(page.locator('.brand h1')).toHaveText('GRBL Studio');
+      await expect(page.locator('#tourOverlay')).toBeHidden();
+      await app.close();
+    } finally {
+      rmSync(userData, { recursive: true, force: true });
     }
   });
 
@@ -208,6 +275,12 @@ test.describe('GRBL Studio — fluxo da UI', () => {
   test('restaura os últimos ajustes dos símbolos ao reabrir o app', async () => {
     // `Prefs.symbols` (RF-CFG-5): mesmo userData, duas execuções.
     const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-prefs-'));
+    // Sem tour: este teste olha só `Prefs.symbols`.
+    writeFileSync(
+      path.join(userData, 'prefs.json'),
+      JSON.stringify({ onboarding: 1 }),
+      'utf8',
+    );
     const launch = () =>
       electron.launch({
         args: [APP_ROOT, `--user-data-dir=${userData}`, '--no-sandbox'],

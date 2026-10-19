@@ -1208,6 +1208,101 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="tourOverlay">
+      <div
+        class="modal tour-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tourTitle"
+      >
+        <header class="modal-head">
+          <h3 id="tourTitle" data-i18n="tour.title">Boas-vindas ao GRBL Studio</h3>
+          <button
+            type="button"
+            id="tourClose"
+            class="icon-btn"
+            data-i18n-title="nav.close"
+            data-i18n-aria="nav.close"
+          >✕</button>
+        </header>
+        <div class="modal-body">
+          <ol class="tour-slides" id="tourSlides">
+            <li class="tour-slide" data-step="1">
+              <h4 data-i18n="tour.step1.title">Conecte a gravadora</h4>
+              <p data-i18n="tour.step1.text">
+                Ligue a máquina, escolha a porta USB e clique em Conectar. Sem
+                conexão você pode abrir arquivos e pré-visualizar, mas não
+                gravar.
+              </p>
+              <p class="hint" data-i18n="tour.step1.where">
+                Onde fica: painel esquerdo → Conexão.
+              </p>
+            </li>
+            <li class="tour-slide hidden" data-step="2">
+              <h4 data-i18n="tour.step2.title">Confira o perfil da máquina</h4>
+              <p data-i18n="tour.step2.text">
+                Escolha o seu modelo (ou Genérico GRBL). O perfil traz o curso,
+                o teto de potência e o módulo do laser — é dele que sai a
+                conversão de % para S.
+              </p>
+              <p class="hint" data-i18n="tour.step2.where">
+                Onde fica: painel esquerdo → Perfil da máquina.
+              </p>
+            </li>
+            <li class="tour-slide hidden" data-step="3">
+              <h4 data-i18n="tour.step3.title">Abra a arte</h4>
+              <p data-i18n="tour.step3.text">
+                Imagem (PNG/JPG), SVG ou G-code: use Abrir ou Importar SVG.
+                Ajuste tamanho e posição — o canto inferior esquerdo da arte é a
+                origem (X0 Y0).
+              </p>
+              <p class="hint" data-i18n="tour.step3.where">
+                Onde fica: barra superior → Abrir / Importar SVG.
+              </p>
+            </li>
+            <li class="tour-slide hidden" data-step="4">
+              <h4 data-i18n="tour.step4.title">Pré-visualize antes de queimar</h4>
+              <p data-i18n="tour.step4.text">
+                O preview mostra o caminho e o tempo estimado. Use Moldura para
+                desenhar o contorno com o laser bem fraco e conferir o lugar na
+                peça.
+              </p>
+              <p class="hint" data-i18n="tour.step4.where">
+                Onde fica: preview → Moldura / Contorno.
+              </p>
+            </li>
+            <li class="tour-slide hidden" data-step="5">
+              <h4 data-i18n="tour.step5.title">Grave com segurança</h4>
+              <p data-i18n="tour.step5.text">
+                Ajuste potência e velocidade, confira o modo (M4/M3) e dê Play.
+                Pausa mantém a posição; Parar cancela o job. Nunca deixe o laser
+                sozinho.
+              </p>
+              <p class="hint" data-i18n="tour.step5.where">
+                Onde fica: barra do job → Play / Pausa / Parar.
+              </p>
+            </li>
+          </ol>
+          <div class="tour-footer-line">
+            <div class="tour-dots" id="tourDots" aria-hidden="true"></div>
+            <span class="hint" id="tourStepLabel" aria-live="polite"></span>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="tourDontShow" checked />
+            <span data-i18n="tour.dontShow">Não mostrar na próxima abertura</span>
+          </label>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="tourSkip" data-i18n="tour.skip">Pular</button>
+          <span class="tour-spacer"></span>
+          <button type="button" id="tourBack" data-i18n="nav.back">Voltar</button>
+          <button type="button" id="tourNext" class="primary" data-i18n="tour.next">
+            Próximo
+          </button>
+        </footer>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="designOverlay">
       <div class="modal design-modal" role="dialog" aria-modal="true" aria-labelledby="designTitle">
         <!-- Barra de título -->

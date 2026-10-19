@@ -382,6 +382,38 @@ export const en = {
   'bar.warn.hri-chars':
     'The HRI has characters without a glyph in the font: they print as “?”.',
 
+  // ------------------------------------------------ welcome / onboarding
+  'tour.title': 'Welcome to GRBL Studio',
+  'tour.step': 'Step {n} of {total}',
+  'tour.next': 'Next',
+  'tour.finish': 'Finish',
+  'tour.skip': 'Skip',
+  'tour.dontShow': "Don't show on next launch",
+  'tour.step1.title': 'Connect the engraver',
+  'tour.step1.text':
+    'Power the machine on, pick the USB port and click Connect. Without a ' +
+    'connection you can still open files and preview, but not engrave.',
+  'tour.step1.where': 'Where: left panel → Connection.',
+  'tour.step2.title': 'Check the machine profile',
+  'tour.step2.text':
+    'Pick your model (or Generic GRBL). The profile carries the work area, ' +
+    'the power ceiling and the laser module — it drives the % to S conversion.',
+  'tour.step2.where': 'Where: left panel → Machine profile.',
+  'tour.step3.title': 'Open the artwork',
+  'tour.step3.text':
+    'Image (PNG/JPG), SVG or G-code: use Open or Import SVG. Set size and ' +
+    'position — the artwork bottom-left corner is the origin (X0 Y0).',
+  'tour.step3.where': 'Where: top bar → Open / Import SVG.',
+  'tour.step4.title': 'Preview before burning',
+  'tour.step4.text':
+    'The preview shows the path and the estimated time. Use Frame to draw ' +
+    'the outline with a very weak laser and check the spot on the workpiece.',
+  'tour.step4.where': 'Where: preview → Frame / Outline.',
+  'tour.step5.title': 'Engrave safely',
+  'tour.step5.text':
+    'Set power and speed, check the mode (M4/M3) and press Play. Pause keeps ' +
+    'the position; Stop cancels the job. Never leave the laser unattended.',
+  'tour.step5.where': 'Where: job bar → Play / Pause / Stop.',
   // ------------------------------------------------------- vector drawing
   'design.title': 'Design',
   'design.tool.select': 'Select (V)',
@@ -1010,6 +1042,7 @@ export const en = {
   'menu.help': 'Help',
   'menu.about': 'About GRBL Studio',
   'menu.site': 'WerneckLab website',
+  'menu.tour': 'Welcome tour',
 
   // -------------------------------------------- console (RF-CON-14/15)
   'console.pause': 'Pause scroll',

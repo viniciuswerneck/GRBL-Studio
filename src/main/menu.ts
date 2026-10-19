@@ -112,6 +112,10 @@ export function rebuildMenu(): void {
       label: t('menu.help'),
       submenu: [
         {
+          label: t('menu.tour'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.tour),
+        },
+        {
           label: t('menu.site'),
           click: () => void shell.openExternal(APP_URL),
         },

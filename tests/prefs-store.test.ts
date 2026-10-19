@@ -121,6 +121,16 @@ describe('PrefsStore — sanitização das novas chaves', () => {
     expect(JSON.stringify(prefs)).not.toContain('persistir');
   });
 
+  it('guarda o tour visto (P0.4) e descarta valor inválido', async () => {
+    const store = await storeWith({ onboarding: 1 });
+    expect((await store.read()).onboarding).toBe(1);
+    const round = await store.updateInPlace({ onboarding: 1.6 });
+    expect(round.onboarding).toBe(2);
+
+    const bad = await storeWith({ onboarding: 'sim' });
+    expect((await bad.read()).onboarding).toBeUndefined();
+  });
+
   it('descarta simbologia desconhecida e símbolos sem nada válido', async () => {
     const store = await storeWith({
       symbols: { barcode: { symbology: 'evil', content: 'x' } },

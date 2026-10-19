@@ -401,6 +401,38 @@ export const ptBR = {
   'bar.warn.hri-chars':
     'O HRI tem caracteres sem glifo na fonte: saem como “?”.',
 
+  // ---------------------------------------------- boas-vindas / onboarding
+  'tour.title': 'Boas-vindas ao GRBL Studio',
+  'tour.step': 'Passo {n} de {total}',
+  'tour.next': 'Próximo',
+  'tour.finish': 'Concluir',
+  'tour.skip': 'Pular',
+  'tour.dontShow': 'Não mostrar na próxima abertura',
+  'tour.step1.title': 'Conecte a gravadora',
+  'tour.step1.text':
+    'Ligue a máquina, escolha a porta USB e clique em Conectar. Sem conexão ' +
+    'você pode abrir arquivos e pré-visualizar, mas não gravar.',
+  'tour.step1.where': 'Onde fica: painel esquerdo → Conexão.',
+  'tour.step2.title': 'Confira o perfil da máquina',
+  'tour.step2.text':
+    'Escolha o seu modelo (ou Genérico GRBL). O perfil traz o curso, o teto ' +
+    'de potência e o módulo do laser — é dele que sai a conversão de % para S.',
+  'tour.step2.where': 'Onde fica: painel esquerdo → Perfil da máquina.',
+  'tour.step3.title': 'Abra a arte',
+  'tour.step3.text':
+    'Imagem (PNG/JPG), SVG ou G-code: use Abrir ou Importar SVG. Ajuste ' +
+    'tamanho e posição — o canto inferior esquerdo da arte é a origem (X0 Y0).',
+  'tour.step3.where': 'Onde fica: barra superior → Abrir / Importar SVG.',
+  'tour.step4.title': 'Pré-visualize antes de queimar',
+  'tour.step4.text':
+    'O preview mostra o caminho e o tempo estimado. Use Moldura para desenhar ' +
+    'o contorno com o laser bem fraco e conferir o lugar na peça.',
+  'tour.step4.where': 'Onde fica: preview → Moldura / Contorno.',
+  'tour.step5.title': 'Grave com segurança',
+  'tour.step5.text':
+    'Ajuste potência e velocidade, confira o modo (M4/M3) e dê Play. Pausa ' +
+    'mantém a posição; Parar cancela o job. Nunca deixe o laser sozinho.',
+  'tour.step5.where': 'Onde fica: barra do job → Play / Pausa / Parar.',
   // ------------------------------------------------------- desenho vetorial
   'design.title': 'Desenhar',
   'design.tool.select': 'Selecionar (V)',
@@ -1037,6 +1069,7 @@ export const ptBR = {
   'menu.help': 'Ajuda',
   'menu.about': 'Sobre o GRBL Studio',
   'menu.site': 'Site do WerneckLab',
+  'menu.tour': 'Tour de boas-vindas',
 
   // -------------------------------------------- console (RF-CON-14/15)
   'console.pause': 'Pausar rolagem',

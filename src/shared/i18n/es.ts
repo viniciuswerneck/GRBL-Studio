@@ -394,6 +394,38 @@ export const es = {
   'bar.warn.hri-chars':
     'El HRI tiene caracteres sin glifo en la fuente: salen como “?”.',
 
+  // -------------------------------------------- bienvenida / onboarding
+  'tour.title': 'Bienvenido a GRBL Studio',
+  'tour.step': 'Paso {n} de {total}',
+  'tour.next': 'Siguiente',
+  'tour.finish': 'Finalizar',
+  'tour.skip': 'Omitir',
+  'tour.dontShow': 'No mostrar en la próxima apertura',
+  'tour.step1.title': 'Conecta la grabadora',
+  'tour.step1.text':
+    'Enciende la máquina, elige el puerto USB y pulsa Conectar. Sin conexión ' +
+    'puedes abrir archivos y ver la vista previa, pero no grabar.',
+  'tour.step1.where': 'Dónde: panel izquierdo → Conexión.',
+  'tour.step2.title': 'Revisa el perfil de la máquina',
+  'tour.step2.text':
+    'Elige tu modelo (o Genérico GRBL). El perfil trae el área de trabajo, el ' +
+    'límite de potencia y el módulo láser — de él sale la conversión de % a S.',
+  'tour.step2.where': 'Dónde: panel izquierdo → Perfil de máquina.',
+  'tour.step3.title': 'Abre el diseño',
+  'tour.step3.text':
+    'Imagen (PNG/JPG), SVG o G-code: usa Abrir o Importar SVG. Ajusta tamaño ' +
+    'y posición — la esquina inferior izquierda del diseño es el origen (X0 Y0).',
+  'tour.step3.where': 'Dónde: barra superior → Abrir / Importar SVG.',
+  'tour.step4.title': 'Previsualiza antes de quemar',
+  'tour.step4.text':
+    'La vista previa muestra el recorrido y el tiempo estimado. Usa Marco ' +
+    'para dibujar el contorno con el láser muy débil y comprobar el lugar.',
+  'tour.step4.where': 'Dónde: vista previa → Marco / Contorno.',
+  'tour.step5.title': 'Graba con seguridad',
+  'tour.step5.text':
+    'Ajusta potencia y velocidad, comprueba el modo (M4/M3) y pulsa Play. ' +
+    'Pausa mantiene la posición; Parar cancela el trabajo. Nunca lo dejes solo.',
+  'tour.step5.where': 'Dónde: barra del trabajo → Play / Pausa / Parar.',
   // ------------------------------------------------------- dibujo vectorial
   'design.title': 'Dibujar',
   'design.tool.select': 'Seleccionar (V)',
@@ -1040,6 +1072,7 @@ export const es = {
   'menu.help': 'Ayuda',
   'menu.about': 'Acerca de GRBL Studio',
   'menu.site': 'Sitio web de WerneckLab',
+  'menu.tour': 'Tour de bienvenida',
 
   // -------------------------------------------- consola (RF-CON-14/15)
   'console.pause': 'Pausar desplazamiento',

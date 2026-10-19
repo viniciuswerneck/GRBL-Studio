@@ -73,6 +73,7 @@ export const MENU_ACTIONS = {
   design: 'design',
   qrCode: 'qr-code',
   barCode: 'bar-code',
+  tour: 'tour',
 } as const;
 
 export type MenuAction = (typeof MENU_ACTIONS)[keyof typeof MENU_ACTIONS];

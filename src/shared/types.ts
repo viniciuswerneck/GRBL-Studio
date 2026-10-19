@@ -253,6 +253,11 @@ export interface Prefs {
   lang?: Lang;
   /** Assistente aberto (`basic`) ou fechado (`advanced`) — RF-APP-4. */
   mode?: 'basic' | 'advanced';
+  /**
+   * Tour de boas-vindas já visto (P0.4/RF-ONB-1): número da versão mostrada.
+   * Ausente/0 = nunca viu (ou pediu para rever).
+   */
+  onboarding?: number;
   /** Perfil de máquina escolhido (RF-IMG-8). */
   machineProfile?: string;
   /** Reconectar automaticamente à última porta ao abrir (padrão true). */

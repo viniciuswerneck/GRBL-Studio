@@ -192,6 +192,8 @@ function sanitize(input: unknown): Prefs {
   if (raw.units === 'mm' || raw.units === 'in') prefs.units = raw.units;
   if (isLang(raw.lang)) prefs.lang = raw.lang;
   if (raw.mode === 'basic' || raw.mode === 'advanced') prefs.mode = raw.mode;
+  const onboarding = finiteIn(raw.onboarding, 0, 1000);
+  if (onboarding !== undefined) prefs.onboarding = Math.round(onboarding);
   if (typeof raw.machineProfile === 'string' && raw.machineProfile)
     prefs.machineProfile = raw.machineProfile;
   if (typeof raw.autoConnect === 'boolean') prefs.autoConnect = raw.autoConnect;

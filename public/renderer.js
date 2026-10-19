@@ -268,6 +268,15 @@ const el = {
   barOverscan: $('barOverscan'),
   barInvert: $('barInvert'),
   barStatus: $('barStatus'),
+  tourOverlay: $('tourOverlay'),
+  tourClose: $('tourClose'),
+  tourSlides: $('tourSlides'),
+  tourDots: $('tourDots'),
+  tourStepLabel: $('tourStepLabel'),
+  tourDontShow: $('tourDontShow'),
+  tourSkip: $('tourSkip'),
+  tourBack: $('tourBack'),
+  tourNext: $('tourNext'),
   barSave: $('barSave'),
   barGenerate: $('barGenerate'),
   designOverlay: $('designOverlay'),
@@ -4341,6 +4350,80 @@ async function saveQr() {
   }
 }
 
+// ------------------------------------------------ boas-vindas (P0.4)
+
+/** Versão do tour: mudou o conteúdo? Suba o número para reapresentar. */
+const TOUR_VERSION = 1;
+const TOUR_STEPS = 5;
+let tourStep = 1;
+
+/** Mostra só o passo atual, acende o ponto e acerta os botões. */
+function syncTour() {
+  if (el.tourSlides) {
+    for (const slide of el.tourSlides.querySelectorAll('.tour-slide')) {
+      slide.classList.toggle('hidden', Number(slide.dataset.step) !== tourStep);
+    }
+  }
+  if (el.tourDots) {
+    if (el.tourDots.children.length !== TOUR_STEPS) {
+      el.tourDots.replaceChildren(
+        ...Array.from({ length: TOUR_STEPS }, () => {
+          const dot = document.createElement('span');
+          dot.className = 'tour-dot';
+          return dot;
+        }),
+      );
+    }
+    [...el.tourDots.children].forEach((dot, i) => {
+      dot.classList.toggle('active', i + 1 === tourStep);
+    });
+  }
+  if (el.tourStepLabel) {
+    el.tourStepLabel.textContent = t('tour.step', {
+      n: tourStep,
+      total: TOUR_STEPS,
+    });
+  }
+  if (el.tourBack) el.tourBack.disabled = tourStep <= 1;
+  if (el.tourNext) {
+    el.tourNext.textContent =
+      tourStep >= TOUR_STEPS ? t('tour.finish') : t('tour.next');
+  }
+}
+
+function openTour() {
+  if (!el.tourOverlay) return;
+  tourStep = 1;
+  if (el.tourDontShow) el.tourDontShow.checked = true;
+  syncTour();
+  el.tourOverlay.classList.remove('hidden');
+  if (el.tourNext) el.tourNext.focus();
+}
+
+/**
+ * Fecha o tour. Marcado "não mostrar" (padrão) → não volta na próxima
+ * abertura; desmarcado → volta (o usuário quer rever).
+ */
+function closeTour() {
+  if (!el.tourOverlay || el.tourOverlay.classList.contains('hidden')) return;
+  el.tourOverlay.classList.add('hidden');
+  const done = !el.tourDontShow || el.tourDontShow.checked;
+  persistPrefs({ onboarding: done ? TOUR_VERSION : 0 });
+}
+
+/** Primeira execução (ou tour novo): apresenta o fluxo de 5 passos. */
+function maybeShowTour() {
+  if (Number(state.prefs.onboarding) >= TOUR_VERSION) return;
+  openTour();
+}
+
+function tourGo(delta) {
+  const next = Math.max(1, Math.min(TOUR_STEPS, tourStep + delta));
+  if (next === tourStep) return;
+  tourStep = next;
+  syncTour();
+}
+
 // -------------------------------------------------- código de barras (1D)
 
 /** Nomes das simbologias (produto, não se traduz). */
@@ -7294,6 +7377,8 @@ document.addEventListener('keydown', (e) => {
     el.frameOverlay,
     el.matTestOverlay,
     el.qrOverlay,
+    el.barcodeOverlay,
+    el.tourOverlay,
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
   if (overlays.length) {
@@ -7301,6 +7386,7 @@ document.addEventListener('keydown', (e) => {
       // O editor de desenho tem desmontagem própria (fecha diálogos, menu de
       // booleanas e editor de texto); esconder na mão deixaria estado preso.
       if (overlay === el.designOverlay) closeDesignModal();
+      else if (overlay === el.tourOverlay) closeTour();
       else overlay.classList.add('hidden');
     }
     return;
@@ -7334,6 +7420,7 @@ if (window.grbl.onAction)
     else if (name === 'bar-code') openBarModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'design') openDesignModal();
+    else if (name === 'tour') openTour();
   });
 
 // ----------------------------------------------------- unidades (RF-APP-3)
@@ -8242,6 +8329,18 @@ if (el.qrKeepAspect)
     if (!el.qrKeepAspect.checked) return;
     syncQrSize(el.qrWidth?.value ? el.qrWidth : el.qrHeight);
   });
+if (el.tourClose) el.tourClose.addEventListener('click', closeTour);
+if (el.tourSkip) el.tourSkip.addEventListener('click', closeTour);
+if (el.tourBack) el.tourBack.addEventListener('click', () => tourGo(-1));
+if (el.tourNext)
+  el.tourNext.addEventListener('click', () => {
+    if (tourStep >= TOUR_STEPS) closeTour();
+    else tourGo(1);
+  });
+if (el.tourOverlay)
+  el.tourOverlay.addEventListener('click', (e) => {
+    if (e.target === el.tourOverlay) closeTour();
+  });
 if (el.barClose) el.barClose.addEventListener('click', closeBarModal);
 if (el.barcodeOverlay)
   el.barcodeOverlay.addEventListener('click', (e) => {
@@ -8561,6 +8660,9 @@ async function init() {
   refreshTexts();
   updateWorkflow();
   updateWizard();
+  // Primeira execução: tour de 5 passos (conectar → perfil → abrir → preview →
+  // gravar). RF-ONB-1/P0.4; sai com "não mostrar" ou pelo menu Ajuda.
+  maybeShowTour();
 
   // Macros (RF-MAC-1): preferências ou conjunto padrão.
   state.macros =
