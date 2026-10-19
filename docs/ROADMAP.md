@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 19/10/2026 (v0.8.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 19/10/2026 (v0.9.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.8.0)
+## Estado atual (v0.9.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -51,7 +51,8 @@ Já entregue (não repetir no planejamento):
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
       Code 39) com **HRI** e avisos de legibilidade — v0.6.0. Continuados na
       **v0.7.0** com ITF-14, Codabar, Code 93 Full ASCII, GS1-128 e **Data
-      Matrix ECC200**; **grade a partir de uma lista** (RF-SYM-9, 19/10/2026).
+      Matrix ECC200**; **grade a partir de uma lista** (RF-SYM-9) e **PDF417**
+      (RF-SYM-7) em 19/10/2026 (v0.9.0).
 - [x] **Simulação de job** (P2.3/RF-PRV-7): playback 2D com play/pause/seek,
       velocidade 1×–10× e tempo estimado — v0.5.0.
 - [x] **Painel "Máquina"** (P0.7/RF-MAQ-1…4/7/8), **área de trabalho do preview**
@@ -178,11 +179,18 @@ diferencial que nenhum concorrente grátis tem.
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
-| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 na 0.8.0**; resta Aztec | M | Simbologias com testes vetoriais. |
+| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0**; resta Aztec | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
 
-### v0.9 — Pro features (paridade com LightBurn/Rayforge)
+### v0.9 — Extras + Pro features
+
+**Entregue nesta versão:** **RF-SYM-9** (grade de símbolos a partir de uma
+lista) e **RF-SYM-7** (**PDF417**: ISO/IEC 15438, Numeric/Byte, RS em GF(929),
+validado por decodificação real com `@zxing/library`) — 16 testes novos +
+E2E. Documentação em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md) §18.
+
+**Objetivo seguinte:** paridade com LightBurn/Rayforge.
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
@@ -253,12 +261,13 @@ da API. Justificativa: `PLANO_PREMIUM.md` §10.
 
 Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico). Resumo:
 
-1. **v0.6/v0.7/v0.8 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) e
-   os avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
+1. **v0.6/v0.7/v0.8/v0.9 (entregues)** — P2.7/P2.8 (QR Code e código de barras
+   1D) e os avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
    P0.4 (onboarding), P0.6 (fuzz + cobertura), as simbologias extras da S2/S3
    (1D + **Data Matrix**) e o catálogo de perfis de máquina (RF-MAQ-10); na
    **0.8.0**, P0.7 (painel "Máquina"), P0.8 (pré-voo MX-1…MX-15) e **P2.2
-   (camadas/multi-operação)**. O **P0.1** saiu só na parte Linux e
+   (camadas/multi-operação)**; na **0.9.0**, **RF-SYM-9** (grade de símbolos)
+   e **RF-SYM-7/PDF417**. O **P0.1** saiu só na parte Linux e
    **startup/RAM ainda estão acima do orçamento** — otimizar performance é
    trabalho aberto. Continuam abertos **P0.3** (Flatpak/winget/brew/AUR),
    **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
