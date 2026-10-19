@@ -4,6 +4,7 @@ import {
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
   IMAGE_EXTENSIONS,
+  PDF_DIALOG_FILTERS,
   SVG_DIALOG_FILTERS,
   extensionOf,
   imageMimeType,
@@ -87,6 +88,11 @@ describe('filtros do diálogo', () => {
   it('aceita DXF ASCII em minúsculas e maiúsculas', () => {
     expect(DXF_DIALOG_FILTERS[0]?.extensions).toEqual(['dxf', 'DXF']);
     expect(DXF_DIALOG_FILTERS[0]?.name).toContain('DXF');
+  });
+
+  it('aceita PDF em minúsculas e maiúsculas', () => {
+    expect(PDF_DIALOG_FILTERS[0]?.extensions).toEqual(['pdf', 'PDF']);
+    expect(PDF_DIALOG_FILTERS.at(-1)?.extensions).toEqual(['*']);
   });
 
   it('lista cada extensão de imagem nos dois casos (GTK é sensível a maiúsculas)', () => {

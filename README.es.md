@@ -88,7 +88,7 @@ Cómo se compara GRBL Studio con los principales programas de láser — datos d
 | QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (con lote) |
 | Capas / multioperación | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Cámara / rotativa | ❌ (en el roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo probado | ✅ 689 tests + E2E | n/d | n/d | ❌ | n/d |
+| Protocolo probado | ✅ 705 tests + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentación
 

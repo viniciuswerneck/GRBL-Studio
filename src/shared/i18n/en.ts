@@ -627,6 +627,18 @@ export const en = {
     'No geometry recognized in the DXF (text, hatches and dimensions are not converted).',
   'dxf.binary': 'Binary DXF is not supported. Export the file as ASCII DXF.',
   'dxf.moduleMissing': 'DXF import module not loaded.',
+  'pdf.loaded':
+    'PDF imported: {contours} contour(s), {width} × {height} mm ({pages} page(s)).',
+  'pdf.pages': 'PDF has {pages} pages; only the first was imported.',
+  'pdf.text':
+    'PDF contains text: fonts are not outlined, so the text was not imported.',
+  'pdf.images':
+    'PDF: {n} bitmap image(s) ignored — only vectors are converted.',
+  'pdf.empty': 'No vector path found in the PDF.',
+  'pdf.encrypted': 'Protected (encrypted) PDF is not supported.',
+  'pdf.damaged': 'Could not read the PDF (damaged or unsupported file).',
+  'pdf.moduleMissing': 'PDF import function unavailable.',
+  'pdf.unsupported': 'PDF: {types} not supported — section ignored.',
   'gcode.summary':
     'G-code generated: {lines} lines, {size}, {rows}×{cols} samples, ~{time}',
   'run.play': '▶ Start',
@@ -919,6 +931,7 @@ export const en = {
   'dlg.openGcode': 'Open G-code',
   'dlg.openSvg': 'Open SVG',
   'dlg.openDxf': 'Open DXF',
+  'dlg.openPdf': 'Open PDF',
   'dlg.saveGcode': 'Save G-code',
   'dlg.importMacros': 'Import macros',
   'dlg.exportMacros': 'Export macros',
@@ -1077,6 +1090,7 @@ export const en = {
   'menu.openGcode': 'Open G-code…',
   'menu.openSvg': 'Import SVG…',
   'menu.openDxf': 'Import DXF…',
+  'menu.openPdf': 'Import PDF…',
   'menu.quit': 'Quit',
   'menu.view': 'View',
   'menu.tools': 'Tools',

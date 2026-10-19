@@ -782,6 +782,69 @@ async function openDxfImport() {
     appendLine(t('err.prefix', { msg: err.message }), 'error');
   }
 }
+
+/**
+ * Importa PDF vetorial (P2.4/RF-DSN-15). O parse roda no main (precisa de
+ * `zlib`); aqui só aplicamos o G-code e relatamos o que ficou de fora.
+ */
+async function openPdfImport() {
+  if (!window.grbl.openPdf) {
+    appendLine(t('pdf.moduleMissing'), 'error');
+    return;
+  }
+  try {
+    const res = await window.grbl.openPdf({
+      feed: Number(el.imgSpeed ? el.imgSpeed.value : 1000) || 1000,
+      travelFeed: 3000,
+    });
+    if (!res) return;
+    if (res.error) {
+      appendLine(
+        t(res.error === 'encrypted' ? 'pdf.encrypted' : 'pdf.damaged'),
+        'error',
+      );
+      return;
+    }
+    if (res.contours === 0) {
+      appendLine(t('pdf.empty'), 'error');
+      if (res.textSkipped) appendLine(t('pdf.text'), 'warn');
+      return;
+    }
+    applyJobLines(res.name.replace(/\.pdf$/i, '.gcode'), res.gcode);
+    appendLine(
+      t('pdf.loaded', {
+        contours: res.contours,
+        width: res.width.toFixed(1),
+        height: res.height.toFixed(1),
+        pages: res.pages,
+      }),
+      'ok',
+    );
+    if (res.pages > 1) appendLine(t('pdf.pages', { pages: res.pages }), 'warn');
+    if (res.textSkipped) appendLine(t('pdf.text'), 'warn');
+    if (res.imagesSkipped > 0) {
+      appendLine(t('pdf.images', { n: res.imagesSkipped }), 'warn');
+    }
+    const unsupported = Object.keys(res.unsupported);
+    if (unsupported.length) {
+      appendLine(
+        t('pdf.unsupported', { types: unsupported.join(', ') }),
+        'warn',
+      );
+    }
+    try {
+      const path = await window.grbl.saveGcode(
+        res.gcode,
+        res.name.replace(/\.pdf$/i, '.gcode'),
+      );
+      if (path) appendLine(t('file.saved', { path }), 'ok');
+    } catch (err) {
+      appendLine(t('err.prefix', { msg: err.message }), 'error');
+    }
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
 //
 // Editor vetorial estilo CorelDRAW. A geometria pura vive em
 // `src/shared/designEditor.ts` (bounds, grupos, hit-test, z-order, RDP) e a
@@ -8017,6 +8080,7 @@ if (window.grbl.onAction)
     else if (name === 'machine') openMachineModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'open-dxf') openDxfImport();
+    else if (name === 'open-pdf') openPdfImport();
     else if (name === 'design') openDesignModal();
     else if (name === 'tour') openTour();
   });

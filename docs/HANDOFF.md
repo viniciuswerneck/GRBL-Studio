@@ -90,7 +90,7 @@ npx electron --no-sandbox .    # abre o app
 - `npm run typecheck` ✅
 - `npm test` ✅ **371 testes** (25 arquivos), inclui o novo teste de ancoragem em
   `tests/design.test.ts` *(contagem da sessão de desenho; na **v0.8.0** a suíte
-  está em **689 testes / 39 arquivos**)*
+  está em **705 testes / 40 arquivos**)*
 - `npx biome check <arquivos alterados>` ✅
 - `npx biome check .` tem **2 erros de formatação pré-existentes**
   (`public/renderer.js` e `public/style.css`) — já estavam no `HEAD`, não são

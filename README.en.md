@@ -85,7 +85,7 @@ with sources: **[full comparison](docs/COMPARATIVO.md)** (in Portuguese).
 | QR / Data Matrix / barcode | ✅ | ✅ | ❌ | ❌ | ✅ (batch) |
 | Layers / multi-operation | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Camera / rotary | ❌ (roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocol tested | ✅ 689 tests + E2E | n/a | n/a | ❌ | n/a |
+| Protocol tested | ✅ 705 tests + E2E | n/a | n/a | ❌ | n/a |
 
 ## Documentation
 

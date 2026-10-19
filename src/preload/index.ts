@@ -22,6 +22,7 @@ import type {
   OpenedImageFile,
   OpenedTextFile,
   OverrideAction,
+  PdfImportResponse,
   PortInfo,
   Prefs,
   RapidOverrideLevel,
@@ -99,6 +100,12 @@ const api = {
     ipcRenderer.invoke(CHANNELS.fileOpenSvg),
   openDxf: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenDxf),
+  /** Importa PDF vetorial (parse no main, com zlib) — RF-DSN-15. */
+  openPdf: (options: {
+    feed?: number;
+    travelFeed?: number;
+  }): Promise<PdfImportResponse | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenPdf, options),
   openMacros: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.macrosOpen),
   saveMacros: (content: string): Promise<string | null> =>

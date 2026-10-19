@@ -649,6 +649,19 @@ export const ptBR = {
   'dxf.binary':
     'DXF binário não é suportado. Exporte o arquivo como DXF ASCII.',
   'dxf.moduleMissing': 'Módulo de importação DXF não carregado.',
+  'pdf.loaded':
+    'PDF importado: {contours} contorno(s), {width} × {height} mm ({pages} página(s)).',
+  'pdf.pages': 'PDF com {pages} páginas; importei apenas a primeira.',
+  'pdf.text':
+    'PDF com texto: fontes não viram curvas, então o texto não foi importado.',
+  'pdf.images':
+    'PDF: {n} imagem(ns) bitmap ignorada(s) — só vetores são convertidos.',
+  'pdf.empty': 'Nenhum caminho vetorial encontrado no PDF.',
+  'pdf.encrypted': 'PDF protegido (criptografado) não é suportado.',
+  'pdf.damaged':
+    'Não foi possível ler o PDF (arquivo corrompido ou não suportado).',
+  'pdf.moduleMissing': 'Função de importação de PDF indisponível.',
+  'pdf.unsupported': 'PDF: {types} não suportado(s) — trecho ignorado.',
   'gcode.summary':
     'G-code gerado: {lines} linhas, {size}, {rows}×{cols} amostras, ~{time}',
   'run.play': '▶ Iniciar',
@@ -945,6 +958,7 @@ export const ptBR = {
   'dlg.openGcode': 'Abrir G-code',
   'dlg.openSvg': 'Abrir SVG',
   'dlg.openDxf': 'Abrir DXF',
+  'dlg.openPdf': 'Abrir PDF',
   'dlg.saveGcode': 'Salvar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',
@@ -1107,6 +1121,7 @@ export const ptBR = {
   'menu.openGcode': 'Abrir G-code…',
   'menu.openSvg': 'Importar SVG…',
   'menu.openDxf': 'Importar DXF…',
+  'menu.openPdf': 'Importar PDF…',
   'menu.quit': 'Sair',
   'menu.view': 'Exibir',
   'menu.tools': 'Ferramentas',

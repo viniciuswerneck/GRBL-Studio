@@ -25,14 +25,14 @@ LightBurn (design 2D, importação de SVG/DXF, grade de teste de material).
 | :--- | :--- |
 | Ferramentas de desenho (P2.1/P2.1b) | ✅ Formas, **texto** (vetor/preenchido/traço), caneta + nós, seleção múltipla/marquee, ordem Z, agrupar, **matriz de cópias**, espelhar, distribuir, snap, réguas, undo/redo, **potência/velocidade/espessura por objeto**, **booleanas** (unir/subtrair/intersecção/exclusão) e **contorno paralelo**. |
 | Importação SVG (P1.6) | ✅ `shared/svg.ts` → contorno G-code. |
-| Importação DXF (P2.4) | ✅ `shared/dxf.ts` → contornos (geometria, blocos/`INSERT`, `$INSUNITS`, camadas) → G-code; PDF pendente. |
+| Importação DXF/PDF (P2.4) | ✅ `shared/dxf.ts` (DXF ASCII) e `shared/pdf.ts` (PDF vetorial) → contornos → G-code; texto de PDF não vira curvas. |
 | Grade de teste de material (P1.7) | ✅ Modal + gerador + testes. |
 | Símbolos QR/barcode (P2.7/P2.8) | ✅ QR (ISO/IEC 18004) + 1D (Code 128/39, EAN-13/8, UPC-A, ITF-14, Codabar, Code 93, GS1-128) com HRI; Data Matrix ECC200. Faltam PDF417/Aztec e a grade de símbolos (RF-SYM-9). |
 | Simulação de job (P2.3) | ✅ Playback 2D com play/pause/seek e tempo estimado (RF-PRV-7). |
 | Painel "Máquina" + pré-voo (P0.7/P0.8) | ✅ `$I/$$/$#/$G/$N` → cartões, pré-voo MX-1…MX-15, diagnóstico copiável e chip de pinos `Pn` (RF-MAQ-7). |
 | Auto-update (P1.2) | ✅ `electron-updater` (`checkForUpdatesAndNotify`). |
 | Builds Win/macOS (P1.1) | ✅ Matrix no `release.yml` (AppImage/deb · exe/msi/zip · dmg/zip). |
-| Testes | **689 casos em 39 arquivos** (Vitest) + E2E Playwright + smoke headless. |
+| Testes | **705 casos em 40 arquivos** (Vitest) + E2E Playwright + smoke headless. |
 | Catálogo de máquinas (RF-MAQ-10) | ✅ **22 perfis + Genérico GRBL**; falta import `.lbdev`/smart connect (P2.5). |
 | Z no jog (P1.5) | ✅ Botões `Z+/Z−` e `PageUp/PageDown`. |
 
@@ -45,7 +45,7 @@ idiomas com paridade por type-check; 11 temas; segurança IPC correta; CI/CD com
 release automática em 3 SOs.
 
 **Maiores lacunas vs. mercado:** **câmera**, **rotativa**, **nesting**,
-**importação PDF/AI**, **catálogo de máquinas** (22 perfis + Genérico, mas
+**importação AI/EPS/HPGL**, **catálogo de máquinas** (22 perfis + Genérico, mas
 sem import `.lbdev`/smart connect) e **galvo/DSP**.
 
 **Novo cenário competitivo (2026):** o rival gratuito mais direto deixou de ser o
@@ -116,7 +116,7 @@ multiplataforma continua aberta.
   MeerK40t, LaserWeb4 e Rayforge.
 
 ### 3.6 Qualidade de engenharia
-- **689 testes** (Vitest) + E2E + smoke; IPC tipado; `contextIsolation: true`,
+- **705 testes** (Vitest) + E2E + smoke; IPC tipado; `contextIsolation: true`,
   `nodeIntegration: false`; protocolo isolado da UI; funções puras testáveis.
 - i18n em 3 idiomas com paridade garantida por `satisfies` + type-check;
   Biome (lint/format); 11 temas por tokens CSS.
@@ -139,9 +139,10 @@ multiplataforma continua aberta.
   padrões de matriz; xTool tem *Smart Nesting*).
 - **Simulação 3D** — Rayforge (3D), LightBurn e MeerK40t; o GRBL Studio já tem o
   **playback 2D com tempo** (P2.3/RF-PRV-7), falta a visualização 3D.
-- **Importação vetorial limitada a SVG/DXF** — Rayforge importa SVG, DXF, PDF,
-  AI, EPS, HPGL, bitmaps e até `.lbrn2`/`.rd`; LightBurn importa DXF/AI/PDF/3D.
-  O DXF ASCII foi entregue no P2.4; PDF/AI seguem pendentes.
+- **Importação vetorial: SVG/DXF/PDF (sem AI/EPS/HPGL)** — Rayforge importa
+  SVG, DXF, PDF, AI, EPS, HPGL, bitmaps e até `.lbrn2`/`.rd`; LightBurn importa
+  DXF/AI/PDF/3D. O PDF vetorial entrou no P2.4 (texto não é convertido em
+  curvas); AI/EPS seguem pendentes.
 - **Sem editor de G-code** (UGS, gSender, LightBurn e Rayforge têm).
 - **Sem suporte a galvo/DSP** (Ruida, Trocen, EZCad, Epilog) — LightBurn Pro,
   MeerK40t, EZCAD, RDWorks.
@@ -196,8 +197,8 @@ multiplataforma continua aberta.
 6. ~~**Simulação de job** (reaproveita o preview e a estimativa de tempo).~~ ✅
    Entregue na 0.5.0 (P2.3/RF-PRV-7).
 7. **Rotativa (eixo A)** e **câmera** (alinhamento visual).
-8. **Importação PDF/AI** — o DXF ASCII já reusa `svg.ts` e o pipeline de
-   contornos (P2.4); falta extrair caminhos de PDF/AI.
+8. **Importação AI/EPS/HPGL** — SVG, DXF e PDF já reusam o pipeline de
+   contornos (P1.6/P2.4); falta AI/EPS/HPGL.
 9. **Catálogo de máquinas** (Ortur/AtomStack/Sculpfun/xTool/Longer/TwoTrees) e
    import de **`.lbdev`/`.lbrn2`** — atalho de migração para quem vem do LightBurn.
 10. **Editor de G-code** (syntax highlight, numeração, edição de linha).
@@ -220,7 +221,7 @@ multiplataforma continua aberta.
 | Camadas / multi-operação | **Muito alto** | Médio | ✅ Entregue (P2.2/0.8.0). |
 | Simulação de job | Alto | Médio | ✅ Entregue (P2.3/RF-PRV-7). |
 | Catálogo de máquinas + import `.lbdev` | **Muito alto** | Baixo | Dados estáticos; facilita migração do LightBurn. |
-| Importação PDF/AI | Alto | Médio | DXF ✅ (P2.4); reusa parser/contornos. |
+| Importação AI/EPS/HPGL | Médio | Médio | SVG/DXF/PDF ✅ (P2.4); reusa parser/contornos. |
 | QR Code / código de barras | Alto | Médio | Único no segmento `open source` (plano próprio). |
 | Câmera + alinhamento | Alto | Alto | Rayforge/LightBurn já têm. |
 | Rotativa (eixo A) | Alto | Alto | Cinemática + calibração. |
@@ -269,7 +270,7 @@ referência de recurso está.
 
 | Produto | Licença / preço | SO | Foco | Destaques | Falta |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **GRBL Studio** (v0.8.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF**, **QR/código de barras** (9 simbologias 1D + QR + Data Matrix), **simulação 2D**, painel **Máquina + pré-voo**, 11 temas, 3 idiomas, 689 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting, PDF/AI, import `.lbdev`, editor de G-code |
+| **GRBL Studio** (v0.8.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF**, **QR/código de barras** (9 simbologias 1D + QR + Data Matrix), **simulação 2D**, painel **Máquina + pré-voo**, 11 temas, 3 idiomas, 705 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting, AI/EPS/HPGL, import `.lbdev`, editor de G-code |
 | **LaserGRBL** (v7.14.x) | GPLv3 · grátis | **Windows** (Wine no Linux) | GRBL 0.9/1.1 | Raster excelente (múltiplos ditherings), vetorização, botões customizados, WiFi ESP8266, overrides, comunidade grande | **Sem design**, camadas, câmera, rotativa, Z; sem macOS/Linux nativo; desenvolvimento lento |
 | **Rayforge** (1.13 beta, out/2026) | MIT · grátis | Linux, macOS, Windows (GTK4) | GRBL, Marlin, Ruida, Smoothieware | **Sketcher paramétrico**, camadas, URLs/materiais (60+), câmera, **rotativa 4 eixos**, **simulação 3D**, array/pattern, import SVG/DXF/PDF/AI/EPS/HPGL/bitmaps/`.lbrn2`/`.rd`, WCS G54–G59, no-go zones, *addons*, CLI/headless, 7 idiomas | Sem **galvo** (EZCad); Ruida ainda experimental; sem QR/código de barras; UI GTK (estilo diferente do Fluent) |
 | **MeerK40t** (0.9.9x) | MIT · grátis | Win/macOS/Linux (wxPython/Raspberry) | K40 (Lihuiyu), GRBL, Ruida, galvo EZCad2, fibra | Árvore de operações/camadas, câmera, rotativa, simulação, grade de material, Z jog, hatch/wobble, i18n (inclui pt) | **Em modo de manutenção** (baixa cadência); UI densa; sem QR/código de barras |
@@ -303,7 +304,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | **Controladores** | GRBL 1.1 | GRBL + DSP + galvo + custom | GRBL, Marlin, Ruida, Smoothieware | GRBL 0.9/1.1 | K40, GRBL, Ruida, galvo EZCad2, fibra | GRBL, Smoothie, Marlin, TinyG | LibLaserCut (Epilog, LAOS, K40, GRBL) | K40 / Lihuiyu | GRBL, FluidNC, TinyG, g2core | GRBL / grblHAL | xTool (protocolo próprio) | LaserPecker | GRBL |
 | **Envia p/ a máquina** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Design 2D / CAD** | ✅ (médio) | ✅ (completo) | ✅ (**paramétrico**) | ❌ | 🟡 (SVG) | ❌ (CAM) | ❌ (foco Inkscape) | ❌ | 🟡 (Designer) | 🟡 (só no 1.7 Edge) | ✅ | ✅ | 🟡 (básico) |
-| **Import vetorial** | 🟡 SVG/DXF | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (experimental) | 🟡 SVG/DXF | ✅ SVG/DXF/bitmap | ✅ SVG/EPS/DXF | 🟡 SVG/DXF | ✅ SVG/DXF | 🟡 (recebe G-code) | 🟡 SVG/DXF | 🟡 SVG/DXF | 🟡 imagem/vetor |
+| **Import vetorial** | 🟡 SVG/DXF/PDF | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (experimental) | 🟡 SVG/DXF | ✅ SVG/DXF/bitmap | ✅ SVG/EPS/DXF | 🟡 SVG/DXF | ✅ SVG/DXF | 🟡 (recebe G-code) | 🟡 SVG/DXF | 🟡 SVG/DXF | 🟡 imagem/vetor |
 | **Camadas / multi-operação** | ✅ (0.8.0/P2.2) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ (por cor) | 🟡 | 🟡 | ❌ | ✅ (16 camadas) | 🟡 | ❌ |
 | **Nesting / matriz de cópias** | 🟡 matriz (sem nesting) | ✅ Quick (2.1) + True (2.2, **Pro**) | 🟡 array/pattern | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ Smart Nesting | 🟡 matrizes | ❌ |
 | **Câmera / alinhamento** | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
@@ -317,7 +318,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | **Galvo / DSP / fibra** | ❌ | ✅ (Pro) | 🟡 Ruida (exp.) | ❌ | ✅ (EZCad2) | ❌ | 🟡 Epilog | ❌ | ❌ | ❌ | ✅ (modelos de fibra) | 🟡 (modelos IR) | ❌ |
 | **i18n (idiomas)** | 3 (pt/en/es) | Vários | 7 (inclui pt) | Vários | Vários (inclui pt) | Inglês | Vários | Inglês | Vários | Vários | Vários | Vários | Inglês |
 | **Preview com intensidade `S`** | ✅ | ✅ | ✅ | 🟡 | ✅ | 🟡 | 🟡 | ✅ | 🟡 | ✅ | ✅ | ✅ | 🟡 |
-| **Robustez de protocolo testada** | ✅ **689 testes + E2E** | *n/d* | *n/d* | ❌ | *n/d* | ❌ | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* |
+| **Robustez de protocolo testada** | ✅ **705 testes + E2E** | *n/d* | *n/d* | ❌ | *n/d* | ❌ | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* | *n/d* |
 | **Nuvem / AI / biblioteca de arte** | ❌ | ❌ (local) | 🟡 AI opcional | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | **Status de desenvolvimento** | Ativo | **Muito ativo** | **Muito ativo** | Lento (Windows-only) | **Manutenção** | **Parado** (2018–21) | Baixa atividade | Ativo (pequeno) | Ativo | **Muito ativo** | **Muito ativo** | Ativo | Baixa atividade |
 
@@ -341,7 +342,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | Booleanas / offset | ✅ | ✅ | ✅ | ❌ | parcial | parcial |
 | Camadas / multi-operação | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Nesting | ❌ | ✅ (2.1/2.2 Pro) | padrões | ❌ | ❌ | ✅ (Smart Nesting) |
-| Import SVG / DXF / PDF / AI | SVG/DXF | SVG/DXF/PDF/AI/3D | **SVG/DXF/PDF/AI/EPS/HPGL/.lbrn2** | SVG (experimental) | SVG/DXF | SVG/DXF (e G-code) |
+| Import SVG / DXF / PDF / AI | SVG/DXF/PDF | SVG/DXF/PDF/AI/3D | **SVG/DXF/PDF/AI/EPS/HPGL/.lbrn2** | SVG (experimental) | SVG/DXF | SVG/DXF (e G-code) |
 | Câmera / alinhamento | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Rotativa (eixo A) | ❌ | ✅ | ✅ (4 eixos) | ❌ | ✅ | ✅ |
 | Simulação de job | ✅ (2D + tempo) | ✅ | ✅ (**3D**) | parcial | ✅ | ✅ (3D) |
@@ -352,7 +353,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | Plugins / addons / CLI | ❌ | REST API | ✅ addons + CLI | ❌ | CLI | ❌ |
 | i18n | 3 idiomas | vários | 7 idiomas | vários | vários (incl. pt) | vários |
 | Temas / aparência | **11 temas Fluent** | ✅ | ✅ (GTK) | básico | básico | ✅ |
-| Robustez de protocolo testada | ✅ (689 testes + E2E) | n/d | n/d | ❌ | n/d | n/d |
+| Robustez de protocolo testada | ✅ (705 testes + E2E) | n/d | n/d | ❌ | n/d | n/d |
 | Preview com intensidade `S` | ✅ | ✅ | ✅ | parcial | ✅ | ✅ |
 | Nuvem / AI / biblioteca | ❌ | ❌ (local) | AI opcional | ❌ | ❌ | ✅ |
 
@@ -365,7 +366,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 1. **Aberto + leve + multiplataforma** — MIT, sem assinatura, sem nuvem, sem
    limite de arquivo, rodando nativo em 3 SOs (Rayforge é o único par nisso).
 2. **Robustez de protocolo** — janela por bytes, comandos de tempo real corretos,
-   WCO/DTG, alarmes com ação recomendada e **689 testes**. Nenhum rival publica
+   WCO/DTG, alarmes com ação recomendada e **705 testes**. Nenhum rival publica
    esse nível de verificação; LaserGRBL e MeerK40t são notoriamente frágeis em
    bordas de protocolo.
 3. **Pipeline de imagem otimizado** — velocidade adaptativa, zigue-zague, fusão
@@ -386,7 +387,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
    xTool.
 2. **Simulação 3D** — Rayforge e LightBurn mostram o resultado antes de gravar;
    o GRBL Studio tem o playback **2D** com tempo.
-3. **Importação vetorial** — SVG/DXF; Rayforge engole também PDF/AI/EPS/HPGL
+3. **Importação vetorial** — SVG/DXF/PDF; Rayforge engole também AI/EPS/HPGL
    e até arquivos do LightBurn.
 4. **Catálogo de máquinas** — 22 perfis + Genérico contra dezenas, sem import
    `.lbdev`; atrito para quem tem Ortur/AtomStack/Sculpfun/xTool.
@@ -421,7 +422,7 @@ GRBL, em qualquer sistema"*, com três pilares que **nenhum rival cobre junto**:
    limite de arquivo, sem plano Pro).
 
 Prioridade de execução para defender o espaço contra o Rayforge:
-**catálogo de máquinas + import LightBurn → PDF/AI → rotativa → câmera**, com
+**catálogo de máquinas + import LightBurn → AI/EPS → rotativa → câmera**, com
 **QR/código de barras (S1/S2 entregues, S3 restante)** e **camadas (entregues na
 0.8.0)** já no bolso por serem diferenciais baratos.
 
@@ -442,7 +443,7 @@ Prioridade de execução para defender o espaço contra o Rayforge:
 | UGS (universalgcodesender.com, releases 2.1.24) · Sienci gSender (releases 1.6.2/1.7 Edge, add-ons) · wiki PiBot (tabela de senders, 2026) | jul–set/2026 | Sendores genéricos e recursos laser/CNC. |
 | xTool Support (transição XCS→Studio, release notes V1.9/V1.5) · LaserPecker (LDS PC 3.0 Beta) · Glowforge Premium | fev–set/2026 | Software grátis preso ao hardware; QR/barcode em lote; assinaturas. |
 | T2Laser (loja) · picengrave.com · Guideflow (jul/2026) · statpit/worldmetrics (2026) | 2026 | Preços de T2Laser (US$ 39,95–79,95), PicEngrave (US$ 40–85), EZCAD (US$ 50–420), CypCut, LaserCAD, EngraveLab, VectorEase, ACMER Studio. |
-| Repositório GRBL Studio (`package.json`, `electron-builder.yml`, `.github/workflows/release.yml`, `src/`, `public/`, `tests/`) | 19/10/2026 | Estado real v0.8.0 (features, 689 testes, builds 3 SOs, auto-update). |
+| Repositório GRBL Studio (`package.json`, `electron-builder.yml`, `.github/workflows/release.yml`, `src/`, `public/`, `tests/`) | 19/10/2026 | Estado real v0.8.0 (features, 705 testes, builds 3 SOs, auto-update). |
 
 ---
 
@@ -456,7 +457,7 @@ também MIT, também multiplataforma, com camadas, câmera, rotativa, simulaçã
 importação ampla. Contra ele, o GRBL Studio deve jogar nas suas forças —
 **confiabilidade medida, leveza, aparência, ferramentas de fabricação (camadas,
 QR/código de barras)** e **zero amarras** — e fechar rápido as lacunas que travam
-produção: **catálogo de máquinas/import LightBurn e PDF/AI** (DXF já entregue).
+produção: **catálogo de máquinas/import LightBurn e AI/EPS** (SVG/DXF/PDF já entregues).
 
 ---
 

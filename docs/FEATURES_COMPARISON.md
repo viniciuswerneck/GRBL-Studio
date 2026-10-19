@@ -49,7 +49,7 @@
 | Imagem (JPG/BMP/PNG/…) | Sim | Sim (PNG/JPEG/BMP/GIF/WebP/AVIF) | ✅ |
 | SVG | Experimental | Sim (importação → contorno) | ✅ |
 | DXF | Experimental | Sim (ASCII: geometria, blocos/`INSERT`, camadas e `$INSUNITS` → contorno) | ✅ |
-| PDF | Não | Não (P2.4 pendente: RF-DSN-15) | ⬜ |
+| PDF | Não | Sim (vetorial: object streams, `cm`, Form XObjects e rotação; 1ª página; texto/imagens ignorados) | ✅ |
 | Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | ✅ |
 | Vetorização | Sim | Sim (contorno/RDP) | ✅ |
 | Perfis de material | Sim | Sim (COMGO Z1: 3W/5W/10W) | ✅ |
@@ -77,15 +77,15 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1026 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1037 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Importação PDF** (P2.4) — SVG e DXF ASCII já existem (P1.6/P2.4).
-3. **Catálogo de máquinas** (P2.5) + import de perfis `.lbdev` do LightBurn.
-4. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
-5. **Câmera + rotativa** (P3.1/P3.2).
-6. **Simbologias restantes** (PDF417/Aztec) e **grade de símbolos** (RF-SYM-9).
+2. **Catálogo de máquinas** (P2.5) + import de perfis `.lbdev` do LightBurn
+   (importação SVG/DXF/PDF, P1.6/P2.4, já existe).
+3. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
+4. **Câmera + rotativa** (P3.1/P3.2).
+5. **Simbologias restantes** (PDF417/Aztec) e **grade de símbolos** (RF-SYM-9).

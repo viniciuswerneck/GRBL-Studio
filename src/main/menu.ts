@@ -59,6 +59,10 @@ export function rebuildMenu(): void {
           label: t('menu.openDxf'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.openDxf),
         },
+        {
+          label: t('menu.openPdf'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.openPdf),
+        },
         { type: 'separator' },
         { label: t('menu.quit'), click: () => app.quit() },
       ],

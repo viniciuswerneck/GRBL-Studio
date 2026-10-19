@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
+import { deflateSync } from 'node:zlib';
 import { _electron as electron, expect, test } from '@playwright/test';
 
 /** API global exposta pelo bundle `public/i18n.js` (GRBL_I18N). */
@@ -815,6 +816,56 @@ test.describe('GRBL Studio — importação DXF (P2.4)', () => {
       await expect(page.locator('#consoleOutput')).toContainText('1 contorno');
       await expect(page.locator('#consoleOutput')).toContainText(
         '20.0 × 10.0 mm',
+      );
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+test.describe('GRBL Studio — importação PDF (P2.4/RF-DSN-15)', () => {
+  test('converte caminhos vetoriais de PDF e carrega o G-code', async () => {
+    const { app, page, close } = await launchApp();
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-pdf-'));
+    const file = path.join(dir, 'peca.pdf');
+    const content = deflateSync(Buffer.from('10 10 100 50 re S')).toString(
+      'latin1',
+    );
+    const pdf = [
+      '%PDF-1.4',
+      '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj',
+      '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 200 120] >>\nendobj',
+      '3 0 obj\n<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>\nendobj',
+      `4 0 obj\n<< /Filter /FlateDecode /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj`,
+      'trailer\n<< /Root 1 0 R >>',
+      '%%EOF',
+      '',
+    ].join('\n');
+    writeFileSync(file, pdf, 'latin1');
+    try {
+      await app.evaluate(({ dialog }, pathToFile) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [pathToFile],
+        });
+        d.showSaveDialog = async () => ({ canceled: true });
+      }, file);
+
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'open-pdf',
+        );
+      });
+
+      await expect(page.locator('#fileInfo')).toContainText('peca.gcode');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'PDF importado',
+      );
+      await expect(page.locator('#consoleOutput')).toContainText(
+        '35.3 × 17.6 mm',
       );
     } finally {
       await close();

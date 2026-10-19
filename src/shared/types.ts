@@ -237,6 +237,32 @@ export interface OpenedTextFile {
   text: string;
 }
 
+/**
+ * Resultado da importação de PDF (RF-DSN-15). O parse roda no main (precisa de
+ * `zlib`); o renderer recebe o G-code pronto e o resumo para as mensagens.
+ */
+export interface PdfImportResult {
+  path: string;
+  name: string;
+  gcode: string;
+  contours: number;
+  /** Largura/altura da arte em mm. */
+  width: number;
+  height: number;
+  /** Total de páginas; só a primeira é importada. */
+  pages: number;
+  textSkipped: boolean;
+  imagesSkipped: number;
+  unsupported: Record<string, number>;
+}
+
+/** Falha prevista da importação (mensagem i18n no renderer). */
+export interface PdfImportFailure {
+  error: 'encrypted' | 'damaged';
+}
+
+export type PdfImportResponse = PdfImportResult | PdfImportFailure;
+
 /** Consulta especial `$#`/`$I`/`$G` (RF-CFG-3). */
 export type SpecialQuery = 'offsets' | 'info' | 'state';
 

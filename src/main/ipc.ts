@@ -14,6 +14,7 @@ import {
 } from 'electron';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
+import { inflateSync } from 'node:zlib';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -32,10 +33,12 @@ import {
   DXF_DIALOG_FILTERS,
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
+  PDF_DIALOG_FILTERS,
   SVG_DIALOG_FILTERS,
   type FileDialogFilter,
   imageMimeType,
 } from '../shared/fileFilters';
+import { parsePdf, pdfToGcode, PdfError } from '../shared/pdf';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
 import { parseSettings } from '../shared/protocol';
 import type {
@@ -44,6 +47,7 @@ import type {
   OpenedImageFile,
   OpenedTextFile,
   OverrideAction,
+  PdfImportResponse,
   PortInfo,
   Prefs,
   RapidOverrideLevel,
@@ -425,6 +429,74 @@ export function registerIpc(
   // --------------------------------------------------- DXF (importação CAD)
   ipcMain.handle(CHANNELS.fileOpenDxf, (evt) =>
     openTextFile(evt.sender, t('dlg.openDxf'), DXF_DIALOG_FILTERS),
+  );
+
+  // --------------------------------------------------- PDF (vetorial, RF-DSN-15)
+  ipcMain.handle(
+    CHANNELS.fileOpenPdf,
+    async (
+      evt,
+      payload: { feed?: number; travelFeed?: number } = {},
+    ): Promise<PdfImportResponse | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: t('dlg.openPdf'),
+        buttonLabel: t('dlg.open'),
+        properties: ['openFile'],
+        filters: PDF_DIALOG_FILTERS,
+        defaultPath: await defaultDir(),
+      });
+      if (!filePath) return null;
+      rememberDir(filePath);
+
+      const info = await stat(filePath);
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
+      if (info.size > TEXT_MAX_BYTES) {
+        throw new Error(
+          t('dlg.fileTooBig', {
+            size: formatMb(info.size),
+            limit: formatMb(TEXT_MAX_BYTES),
+          }),
+        );
+      }
+
+      const buffer = await readFile(filePath);
+      let doc: ReturnType<typeof parsePdf>;
+      try {
+        doc = parsePdf(
+          buffer.toString('latin1'),
+          (data) => new Uint8Array(inflateSync(Buffer.from(data))),
+        );
+      } catch (err) {
+        if (err instanceof PdfError && err.code === 'encrypted') {
+          return { error: 'encrypted' };
+        }
+        return { error: 'damaged' };
+      }
+
+      const feed =
+        Number.isFinite(payload.feed) && (payload.feed ?? 0) > 0
+          ? Number(payload.feed)
+          : 1000;
+      const travelFeed =
+        Number.isFinite(payload.travelFeed) && (payload.travelFeed ?? 0) > 0
+          ? Number(payload.travelFeed)
+          : 3000;
+      const gcode = doc.contours.length
+        ? pdfToGcode(doc, { feed, travelFeed })
+        : '';
+      return {
+        path: filePath,
+        name: path.basename(filePath),
+        gcode,
+        contours: doc.contours.length,
+        width: doc.width,
+        height: doc.height,
+        pages: doc.pages,
+        textSkipped: doc.textSkipped,
+        imagesSkipped: doc.imagesSkipped,
+        unsupported: doc.unsupported,
+      };
+    },
   );
 
   /**

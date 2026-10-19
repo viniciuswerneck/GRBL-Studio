@@ -81,6 +81,12 @@ export const DXF_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
+/** PDF (importação vetorial). */
+export const PDF_DIALOG_FILTERS: FileDialogFilter[] = [
+  { name: 'PDF (pdf)', extensions: ['pdf', 'PDF'] },
+  { name: 'Todos os arquivos', extensions: ['*'] },
+];
+
 const IMAGE_SET = new Set(IMAGE_EXTENSIONS.map((e) => e.toLowerCase()));
 const GCODE_SET = new Set(GCODE_EXTENSIONS.map((e) => e.toLowerCase()));
 

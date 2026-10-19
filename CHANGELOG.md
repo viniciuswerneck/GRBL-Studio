@@ -42,8 +42,20 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   instrução para exportar em ASCII. O bundle `public/dxf.js` carrega só ao
   importar (fora do primeiro paint), reusando `contoursToGcode` de `svg.ts`.
 - Testes: **14 unitários** do parser (geometria, blocos, camadas, unidades,
-  G-code) e **E2E** com o diálogo nativo simulado. **PDF segue pendente**
-  (P2.4 parcial).
+  G-code) e **E2E** com o diálogo nativo simulado.
+
+### Added — importação PDF vetorial (P2.4, RF-DSN-15)
+
+- **Arquivo → Importar PDF…** extrai caminhos vetoriais de PDFs (o parse roda no
+  main, que tem `zlib`): objetos por varredura + **object streams** (`/ObjStm`),
+  filtros `FlateDecode`/`ASCIIHex`/`ASCII85`, operadores `m l c v y re h`, matriz
+  `cm` com pilha `q/Q`, **Form XObjects** (`Do` + `/Matrix`) e **rotação de
+  página**. Contornos convertidos de pontos para mm e normalizados em (0,0).
+- Importa apenas a **primeira página** e avisa quantas existem; **texto** (fontes
+  não viram curvas) e **imagens** são ignorados com aviso, sem inventar
+  geometria. PDF criptografado é recusado com orientação.
+- Testes: **15 unitários** (inclusive object stream, rotação, filtros e XObject)
+  e **E2E** com diálogo simulado. Com isso o **P2.4 (DXF + PDF) fecha**.
 
 ### Added — camadas / multi-operação (P2.2, RF-DSN-13)
 

@@ -44,8 +44,10 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > job** virou o requisito **RF-PRV-7** (entregue na 0.5.0). Nesta data entrou
 > **RF-DSN-13 (camadas / multi-operação, P2.2)**: parâmetros por camada, ordem de
 > execução reordenável e `M5` antes das trocas de potência. Nesta data também
-> entrou **RF-DSN-14 (importação DXF ASCII, P2.4)**: geometria/blocos/camadas/
-> `$INSUNITS` → contornos e G-code; o **PDF** (RF-DSN-15) fica para depois.
+> entraram **RF-DSN-14 (importação DXF ASCII)** e **RF-DSN-15 (importação PDF
+> vetorial)** do **P2.4**: geometria/blocos/camadas/`$INSUNITS` e caminhos de
+> PDF (object streams, `cm`, Form XObjects, rotação da 1ª página) → contornos e
+> G-code. Texto de PDF não vira curva (aviso).
 > `RF-SYM-9` (grade de símbolos) segue pendente.
 
 | Fase | Status | Pendências |
