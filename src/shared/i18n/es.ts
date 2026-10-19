@@ -286,6 +286,7 @@ export const es = {
   'qr.err.too-long':
     'El contenido es demasiado largo para un código QR en el nivel {ecc}.',
   'qr.err.bad-version': 'Versión de la información de formato no válida.',
+  'qr.err.unknown': 'No se pudo generar el código QR con estos parámetros.',
   'qr.warn.module-small':
     'Módulo menor que 2× el punto del láser: el código puede salir ilegible.',
   'qr.warn.module-tiny':
@@ -312,6 +313,8 @@ export const es = {
   'dm.err.bad-chars':
     'El Data Matrix ECC200 solo acepta Latin-1 (sin emoji ni otro UTF-8).',
   'dm.err.bad-size': 'Tamaño de Data Matrix no válido.',
+  'dm.err.unknown':
+    'No se pudo generar el Data Matrix con estos parámetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':
@@ -393,6 +396,8 @@ export const es = {
     'Barras más bajas que el mínimo recomendado: dificulta la lectura.',
   'bar.warn.hri-chars':
     'El HRI tiene caracteres sin glifo en la fuente: salen como “?”.',
+  'bar.warn.uppercased':
+    'El Code 39 solo graba mayúsculas — el contenido se convirtió, y el lector lo devolverá en mayúsculas.',
 
   // -------------------------------------------- bienvenida / onboarding
   'tour.title': 'Bienvenido a GRBL Studio',
@@ -887,6 +892,10 @@ export const es = {
   'client.notConnected': 'No conectado.',
   'client.jobRunning': 'Ya hay un trabajo en ejecución.',
   'client.stopped': 'Detenido por el usuario.',
+  'client.queryJobStarted':
+    'Consulta cancelada: un job comenzó mientras seguía en la cola.',
+  'client.lineTooLong':
+    'Línea demasiado larga ({bytes} B) para el búfer de la máquina ({max} B) — envío detenido para no corromper el G-code. Extracto: {line}',
   'client.reset': 'Reset por el usuario.',
   'client.writeFail': 'Fallo al escribir en la serie: {msg}',
   'client.stall':

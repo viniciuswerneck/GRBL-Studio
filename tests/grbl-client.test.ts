@@ -240,6 +240,40 @@ describe('GrblClient — janela de envio (contagem de caracteres)', () => {
     expect(fake.written.length).toBe(12);
   });
 
+  it('nunca envia linha maior que o buffer RX (aborta o job)', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    const errors: string[] = [];
+    client.on('error', (e) => errors.push(e.message));
+
+    // 201 bytes: não cabe no buffer de 128 B — enviar estouraria o buffer e o
+    // GRBL perderia caracteres no meio (G-code corrompido). Melhor falhar alto.
+    const long = `;${'x'.repeat(200)}`;
+    client.startJob(['G1 X1', long, 'G1 X2'], 'longa');
+
+    expect(fake.written).toEqual(['G1 X1']); // a longa nunca sai
+    expect(errors.join(' ')).toMatch(/Linha longa demais/);
+
+    // Job abortado: as linhas seguintes não são enviadas nem com `ok` chegando.
+    fake.feed('ok\n');
+    expect(fake.written).toEqual(['G1 X1']);
+  });
+
+  it('rejeita a consulta enfileirada quando um job começa', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+
+    client.sendLine('G1 X1'); // ocupa a janela…
+    const pending = client.query('$$'); // …então a consulta fica só na fila
+    const rejected = expect(pending).rejects.toThrow('Consulta cancelada');
+
+    client.startJob(['G1 X2'], 'novo');
+    await rejected;
+
+    expect(fake.written).not.toContain('$$');
+    expect(fake.written).toContain('G1 X2');
+  });
+
   it('não mistura consulta com linhas do job em voo', async () => {
     const { fake, client } = setup();
     await client.connect(CONNECT);

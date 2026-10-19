@@ -181,7 +181,10 @@ export function parseStatusReport(line: string): GrblStatus | null {
 
 /** Extrai o código numérico de `error:N` ou `ALARM:N`. */
 function extractCode(line: string): number | undefined {
-  const match = line.match(/:(\d+)\s*$/);
+  // Código logo após o prefixo (`error:9`, `ALARM:1`). Aceitar texto depois
+  // (`error:9 not ok`) evita perder o código quando o firmware acrescenta algo
+  // — mas exigir o dígito colado ao `:` mantém `$#`/`ALARM:` sem código.
+  const match = line.match(/^[^:]*:\s*(\d+)\b/);
   if (!match) return undefined;
   const n = Number.parseInt(match[1]!, 10);
   return Number.isFinite(n) ? n : undefined;
@@ -210,8 +213,6 @@ export function classifyLine(rawLine: string): ClassifiedLine {
     return { kind: 'message', text: trimmed, message: inner };
   }
 
-  if (/ok\b/i.test(trimmed)) return { kind: 'ok', text: trimmed };
-
   if (/^error:/i.test(trimmed)) {
     const code = extractCode(trimmed);
     return {
@@ -237,6 +238,10 @@ export function classifyLine(rawLine: string): ClassifiedLine {
           : trimmed,
     };
   }
+
+  // O `ok` só depois de `error:`/`ALARM:`: um firmware que combine os dois
+  // (`error:9 not ok`) não pode liberar a janela de envio cedo demais.
+  if (/ok\b/i.test(trimmed)) return { kind: 'ok', text: trimmed };
 
   if (trimmed.startsWith('$')) {
     return { kind: 'setting', text: trimmed };
@@ -284,9 +289,13 @@ export function parseSettings(lines: string[]): Map<number, ParsedSetting> {
  */
 export function splitLines(buffer: string): { lines: string[]; rest: string } {
   // Status reports terminam em '>' e, em alguns firmwares/chunks, chegam
-  // colados ao 'ok' seguinte sem '\n'. Inserimos a quebra para não perder
-  // a confirmação (o que travava o envio com watchdog de 8 s).
-  const normalized = buffer.replace(/>(?!\n)/g, '>\n');
+  // colados ao 'ok' seguinte sem '\n'. Inserimos a quebra — mas só no `>` que
+  // **fecha** um `<...>` de status (a forma do GRBL: `<Idle`, `<Run`, `<[…`):
+  // um `>` dentro de uma mensagem (`[MSG:ferramenta > 3 mm]`) não divide linha.
+  const normalized = buffer.replace(
+    /<([A-Za-z\[])([^<>\n]*)>(?!\n)/g,
+    '<$1$2>\n',
+  );
   const parts = normalized.split('\n');
   const rest = parts.pop() ?? '';
   return { lines: parts, rest };

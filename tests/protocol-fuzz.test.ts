@@ -235,9 +235,9 @@ function classifiedLine(): string {
     case 0:
       return pick(['ok', 'OK', 'ok\r', '@ok', 'ok!', 'not ok', '[MSG:Jog ok]']);
     case 1:
-      return `error:${pick(['1', '9', '99', '', 'UNKNOWN', '9'.repeat(400)])}`;
+      return `error:${pick(['1', '9', '99', '', 'UNKNOWN', '9'.repeat(400)])}${pick(['', ' not ok', ' ok'])}`;
     case 2:
-      return `ALARM:${pick(['1', '9', '99', '', 'UNKNOWN', '9'.repeat(400)])}`;
+      return `ALARM:${pick(['1', '9', '99', '', 'UNKNOWN', '9'.repeat(400)])}${pick(['', ' ok'])}`;
     case 3:
       return pick(['$G', '$#', '$I', '$$']);
     case 4:
@@ -383,7 +383,12 @@ function checkClassified(input: string): void {
       'welcome sem banner',
     );
   }
-  if (line.kind === 'ok') check(/ok\b/i.test(trimmed), 'ok sem ACK');
+  if (line.kind === 'ok') {
+    check(/ok\b/i.test(trimmed), 'ok sem ACK');
+    // `error:`/`ALARM:` que citam "ok" não podem virar ACK (liberaria a janela
+    // de envio antes da hora).
+    check(!/^error:|^ALARM:/i.test(trimmed), 'ok em linha de erro/alarme');
+  }
 }
 
 function checkSetting(input: string): void {
@@ -414,11 +419,25 @@ function checkSplit(input: string): void {
     );
   }
 
-  const normalized = input.replace(/>(?!\n)/g, '>\n');
+  // O contrato do `splitLines` é **não perder conteúdo**: ele só pode
+  // *inserir* `\n` logo depois de um `>` que fecha um status report. Comparar
+  // com a normalização antiga (`/>(?!\n)/g`) não vale mais — ela dividia um `>`
+  // dentro de `[MSG:…]`. Aqui a comparação é caractere a caractere: `rebuilt`
+  // tem de ser o input, na ordem, com quebras inseridas só depois de `>`.
   const rebuilt = lines.length > 0 ? `${lines.join('\n')}\n${rest}` : rest;
+  let i = 0;
+  let ok = true;
+  for (let r = 0; r < rebuilt.length && ok; r++) {
+    if (rebuilt[r] === '\n' && input[i] !== '\n') {
+      ok = r > 0 && rebuilt[r - 1] === '>';
+      continue; // quebra inserida: não consome o input
+    }
+    if (rebuilt[r] !== input[i]) ok = false;
+    else i++;
+  }
   check(
-    rebuilt === normalized,
-    `split perdeu conteúdo em ${describeInput(input)}`,
+    ok && i === input.length,
+    `split alterou conteúdo em ${describeInput(input)}`,
   );
 }
 

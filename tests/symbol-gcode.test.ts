@@ -790,3 +790,70 @@ describe('dataMatrixToGcode (2D → G-code, RF-SYM-7)', () => {
     expect(res.warnings).toContain('outside-work-area');
   });
 });
+
+describe('cabeçalho — limite de bytes do buffer RX (RF-SYM-3)', () => {
+  const encoder = new TextEncoder();
+  // Latin-1: `—` e acentos ocupam 2 bytes cada; contar caracteres mentiria.
+  const longLabel = `${'çãõáé'.repeat(30)}—fim`;
+  const maxLineBytes = 110;
+  const overlong = (gcode: string) =>
+    gcode
+      .split('\n')
+      .filter((line) => line.trim() !== '')
+      .filter((line) => encoder.encode(line).length > maxLineBytes);
+
+  it('nenhuma linha do QR passa do teto (rótulo longo com acentos)', () => {
+    const result = qrToGcode(longLabel, {
+      ...baseParams,
+      label: longLabel,
+      labelMaxChars: 60,
+    });
+    expect(overlong(result.gcode)).toEqual([]);
+    expect(result.gcode).toContain('conteúdo: ');
+    expect(result.gcode).toMatch(/conteúdo: [^\n]*…/);
+  });
+
+  it('nenhuma linha do Data Matrix passa do teto', () => {
+    const result = dataMatrixToGcode('DM 123', {
+      ...baseParams,
+      label: longLabel,
+      labelMaxChars: 60,
+    });
+    expect(overlong(result.gcode)).toEqual([]);
+  });
+
+  it('nenhuma linha do código de barras passa do teto', () => {
+    const result = barcodeToGcode('GRBL-STUDIO', {
+      ...baseParams,
+      symbology: 'code128',
+      label: longLabel,
+      labelMaxChars: 60,
+    });
+    expect(overlong(result.gcode)).toEqual([]);
+  });
+});
+
+describe('avisos do Code 39 (mudança silenciosa de dado)', () => {
+  it('avisa quando o Code 39 converte o conteúdo para maiúsculas', () => {
+    const up = barcodeToGcode('GRBL-STUDIO', {
+      ...baseParams,
+      symbology: 'code39',
+    });
+    expect(up.warnings).not.toContain('uppercased');
+
+    const lower = barcodeToGcode('grbl-studio', {
+      ...baseParams,
+      symbology: 'code39',
+    });
+    expect(lower.warnings).toContain('uppercased');
+    expect(lower.barcode.data).toBe('GRBL-STUDIO');
+  });
+
+  it('não avisa nas outras simbologias (têm minúsculas no alfabeto)', () => {
+    const r = barcodeToGcode('grbl-studio', {
+      ...baseParams,
+      symbology: 'code128',
+    });
+    expect(r.warnings).not.toContain('uppercased');
+  });
+});

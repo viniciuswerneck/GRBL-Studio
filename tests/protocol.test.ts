@@ -88,6 +88,14 @@ describe('classifyLine', () => {
     expect(classifyLine("Grbl 1.1f ['$' for help]").kind).toBe('welcome');
   });
 
+  it('não confunde `error:`/`ALARM:` que citam “ok” com um ACK', () => {
+    // Um `ok` não ancorado liberaria a janela de envio antes da hora.
+    expect(classifyLine('error:9 not ok').kind).toBe('error');
+    expect(classifyLine('error:9 not ok').code).toBe(9);
+    expect(classifyLine('ALARM:1 ok').kind).toBe('alarm');
+    expect(classifyLine('ALARM:1 ok').code).toBe(1);
+  });
+
   it('trata alarme/erro sem código', () => {
     const alarm = classifyLine('ALARM:');
     expect(alarm.kind).toBe('alarm');
@@ -132,6 +140,29 @@ describe('splitLines', () => {
 
   it('sem newline mantém tudo no rest', () => {
     expect(splitLines('ok')).toEqual({ lines: [], rest: 'ok' });
+  });
+
+  it('quebra o `>` do status colado ao `ok` seguinte', () => {
+    expect(splitLines('<Idle|MPos:0.000,0.000,0.000>ok\n')).toEqual({
+      lines: ['<Idle|MPos:0.000,0.000,0.000>', 'ok'],
+      rest: '',
+    });
+    // Dois status colados, sem `\n` nenhum.
+    expect(splitLines('<Idle>ok<Run>').lines).toEqual(['<Idle>', 'ok<Run>']);
+  });
+
+  it('não quebra um `>` dentro de uma mensagem', () => {
+    expect(splitLines('[MSG:ferramenta > 3 mm]\nok\n')).toEqual({
+      lines: ['[MSG:ferramenta > 3 mm]', 'ok'],
+      rest: '',
+    });
+  });
+
+  it('status parcial entre chunks continua no rest', () => {
+    expect(splitLines('<Idle|MPos:1.000,2.000,')).toEqual({
+      lines: [],
+      rest: '<Idle|MPos:1.000,2.000,',
+    });
   });
 });
 

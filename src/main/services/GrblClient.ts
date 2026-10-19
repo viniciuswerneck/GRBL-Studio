@@ -314,6 +314,13 @@ export class GrblClient extends EventEmitter {
       .filter((l) => l.length > 0)
       .map((line) => ({ line, job: true }));
 
+    // A fila é substituída: uma consulta enfileirada mas ainda não despachada
+    // sumiria e só falharia no timeout (8 s de espera espúria). Falha agora,
+    // com motivo claro. Se ela já está em voo, o `ok` da resposta continua
+    // atribuído em ordem (FIFO) — não se mexe nela.
+    if (this.pendingQuery && !this.pendingQuery.active) {
+      this.failQuery(new Error(t('client.queryJobStarted')));
+    }
     this.queue = items;
     this.jobDone = 0;
     this.job = { state: 'running', name, sent: 0, total: items.length };
@@ -704,6 +711,14 @@ export class GrblClient extends EventEmitter {
   }
 
   /**
+   * Trecho curto de uma linha para a mensagem de erro (não despeja 300 B no
+   * console).
+   */
+  private static shortLine(line: string): string {
+    return line.length > 48 ? `${line.slice(0, 47)}…` : line;
+  }
+
+  /**
    * Orçamento da janela em bytes: o buffer RX do GRBL com uma pequena margem
    * (o GRBL conta a linha inteira, incluindo o `\n`).
    */
@@ -739,6 +754,21 @@ export class GrblClient extends EventEmitter {
       if (item.job && paused) return;
       if (!item.job && this.inFlight.length > 0) return;
       const bytes = Buffer.byteLength(item.line, 'utf8') + 1; // + '\n'
+      // Linha que não cabe no buffer RX do GRBL (128 B típicos): enviar
+      // estouraria o buffer e o GRBL perderia caracteres no meio — falha alto
+      // em vez de corromper. O '\n' conta: o GRBL precisa da linha inteira.
+      if (bytes > this.rxBufferSize) {
+        this.queue.shift();
+        const msg = t('client.lineTooLong', {
+          bytes,
+          max: this.rxBufferSize,
+          line: GrblClient.shortLine(item.line),
+        });
+        if (item.query) this.failQuery(new Error(msg));
+        if (item.job) this.abortJob(msg);
+        this.emit('error', { message: msg });
+        continue;
+      }
       // Sempre permite a primeira linha em voo (mesmo se for maior que a
       // janela): senão uma linha longa travaria o envio para sempre.
       if (item.job && this.inFlight.length > 0) {

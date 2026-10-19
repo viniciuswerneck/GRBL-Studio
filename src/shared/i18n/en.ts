@@ -278,6 +278,7 @@ export const en = {
   'qr.err.empty': 'Enter some content to generate the QR Code.',
   'qr.err.too-long': 'The content is too long for a QR Code at level {ecc}.',
   'qr.err.bad-version': 'Invalid format information version.',
+  'qr.err.unknown': 'Could not generate the QR Code with these settings.',
   'qr.warn.module-small':
     'Module smaller than 2× the laser spot: the code may be unreadable.',
   'qr.warn.module-tiny': 'Module below 0.3 mm: too small for most readers.',
@@ -303,6 +304,7 @@ export const en = {
   'dm.err.bad-chars':
     'The ECC200 Data Matrix accepts Latin-1 only (no emoji or other UTF-8).',
   'dm.err.bad-size': 'Invalid Data Matrix size.',
+  'dm.err.unknown': 'Could not generate the Data Matrix with these settings.',
 
   'bar.title': 'Barcode',
   'bar.hint':
@@ -381,6 +383,8 @@ export const en = {
     'Bars shorter than the recommended minimum: makes scanning harder.',
   'bar.warn.hri-chars':
     'The HRI has characters without a glyph in the font: they print as “?”.',
+  'bar.warn.uppercased':
+    'Code 39 is uppercase-only — the content was converted, and a scanner will return it in uppercase.',
 
   // ------------------------------------------------ welcome / onboarding
   'tour.title': 'Welcome to GRBL Studio',
@@ -863,6 +867,10 @@ export const en = {
   'client.notConnected': 'Not connected.',
   'client.jobRunning': 'A job is already running.',
   'client.stopped': 'Stopped by the user.',
+  'client.queryJobStarted':
+    'Query cancelled: a job started while it was still queued.',
+  'client.lineTooLong':
+    'Line too long ({bytes} B) for the machine buffer ({max} B) — sending stopped to avoid corrupting the G-code. Excerpt: {line}',
   'client.reset': 'Reset by the user.',
   'client.writeFail': 'Failed to write to the serial port: {msg}',
   'client.stall':

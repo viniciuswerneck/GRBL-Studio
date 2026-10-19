@@ -84,6 +84,35 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
+const utf8 = new TextEncoder();
+
+/**
+ * Teto de bytes de cada linha do cabeçalho (comentário de G-code). Folga sobre
+ * o buffer RX de 128 B: nunca é a linha que estoura o envio.
+ */
+const HEADER_MAX_BYTES = 110;
+
+/**
+ * Corta o texto em um orçamento de **bytes** UTF-8 (não de caracteres): o
+ * cabeçalho vira comentário de G-code e uma linha não pode passar do buffer RX
+ * do GRBL (128 B típicos). Com acentos (Latin-1 = 2 B) contar caracteres
+ * mentiria.
+ */
+function truncateBytes(text: string, maxBytes: number, ellipsis = '…'): string {
+  if (utf8.encode(text).length <= maxBytes) return text;
+  const suffix = utf8.encode(ellipsis);
+  const budget = Math.max(0, maxBytes - suffix.length);
+  let out = '';
+  let used = 0;
+  for (const ch of text) {
+    const size = utf8.encode(ch).length;
+    if (used + size > budget) break;
+    out += ch;
+    used += size;
+  }
+  return out + ellipsis;
+}
+
 /**
  * Pontos finitos e trecho com comprimento real: coordenadas `NaN`/`Infinity`
  * fariam o GRBL abortar o job, e um trecho de comprimento zero não queima nada.
@@ -238,7 +267,8 @@ export type SymbolWarningCode =
   | 'stretched'
   | 'x-dim-small'
   | 'bar-height-small'
-  | 'hri-chars';
+  | 'hri-chars'
+  | 'uppercased';
 
 export interface SymbolWarningsOptions {
   /** Lado do módulo (QR) ou X-dimension (1D), em mm. */
@@ -457,9 +487,10 @@ function matrixToGcode(
   });
 
   const label = params.label ?? '';
-  const maxChars = Math.max(8, params.labelMaxChars ?? 60);
-  const shown =
-    label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
+  // Orçamento em **bytes** (acentos ocupam 2 no Latin-1) e teto por linha: o
+  // cabeçalho é comentário de G-code e não pode passar do buffer RX da máquina.
+  const maxBytes = Math.max(8, params.labelMaxChars ?? 60);
+  const shown = truncateBytes(label, maxBytes);
   const moduleText = stretched
     ? `módulo ${fmt(moduleXMm)} × ${fmt(moduleYMm)} mm`
     : `módulo ${fmt(moduleXMm)} mm`;
@@ -469,7 +500,7 @@ function matrixToGcode(
     ...symbol.details,
     `${moduleText} · quiet zone ${quietZoneModules} módulos · ${fmt(extent.widthMm)} × ${fmt(extent.heightMm)} mm`,
     `varredura ${linesPerMm} linhas/mm${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
-  ];
+  ].map((line) => truncateBytes(line, HEADER_MAX_BYTES));
 
   const result = symbolToGcode(applyOverscan(segments, overscanMm), extent, {
     ...params,
@@ -774,9 +805,7 @@ export function barcodeToGcode(
   };
 
   const label = params.label ?? barcode.data;
-  const maxChars = Math.max(8, params.labelMaxChars ?? 60);
-  const shown =
-    label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
+  const shown = truncateBytes(label, Math.max(8, params.labelMaxChars ?? 60));
   const check =
     barcode.checkDigit !== undefined
       ? ` · verificador ${barcode.checkDigit}`
@@ -788,7 +817,7 @@ export function barcodeToGcode(
     `conteúdo: ${shown}${check}`,
     `${barcode.totalModules} módulos · X-dim ${fmt(xDimMm)} mm · barras ${fmt(barHeightMm)} mm · quiet zone ${quietZoneModules} módulos`,
     `${fmt(extent.widthMm)} × ${fmt(extent.heightMm)} mm · varredura ${linesPerMm} linhas/mm${showHri ? ` · HRI ${fmt(hriHeightMm)} mm` : ''}${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
-  ];
+  ].map((line) => truncateBytes(line, HEADER_MAX_BYTES));
 
   const result = symbolToGcode(applyOverscan(segments, overscanMm), extent, {
     ...params,
@@ -813,6 +842,11 @@ export function barcodeToGcode(
     warnings.push('bar-height-small');
   if (showHri && unsupportedChars(barcode.hri).length > 0) {
     warnings.push('hri-chars');
+  }
+  // O Code 39 só tem um alfabeto (maiúsculas): normalizar pode **mudar o dado**
+  // que o leitor devolve — avisa em vez de mudar em silêncio.
+  if (params.symbology === 'code39' && text !== barcode.data) {
+    warnings.push('uppercased');
   }
 
   return {
