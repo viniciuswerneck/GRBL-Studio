@@ -601,3 +601,64 @@ describe('GrblClient — consultas ($$, etc.)', () => {
     await expect(first).resolves.toEqual([]);
   });
 });
+
+describe('GrblClient — porta morta (§11.6.4)', () => {
+  it('avisa e desconecta quando a máquina para de responder ao `?`', async () => {
+    // Coleta real (21:38): depois do `ALARM:1` de fim de curso o controlador
+    // reiniciou, o CDC re-enumerou e o app ficou **46 s** "conectado" numa porta
+    // morta, até um write devolver `bad file descriptor` (6 logs com o mesmo fim).
+    vi.useFakeTimers();
+    const fake = new FakeTransport();
+    const client = new GrblClient({
+      statusPollMs: 50,
+      statusSilenceMs: 200,
+      stallMs: 100000,
+      transportFactory: () => fake,
+    });
+    const conns: string[] = [];
+    const errors: ErrorPayload[] = [];
+    client.on('connection', (c) => conns.push(c));
+    client.on('error', (err) => errors.push(err));
+
+    await client.connect(CONNECT);
+    // A máquina responde uma vez (está viva) e então o fd morre em silêncio.
+    fake.feed('<Idle|MPos:0.000,0.000,0.000|FS:0,0>\n');
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(client.isConnected()).toBe(false);
+    expect(conns.at(-1)).toBe('disconnected');
+    const last = errors.at(-1)!;
+    expect(last.message).toMatch(/parou de responder/i);
+    expect(last.kind).toBe('error');
+    // Sem código GRBL: não é alarme da máquina, é o enlace caído.
+    expect(last.code).toBeUndefined();
+
+    // O polling parou de bater na porta morta.
+    const written = fake.written.length;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fake.written.length).toBe(written);
+    expect(fake.realtime.length).toBeGreaterThan(0);
+  });
+
+  it('não declara porta morta com job na fila (stall tem o seu próprio vigia)', async () => {
+    vi.useFakeTimers();
+    const fake = new FakeTransport();
+    const client = new GrblClient({
+      statusPollMs: 50,
+      statusSilenceMs: 200,
+      stallMs: 100000,
+      transportFactory: () => fake,
+    });
+    const errors: ErrorPayload[] = [];
+    client.on('error', (err) => errors.push(err));
+
+    await client.connect(CONNECT);
+    client.startJob(['G1 X1', 'G1 X2']);
+    // Aqui há trabalho em voo: silêncio é do job (o vigia de `ok` cobre esse
+    // caso — foi ele que pegou o stall real de 8 s na coleta).
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(client.isConnected()).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});

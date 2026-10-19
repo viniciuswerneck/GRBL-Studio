@@ -897,6 +897,8 @@ export const ptBR = {
     'Este firmware não implementa o jog dedicado ($J=). "{line}" foi recusada; passando a mover com G91/G0/G90.',
   'client.queryRetry':
     'A máquina recusou a primeira leitura após conectar ("{line}") — repetindo uma vez.',
+  'client.linkLost':
+    'A máquina parou de responder (sem status há {ms} ms) — a porta provavelmente caiu. Reconecte para continuar.',
   'client.lineTooLong':
     'Linha longa demais ({bytes} B) para o buffer da máquina ({max} B) — envio interrompido para não corromper o G-code. Trecho: {line}',
   'client.reset': 'Reset pelo usuário.',

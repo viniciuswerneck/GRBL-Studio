@@ -92,6 +92,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Perfil da C1 conferido contra a coleta:** `tests/machines.test.ts` agora
   falha se um perfil prometer escrever um `$` que a máquina não tem (escrever
   código inexistente responde `error:3`).
+- **Porta morta: o app não fica mais "conectado" no vazio.** Depois do `ALARM`
+  de fim de curso o controlador reinicia e o CDC USB re-enumera — o fd morre,
+  mas os writes seguem aceitos por dezenas de segundos. O app passava **46 s**
+  mostrando um DRO congelado como se estivesse tudo bem (`bad file descriptor`
+  aparece em 6 logs de sessão). Agora um **vigia de silêncio** (≥ 5 s sem status
+  `?` em repouso) avisa no console e volta para "desconectado", liberando o
+  botão para reconectar. Com job na fila o silêncio é do job — quem cuida é o
+  vigia de `ok` (`PLANO_MAQUINA.md` §11.8). O `SerialTransport.close()` também
+  passou a resolver mesmo quando o callback do `serialport` nunca chega.
 
 ## [0.7.0] - 2026-10-18
 

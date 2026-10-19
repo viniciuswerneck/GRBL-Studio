@@ -873,6 +873,8 @@ export const en = {
     'This firmware does not implement dedicated jog ($J=). "{line}" was rejected; moving with G91/G0/G90 instead.',
   'client.queryRetry':
     'The machine refused the first read after connecting ("{line}") — retrying once.',
+  'client.linkLost':
+    'The machine stopped responding (no status for {ms} ms) — the port probably dropped. Reconnect to continue.',
   'client.lineTooLong':
     'Line too long ({bytes} B) for the machine buffer ({max} B) — sending stopped to avoid corrupting the G-code. Excerpt: {line}',
   'client.reset': 'Reset by the user.',

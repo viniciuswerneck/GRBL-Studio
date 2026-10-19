@@ -135,6 +135,13 @@ export function defaultTransportFactory(opts: ConnectOptions): TransportLike {
 export interface GrblClientOptions {
   statusPollMs?: number;
   stallMs?: number;
+  /**
+   * Silêncio máximo do status (`?`) antes de considerar o **enlace caído**.
+   * O GRBL responde **todo** `?`, então silêncio prolongado em repouso é porta
+   * morta — não máquina ocupada (`PLANO_MAQUINA` §11.6.4). Padrão: 10 ×
+   * `statusPollMs`, mínimo de 5 s.
+   */
+  statusSilenceMs?: number;
   transportFactory?: TransportFactory;
 }
 
@@ -189,9 +196,16 @@ export class GrblClient extends EventEmitter {
   private pollTimer: NodeJS.Timeout | null = null;
 
   private readonly statusPollMs: number;
+  private readonly statusSilenceMs: number;
   private readonly stallMs: number;
   private readonly transportFactory: TransportFactory;
   private lastStatus: GrblStatus | null = null;
+  /**
+   * Quando chegou o último status (`?`). É o que distingue "máquina ocupada"
+   * de **porta morta**: o GRBL responde todo `?`, então em repouso o silêncio
+   * denuncia o enlace caído (§11.6.4).
+   */
+  private lastStatusAt = 0;
 
   private job: JobInfo = { state: 'idle', sent: 0, total: 0 };
   /** Última emissão de progresso (limita o IPC a ~10 Hz — RF-GC-2). */
@@ -201,6 +215,8 @@ export class GrblClient extends EventEmitter {
   constructor(options: GrblClientOptions = {}) {
     super();
     this.statusPollMs = options.statusPollMs ?? 200;
+    this.statusSilenceMs =
+      options.statusSilenceMs ?? Math.max(5000, this.statusPollMs * 10);
     this.stallMs = options.stallMs ?? DEFAULT_STALL_MS;
     this.transportFactory = options.transportFactory ?? defaultTransportFactory;
     // O evento 'error' do EventEmitter lança se não houver listener. Garantimos
@@ -277,6 +293,16 @@ export class GrblClient extends EventEmitter {
       startup,
       status: this.lastStatus ?? null,
     };
+  }
+
+  /**
+   * Enlace caído em uso: a porta parou de responder ao `?`. Avisa e fecha o que
+   * houver — a UI volta para "desconectado" (e o botão reconecta) em vez de
+   * mostrar um DRO congelado como se a máquina estivesse viva (§11.6.4).
+   */
+  private async onLinkLost(): Promise<void> {
+    this.emitError(t('client.linkLost', { ms: this.statusSilenceMs }));
+    await this.disconnect();
   }
 
   async disconnect(): Promise<void> {
@@ -536,10 +562,21 @@ export class GrblClient extends EventEmitter {
 
   private startPolling(): void {
     this.stopPolling();
-    this.pollTimer = setInterval(
-      () => this.emitRealtime(REALTIME.statusReport),
-      this.statusPollMs,
-    );
+    this.lastStatusAt = Date.now();
+    this.pollTimer = setInterval(() => {
+      // Vigia de silêncio: com a porta morta (CDC re-enumerado depois de um
+      // reset) o `?` sai para o vazio e o app continuava **"conectado"** — na
+      // coleta foram 46 s mentindo, até um write devolver `bad file descriptor`
+      // (`PLANO_MAQUINA` §11.6.4). O GRBL responde todo `?`; silêncio só é
+      // esperado com job na fila (stall/pausa), e aí o vigia de `ok` cuida.
+      if (this.job.state === 'idle' && this.inFlight.length === 0) {
+        if (Date.now() - this.lastStatusAt > this.statusSilenceMs) {
+          void this.onLinkLost();
+          return;
+        }
+      }
+      this.emitRealtime(REALTIME.statusReport);
+    }, this.statusPollMs);
   }
 
   private stopPolling(): void {
@@ -620,6 +657,7 @@ export class GrblClient extends EventEmitter {
       const status = parseStatusReport(line);
       if (status) {
         this.lastStatus = status;
+        this.lastStatusAt = Date.now();
         this.emit('status', status);
       }
       return;

@@ -66,18 +66,20 @@ export class SerialTransport extends EventEmitter {
 
   private writeRaw(data: Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.port?.isOpen) {
+      // Referência **local**: o `close()` zera `this.port` de propósito (para
+      // nenhuma escrita nova mirar a porta moribunda) e o callback do write
+      // chega depois — sem isto, o `drain` estouraria com `null`.
+      const port = this.port;
+      if (!port?.isOpen) {
         reject(new Error('Porta serial não está aberta.'));
         return;
       }
-      this.port.write(data, (err) => {
+      port.write(data, (err) => {
         if (err) {
           reject(err);
           return;
         }
-        this.port!.drain((drainErr) =>
-          drainErr ? reject(drainErr) : resolve(),
-        );
+        port.drain((drainErr) => (drainErr ? reject(drainErr) : resolve()));
       });
     });
   }
@@ -86,14 +88,19 @@ export class SerialTransport extends EventEmitter {
   close(): Promise<void> {
     return new Promise((resolve) => {
       const port = this.port;
+      this.port = null;
       if (!port?.isOpen) {
-        this.port = null;
         resolve();
         return;
       }
+      // Porta morta (CDC re-enumerado depois de um reset): o callback do
+      // `close` pode **nunca** chegar. Não podemos travar quem espera por ele —
+      // a UI ficaria presa em "conectado" numa porta que não existe mais.
+      const done = () => resolve();
+      const timer = setTimeout(done, 500);
       port.close(() => {
-        this.port = null;
-        resolve();
+        clearTimeout(timer);
+        done();
       });
     });
   }

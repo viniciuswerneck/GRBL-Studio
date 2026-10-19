@@ -303,10 +303,10 @@ porta** ainda não é detectada.
 2. `sMax` do perfil é a **referência**; o `$30` da máquina é a **verdade**.
 3. `[OPT:H]` não informa buffer: até o painel existir, a janela segue no padrão e
    o único indício de saturação seria `Bf` — que este firmware não manda.
-4. **Detectar a perda da porta após `ALARM` de hard limit** (§11.5): hoje o app
-   mostra `bad file descriptor` e fica "conectado" numa porta morta. Precisa
-   avisar e oferecer **reconectar** (o controlador volta como `Grbl …` sem
-   `$X`/`$H` até o usuário destravar).
+4. ~~**Detectar a perda da porta após `ALARM` de hard limit**~~ — **feito**
+   (§11.8): vigia de silêncio do status; o app avisa e volta para
+   "desconectado" (o botão reconecta) em vez de ficar "conectado" numa porta
+   morta.
 5. **Park position**: ao terminar o job, não parquear em `X0 Y0` (MX-15); deixar
    o usuário escolher um ponto de repouso dentro do curso, longe das chaves.
 
@@ -347,7 +347,41 @@ que recuse `$J=`. Na C1 o jog dedicado funciona (§11.3) — o `useDollarJog` er
 documentado e ignorado, agora é respeitado, e há degradação automática para
 `G91`/`G0`/`G90` se algum firmware recusar.
 
----
+### 11.8 Porta morta: o app ficava "conectado" 46 s numa porta que não existia
+
+O mesmo job do §11.5 termina assim (log `session-2026-10-18_21-38-15.log`):
+
+```
+21:45:21.302  << ALARM:1
+21:45:21.303  [job] state=aborted sent=4554 total=4554
+21:45:21.308  << Grbl 1.3a ['$' for help]        ← o controlador REINICIOU
+              (46 s de silêncio absoluto — sem `disconnected`, sem erro)
+21:46:07.406  [conn] disconnected
+21:46:07.406  [error] Conexão encerrada: bad file descriptor
+```
+
+O reset faz o CDC USB re-enumerar: o fd do app morre, mas no Linux os writes
+para o tty continuam **aceitos** por dezenas de segundos. Nesse intervalo o app
+seguia "conectado": DRO congelado, polling de `?` batendo no vazio e o operador
+sem saber que o enlace tinha ido embora. `bad file descriptor` aparece em **6
+logs** de sessão — não é caso isolado.
+
+Correção (vigia de silêncio, §11.6.4):
+
+| Regra | Porquê |
+| :--- | :--- |
+| Sedo ≥ 5 s sem **nenhum** status (`?`) → **enlace caído** | o GRBL responde **todo** `?`; silêncio em repouso é porta morta |
+| Só em repouso (`job.state === 'idle'` e janela vazia) | um stall de job (8 s reais na coleta) é do **job**, e o vigia de `ok` já cobre |
+| Avisa no console e volta a `disconnected` | a UI para de mentir; o botão de conexão reconecta (a porta pode voltar como `ttyACM1`) |
+| Sem código GRBL → **não** entra no histórico de alarmes | não é alarme da máquina; é o enlace (RF-STA-7 é para o que o operador remedia) |
+| `SerialTransport.close()` resolve mesmo sem callback | com o fd morto o `close` pode nunca chamar de volta — travaria a UI em "conectado" |
+
+Os 5 s são folgados de propósito: a máquina responde `?` mesmo em movimento —
+inclusive durante o homing (`<Home\|MPos:-100.088,…\|Pn:XY>`, dos 7 `$H` reais
+nos logs). Silêncio assim só se explica por enlace caído.
+
+Testes: `tests/grbl-client.test.ts` (avisa/desconecta/para o polling; e **não**
+dispara com job na fila) e `tests/serial-transport.test.ts` (callback ausente).
 
 *Spec criada em 18/10/2026 para a v0.6 (P0.7/P0.8). Primeira revisão com dados de
 máquina real feita na mesma data (§11) — Sculpfun C1.*
