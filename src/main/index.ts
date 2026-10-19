@@ -115,6 +115,7 @@ function createWindow(): void {
   void mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
 
   installSmokeTest(mainWindow);
+  installBench(mainWindow);
 }
 
 /**
@@ -182,6 +183,113 @@ function installSmokeTest(win: BrowserWindow): void {
   setTimeout(() => fail('timeout carregando o renderer'), 15000);
 }
 
+/**
+ * Modo benchmark (RNF-11/RNF-12): `GRBL_BENCH=1`.
+ *
+ * O `scripts/bench.mjs` liga esta flag para saber quando a janela está
+ * realmente pronta e para medir a latência de ida e volta main → renderer →
+ * IPC sem instrumentar a UI. Fora do modo benchmark nada é registrado, nenhum
+ * timer extra roda e o comportamento do app não muda.
+ */
+function installBench(win: BrowserWindow): void {
+  if (process.env.GRBL_BENCH !== '1') return;
+
+  const emit = (event: string, payload: Record<string, unknown>): void => {
+    console.log(`BENCH_${event} ${JSON.stringify(payload)}`);
+  };
+
+  // O script encerra a amostragem com SIGTERM; sai de forma limpa (dispose).
+  process.once('SIGTERM', () => app.quit());
+
+  const installedAt = Math.round(process.uptime() * 1000);
+  let loadedAt = installedAt;
+  let shownAt = installedAt;
+  const loaded = new Promise<void>((resolve) => {
+    win.webContents.once('did-finish-load', () => {
+      loadedAt = Math.round(process.uptime() * 1000);
+      resolve();
+    });
+  });
+  const shown = new Promise<void>((resolve) => {
+    if (win.isVisible()) {
+      shownAt = Math.round(process.uptime() * 1000);
+      resolve();
+    } else {
+      win.once('ready-to-show', () => {
+        shownAt = Math.round(process.uptime() * 1000);
+        resolve();
+      });
+    }
+  });
+
+  void (async () => {
+    try {
+      await Promise.all([loaded, shown]);
+      // Espera dois frames: did-finish-load não garante o primeiro paint.
+      await win.webContents.executeJavaScript(
+        'new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))',
+        true,
+      );
+      const paintAt = Math.round(process.uptime() * 1000);
+      emit('READY', {
+        pid: process.pid,
+        uptimeMs: paintAt,
+        timings: {
+          hookInstalledMs: installedAt,
+          didFinishLoadMs: loadedAt,
+          readyToShowMs: shownAt,
+          firstPaintMs: paintAt,
+        },
+        electron: process.versions.electron,
+        chrome: process.versions.chrome,
+        node: process.versions.node,
+        appVersion: app.getVersion(),
+        userData: app.getPath('userData'),
+      });
+
+      // Latência de interação: round trip main → renderer → handler IPC leve.
+      // O app fica 250 ms ocioso antes para o primeiro paint terminar.
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      for (let i = 0; i < 5; i += 1) {
+        await win.webContents.executeJavaScript(
+          'window.grbl.getAppInfo()',
+          true,
+        );
+      }
+
+      const samples: number[] = [];
+      for (let i = 0; i < 50; i += 1) {
+        const started = performance.now();
+        await win.webContents.executeJavaScript(
+          'window.grbl.getAppInfo()',
+          true,
+        );
+        samples.push(performance.now() - started);
+      }
+      samples.sort((a, b) => a - b);
+      const at = (p: number): number => {
+        const index = Math.min(
+          samples.length - 1,
+          Math.max(0, Math.ceil(p * samples.length) - 1),
+        );
+        return samples[index] ?? 0;
+      };
+      const mean =
+        samples.reduce((sum, value) => sum + value, 0) / samples.length;
+      emit('LATENCY', {
+        samples: samples.length,
+        minMs: Number((samples[0] ?? 0).toFixed(2)),
+        p50Ms: Number(at(0.5).toFixed(2)),
+        p95Ms: Number(at(0.95).toFixed(2)),
+        maxMs: Number((samples[samples.length - 1] ?? 0).toFixed(2)),
+        meanMs: Number(mean.toFixed(2)),
+      });
+    } catch (err) {
+      emit('ERROR', { message: String(err) });
+    }
+  })();
+}
+
 app.whenReady().then(async () => {
   const { client, prefs, log } = registerIpc(() => mainWindow, {
     // Prefs mudaram (tema/idioma escolhidos na UI): reflete no menu.
@@ -204,6 +312,7 @@ app.whenReady().then(async () => {
   if (
     process.env.GRBL_SMOKE_TEST !== '1' &&
     process.env.GRBL_E2E !== '1' &&
+    process.env.GRBL_BENCH !== '1' &&
     !process.env.VITE_DEV_SERVER_URL
   ) {
     autoUpdater.autoDownload = true;
