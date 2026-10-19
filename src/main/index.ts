@@ -3,7 +3,6 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { autoUpdater } from 'electron-updater';
 import * as path from 'node:path';
 import { detectLocale, getLocale, setLocale } from '../shared/i18n';
 import { DEFAULT_THEME, isThemeId } from '../shared/themes';
@@ -12,11 +11,14 @@ import { initMenu, rebuildMenu } from './menu';
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
+let splashTimer: ReturnType<typeof setTimeout> | null = null;
 let dispose: (() => Promise<void>) | null = null;
 let splashShown = false;
 
 /** Arte de splash (public/splash.png, 984×535) exibida a 75 % em 738×401. */
 const SPLASH = { width: 738, height: 401 };
+/** Só mostra o splash se a janela principal ainda não estiver pronta. */
+const SPLASH_DELAY_MS = 400;
 /** Ícone do app/janela (electron-builder também lê `build/icon.png`). */
 const APP_ICON = path.join(__dirname, '../../build/icon.png');
 
@@ -81,7 +83,6 @@ function syncMenu(theme: string, lang = getLocale()): void {
 }
 
 function createWindow(): void {
-  createSplash();
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -100,10 +101,14 @@ function createWindow(): void {
   });
 
   mainWindow.once('ready-to-show', () => {
+    if (splashTimer) clearTimeout(splashTimer);
+    splashTimer = null;
     closeSplash();
     mainWindow?.show();
   });
   mainWindow.on('closed', () => {
+    if (splashTimer) clearTimeout(splashTimer);
+    splashTimer = null;
     mainWindow = null;
   });
 
@@ -112,7 +117,18 @@ function createWindow(): void {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', (event) => event.preventDefault());
 
+  // O load começa antes de qualquer janela auxiliar: criar o splash custa
+  // ~85 ms neste hardware (uma `BrowserWindow` a mais, com renderer próprio) e
+  // atrasava o início do load. O splash entra só se a janela demorar de fato a
+  // ficar pronta (RNF-11) — em máquina rápida ele nem chega a aparecer.
   void mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
+
+  if (process.env.GRBL_SMOKE_TEST !== '1' && process.env.GRBL_E2E !== '1') {
+    splashTimer = setTimeout(() => {
+      splashTimer = null;
+      if (mainWindow && !mainWindow.isVisible()) createSplash();
+    }, SPLASH_DELAY_MS);
+  }
 
   installSmokeTest(mainWindow);
   installBench(mainWindow);
@@ -315,11 +331,18 @@ app.whenReady().then(async () => {
     process.env.GRBL_BENCH !== '1' &&
     !process.env.VITE_DEV_SERVER_URL
   ) {
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {
-      /* sem rede / sem release: silencioso */
-    });
+    // `electron-updater` custa ~110 ms de require com cache quente (árvore do
+    // builder-util): carrega só aqui, depois da janela criada, fora do caminho
+    // do 1º frame.
+    void import('electron-updater')
+      .then(({ autoUpdater }) => {
+        autoUpdater.autoDownload = true;
+        autoUpdater.autoInstallOnAppQuit = true;
+        return autoUpdater.checkForUpdatesAndNotify();
+      })
+      .catch(() => {
+        /* sem rede / sem release: silencioso */
+      });
   }
 
   app.on('activate', () => {

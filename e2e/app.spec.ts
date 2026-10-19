@@ -357,4 +357,36 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await close();
     }
   });
+
+  test('o editor vetorial carrega sob demanda (RNF-11)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      // Fora do caminho do primeiro paint: o bundle do editor não está no DOM
+      // nem executado antes de abrir Ferramentas → Desenho.
+      expect(
+        await page.evaluate(
+          () =>
+            typeof (window as unknown as Record<string, unknown>)
+              .GRBL_DESIGN_EDITOR,
+        ),
+      ).toBe('undefined');
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      expect(
+        await page.evaluate(
+          () =>
+            typeof (window as unknown as Record<string, unknown>)
+              .GRBL_DESIGN_EDITOR,
+        ),
+      ).toBe('object');
+      await expect(page.locator('#designCanvas')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
 });

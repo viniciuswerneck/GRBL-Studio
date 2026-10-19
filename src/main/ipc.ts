@@ -18,7 +18,6 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-import { SerialPort } from 'serialport';
 import { CHANNELS } from '../shared/channels';
 import {
   APP_AUTHOR,
@@ -148,6 +147,9 @@ export function registerIpc(
   });
 
   ipcMain.handle(CHANNELS.portsList, async (): Promise<PortInfo[]> => {
+    // Import sob demanda: o binding nativo custa ~35 ms com cache quente
+    // (~125 ms no primeiro acesso) e só é preciso ao listar portas.
+    const { SerialPort } = await import('serialport');
     const ports = await SerialPort.list();
     return ports.map((p) => ({
       path: p.path,

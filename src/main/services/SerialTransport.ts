@@ -5,10 +5,10 @@
  */
 
 import { EventEmitter } from 'node:events';
-import { SerialPort } from 'serialport';
+import type { SerialPort as SerialPortHandle } from 'serialport';
 
 export class SerialTransport extends EventEmitter {
-  private port: SerialPort | null = null;
+  private port: SerialPortHandle | null = null;
 
   constructor(
     private readonly path: string,
@@ -22,7 +22,10 @@ export class SerialTransport extends EventEmitter {
   }
 
   /** Abre a porta. Rejeita se falhar (ex.: permissão / porta ocupada). */
-  open(): Promise<void> {
+  async open(): Promise<void> {
+    // Import sob demanda: o binding nativo custa ~35 ms com cache quente e só
+    // é preciso ao conectar de fato (RNF-11: o startup não paga esse custo).
+    const { SerialPort } = await import('serialport');
     return new Promise((resolve, reject) => {
       const port = new SerialPort({
         path: this.path,

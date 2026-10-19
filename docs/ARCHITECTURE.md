@@ -67,6 +67,27 @@ isolados por `contextIsolation`:
   via esbuild): executa `shared/image/*` fora da thread principal (ADR-7) e
   devolve o G-code mais a grade processada para o preview.
 
+### Boot e carregamento sob demanda (RNF-11)
+
+O primeiro paint é orçado em ≤ 1,5 s, então o boot carrega **só o que a
+primeira tela usa**:
+
+- **Main:** `electron-updater` e `serialport` entram por `await import()` —
+  nunca no topo do módulo. O updater só é carregado depois da janela criada; a
+  API serial, ao listar portas ou conectar. `BrowserWindow` principal é criada e
+  recebe `loadFile` **antes** do splash; o splash entra só se a janela não
+  estiver pronta em 400 ms.
+- **Renderer:** `index.html` referencia apenas os bundles do primeiro paint
+  (i18n, materiais, máquinas, ajustes, preview, retomada, macros, teste de
+  material e `renderer.js`). Tabelas de símbolos e editor vetorial usam
+  `loadBundle(arquivo)` — um `<script>` injetado uma única vez, com a Promise
+  memorizada. Os símbolos são pré-aquecidos em `requestIdleCallback` (2 s após o
+  boot); o editor vetorial carrega em `ensureDesign()`, chamado por
+  `openDesignModal()` e `openSvgImport()`.
+- **Regra:** módulo pesado novo (tabela, biblioteca, encoder) **não** entra como
+  `<script>` em `index.html`; entra por `loadBundle()` no ponto de uso. Só o que
+  a primeira tela pinta pode ser síncrono.
+
 ### Preload (ponte)
 
 - Expõe `window.grbl` com métodos explícitos via `contextBridge`.

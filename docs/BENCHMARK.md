@@ -219,6 +219,45 @@ usa a invocação direta para não depender dele.
 > RAM/PSS e a latência são menos sensíveis a isso. O script imprime a carga no
 > início e no fim e avisa quando ela passa do número de núcleos.
 
+## 6.3 Otimizações de boot (v0.7.1) — A/B intercalado
+
+Em 18/10/2026, depois da 0.7.0, o boot foi atacado em três frentes. A medição
+abaixo é um **A/B intercalado** (commit da 0.7.0 × árvore otimizada), 4 pares
+alternados com `--dwell=1000`, na mesma sessão e com carga ~4,7 — é a comparação
+que isola o efeito das mudanças do ruído da máquina.
+
+| Fase | 0.7.0 (mediana) | Otimizado (mediana) | Δ |
+| :--- | ---: | ---: | ---: |
+| Hook do main (`hookInstalledMs`) | 694 ms | 546 ms | **−148 ms** |
+| `ready-to-show` | 1 500 ms | 1 314 ms | **−186 ms** |
+| Primeiro paint | 1 688 ms | 1 578 ms | **−110 ms** |
+| Startup total (spawn → paint) | 1 847 ms | 1 779 ms | **−68 ms** |
+| Melhor execução do par | 1 661 ms | **1 337 ms** | −324 ms |
+
+O que mudou:
+
+1. **`electron-updater` e `serialport` sob demanda.** Eram imports estáticos no
+   topo de `main/index.ts`/`ipc.ts`. Medidos isoladamente: ~110 ms
+   (`electron-updater`, árvore do builder-util) e ~35 ms (`serialport`, binding
+   nativo) com cache quente — mais no primeiro acesso. O updater agora carrega
+   depois da janela criada; o serial, ao listar portas ou conectar.
+2. **Splash fora do caminho crítico.** `createWindow()` criava o splash antes da
+   janela principal: ~85 ms antes de o `loadFile` começar (medido com
+   instrumentação temporária no main: 493 → 430 ms). Agora o `loadFile` começa
+   primeiro e o splash só aparece se a janela não estiver pronta em 400 ms.
+3. **Bundles do renderer sob demanda.** `index.html` tinha 19 `<script>`
+   síncronos (~470 KB). Saíram do caminho do primeiro paint as tabelas de
+   QR/Data Matrix + código de barras (108 KB) e o editor vetorial (65 KB em 8
+   bundles), carregados por `loadBundle()`/`ensureDesign()` no ponto de uso. Os
+   símbolos são pré-aquecidos em `requestIdleCallback` 2 s depois do boot; o
+   editor carrega ao abrir Desenho/importar SVG (coberto por E2E).
+
+O que a otimização **não** resolveu: o piso da máquina. Com o `index.html` sem
+nenhum script, o primeiro paint ainda fica em **1 268–1 769 ms** (spawn →
+paint) — HTML + layout + compositor. Nenhuma tarefa longa (> 50 ms) aparece no
+renderer; o custo é distribuído. O startup total segue acima de 1,5 s nesta
+máquina.
+
 ## 7. Procedimento manual — FPS durante job (≥ 55 fps)
 
 Não há número automático: é preciso um job rodando. Para não depender de

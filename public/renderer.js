@@ -27,6 +27,34 @@ try {
   /* localStorage indisponível */
 }
 
+// Bundles carregados sob demanda (RNF-11): tabelas de QR/Data Matrix e de
+// código de barras só são necessárias quando o modal é aberto. Ficam fora do
+// caminho do primeiro paint; o modal espera o carregamento (instantâneo em
+// `file://`, e já pré-aquecido em segundo plano — ver `prefetchBundles`).
+const bundleLoads = new Map();
+function loadBundle(file) {
+  if (!bundleLoads.has(file)) {
+    bundleLoads.set(
+      file,
+      new Promise((resolve, reject) => {
+        const tag = document.createElement('script');
+        tag.src = `./${file}`;
+        tag.onload = () => resolve();
+        tag.onerror = () => reject(new Error(`falha ao carregar ${file}`));
+        document.head.appendChild(tag);
+      }),
+    );
+  }
+  return bundleLoads.get(file);
+}
+
+/** `loadBundle` com falha reportada no console (não derruba o modal). */
+function requireBundle(file) {
+  return loadBundle(file).catch((err) => {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  });
+}
+
 /** Nome de máquina localizável — marcas/modelos são nomes próprios. */
 function machineName(prof) {
   return prof && prof.id === 'generic' ? t('profile.generic') : prof.name;
@@ -635,6 +663,7 @@ function openFrameModal() {
  * do corte (RF-STA-5).
  */
 async function openSvgImport() {
+  await ensureDesign();
   if (!window.GRBL_SVG) {
     appendLine('Módulo de importação SVG não carregado.', 'error');
     return;
@@ -674,9 +703,35 @@ async function openSvgImport() {
 // geração de G-code em `src/shared/design.ts`. Aqui fica **só a interação**
 // (canvas, ponteiro, teclado) — nunca protocolo GRBL.
 
-const DE = window.GRBL_DESIGN_EDITOR;
-const BOOL = window.GRBL_BOOLEAN;
-const OFFSET = window.GRBL_OFFSET;
+// O editor vetorial (~65 KB em 8 bundles) só é necessário ao abrir o Desenho
+// ou importar SVG: carrega sob demanda, fora do caminho do primeiro paint
+// (RNF-11). `DE`/`BOOL`/`OFFSET` são preenchidos por `ensureDesign()`.
+let DE = null;
+let BOOL = null;
+let OFFSET = null;
+
+const DESIGN_BUNDLES = [
+  'svg.js',
+  'design.js',
+  'designEditor.js',
+  'fonts.js',
+  'hatch.js',
+  'contour.js',
+  'boolean.js',
+  'offset.js',
+];
+
+let designReady = null;
+function ensureDesign() {
+  if (!designReady) {
+    designReady = Promise.all(DESIGN_BUNDLES.map(requireBundle)).then(() => {
+      DE = window.GRBL_DESIGN_EDITOR;
+      BOOL = window.GRBL_BOOLEAN;
+      OFFSET = window.GRBL_OFFSET;
+    });
+  }
+  return designReady;
+}
 const RULER = 22; // espessura das réguas (px)
 const D_MARGIN = 18; // margem do "ajustar à página" (px)
 // Espessura do traço: relação px ↔ mm do campo de propriedades do objeto
@@ -3481,10 +3536,14 @@ function dLoadPrefs() {
 
 // --------------------------------------------------------------- modal/open
 
-function openDesignModal() {
+async function openDesignModal() {
   if (!el.designOverlay) return;
+  await ensureDesign();
   el.designOverlay.classList.remove('hidden');
-  if (!DE) appendLine('Módulo de edição não carregado.', 'error');
+  if (!DE) {
+    appendLine('Módulo de edição não carregado.', 'error');
+    return;
+  }
   dLoadPrefs();
   const g = $('designGrid');
   if (g) designState.grid = Number(g.value) || 5;
@@ -4169,8 +4228,9 @@ function populateQrVersions() {
   }
 }
 
-function openQrModal() {
+async function openQrModal() {
   if (!el.qrOverlay) return;
+  await requireBundle('qrcode.js');
   populateQrVersions();
   populateDmSizes();
   syncQrSymbology({ applyDefaults: false });
@@ -4483,8 +4543,9 @@ function applyBarDefaults(sym) {
   if (el.barHeight) el.barHeight.value = String(spec.defaultBarHeightMm);
 }
 
-function openBarModal() {
+async function openBarModal() {
   if (!el.barcodeOverlay) return;
+  await requireBundle('barcode.js');
   syncBarSymbology();
   el.barcodeOverlay.classList.remove('hidden');
   if (el.barStatus) el.barStatus.textContent = '';
@@ -8704,3 +8765,17 @@ async function init() {
 }
 
 init();
+
+// Pré-aquece os bundles sob demanda depois que a janela já pintou: o primeiro
+// clique em Ferramentas → QR/Código de barras não paga o parse das tabelas.
+function prefetchBundles() {
+  void requireBundle('qrcode.js');
+  void requireBundle('barcode.js');
+}
+setTimeout(() => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(prefetchBundles, { timeout: 3000 });
+  } else {
+    prefetchBundles();
+  }
+}, 2000);

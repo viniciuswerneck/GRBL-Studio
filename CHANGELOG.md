@@ -4,6 +4,28 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Performance — startup (RNF-11)
+
+- **`electron-updater` e `serialport` sob demanda.** O updater (≈110 ms de
+  `require` com cache quente, mais no primeiro acesso) só carrega depois da
+  janela criada; a API de porta serial (≈33 ms + binding nativo) só é carregada
+  ao listar/conectar. Nada muda no comportamento: o auto-update continua
+  silencioso e a lista de portas continua no boot.
+- **Splash fora do caminho crítico.** A janela principal começa o `loadFile`
+  antes de qualquer janela auxiliar; o splash só aparece se a janela ainda não
+  estiver pronta em 400 ms. Em máquina rápida ele nem pisca.
+- **Bundles do renderer sob demanda.** As tabelas de QR/Data Matrix e de código
+  de barras (108 KB) e o editor vetorial (65 KB em 8 bundles) saem do caminho do
+  primeiro paint. Os símbolos são pré-aquecidos em `requestIdleCallback` 2 s
+  depois do boot; o editor carrega ao abrir Desenho/importar SVG. Os 19
+  `<script>` viraram 9.
+- **Medição (Linux/Wayland, i3-5015U, A/B intercalado 4×):** `ready-to-show`
+  **1 500 → 1 314 ms** (mediana), hook do main **694 → 546 ms**, startup total
+  **1 846 → 1 779 ms**. No melhor par, 1 337 ms. Continua acima do orçamento de
+  1 500 ms nesta máquina — números e ressalvas em `docs/BENCHMARK.md`.
+
 ## [0.7.0] - 2026-10-18
 
 ### Added — Simbologias: 1D extras e Data Matrix (S2/S3, RF-SYM-7)
