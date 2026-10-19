@@ -342,8 +342,16 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await expect(page.locator('#barChecksumField')).toBeVisible();
       await page.fill('#barContent', 'grbl-studio');
       await page.click('#barGenerate');
-      // Code 39 é unissex: o HRI sai em maiúsculas.
+      // Code 39 é unissex: mudar o dado em silêncio não é opção — o status
+      // avisa que o conteúdo virou maiúsculas.
       await expect(page.locator('#barStatus')).toContainText('Code 39 gerado');
+      await expect(page.locator('#barStatus')).toContainText('⚠');
+      await expect(page.locator('#barStatus')).toContainText('maiúsculas');
+      // Já em maiúsculas, nada mudou: sem aviso.
+      await page.click('#frameClose'); // o gerar abre o posicionamento
+      await expect(page.locator('#barcodeOverlay')).toBeVisible();
+      await page.fill('#barContent', 'GRBL-STUDIO');
+      await page.click('#barGenerate');
       await expect(page.locator('#barStatus')).not.toContainText('⚠');
     } finally {
       await close();

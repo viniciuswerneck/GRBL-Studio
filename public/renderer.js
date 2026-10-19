@@ -4294,7 +4294,8 @@ async function generateQr() {
   }
   const opts = readQrOptions();
   if (el.qrContent && !el.qrContent.value.trim()) {
-    if (el.qrStatus) el.qrStatus.textContent = t('qr.err.empty');
+    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
   }
   if (el.qrStatus) el.qrStatus.textContent = t('qr.status.generating');
@@ -4303,7 +4304,9 @@ async function generateQr() {
     result = generate2dGcode(opts);
   } catch (err) {
     // QrError/DataMatrixError trazem um `code` estável → mensagem do i18n.
-    const key = `${opts.symbology === 'datamatrix' ? 'dm' : 'qr'}.err.${err?.code ?? 'bad-version'}`;
+    // Sem `code` (falha inesperada do encoder) cai no genérico da simbologia.
+    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const key = `${prefix}.err.${err?.code ?? 'unknown'}`;
     if (el.qrStatus) el.qrStatus.textContent = t(key, opts);
     appendLine(t(key, opts), 'error');
     return;
@@ -4333,7 +4336,8 @@ async function saveQr() {
   if (!window.GRBL_QR) return;
   const opts = readQrOptions();
   if (el.qrContent && !el.qrContent.value.trim()) {
-    if (el.qrStatus) el.qrStatus.textContent = t('qr.err.empty');
+    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
   }
   try {
@@ -4345,7 +4349,8 @@ async function saveQr() {
     );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
-    const key = `${opts.symbology === 'datamatrix' ? 'dm' : 'qr'}.err.${err?.code ?? 'bad-version'}`;
+    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const key = `${prefix}.err.${err?.code ?? 'unknown'}`;
     appendLine(t(key, opts), 'error');
   }
 }
@@ -7357,20 +7362,9 @@ function emergencyStopFromKeyboard(e) {
   return true;
 }
 
-document.addEventListener('keydown', (e) => {
-  if (typingInField(e.target)) return;
-  // Ctrl+X: parada de emergência sempre disponível durante o job.
-  if (
-    e.ctrlKey &&
-    !e.altKey &&
-    !e.metaKey &&
-    (e.key === 'x' || e.key === 'X')
-  ) {
-    emergencyStopFromKeyboard(e);
-    return;
-  }
-  if (e.key !== 'Escape') return;
-  const overlays = [
+/** Overlays abertos, na ordem em que o Esc deve fechá-los. */
+function openOverlays() {
+  return [
     el.appearanceOverlay,
     el.aboutOverlay,
     el.settingsOverlay,
@@ -7381,6 +7375,24 @@ document.addEventListener('keydown', (e) => {
     el.tourOverlay,
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
+}
+
+document.addEventListener('keydown', (e) => {
+  // Parada de emergência **sempre** disponível: o operador pode estar com o
+  // foco no console (ou num campo do modal) quando precisa abortar — Ctrl+X
+  // vale em qualquer foco (DESIGN §5). Sem job rodando ele devolve `false` e o
+  // recortar nativo continua funcionando.
+  if (e.ctrlKey && !e.altKey && !e.metaKey && (e.key === 'x' || e.key === 'X')) {
+    if (emergencyStopFromKeyboard(e)) return;
+  }
+  // Esc para o job mesmo com o foco num campo — mas só sem diálogo aberto: com
+  // diálogo, o Esc fecha o diálogo (o Ctrl+X segue sendo a parada garantida).
+  if (e.key === 'Escape' && openOverlays().length === 0) {
+    if (emergencyStopFromKeyboard(e)) return;
+  }
+  if (typingInField(e.target)) return;
+  if (e.key !== 'Escape') return;
+  const overlays = openOverlays();
   if (overlays.length) {
     for (const overlay of overlays) {
       // O editor de desenho tem desmontagem própria (fecha diálogos, menu de
