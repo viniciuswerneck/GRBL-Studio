@@ -248,14 +248,15 @@ export const es = {
     'Cuadrícula generada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Revisa la vista previa y envía o guarda.',
   'qr.title': 'Código 2D',
   'qr.hint':
-    'Genera un código QR como G-code de barrido: elige el contenido, el ' +
-    'tamaño en mm (o el lado del módulo) y graba. El origen del arte es la ' +
-    'esquina inferior izquierda (X0 Y0).',
+    'Genera un código QR, un Data Matrix o un PDF417 como G-code de barrido: ' +
+    'elige el símbolo, el contenido y el tamaño en mm (o el lado del módulo) y ' +
+    'graba. El origen del arte es la esquina inferior izquierda (X0 Y0).',
   'qr.content': 'Contenido',
   'qr.contentPlaceholder': 'https://ejemplo.com o un texto',
   'qr.symbology': 'Símbolo',
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
+  'qr.sym.pdf417': 'PDF417',
   'qr.ecc': 'Corrección de errores',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -322,6 +323,24 @@ export const es = {
     'El Data Matrix ECC200 solo acepta Latin-1 (sin emoji ni otro UTF-8).',
   'dm.err.bad-size': 'Tamaño de Data Matrix no válido.',
   'dm.err.unknown': 'No se pudo generar el Data Matrix con estos parámetros.',
+
+  // ---------------------------------------- PDF417 (v0.8, RF-SYM-7)
+  'pdf.title': 'Código PDF417',
+  'qr.pdf.ecc': 'Corrección de errores',
+  'qr.pdf.eccOption': 'Nivel {level} — {ec} codewords',
+  'qr.pdf.cols': 'Columnas de datos (vacío = automático)',
+  'qr.pdf.rowHeight': 'Altura de la fila (mm)',
+  'pdf.status.done':
+    'PDF417 generado: {rows} × {cols} codewords · EC nivel {ecc} · {w} × {h} mm · ' +
+    'módulo {module} mm · fila {row} mm. Revisa la vista previa y envía o guarda.',
+  'pdf.err.empty': 'Introduce un contenido para generar el PDF417.',
+  'pdf.err.too-long':
+    'Contenido demasiado largo para un PDF417 con estos parámetros.',
+  'pdf.err.bad-options':
+    'Parámetros de PDF417 inválidos (columnas de datos fuera de 1…30).',
+  'pdf.err.bad-chars':
+    'El PDF417 solo admite Latin-1 (sin emoji ni otro UTF-8).',
+  'pdf.err.unknown': 'No se pudo generar el PDF417 con estos parámetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':

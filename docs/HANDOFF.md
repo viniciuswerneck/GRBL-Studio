@@ -90,7 +90,7 @@ npx electron --no-sandbox .    # abre o app
 - `npm run typecheck` ✅
 - `npm test` ✅ **371 testes** (25 arquivos), inclui o novo teste de ancoragem em
   `tests/design.test.ts` *(contagem da sessão de desenho; na **v0.8.0** a suíte
-  está em **715 testes / 41 arquivos**)*
+  está em **731 testes / 42 arquivos**)*
 - `npx biome check <arquivos alterados>` ✅
 - `npx biome check .` tem **2 erros de formatação pré-existentes**
   (`public/renderer.js` e `public/style.css`) — já estavam no `HEAD`, não são
@@ -188,9 +188,9 @@ Detalhes em `docs/PLANO_QR_BARCODE.md` §16; resumo para retomar rápido:
   real. O HRI sai abaixo das barras e o símbolo é deslocado para Y ≥ 0.
 - **Bundle gerado:** `public/barcode.js` (`npm run build:barcode`). Sem
   dependência de runtime (ADR-11); `jsbarcode` é só teste (cross-check).
-- **Pendências seguintes (S3, v0.7):** Data Matrix/PDF417/Aztec, Code 93/GS1-128,
-  o símbolo como **objeto** no editor "Desenhar"; ITF-14/Codabar da S2. (Data
-  Matrix, 1D extras e a **grade** de símbolos já saíram.)
+- **Pendências seguintes (S3):** **Aztec** e o símbolo como **objeto** no editor
+  "Desenhar". (Data Matrix, 1D extras, a **grade** de símbolos e o **PDF417** já
+  saíram.)
 - **Validar com hardware:** gravar um Code 128 com X-dim 0,5 mm e ler com
   leitor/celular; se não ler, aumentar a quiet zone, a altura das barras ou o
   X-dimension (os avisos apontam qual).
@@ -230,10 +230,11 @@ lint), release com os artefatos do CI. Resumo para retomar rápido:
   viram ACK; `splitLines` só quebra no `>` de status; consulta em fila é
   rejeitada no Play; `Esc`/`Ctrl+X` funcionam com o foco num campo; Code 39 avisa
   a conversão para maiúsculas.
-- **Pendências:** PDF417/Aztec, DM retangular/C40/Base256/ECI, Code 93 Full
-  ASCII, validação de AIs do GS1 e o símbolo como objeto no editor (§17 de
-  `PLANO_QR_BARCODE.md`); P0.3/P0.5/P0.7/P0.8; e a performance do RNF-11. (A
-  **grade** de símbolos, RF-SYM-9, saiu em 19/10/2026.)
+- **Pendências:** Aztec, DM retangular/C40/Base256/ECI, PDF417 Text/ECI,
+  Code 93 Full ASCII, validação de AIs do GS1 e o símbolo como objeto no editor
+  (§17/§18 de `PLANO_QR_BARCODE.md`); P0.3/P0.5/P0.7/P0.8; e a performance do
+  RNF-11. (A **grade** de símbolos, RF-SYM-9, e o **PDF417**, RF-SYM-7, saíram
+  em 19/10/2026.)
 - **Validar com hardware:** ler um Data Matrix e um ITF-14 gravados com o
   leitor/celular (o DM aceita só Latin-1 — travessão e emoji dão `bad-chars`).
 
@@ -306,8 +307,8 @@ O que entrou desde a 0.7.0:
 
 ### Pendências
 
-- PDF417/Aztec; Data Matrix C40/Base256/ECI; dicionário GS1 completo e ligar a
-  validação à UI; P0.3 (Flatpak/winget/brew/AUR); câmera, rotativa, nesting,
+- Aztec; PDF417 Text/ECI; Data Matrix C40/Base256/ECI; dicionário GS1 completo e
+  ligar a validação à UI; P0.3 (Flatpak/winget/brew/AUR); câmera, rotativa, nesting,
   WebGL; validação em hardware Windows/macOS; FPS/DPI/`?` manuais.
 - **Validar com hardware:** painel Máquina na COMGO Z1 (o emulador cobre o
   parsing, não o firmware real) e o pré-voo num job com `G1` sem `F` de

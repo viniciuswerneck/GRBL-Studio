@@ -984,6 +984,7 @@
               <select id="qrSymbology">
                 <option value="qr" selected data-i18n="qr.sym.qr">QR Code</option>
                 <option value="datamatrix" data-i18n="qr.sym.datamatrix">Data Matrix</option>
+                <option value="pdf417" data-i18n="qr.sym.pdf417">PDF417</option>
               </select>
             </label>
             <label class="field field-wide">
@@ -1022,7 +1023,7 @@
                 <option value="0" data-i18n="qr.versionAuto">Automática</option>
               </select>
             </label>
-            <div class="field field-wide">
+            <div class="field field-wide" id="qrSizeField">
               <span data-i18n="qr.size">Tamanho (mm)</span>
               <div class="sym-size-row">
                 <input
@@ -1063,6 +1064,25 @@
             <label class="field hidden" id="dmSizeField">
               <span data-i18n="dm.size">Tamanho do símbolo</span>
               <select id="dmSize"></select>
+            </label>
+            <label class="field hidden" id="qrPdfEccField">
+              <span data-i18n="qr.pdf.ecc">Correção de erro</span>
+              <select id="qrPdfEcc"></select>
+            </label>
+            <label class="field hidden" id="qrPdfColsField">
+              <span data-i18n="qr.pdf.cols">Colunas de dados (vazio = automático)</span>
+              <input type="number" id="qrPdfCols" min="1" max="30" step="1" placeholder="—" />
+            </label>
+            <label class="field hidden" id="qrPdfRowHeightField">
+              <span data-i18n="qr.pdf.rowHeight">Altura da linha (mm)</span>
+              <input
+                type="number"
+                id="qrPdfRowHeight"
+                min="0.1"
+                max="50"
+                step="0.1"
+                value="1.2"
+              />
             </label>
             <label class="field" id="qrQuietField">
               <span data-i18n="qr.quietZone">Quiet zone (módulos)</span>

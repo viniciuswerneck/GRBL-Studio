@@ -264,8 +264,8 @@ O que mudou:
    primeiro e o splash só aparece se a janela não estiver pronta em 400 ms.
 3. **Bundles do renderer sob demanda.** `index.html` tinha 19 `<script>`
    síncronos (~470 KB). Saíram do caminho do primeiro paint as tabelas de
-   QR/Data Matrix + código de barras (108 KB) e o editor vetorial (65 KB em 8
-   bundles), carregados por `loadBundle()`/`ensureDesign()` no ponto de uso. Os
+   QR/Data Matrix/PDF417 + código de barras (`qrcode.js` + `barcode.js`, ~160 KB
+   no build 0.8.0) e o editor vetorial (~75 KB em 8 bundles), carregados por `loadBundle()`/`ensureDesign()` no ponto de uso. Os
    símbolos são pré-aquecidos em `requestIdleCallback` 2 s depois do boot; o
    editor carrega ao abrir Desenho/importar SVG (coberto por E2E).
 

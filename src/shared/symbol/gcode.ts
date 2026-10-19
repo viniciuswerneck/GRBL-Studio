@@ -28,6 +28,11 @@ import {
   scanLinesPerModule,
 } from './mask';
 import { DATA_MATRIX_QUIET_ZONE, encodeDataMatrix } from './datamatrix';
+import {
+  PDF417_QUIET_ZONE_MODULES,
+  type Pdf417EccLevel,
+  encodePdf417,
+} from './pdf417';
 import { type QrEcc, type QrMode, encodeQr } from './qr';
 
 /** Ponto do laser da COMGO Z1 (usado nos avisos de legibilidade). */
@@ -677,6 +682,61 @@ export interface DataMatrixGcodeResult extends SymbolGcodeResult {
   warnings: SymbolWarningCode[];
 }
 
+/** Parâmetros de geometria do **PDF417** (RF-SYM-7). */
+export interface Pdf417GcodeParams extends SymbolGcodeParams {
+  /** Nível de correção de erro (0…8). Padrão 2. */
+  eccLevel?: number;
+  /**
+   * Colunas de **dados** do PDF417 (1…30) ou `'auto'` (padrão). Nome distinto
+   * de `SymbolGridParams.columns` (colunas da grade, RF-SYM-9).
+   */
+  dataColumns?: number | 'auto';
+  /**
+   * Largura final em mm, já com a quiet zone. Vence `moduleMm`.
+   */
+  targetWidthMm?: number;
+  /** Largura de um módulo (X-dimension), em mm. Padrão 0,4. */
+  moduleMm?: number;
+  /** Altura de cada linha, em mm. Padrão 3 × módulo. */
+  rowHeightMm?: number;
+  /** Quiet zone em módulos. Padrão 2 (norma). */
+  quietZoneModules?: number;
+  /** Linhas de varredura por mm. Padrão 10. */
+  linesPerMm?: number;
+  /** Inverte a polaridade (queima o fundo). Padrão falso. */
+  invert?: boolean;
+  /** Descarta trechos menores que isso (mm). */
+  minRunMm?: number;
+  /** Área de trabalho (`$130`/`$131`) para o aviso "não cabe". */
+  workAreaX?: number;
+  workAreaY?: number;
+  /** Texto do conteúdo no cabeçalho (padrão: o próprio conteúdo). */
+  label?: string;
+  /** Máximo de caracteres do conteúdo no comentário. Padrão 60. */
+  labelMaxChars?: number;
+}
+
+export interface Pdf417GcodeResult extends SymbolGcodeResult {
+  pdf417: {
+    rows: number;
+    /** Colunas de **dados** (sem indicadores/start/stop). */
+    columns: number;
+    eccLevel: Pdf417EccLevel;
+    ecCodewords: number;
+    dataCodewords: number;
+    totalCodewords: number;
+  };
+  /** Largura de um módulo (X-dimension) efetiva, em mm. */
+  moduleMm: number;
+  /** Altura de cada linha efetiva, em mm. */
+  rowHeightMm: number;
+  quietZoneModules: number;
+  /** Largura total em módulos (com quiet zone). */
+  widthModules: number;
+  linesPerModule: number;
+  warnings: SymbolWarningCode[];
+}
+
 /**
  * Texto → G-code do **Data Matrix ECC200** (ISO/IEC 16022, modo ASCII).
  * Mesmo pipeline do QR: matriz → bandas → varredura vertical → G-code; quiet
@@ -771,6 +831,155 @@ export function dataMatrixToCell(
     },
     { ...params, label: params.label ?? text },
   );
+  return {
+    segments: g.segments,
+    extent: g.extent,
+    label: text,
+    warnings: g.warnings,
+  };
+}
+
+// --------------------------------------------------------- PDF417 → G-code
+
+/** Largura de módulo padrão do PDF417 (X-dimension), em mm. */
+const PDF417_DEFAULT_MODULE_MM = 0.4;
+/** Altura de linha padrão = este fator × largura do módulo. */
+const PDF417_ROW_HEIGHT_FACTOR = 3;
+
+interface Pdf417Geometry {
+  pdf: ReturnType<typeof encodePdf417>;
+  segments: SymbolSegment[];
+  extent: SymbolExtent;
+  header: string[];
+  moduleMm: number;
+  rowHeightMm: number;
+  quietZoneModules: number;
+  linesPerMm: number;
+  widthModules: number;
+  warnings: SymbolWarningCode[];
+}
+
+/** Pipeline do PDF417: matriz retangular → varredura horizontal → segmentos. */
+function pdf417Geometry(
+  text: string,
+  params: Pdf417GcodeParams,
+): Pdf417Geometry {
+  const pdf = encodePdf417(text, {
+    eccLevel: params.eccLevel,
+    columns: params.dataColumns,
+  });
+  const widthModules = pdf.matrix[0]?.length ?? 0;
+  const quietZoneModules = Number.isFinite(params.quietZoneModules)
+    ? Math.max(0, Math.floor(params.quietZoneModules as number))
+    : PDF417_QUIET_ZONE_MODULES;
+  const linesPerMm = positive(params.linesPerMm, 10);
+  const overscanMm = positive(params.overscanMm, 0);
+
+  const totalModules = widthModules + quietZoneModules * 2;
+  let moduleMm = positive(params.moduleMm, PDF417_DEFAULT_MODULE_MM);
+  const target = positive(params.targetWidthMm, 0);
+  if (target > 0) moduleMm = target / totalModules;
+  moduleMm = clamp(moduleMm, MIN_MODULE_MM, MAX_MODULE_MM);
+  const rowHeightMm = positive(
+    params.rowHeightMm,
+    moduleMm * PDF417_ROW_HEIGHT_FACTOR,
+  );
+
+  const geometry = matrixToBands(pdf.matrix, {
+    moduleMm,
+    moduleYMm: rowHeightMm,
+    quietZoneModules,
+  });
+  const baseBands: SymbolBand[] = geometry.bands;
+  const extent = geometry.extent;
+  const bands = params.invert ? invertBands(baseBands, extent) : baseBands;
+  const segments = bandsToScanSegments(bands, {
+    linesPerMm,
+    minRunMm: params.minRunMm,
+  });
+
+  const shown = truncateBytes(
+    params.label ?? text,
+    Math.max(8, params.labelMaxChars ?? 60),
+  );
+  const header = [
+    'PDF417 (GRBL Studio)',
+    `conteúdo: ${shown}`,
+    `${pdf.rows} × ${pdf.columns} codewords · EC nível ${pdf.eccLevel} (${pdf.ecCodewords}) · ${pdf.dataCodewords} dados + ${pdf.ecCodewords} EC`,
+    `módulo ${fmt(moduleMm)} mm · linha ${fmt(rowHeightMm)} mm · quiet zone ${quietZoneModules} módulos · ${fmt(extent.widthMm)} × ${fmt(extent.heightMm)} mm`,
+    `varredura ${linesPerMm} linhas/mm${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
+  ].map((line) => truncateBytes(line, HEADER_MAX_BYTES));
+
+  // Legibilidade pelo **X-dimension**; o preenchimento vertical depende da
+  // altura da linha (não do módulo), então reavaliamos `lines-too-few`.
+  const warnings: SymbolWarningCode[] = symbolWarnings({
+    moduleMm,
+    quietZoneModules,
+    quietZoneMinModules: PDF417_QUIET_ZONE_MODULES,
+    linesPerMm,
+    widthMm: extent.widthMm,
+    heightMm: extent.heightMm,
+    originX: params.originX ?? 0,
+    originY: params.originY ?? 0,
+    workAreaX: params.workAreaX,
+    workAreaY: params.workAreaY,
+  }).filter((w) => w !== 'lines-too-few');
+  if (scanLinesPerModule(rowHeightMm, linesPerMm) < 3) {
+    warnings.push('lines-too-few');
+  }
+
+  return {
+    pdf,
+    segments: applyOverscan(segments, overscanMm),
+    extent,
+    header,
+    moduleMm,
+    rowHeightMm,
+    quietZoneModules,
+    linesPerMm,
+    widthModules,
+    warnings,
+  };
+}
+
+/**
+ * Texto → G-code do **PDF417** (ISO/IEC 15438), pronto para o preview/Play ou
+ * salvar. Puro: sem DOM e sem máquina.
+ */
+export function pdf417ToGcode(
+  text: string,
+  params: Pdf417GcodeParams,
+): Pdf417GcodeResult {
+  const g = pdf417Geometry(text, params);
+  const result = symbolToGcode(g.segments, g.extent, {
+    ...params,
+    header: g.header,
+  });
+  return {
+    ...result,
+    pdf417: {
+      rows: g.pdf.rows,
+      columns: g.pdf.columns,
+      eccLevel: g.pdf.eccLevel,
+      ecCodewords: g.pdf.ecCodewords,
+      dataCodewords: g.pdf.dataCodewords,
+      totalCodewords: g.pdf.totalCodewords,
+    },
+    moduleMm: g.moduleMm,
+    rowHeightMm: g.rowHeightMm,
+    quietZoneModules: g.quietZoneModules,
+    widthModules: g.widthModules,
+    linesPerModule: scanLinesPerModule(g.rowHeightMm, g.linesPerMm),
+    warnings: g.warnings,
+  };
+}
+
+/** PDF417 → célula de grade (RF-SYM-9). Mesma geometria do símbolo único. */
+export function pdf417ToCell(
+  text: string,
+  params: Pdf417GcodeParams,
+): SymbolGridCell {
+  const g = pdf417Geometry(text, params);
   return {
     segments: g.segments,
     extent: g.extent,
@@ -1230,6 +1439,17 @@ export function dataMatrixGridToGcode(
 ): SymbolGridResult {
   return symbolGridToGcode(
     texts.map((text) => dataMatrixToCell(text, params)),
+    params,
+  );
+}
+
+/** Vários PDF417 → G-code em grade (RF-SYM-7/9). */
+export function pdf417GridToGcode(
+  texts: ReadonlyArray<string>,
+  params: Pdf417GcodeParams & SymbolGridParams,
+): SymbolGridResult {
+  return symbolGridToGcode(
+    texts.map((text) => pdf417ToCell(text, params)),
     params,
   );
 }

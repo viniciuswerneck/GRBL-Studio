@@ -19,7 +19,7 @@ rodam firmware GRBL.
 | [COMPARATIVO.md](COMPARATIVO.md) | **Página pública** do comparativo (P0.5): resumo, onde ganhamos/perdemos, orçamentos e fontes. |
 | [ROADMAP.md](ROADMAP.md) | Roadmap histórico por versão (resumo de alto nível) + **anexo de glossário** em linguagem simples (o que é · onde usa · onde entra). |
 | [PLANO_PREMIUM.md](PLANO_PREMIUM.md) | **Plano para ser o melhor do mercado**: placar de liderança, gap × meta, fases P0–P4 (na ordem de prioridade), fosso e invariantes. |
-| [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) | **Plano e estado** das ferramentas de geração de **QR Code** e **código de barras** (fases S1–S3, RF-SYM-*): S1/S2 ✅ (v0.6.0), 1D extras + Data Matrix ✅ (v0.7.0); faltam PDF417/Aztec e a grade/lote (S3). |
+| [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) | **Plano e estado** das ferramentas de geração de **QR Code** e **código de barras** (fases S1–S3, RF-SYM-*): S1/S2 ✅ (v0.6.0), 1D extras + Data Matrix ✅ (v0.7.0), PDF417 + grade ✅ (v0.8.0); falta Aztec (S3). |
 | [PLANO_MAQUINA.md](PLANO_MAQUINA.md) | **Spec técnica** do módulo **M14** (RF-MAQ-*): leitura estruturada da máquina (`$I`/`$$`/`$#`/`$G`/`$N`), painel "Máquina", **pré-voo MX-1…MX-15**, diagnóstico copiável e achados da máquina real (§11). |
 | [../CHANGELOG.md](../CHANGELOG.md) | Registro de mudanças por versão. |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Como contribuir (setup, DoD, estilo, testes). |

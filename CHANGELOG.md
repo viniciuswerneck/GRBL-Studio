@@ -20,6 +20,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   e catálogo).
 - **`CHANGELOG.md`:** a **simulação de job (P2.3 / RF-PRV-7)** foi adicionada à
   seção da 0.5.0, de onde havia sido omitida.
+- **PDF417 (`RF-SYM-7`) nos docs:** `PRODUCT_SPEC.md`, `PLANO_DE_ACAO.md`,
+  `PLANO_QR_BARCODE.md` (novo §18), `ARCHITECTURE.md`, `ROADMAP.md`,
+  `FEATURES_COMPARISON.md`, `ANALISE_COMPETITIVA.md`, `HANDOFF.md` e
+  `docs/README.md` — PDF417 marcado como entregue, **Aztec** como pendente, e as
+  contagens atualizadas (**731 testes / 42 arquivos**, **1054 chaves** i18n).
 
 ### Added — chip de pinos `Pn` na barra de status (RF-MAQ-7)
 
@@ -56,6 +61,27 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   geometria. PDF criptografado é recusado com orientação.
 - Testes: **15 unitários** (inclusive object stream, rotação, filtros e XObject)
   e **E2E** com diálogo simulado. Com isso o **P2.4 (DXF + PDF) fecha**.
+
+### Added — PDF417 (RF-SYM-7)
+
+- **Novo símbolo 2D PDF417** (ISO/IEC 15438) no modal **Código 2D** (Ferramentas),
+  ao lado de QR Code e Data Matrix: conteúdo livre → G-code de varredura, com
+  **nível de correção de erro 0…8**, **colunas de dados** (ou automáticas) e
+  **altura de linha** em mm. O tamanho em mm quadrado não se aplica (o símbolo
+  cresce em linhas) — o dimensionamento é por módulo (X-dimension) × altura.
+- Encoder puro `src/shared/symbol/pdf417.ts`: *start*/*stop* de 17/18 módulos,
+  indicadores de linha por **cluster (0/3/6)**, compaction **Numeric (902)** e
+  **Byte (901/924)** e correção de erro Reed–Solomon em **GF(929)** (`2^(nível+1)`
+  codewords). Escolha automática de linhas (3–90) × colunas (1–30), até 928
+  codewords. Conteúdo em **Latin-1** (ECI padrão); fora disso, erro `bad-chars`.
+- Padrões de codeword **gerados** por `scripts/gen-pdf417-tables.mjs` a partir do
+  `@zxing/library` (`src/shared/symbol/pdf417.tables.ts`, não editar à mão).
+  `pdf417ToGcode`/`pdf417ToCell`/`pdf417GridToGcode` reusam o pipeline 2D
+  (`matrixToBands`/`bandsToScanSegments`), com overscan/polaridade e avisos.
+- Testes: **16 unitários** — incluindo **decodificação real** com o `PDF417Reader`
+  do ZXing (Byte 901/924, Numeric > 44 dígitos, Latin-1, colunas/níveis variados),
+  descritor de comprimento, **síndromes de Reed–Solomon** e erros tipados — e
+  **E2E** do modal. Modo **Text (900)** e **Aztec** ficam para depois.
 
 ### Added — grade de símbolos (RF-SYM-9)
 

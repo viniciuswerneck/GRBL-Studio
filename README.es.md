@@ -29,11 +29,11 @@ firmware **GRBL 1.1**.
   de nodos, grosor de trazo, booleanas (unir/restar/intersección/excluir),
   contorno paralelo, matriz de copias, espejo, agrupar y alinear. El G-code sale
   **anclado al origen (X0 Y0)**, listo para grabar con la pieza ya posicionada.
-- **Herramientas de símbolos**: **QR Code** y **Data Matrix ECC200** (ECC
-  L/M/Q/H, tamaño en mm, quiet zone, avisos de legibilidad) y **códigos de
-  barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar y
-  Code 93 — con HRI; **cuadrícula a partir de una lista** (1 símbolo por línea);
-  todo se convierte en G-code en el mismo flujo de vista previa/Play.
+- **Herramientas de símbolos**: **QR Code**, **Data Matrix ECC200** y **PDF417**
+  (ECC L/M/Q/H o nivel 0–8, tamaño en mm, quiet zone, avisos de legibilidad) y
+  **códigos de barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14,
+  Codabar y Code 93 — con HRI; **cuadrícula a partir de una lista** (1 símbolo
+  por línea); todo se convierte en G-code en el mismo flujo de vista previa/Play.
 - **Perfiles de máquina** de 22 modelos + Genérico GRBL (área de trabajo, homing,
   módulo láser y techo de `S`) como dato, no fijado en el código.
 - **Modo Básico** con un asistente de 6 pasos para principiantes; modo Avanzado
@@ -85,10 +85,10 @@ Cómo se compara GRBL Studio con los principales programas de láser — datos d
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Precio / licencia | **Gratis, MIT** | US$ 99/199 + updates | Gratis, MIT | Gratis, GPLv3 | Gratis (solo xTool) |
 | Linux nativo | ✅ | ✅ | ✅ | ❌ | ❌ |
-| QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (con lote) |
+| QR / Data Matrix / PDF417 / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (con lote) |
 | Capas / multioperación | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Cámara / rotativa | ❌ (en el roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo probado | ✅ 715 tests + E2E | n/d | n/d | ❌ | n/d |
+| Protocolo probado | ✅ 731 tests + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentación
 

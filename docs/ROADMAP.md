@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1042 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1054 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -60,7 +60,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **715 testes** (Vitest, 41 arquivos) + E2E Playwright + smoke headless.
+- [x] **731 testes** (Vitest, 42 arquivos) + E2E Playwright + smoke headless.
 
 ---
 
@@ -178,7 +178,7 @@ diferencial que nenhum concorrente grátis tem.
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
-| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0**; restam PDF417/Aztec | M | Simbologias com testes vetoriais. |
+| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 na 0.8.0**; resta Aztec | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
 
@@ -262,7 +262,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    **startup/RAM ainda estão acima do orçamento** — otimizar performance é
    trabalho aberto. Continuam abertos **P0.3** (Flatpak/winget/brew/AUR),
    **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
-   (PDF417/Aztec, lote) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+   (Aztec, símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 2. **v0.7 (restante)** — DXF/PDF, catálogo 30+ + `.lbdev`, editor de G-code,
    biblioteca de jobs e validação Win/macOS.
 3. **v0.8** — lote/dados variáveis, modo produção, presets de material e
@@ -375,8 +375,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | 45 | **HRI** | Texto legível embaixo do código de barras. | Etiqueta que uma pessoa também lê. | ✅ RF-SYM-6 |
 | 46 | **Quiet zone** | Margem em branco em volta do código. | Sem ela, o leitor não lê. | ✅ RF-SYM-2 |
 | 47 | **X-dimension** | Largura da barrinha mais fina. | Dimensionar o código em mm. | ✅ RF-SYM-2/3 |
-| 48 | **Data Matrix** | O quadradinho 2D (junto do QR). | Peça pequena, marcação industrial. | ✅ RF-SYM-7 (parcial) |
+| 48 | **Data Matrix** | O quadradinho 2D (junto do QR). | Peça pequena, marcação industrial. | ✅ RF-SYM-7 (0.7.0) |
 | 49 | **Versão/máscara do QR** | Quão grande e "denso" o QR fica. | Caber no espaço e ainda ler. | ✅ RF-SYM-1 |
+| 50 | **PDF417** | Código 2D em barras empilhadas (etiquetas, notas). | Muita informação num espaço baixo e largo. | ✅ RF-SYM-7 (0.8.0) |
 
 ### Anexo B — candidatos novos (proposta, a ratificar)
 

@@ -27,10 +27,11 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
   espessura de traço, booleanas (unir/subtrair/intersectar/excluir), contorno
   paralelo, matriz de cópias, espelhar, agrupar e alinhar. O G-code sai
   **ancorado na origem (X0 Y0)**, pronto para gravar com a peça já posicionada.
-- **Ferramentas de símbolos**: **QR Code** e **Data Matrix ECC200** (ECC
-  L/M/Q/H, tamanho em mm, quiet zone, avisos de legibilidade) e **código de
-  barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar e
-  Code 93 — com HRI; **grade a partir de uma lista** (1 símbolo por linha); tudo
+- **Ferramentas de símbolos**: **QR Code**, **Data Matrix ECC200** e **PDF417**
+  (ECC L/M/Q/H ou nível 0–8, tamanho em mm, quiet zone, avisos de legibilidade) e
+  **código de barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14,
+  Codabar e Code 93 — com HRI; **grade a partir de uma lista** (1 símbolo por
+  linha); tudo
   vira G-code no mesmo preview/Play.
 - **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
   laser e teto de `S`) como dado, não chumbado no código.
@@ -82,10 +83,10 @@ Como o GRBL Studio se compara aos principais programas de laser — dados de
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Preço / licença | **Grátis, MIT** | US$ 99/199 + updates | Grátis, MIT | Grátis, GPLv3 | Grátis (só xTool) |
 | Linux nativo | ✅ | ✅ | ✅ | ❌ | ❌ |
-| QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (com lote) |
+| QR / Data Matrix / PDF417 / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (com lote) |
 | Camadas / multi-operação | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Câmera / rotativa | ❌ (no roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo testado | ✅ 715 testes + E2E | n/d | n/d | ❌ | n/d |
+| Protocolo testado | ✅ 731 testes + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentação
 

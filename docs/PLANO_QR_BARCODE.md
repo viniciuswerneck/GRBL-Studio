@@ -1,9 +1,10 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
 > **Status: S1 (QR Code), S2 (código de barras 1D) e S3 parcial (1D extras +
-> Data Matrix) implementadas** — S1/S2 publicadas na v0.6.0 e a continuação na
-> v0.7.0 (18/10/2026). Ver §15 (S1), §16 (S2) e §17 (S2 restante + S3 parcial)
-> para o que foi entregue, medido e o que ainda falta.
+> Data Matrix + grade + PDF417) implementadas** — S1/S2 publicadas na v0.6.0 e a
+> continuação na v0.7.0 (18/10/2026) e v0.8.0 (19/10/2026). Ver §15 (S1), §16
+> (S2), §17 (S2 restante + S3 parcial) e §18 (PDF417) para o que foi entregue,
+> medido e o que ainda falta.
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
@@ -45,8 +46,9 @@ ou gravar direto.
 ### 2.2 Fora do escopo (por ora)
 
 - Ler/decodificar símbolos a partir de imagem (não é o objetivo do app).
-- QR Micro / rMQR; Data Matrix / PDF417 / Aztec (fase S3, §10).
-- Fluxo em lote (lista → grade de símbolos) — fase S3.
+- QR Micro / rMQR; **Aztec** (fase S3, §10). Os demais 2D (Data Matrix e
+  PDF417) já foram entregues.
+- Fluxo em lote (lista → grade de símbolos) — **entregue** (RF-SYM-9, §17).
 - Símbolo como **objeto vetorial** dentro do editor "Desenhar" (fase S3; ver §7.3).
 
 ---
@@ -172,6 +174,13 @@ comprimento, X-dimension.
 
 Data Matrix ECC200 (reaproveita GF(256) do QR), PDF417 e Aztec. Sem
 compromisso no MVP.
+
+**Entregues (v0.7.0/v0.8.0).** Data Matrix ECC200 (v0.7.0) e **PDF417**
+(v0.8.0, ISO/IEC 15438): matriz retangular, compaction **Numeric (902)** e
+**Byte (901/924)**, EC Reed–Solomon em **GF(929)**, indicadores de linha por
+cluster (0/3/6) e *start*/*stop*; validado por **decodificação real** com
+`@zxing/library` (`PDF417Reader`). Modo **Text** (900) e **Aztec** ficam para
+depois.
 
 ---
 
@@ -364,7 +373,7 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 | :--- | :--- | :--- | :--- |
 | **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
 | **S2 — 1D + HRI** ✅ | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. **(feito — §16 e §17)** |
-| **S3 — Extras** (parcial: 1D extras + Data Matrix ✅ + grade ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** PDF417/Aztec e símbolo como objeto. (A **grade** RF-SYM-9 saiu em 19/10/2026.) |
+| **S3 — Extras** (parcial: 1D extras + Data Matrix + PDF417 + grade ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** Aztec e símbolo como objeto. (A **grade** RF-SYM-9 saiu em 19/10/2026 e o **PDF417** em 19/10/2026.) |
 
 Sequência sugerida: **S1 → S2** (MVP útil: QR + Code 128/EAN) e só então S3.
 As fases são independentes de P2.1 (design) e P3.x (câmera/rotativa), mas
@@ -579,7 +588,31 @@ referência e **decodifica** com o `DataMatrixReader` do **ZXing**
 144×144, incluindo acentos Latin-1 e 2/6/10 blocos intercalados. Há ainda testes
 de G-code do DM/ITF-14 e E2E dos dois modais e da persistência.
 
-**Fora do escopo (segue aberto).** PDF417 e Aztec; Data Matrix retangular e os
+**Fora do escopo (segue aberto).** Aztec; Data Matrix retangular e os
 modos C40/Text/X12/EDIFACT/Base256/ECI; Code 93 Full ASCII; validação de AIs do
 GS1; e o símbolo como **objeto** no editor "Desenhar" (S3). A **grade** de
-símbolos (RF-SYM-9) foi **entregue** em 19/10/2026.
+símbolos (RF-SYM-9) e o **PDF417** foram **entregues** em 19/10/2026.
+
+---
+
+## 18. Estado da implementação — PDF417 (v0.8.0, 19/10/2026)
+
+**Entregue** (mesmo bundle/modais, sem IPC novo):
+
+| Item | Onde | O que foi feito |
+| :--- | :--- | :--- |
+| **Encoder PDF417** | `symbol/pdf417.ts` | ISO/IEC 15438: matriz retangular com *start*/*stop*, indicadores de linha por cluster (0/3/6), compaction **Numeric (902)** e **Byte (901/924)**, EC Reed–Solomon em **GF(929)** (`2^(nível+1)` codewords, níveis 0–8), escolha automática de linhas×colunas (3…90 × 1…30, ≤ 928 codewords). Latin-1 (ECI padrão); fora disso, erro `bad-chars`. |
+| **Tabelas** | `symbol/pdf417.tables.ts` | Padrões de codeword (929×3) **gerados** por `scripts/gen-pdf417-tables.mjs` a partir do `@zxing/library` — não editar à mão. |
+| **G-code** | `symbol/gcode.ts` | `pdf417ToGcode`/`pdf417ToCell`/`pdf417GridToGcode` reusam o pipeline de varredura (`matrixToBands`/`bandsToScanSegments`); X-dimension e **altura de linha** separados (padrão 3× o módulo) e aviso `lines-too-few` reavaliado pela altura da linha. |
+| **UI 2D** | modal **Código 2D** | Terceiro símbolo no `select`: campos exclusivos (nível de EC 0–8, colunas de dados, altura de linha); o tamanho em mm (linha) fica oculto (o PDF417 cresce em linhas). |
+| **Preferências** | `Prefs.symbols.qr` | Guarda também `pdfEcc`/`pdfColumns`/`pdfRowHeightMm` (sanitizado). |
+
+**Validação.** `tests/symbol-pdf417.test.ts` (16 testes) **decodifica de verdade**
+com o `PDF417Reader` do **ZXing** (`@zxing/library`, devDependency) — Byte
+(901/924), Numeric (inclusive > 44 dígitos), Latin-1, colunas/níveis variados —
+e confere o **descritor de comprimento**, as **síndromes de Reed–Solomon em
+GF(929)**, *start*/*stop* e os erros tipados. Há ainda testes de G-code (grade
+incluída) e E2E do modal.
+
+**Fora do escopo (PDF417).** Modo **Text** (900; mais denso para maiúsculas),
+micro-PDF417 e ECI explícito (além do Latin-1 padrão).

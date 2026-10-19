@@ -43,7 +43,7 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 | Critério | Líder hoje | Nossa meta | Como provar |
 | :-- | :-- | :-- | :-- |
-| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 715+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
+| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 731+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
 | Startup / RAM / FPS / DPI | ninguém publica | **#1 medido** | benchmark publicado (badge no README) — RNF-11/12 |
 | Pipeline de imagem (tempo por peça) | LaserGRBL / LightBurn | **#1** | benchmark por material (mesma máquina, mesmo arquivo) |
 | Fluxo "abrir → gravar" | LightBurn | **#1 (≤ 3 cliques)** | teste cronometrado, gravado em vídeo |

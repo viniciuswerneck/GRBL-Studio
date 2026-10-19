@@ -272,8 +272,15 @@ const el = {
   qrVersionField: $('qrVersionField'),
   qrVersion: $('qrVersion'),
   qrQuietField: $('qrQuietField'),
+  qrSizeField: $('qrSizeField'),
   dmSizeField: $('dmSizeField'),
   dmSize: $('dmSize'),
+  qrPdfEccField: $('qrPdfEccField'),
+  qrPdfEcc: $('qrPdfEcc'),
+  qrPdfColsField: $('qrPdfColsField'),
+  qrPdfCols: $('qrPdfCols'),
+  qrPdfRowHeightField: $('qrPdfRowHeightField'),
+  qrPdfRowHeight: $('qrPdfRowHeight'),
   qrWidth: $('qrWidth'),
   qrHeight: $('qrHeight'),
   qrKeepAspect: $('qrKeepAspect'),
@@ -4834,22 +4841,59 @@ function populateDmSizes() {
   }
 }
 
-/** Mostra só os campos do símbolo escolhido (QR ou Data Matrix). */
+/** Mostra só os campos do símbolo escolhido (QR, Data Matrix ou PDF417). */
 function syncQrSymbology({ applyDefaults = true } = {}) {
-  const kind = el.qrSymbology?.value === 'datamatrix' ? 'datamatrix' : 'qr';
+  const value = el.qrSymbology?.value;
+  const kind =
+    value === 'datamatrix'
+      ? 'datamatrix'
+      : value === 'pdf417'
+        ? 'pdf417'
+        : 'qr';
   const isDm = kind === 'datamatrix';
-  if (el.qrEccField) el.qrEccField.classList.toggle('hidden', isDm);
-  if (el.qrVersionField) el.qrVersionField.classList.toggle('hidden', isDm);
+  const isPdf = kind === 'pdf417';
+  if (el.qrEccField) el.qrEccField.classList.toggle('hidden', isDm || isPdf);
+  if (el.qrVersionField)
+    el.qrVersionField.classList.toggle('hidden', isDm || isPdf);
+  // A quiet zone do Data Matrix é 1 módulo (norma) — mostrada no status.
   if (el.qrQuietField) el.qrQuietField.classList.toggle('hidden', isDm);
   if (el.dmSizeField) el.dmSizeField.classList.toggle('hidden', !isDm);
-  // A quiet zone do Data Matrix é 1 módulo (norma) — mostrada no status.
+  // O PDF417 cresce em linhas; o tamanho é dirigido por módulo + altura da linha.
+  if (el.qrSizeField) el.qrSizeField.classList.toggle('hidden', isPdf);
+  if (el.qrPdfEccField) el.qrPdfEccField.classList.toggle('hidden', !isPdf);
+  if (el.qrPdfColsField) el.qrPdfColsField.classList.toggle('hidden', !isPdf);
+  if (el.qrPdfRowHeightField) {
+    el.qrPdfRowHeightField.classList.toggle('hidden', !isPdf);
+  }
   if (applyDefaults && el.qrQuiet) {
-    el.qrQuiet.value = isDm ? '1' : '4';
+    el.qrQuiet.value = isDm ? '1' : isPdf ? '2' : '4';
   }
   if (el.qrTitle) {
-    el.qrTitle.textContent = isDm ? t('dm.title') : t('qr.title');
+    el.qrTitle.textContent = isDm
+      ? t('dm.title')
+      : isPdf
+        ? t('pdf.title')
+        : t('qr.title');
   }
-  if (el.qrModule && applyDefaults) el.qrModule.value = '0.5';
+  if (el.qrModule && applyDefaults) el.qrModule.value = isPdf ? '0.4' : '0.5';
+  if (el.qrPdfEcc && el.qrPdfEcc.options.length === 0) {
+    populatePdfEcc();
+  }
+}
+
+/** Preenche o seletor de nível de correção de erro do PDF417 uma única vez. */
+function populatePdfEcc() {
+  if (!el.qrPdfEcc || el.qrPdfEcc.options.length > 0) return;
+  for (let level = 0; level <= 8; level++) {
+    const opt = document.createElement('option');
+    opt.value = String(level);
+    opt.textContent = t('qr.pdf.eccOption', {
+      level,
+      ec: 2 ** (level + 1),
+    });
+    el.qrPdfEcc.appendChild(opt);
+  }
+  el.qrPdfEcc.value = '2';
 }
 
 function closeQrModal() {
@@ -4903,18 +4947,32 @@ function readQrOptions() {
     return Math.max(1, Math.min(1000, raw));
   };
   const version = clampNum(el.qrVersion, 0, 40, 0);
-  const isDm = el.qrSymbology?.value === 'datamatrix';
+  const value = el.qrSymbology?.value;
+  const isDm = value === 'datamatrix';
+  const isPdf = value === 'pdf417';
   const dmSize = clampNum(el.dmSize, 0, 144, 0);
+  /** Inteiro positivo do input, ou `'auto'` quando vazio/inválido. */
+  const autoInt = (input, min, max) => {
+    const raw = Number(input ? input.value : Number.NaN);
+    if (!Number.isFinite(raw) || raw <= 0) return 'auto';
+    return Math.round(Math.max(min, Math.min(max, raw)));
+  };
   return {
-    symbology: isDm ? 'datamatrix' : 'qr',
+    symbology: isDm ? 'datamatrix' : isPdf ? 'pdf417' : 'qr',
     ecc: el.qrEcc?.value || 'M',
     version: version > 0 ? Math.round(version) : 'auto',
     size: dmSize > 0 ? Math.round(dmSize) : 'auto',
+    // PDF417 (RF-SYM-7).
+    pdfEcc: Math.round(clampNum(el.qrPdfEcc, 0, 8, 2)),
+    pdfColumns: autoInt(el.qrPdfCols, 1, 30),
+    pdfRowHeightMm: clampNum(el.qrPdfRowHeight, 0.1, 50, 1.2),
     targetWidthMm: targetNum(el.qrWidth),
     targetHeightMm: targetNum(el.qrHeight),
-    moduleMm: clampNum(el.qrModule, 0.05, 20, 0.5),
+    moduleMm: clampNum(el.qrModule, 0.05, 20, isPdf ? 0.4 : 0.5),
     // Data Matrix: quiet zone de 1 módulo (ISO/IEC 16022), não configurável.
-    quietZoneModules: isDm ? 1 : Math.round(clampNum(el.qrQuiet, 0, 10, 4)),
+    quietZoneModules: isDm
+      ? 1
+      : Math.round(clampNum(el.qrQuiet, 0, 10, isPdf ? 2 : 4)),
     linesPerMm: Math.round(clampNum(el.qrLines, 1, 40, 10)),
     powerPercent: clampNum(el.qrPower, 0, 100, 100),
     feed: Math.round(clampNum(el.qrFeed, 1, 20000, 1000)),
@@ -4939,24 +4997,37 @@ function syncQrSize(source) {
 function qrStatusText(result) {
   if (result.count !== undefined) return gridStatusText(result, 'qr.warn');
   const fmt2 = (v) => v.toFixed(2);
-  const moduleText =
-    Math.abs(result.moduleMm - result.moduleYMm) < 1e-9
-      ? fmt2(result.moduleMm)
-      : `${fmt2(result.moduleMm)} × ${fmt2(result.moduleYMm)}`;
-  const done = result.datamatrix
-    ? t('dm.status.done', {
-        size: result.datamatrix.size,
-        w: result.widthMm.toFixed(1),
-        h: result.heightMm.toFixed(1),
-        module: moduleText,
-      })
-    : t('qr.status.done', {
-        version: `v${result.qr.version}-${result.qr.ecc}`,
-        size: result.qr.size,
-        w: result.widthMm.toFixed(1),
-        h: result.heightMm.toFixed(1),
-        module: moduleText,
-      });
+  let done;
+  if (result.pdf417) {
+    done = t('pdf.status.done', {
+      rows: result.pdf417.rows,
+      cols: result.pdf417.columns,
+      ecc: result.pdf417.eccLevel,
+      w: result.widthMm.toFixed(1),
+      h: result.heightMm.toFixed(1),
+      module: fmt2(result.moduleMm),
+      row: fmt2(result.rowHeightMm),
+    });
+  } else {
+    const moduleText =
+      Math.abs(result.moduleMm - result.moduleYMm) < 1e-9
+        ? fmt2(result.moduleMm)
+        : `${fmt2(result.moduleMm)} × ${fmt2(result.moduleYMm)}`;
+    done = result.datamatrix
+      ? t('dm.status.done', {
+          size: result.datamatrix.size,
+          w: result.widthMm.toFixed(1),
+          h: result.heightMm.toFixed(1),
+          module: moduleText,
+        })
+      : t('qr.status.done', {
+          version: `v${result.qr.version}-${result.qr.ecc}`,
+          size: result.qr.size,
+          w: result.widthMm.toFixed(1),
+          h: result.heightMm.toFixed(1),
+          module: moduleText,
+        });
+  }
   const parts = [done];
   if (result.warnings?.length) {
     parts.push(...result.warnings.map((code) => `⚠ ${t(`qr.warn.${code}`)}`));
@@ -4974,7 +5045,7 @@ async function generateQr() {
     ? gridItems(el.qrContent?.value).length > 0
     : Boolean(el.qrContent?.value.trim());
   if (!hasContent) {
-    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const prefix = symbolErrPrefix(opts.symbology);
     if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
   }
@@ -4985,7 +5056,7 @@ async function generateQr() {
   } catch (err) {
     // QrError/DataMatrixError trazem um `code` estável → mensagem do i18n.
     // Sem `code` (falha inesperada do encoder) cai no genérico da simbologia.
-    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const prefix = symbolErrPrefix(opts.symbology);
     const key = `${prefix}.err.${err?.code ?? 'unknown'}`;
     if (el.qrStatus) el.qrStatus.textContent = t(key, opts);
     appendLine(t(key, opts), 'error');
@@ -4999,17 +5070,31 @@ async function generateQr() {
   openFrameModal();
 }
 
+/** Prefixo das chaves i18n do símbolo 2D (qr/dm/pdf). */
+function symbolErrPrefix(symbology) {
+  if (symbology === 'datamatrix') return 'dm';
+  if (symbology === 'pdf417') return 'pdf';
+  return 'qr';
+}
+
 /** Nome do arquivo virtual do símbolo conforme simbologia e grade (RF-SYM-9). */
 function symbolFileName(opts, kind) {
   const dm = opts.symbology === 'datamatrix';
+  const pdf = opts.symbology === 'pdf417';
   if (kind === '2d') {
-    if (opts.grid) return dm ? 'datamatrix-grid.gcode' : 'qr-code-grid.gcode';
-    return dm ? 'datamatrix.gcode' : 'qr-code.gcode';
+    if (opts.grid) {
+      return dm
+        ? 'datamatrix-grid.gcode'
+        : pdf
+          ? 'pdf417-grid.gcode'
+          : 'qr-code-grid.gcode';
+    }
+    return dm ? 'datamatrix.gcode' : pdf ? 'pdf417.gcode' : 'qr-code.gcode';
   }
   return opts.grid ? 'barcode-grid.gcode' : 'barcode.gcode';
 }
 
-/** Gera o G-code do símbolo 2D escolhido (QR ou Data Matrix), sozinho ou em grade. */
+/** Gera o G-code do símbolo 2D escolhido (QR, Data Matrix ou PDF417). */
 function generate2dGcode(opts) {
   const common = {
     ...opts,
@@ -5019,6 +5104,25 @@ function generate2dGcode(opts) {
     gapXMm: opts.gridGapMm,
     gapYMm: opts.gridGapMm,
   };
+  if (opts.symbology === 'pdf417') {
+    const pdf = {
+      ...common,
+      dataColumns: opts.pdfColumns,
+      eccLevel: opts.pdfEcc,
+      rowHeightMm: opts.pdfRowHeightMm,
+    };
+    delete pdf.ecc;
+    delete pdf.version;
+    delete pdf.size;
+    delete pdf.targetHeightMm;
+    if (opts.grid) {
+      return window.GRBL_QR.pdf417GridToGcode(
+        gridItems(el.qrContent?.value),
+        pdf,
+      );
+    }
+    return window.GRBL_QR.pdf417ToGcode(el.qrContent.value.trim(), pdf);
+  }
   if (opts.grid) {
     const items = gridItems(el.qrContent?.value);
     if (opts.symbology === 'datamatrix') {
@@ -5043,7 +5147,7 @@ async function saveQr() {
     ? gridItems(el.qrContent?.value).length > 0
     : Boolean(el.qrContent?.value.trim());
   if (!hasContent) {
-    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const prefix = symbolErrPrefix(opts.symbology);
     if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
   }
@@ -5056,7 +5160,7 @@ async function saveQr() {
     );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
-    const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
+    const prefix = symbolErrPrefix(opts.symbology);
     const key = `${prefix}.err.${err?.code ?? 'unknown'}`;
     appendLine(t(key, opts), 'error');
   }
@@ -5251,6 +5355,9 @@ function persistSymbolPrefs(kind, opts) {
       ecc: opts.ecc,
       version: opts.version === 'auto' ? 0 : opts.version,
       dmSize: opts.size === 'auto' ? 0 : opts.size,
+      pdfEcc: opts.pdfEcc,
+      pdfColumns: opts.pdfColumns,
+      pdfRowHeightMm: opts.pdfRowHeightMm,
       moduleMm: opts.moduleMm,
       quietZoneModules: opts.quietZoneModules,
       linesPerMm: opts.linesPerMm,
@@ -5291,11 +5398,22 @@ function applySymbolPrefs() {
   const qr = state.prefs.symbols?.qr;
   populateQrVersions();
   populateDmSizes();
+  populatePdfEcc();
   if (qr) {
     if (el.qrSymbology && qr.symbology) el.qrSymbology.value = qr.symbology;
     if (el.qrEcc && qr.ecc) el.qrEcc.value = qr.ecc;
     if (el.qrVersion) el.qrVersion.value = String(qr.version || 0);
     if (el.dmSize) el.dmSize.value = String(qr.dmSize || 0);
+    if (el.qrPdfEcc && qr.pdfEcc != null) {
+      el.qrPdfEcc.value = String(qr.pdfEcc);
+    }
+    if (el.qrPdfCols) {
+      el.qrPdfCols.value =
+        typeof qr.pdfColumns === 'number' ? String(qr.pdfColumns) : '';
+    }
+    if (el.qrPdfRowHeight && qr.pdfRowHeightMm) {
+      el.qrPdfRowHeight.value = String(qr.pdfRowHeightMm);
+    }
     if (el.qrModule && qr.moduleMm) el.qrModule.value = String(qr.moduleMm);
     if (el.qrQuiet && qr.quietZoneModules != null) {
       el.qrQuiet.value = String(qr.quietZoneModules);

@@ -242,14 +242,15 @@ export const en = {
     'Grid generated: {count} symbol(s) · {cols} × {rows} · {w} × {h} mm. Check the preview and send or save.',
   'qr.title': '2D code',
   'qr.hint':
-    'Generates a QR Code or a Data Matrix as raster G-code: pick the symbol, ' +
-    'the content and the size in mm (or the module size) and engrave. The ' +
-    'artwork origin is the bottom-left corner (X0 Y0).',
+    'Generates a QR Code, a Data Matrix or a PDF417 as raster G-code: pick the ' +
+    'symbol, the content and the size in mm (or the module size) and engrave. ' +
+    'The artwork origin is the bottom-left corner (X0 Y0).',
   'qr.content': 'Content',
   'qr.contentPlaceholder': 'https://example.com or some text',
   'qr.symbology': 'Symbol',
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
+  'qr.sym.pdf417': 'PDF417',
   'qr.ecc': 'Error correction',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -313,6 +314,22 @@ export const en = {
     'The ECC200 Data Matrix accepts Latin-1 only (no emoji or other UTF-8).',
   'dm.err.bad-size': 'Invalid Data Matrix size.',
   'dm.err.unknown': 'Could not generate the Data Matrix with these settings.',
+
+  // ---------------------------------------- PDF417 (v0.8, RF-SYM-7)
+  'pdf.title': 'PDF417 code',
+  'qr.pdf.ecc': 'Error correction',
+  'qr.pdf.eccOption': 'Level {level} — {ec} codewords',
+  'qr.pdf.cols': 'Data columns (blank = automatic)',
+  'qr.pdf.rowHeight': 'Row height (mm)',
+  'pdf.status.done':
+    'PDF417 generated: {rows} × {cols} codewords · EC level {ecc} · {w} × {h} mm ' +
+    '· module {module} mm · row {row} mm. Check the preview, then send or save.',
+  'pdf.err.empty': 'Enter content to generate the PDF417.',
+  'pdf.err.too-long': 'Content too long for a PDF417 with these settings.',
+  'pdf.err.bad-options': 'Invalid PDF417 settings (data columns out of 1…30).',
+  'pdf.err.bad-chars':
+    'The PDF417 accepts Latin-1 only (no emoji or other UTF-8).',
+  'pdf.err.unknown': 'Could not generate the PDF417 with these settings.',
 
   'bar.title': 'Barcode',
   'bar.hint':

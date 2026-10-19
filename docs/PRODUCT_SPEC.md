@@ -244,7 +244,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-SYM-4 | **Parâmetros de gravação** (velocidade, potência, passadas, modo M3/M4) e **pré-visualização** antes de gravar. | Should | ✅ |
 | RF-SYM-5 | **Avisos de legibilidade**: módulo/X-dimension pequenos para o spot do laser, quiet zone reduzida, símbolo fora da área de trabalho e símbolo esticado (largura ≠ altura) — com causa e ação. | Should | ✅ |
 | RF-SYM-6 | **Texto legível (HRI)** sob o código de barras, opcional. | Could | ✅ |
-| RF-SYM-7 | Simbologias adicionais: 1D (ITF-14, Codabar, Code 93, GS1-128) e 2D (Data Matrix, PDF417, Aztec). **Entregue:** 1D extras + Data Matrix ECC200 (v0.7.0). **Pendente:** PDF417/Aztec. | Could | 🟡 |
+| RF-SYM-7 | Simbologias adicionais: 1D (ITF-14, Codabar, Code 93, GS1-128) e 2D (Data Matrix, PDF417, Aztec). **Entregue:** 1D extras + Data Matrix ECC200 (v0.7.0) + PDF417 (v0.8.0). **Pendente:** Aztec. | Could | 🟡 |
 | RF-SYM-8 | **Salvar `.gcode`** ou enviar direto para a área de execução (preview + Play), sem IPC novo. | Should | ✅ |
 | RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ✅ |
 | RF-ONB-1 | **Onboarding** de primeira execução: tour de 5 passos (conectar → perfil da máquina → abrir → preview → gravar), reabrível pela Ajuda e dispensável (“não mostrar”). | Should | ✅ |

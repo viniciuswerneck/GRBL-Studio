@@ -35,8 +35,8 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > caminho main → IPC → renderer por emulador TCP. A performance do RNF-11 foi
 > trabalhada (updater/serial sob demanda, splash adiado, bundles sob demanda),
 > mas **startup e RAM seguem acima do orçamento** nesta máquina — números e
-> ressalvas em `docs/BENCHMARK.md`. `RF-SYM-7` ganhou Code 93 Full ASCII e a
-> validação de AIs GS1-128; PDF417/Aztec continuam fora.
+> ressalvas em `docs/BENCHMARK.md`. `RF-SYM-7` ganhou Code 93 Full ASCII, a
+> validação de AIs GS1-128 e o **PDF417** (v0.8.0); o **Aztec** continua fora.
 >
 > **Nota (19/10/2026):** o módulo **M14** foi reconciliado no `PRODUCT_SPEC.md`
 > (RF-MAQ-1…8 ✅, incluindo o **chip de pinos `Pn`** na barra de status,
@@ -50,6 +50,9 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > G-code. Texto de PDF não vira curva (aviso). Nesta data, por fim, entrou
 > **RF-SYM-9 (grade de símbolos)**: uma lista (1 por linha) → vários símbolos em
 > colunas/linhas com espaçamento configurável, num único programa de G-code.
+> Também entrou o **PDF417** (RF-SYM-7): Numeric/Byte compaction, EC Reed–Solomon
+> em GF(929), validação por decodificação real com `@zxing/library`, no modal 2D
+> (símbolo, nível de EC 0–8, colunas e altura de linha).
 
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
@@ -68,7 +71,7 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | ID | Status | O que falta |
 | :--- | :--- | :--- |
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
-| RF-SYM-7 | 🟡 | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; falta PDF417/Aztec |
+| RF-SYM-7 | 🟡 | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; **PDF417 entregue na 0.8.0**; falta Aztec |
 | RF-SYM-9 | ✅ | Vários símbolos em grade a partir de uma lista (colunas/espaçamento configuráveis) |
 
 > **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,

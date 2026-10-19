@@ -257,14 +257,15 @@ export const ptBR = {
     'Grade gerada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Confira no preview e envie ou salve.',
   'qr.title': 'Código 2D',
   'qr.hint':
-    'Gera um QR Code ou um Data Matrix como G-code de varredura: escolha o ' +
-    'símbolo, o conteúdo e o tamanho (mm ou lado do módulo) e grave. A origem ' +
-    'da arte é o canto inferior esquerdo (X0 Y0).',
+    'Gera um QR Code, um Data Matrix ou um PDF417 como G-code de varredura: ' +
+    'escolha o símbolo, o conteúdo e o tamanho (mm ou lado do módulo) e grave. A ' +
+    'origem da arte é o canto inferior esquerdo (X0 Y0).',
   'qr.content': 'Conteúdo',
   'qr.contentPlaceholder': 'https://exemplo.com ou um texto',
   'qr.symbology': 'Símbolo',
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
+  'qr.sym.pdf417': 'PDF417',
   'qr.ecc': 'Correção de erro',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -332,6 +333,23 @@ export const ptBR = {
   'dm.err.bad-size': 'Tamanho de Data Matrix inválido.',
   'dm.err.unknown':
     'Não foi possível gerar o Data Matrix com esses parâmetros.',
+
+  // ----------------------------------------- PDF417 (v0.8, RF-SYM-7)
+  'pdf.title': 'Código PDF417',
+  'qr.pdf.ecc': 'Correção de erro',
+  'qr.pdf.eccOption': 'Nível {level} — {ec} codewords',
+  'qr.pdf.cols': 'Colunas de dados (vazio = automático)',
+  'qr.pdf.rowHeight': 'Altura da linha (mm)',
+  'pdf.status.done':
+    'PDF417 gerado: {rows} × {cols} codewords · EC nível {ecc} · {w} × {h} mm · ' +
+    'módulo {module} mm · linha {row} mm. Confira no preview e envie ou salve.',
+  'pdf.err.empty': 'Informe um conteúdo para gerar o PDF417.',
+  'pdf.err.too-long':
+    'Conteúdo longo demais para um PDF417 com esses parâmetros.',
+  'pdf.err.bad-options':
+    'Parâmetros de PDF417 inválidos (colunas de dados fora de 1…30).',
+  'pdf.err.bad-chars': 'O PDF417 aceita só Latin-1 (sem emoji ou outro UTF-8).',
+  'pdf.err.unknown': 'Não foi possível gerar o PDF417 com esses parâmetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':

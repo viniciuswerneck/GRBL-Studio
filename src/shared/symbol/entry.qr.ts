@@ -10,6 +10,8 @@ export type {
   DataMatrixGcodeParams,
   DataMatrixGcodeResult,
   MatrixGcodeParams,
+  Pdf417GcodeParams,
+  Pdf417GcodeResult,
   QrGcodeParams,
   QrGcodeResult,
   SymbolGcodeResult,
@@ -27,6 +29,9 @@ export {
   dataMatrixGridToGcode,
   dataMatrixToCell,
   dataMatrixToGcode,
+  pdf417GridToGcode,
+  pdf417ToCell,
+  pdf417ToGcode,
   qrGridToGcode,
   qrModuleSizes,
   qrToCell,
@@ -35,6 +40,14 @@ export {
   symbolToGcode,
   symbolWarnings,
 } from './gcode';
+export type { Pdf417EccLevel, Pdf417ErrorCode } from './pdf417';
+export {
+  PDF417_QUIET_ZONE_MODULES,
+  Pdf417Error,
+  encodePdf417,
+  pdf417EcCodewords,
+  pdf417TotalModules,
+} from './pdf417';
 export type {
   DataMatrixOptions,
   DataMatrixResult,
