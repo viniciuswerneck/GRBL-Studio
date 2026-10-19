@@ -4,7 +4,7 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.7.0] - 2026-10-18
 
 ### Added — Simbologias: 1D extras e Data Matrix (S2/S3, RF-SYM-7)
 
@@ -66,6 +66,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   do RNF-11 na máquina de referência (Intel i3-5015U, carga ~3–4). FPS durante
   job, latência de `?` e DPI continuam manuais; Windows/macOS não medidos.
   Otimizar startup/RAM segue aberto.
+
+### Fixed
+
+- **Envio:** uma linha maior que o buffer RX do GRBL **não** é mais enviada — o
+  job é abortado com erro claro (com trecho da linha) em vez de estourar o
+  buffer e corromper o G-code. O cabeçalho gerado pelos símbolos passa a ser
+  cortado por **bytes** (acentos Latin-1 ocupam 2) com teto por linha.
+- **Protocolo:** `error:`/`ALARM:` que citam "ok" (ex.: `error:9 not ok`) não
+  viram ACK — liberar a janela antes da hora; o código é extraído mesmo com
+  texto depois do número.
+- **Protocolo:** `splitLines` só quebra a linha no `>` que **fecha** um
+  `<...>` de status; um `>` dentro de `[MSG:ferramenta > 3 mm]` não divide mais
+  a mensagem.
+- **Cliente:** iniciar um job com uma consulta enfileirada (mas ainda não
+  despachada) a rejeita na hora, em vez de deixá-la pendurada até o timeout de
+  8 s.
+- **UI:** parada de emergência por teclado (`Esc`/`Ctrl+X`) volta a funcionar
+  com o foco num campo (console, campos do modal) — era justamente o caso real;
+  o `Ctrl+X` é tratado antes da guarda de digitação e o `Esc` para o job quando
+  não há diálogo aberto.
+- **Símbolos:** o Code 39 avisa que o conteúdo foi convertido para maiúsculas
+  (antes mudava o dado em silêncio) e o modal 2D não mostra mais a chave crua
+  `dm.err.bad-version` quando o erro não tem `code`.
 
 ### Changed — documentos
 
