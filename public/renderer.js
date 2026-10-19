@@ -711,7 +711,77 @@ async function openSvgImport() {
   }
 }
 
-// ------------------------------------------------------------------ desenho vetorial (design tools)
+/**
+ * Importa DXF ASCII (P2.4): converte os contornos em G-code e carrega na
+ * Execução, como o SVG. O bundle `dxf.js` carrega sob demanda e já leva o
+ * emissor de G-code junto (não depende do editor vetorial).
+ */
+async function openDxfImport() {
+  await requireBundle('dxf.js');
+  if (!window.GRBL_DXF) {
+    appendLine(t('dxf.moduleMissing'), 'error');
+    return;
+  }
+  try {
+    const file = await window.grbl.openDxf();
+    if (!file) return;
+    let doc;
+    try {
+      doc = window.GRBL_DXF.parseDxf(file.text);
+    } catch (err) {
+      if (err && err.code === 'binary') {
+        appendLine(t('dxf.binary'), 'error');
+        return;
+      }
+      throw err;
+    }
+    if (doc.contours.length === 0) {
+      appendLine(t('dxf.empty'), 'error');
+      return;
+    }
+    const gcode = window.GRBL_DXF.dxfToGcode(doc, {
+      feed: Number(el.imgSpeed ? el.imgSpeed.value : 1000) || 1000,
+      travelFeed: 3000,
+      scale: 1,
+      flipY: false,
+    });
+    applyJobLines(file.name.replace(/\.dxf$/i, '.gcode'), gcode);
+    appendLine(
+      t('dxf.loaded', {
+        contours: doc.contours.length,
+        width: doc.width.toFixed(1),
+        height: doc.height.toFixed(1),
+        unit: doc.unit,
+      }),
+      'ok',
+    );
+    if (doc.hidden > 0) {
+      appendLine(t('dxf.hidden', { n: doc.hidden }), 'warn');
+    }
+    const unsupported = Object.keys(doc.unsupported);
+    if (unsupported.length) {
+      const n = unsupported.reduce(
+        (sum, type) => sum + doc.unsupported[type],
+        0,
+      );
+      appendLine(
+        t('dxf.ignored', { n, types: unsupported.join(', ') }),
+        'warn',
+      );
+    }
+    try {
+      const path = await window.grbl.saveGcode(
+        gcode,
+        file.name.replace(/\.dxf$/i, '.gcode'),
+      );
+      if (path) appendLine(t('file.saved', { path }), 'ok');
+    } catch (err) {
+      appendLine(t('err.prefix', { msg: err.message }), 'error');
+    }
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
 //
 // Editor vetorial estilo CorelDRAW. A geometria pura vive em
 // `src/shared/designEditor.ts` (bounds, grupos, hit-test, z-order, RDP) e a
@@ -7946,6 +8016,7 @@ if (window.grbl.onAction)
     else if (name === 'bar-code') openBarModal();
     else if (name === 'machine') openMachineModal();
     else if (name === 'open-svg') openSvgImport();
+    else if (name === 'open-dxf') openDxfImport();
     else if (name === 'design') openDesignModal();
     else if (name === 'tour') openTour();
   });

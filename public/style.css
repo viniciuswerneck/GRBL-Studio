@@ -622,6 +622,9 @@ input[type="checkbox"] {
 .line-ok {
   color: var(--ok);
 }
+.line-warn {
+  color: var(--warn);
+}
 .line-message {
   color: var(--accent);
 }

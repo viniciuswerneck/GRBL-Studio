@@ -29,9 +29,11 @@ import {
 } from '../shared/appInfo';
 import { detectLocale, setLocale, t } from '../shared/i18n';
 import {
+  DXF_DIALOG_FILTERS,
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
   SVG_DIALOG_FILTERS,
+  type FileDialogFilter,
   imageMimeType,
 } from '../shared/fileFilters';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
@@ -125,6 +127,39 @@ export function registerIpc(
     void prefs
       .updateInPlace({ fileDir: path.dirname(filePath) })
       .catch(() => {});
+  };
+
+  /**
+   * Diálogo de arquivo de texto (G-code/SVG/DXF): valida o tamanho no main e
+   * devolve o texto pronto — o renderer nunca recebe caminhos.
+   */
+  const openTextFile = async (
+    sender: WebContents,
+    title: string,
+    filters: FileDialogFilter[],
+  ): Promise<OpenedTextFile | null> => {
+    const filePath = await pickFile(sender, {
+      title,
+      buttonLabel: t('dlg.open'),
+      properties: ['openFile'],
+      filters,
+      defaultPath: await defaultDir(),
+    });
+    if (!filePath) return null;
+    rememberDir(filePath);
+
+    const info = await stat(filePath);
+    if (!info.isFile()) throw new Error(t('dlg.notFile'));
+    if (info.size > TEXT_MAX_BYTES) {
+      throw new Error(
+        t('dlg.fileTooBig', {
+          size: formatMb(info.size),
+          limit: formatMb(TEXT_MAX_BYTES),
+        }),
+      );
+    }
+    const text = await readFile(filePath, 'utf8');
+    return { path: filePath, name: path.basename(filePath), text };
   };
 
   client.on('console', (d) => {
@@ -383,32 +418,13 @@ export function registerIpc(
   );
 
   // --------------------------------------------------- SVG (importação vetorial)
-  ipcMain.handle(
-    CHANNELS.fileOpenSvg,
-    async (evt): Promise<OpenedTextFile | null> => {
-      const filePath = await pickFile(evt.sender, {
-        title: t('dlg.openSvg'),
-        buttonLabel: t('dlg.open'),
-        properties: ['openFile'],
-        filters: SVG_DIALOG_FILTERS,
-        defaultPath: await defaultDir(),
-      });
-      if (!filePath) return null;
-      rememberDir(filePath);
+  ipcMain.handle(CHANNELS.fileOpenSvg, (evt) =>
+    openTextFile(evt.sender, t('dlg.openSvg'), SVG_DIALOG_FILTERS),
+  );
 
-      const info = await stat(filePath);
-      if (!info.isFile()) throw new Error(t('dlg.notFile'));
-      if (info.size > TEXT_MAX_BYTES) {
-        throw new Error(
-          t('dlg.fileTooBig', {
-            size: formatMb(info.size),
-            limit: formatMb(TEXT_MAX_BYTES),
-          }),
-        );
-      }
-      const text = await readFile(filePath, 'utf8');
-      return { path: filePath, name: path.basename(filePath), text };
-    },
+  // --------------------------------------------------- DXF (importação CAD)
+  ipcMain.handle(CHANNELS.fileOpenDxf, (evt) =>
+    openTextFile(evt.sender, t('dlg.openDxf'), DXF_DIALOG_FILTERS),
   );
 
   /**

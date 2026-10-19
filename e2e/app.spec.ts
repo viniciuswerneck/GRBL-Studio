@@ -716,3 +716,109 @@ test.describe('GRBL Studio — pré-voo (P0.8)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — importação DXF (P2.4)', () => {
+  test('converte DXF ASCII em contornos e carrega o G-code na Execução', async () => {
+    const { app, page, close } = await launchApp();
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-dxf-'));
+    const file = path.join(dir, 'peca.dxf');
+    // Retângulo 20×10 em mm (LWPOLYLINE fechada), com uma camada CUT.
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'HEADER',
+      '9',
+      '$INSUNITS',
+      '70',
+      '4',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'TABLES',
+      '0',
+      'TABLE',
+      '2',
+      'LAYER',
+      '70',
+      '1',
+      '0',
+      'LAYER',
+      '2',
+      'CUT',
+      '70',
+      '0',
+      '62',
+      '7',
+      '0',
+      'ENDTAB',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'LWPOLYLINE',
+      '8',
+      'CUT',
+      '90',
+      '4',
+      '70',
+      '1',
+      '10',
+      '0',
+      '20',
+      '0',
+      '10',
+      '20',
+      '20',
+      '0',
+      '10',
+      '20',
+      '20',
+      '10',
+      '10',
+      '0',
+      '20',
+      '10',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    writeFileSync(file, dxf, 'utf8');
+    try {
+      await app.evaluate(({ dialog }, pathToFile) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [pathToFile],
+        });
+        d.showSaveDialog = async () => ({ canceled: true });
+      }, file);
+
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'open-dxf',
+        );
+      });
+
+      await expect(page.locator('#fileInfo')).toContainText('peca.gcode');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'DXF importado',
+      );
+      await expect(page.locator('#consoleOutput')).toContainText('1 contorno');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        '20.0 × 10.0 mm',
+      );
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -635,6 +635,15 @@ export const es = {
   'file.infoGeneratedTime':
     '{file} — {lines} líneas · {size} · ~{time} (generado de {image})',
   'file.saved': 'G-code guardado en {path}',
+  'dxf.loaded':
+    'DXF importado: {contours} contorno(s), {width} × {height} mm (unidad de origen: {unit})',
+  'dxf.hidden': 'DXF: {n} entidad(es) en capas ocultas ignorada(s).',
+  'dxf.ignored': 'DXF: {n} entidad(es) no soportada(s) ignorada(s): {types}.',
+  'dxf.empty':
+    'Ninguna geometría reconocida en el DXF (texto, hatch y dimensiones no se convierten).',
+  'dxf.binary':
+    'El DXF binario no es compatible. Exporte el archivo como DXF ASCII.',
+  'dxf.moduleMissing': 'Módulo de importación DXF no cargado.',
   'gcode.summary':
     'G-code generado: {lines} líneas, {size}, {rows}×{cols} muestras, ~{time}',
   'run.play': '▶ Iniciar',
@@ -935,6 +944,7 @@ export const es = {
   'dlg.openImage': 'Abrir imagen',
   'dlg.openGcode': 'Abrir G-code',
   'dlg.openSvg': 'Abrir SVG',
+  'dlg.openDxf': 'Abrir DXF',
   'dlg.saveGcode': 'Guardar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',
@@ -1098,6 +1108,7 @@ export const es = {
   'menu.file': 'Archivo',
   'menu.openGcode': 'Abrir G-code…',
   'menu.openSvg': 'Importar SVG…',
+  'menu.openDxf': 'Importar DXF…',
   'menu.quit': 'Salir',
   'menu.view': 'Ver',
   'menu.tools': 'Herramientas',

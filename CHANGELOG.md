@@ -30,6 +30,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - Helper puro `parsePins` em `src/shared/machines.ts` (bundle sempre carregado)
   com testes unitários; **E2E** cobre os dois casos (com e sem `Pn`).
 
+### Added — importação DXF (P2.4)
+
+- **Arquivo → Importar DXF…** lê DXF ASCII (CAD) e converte em G-code de
+  contorno, como o SVG. Suporta `LINE`, `LWPOLYLINE`/`POLYLINE` (com *bulge*),
+  `CIRCLE`, `ARC`, `ELLIPSE` e `SPLINE` (NURBS), **blocos/`INSERT`**
+  (translação, escala, rotação e arrays), **`$INSUNITS`** (in/mm/cm/m…),
+  camadas congeladas/desligadas e **aviso** das entidades não convertidas
+  (texto, hatch, dimensões).
+- Contornos normalizados em (0,0), em mm; **DXF binário** é recusado com
+  instrução para exportar em ASCII. O bundle `public/dxf.js` carrega só ao
+  importar (fora do primeiro paint), reusando `contoursToGcode` de `svg.ts`.
+- Testes: **14 unitários** do parser (geometria, blocos, camadas, unidades,
+  G-code) e **E2E** com o diálogo nativo simulado. **PDF segue pendente**
+  (P2.4 parcial).
+
 ### Added — camadas / multi-operação (P2.2, RF-DSN-13)
 
 - **Camadas** no editor vetorial: cada objeto pertence a uma camada e a **ordem

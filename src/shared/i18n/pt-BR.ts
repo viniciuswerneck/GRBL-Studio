@@ -640,6 +640,15 @@ export const ptBR = {
   'file.infoGeneratedTime':
     '{file} — {lines} linhas · {size} · ~{time} (gerado de {image})',
   'file.saved': 'G-code salvo em {path}',
+  'dxf.loaded':
+    'DXF importado: {contours} contorno(s), {width} × {height} mm (unidade de origem: {unit})',
+  'dxf.hidden': 'DXF: {n} entidade(s) em camadas ocultas ignorada(s).',
+  'dxf.ignored': 'DXF: {n} entidade(s) sem suporte ignorada(s): {types}.',
+  'dxf.empty':
+    'Nenhuma geometria reconhecida no DXF (texto, hatch e dimensões não são convertidos).',
+  'dxf.binary':
+    'DXF binário não é suportado. Exporte o arquivo como DXF ASCII.',
+  'dxf.moduleMissing': 'Módulo de importação DXF não carregado.',
   'gcode.summary':
     'G-code gerado: {lines} linhas, {size}, {rows}×{cols} amostras, ~{time}',
   'run.play': '▶ Iniciar',
@@ -935,6 +944,7 @@ export const ptBR = {
   'dlg.openImage': 'Abrir imagem',
   'dlg.openGcode': 'Abrir G-code',
   'dlg.openSvg': 'Abrir SVG',
+  'dlg.openDxf': 'Abrir DXF',
   'dlg.saveGcode': 'Salvar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',
@@ -1096,6 +1106,7 @@ export const ptBR = {
   'menu.file': 'Arquivo',
   'menu.openGcode': 'Abrir G-code…',
   'menu.openSvg': 'Importar SVG…',
+  'menu.openDxf': 'Importar DXF…',
   'menu.quit': 'Sair',
   'menu.view': 'Exibir',
   'menu.tools': 'Ferramentas',

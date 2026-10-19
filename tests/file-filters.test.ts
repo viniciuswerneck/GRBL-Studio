@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DXF_DIALOG_FILTERS,
   GCODE_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
   IMAGE_EXTENSIONS,
+  SVG_DIALOG_FILTERS,
   extensionOf,
   imageMimeType,
   isSupportedGcodeName,
@@ -78,6 +80,13 @@ describe('filtros do diálogo', () => {
   it('mantém "Todos os arquivos" como último filtro (fallback do usuário)', () => {
     expect(IMAGE_DIALOG_FILTERS.at(-1)?.extensions).toEqual(['*']);
     expect(GCODE_DIALOG_FILTERS.at(-1)?.extensions).toEqual(['*']);
+    expect(SVG_DIALOG_FILTERS.at(-1)?.extensions).toEqual(['*']);
+    expect(DXF_DIALOG_FILTERS.at(-1)?.extensions).toEqual(['*']);
+  });
+
+  it('aceita DXF ASCII em minúsculas e maiúsculas', () => {
+    expect(DXF_DIALOG_FILTERS[0]?.extensions).toEqual(['dxf', 'DXF']);
+    expect(DXF_DIALOG_FILTERS[0]?.name).toContain('DXF');
   });
 
   it('lista cada extensão de imagem nos dois casos (GTK é sensível a maiúsculas)', () => {

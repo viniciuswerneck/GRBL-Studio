@@ -42,9 +42,10 @@ Já entregue (não repetir no planejamento):
 - [x] **Camadas / multi-operação** (P2.2): parâmetros por camada, ordem de
       execução reordenável (arrastando ou ↑/↓) e **gravar + cortar numa
       execução**, com `M5` antes de cada troca de potência/modo — v0.8.0.
-- [x] **Importação SVG** (P1.6) e **grade de teste de material** (P1.7).
+- [x] **Importação SVG** (P1.6), **DXF ASCII** (P2.4) e **grade de teste de
+      material** (P1.7). PDF segue pendente no P2.4.
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1018 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1026 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -59,7 +60,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **674 testes** (Vitest, 38 arquivos) + E2E Playwright + smoke headless.
+- [x] **689 testes** (Vitest, 39 arquivos) + E2E Playwright + smoke headless.
 
 ---
 

@@ -43,8 +43,10 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > desabilitado com explicação quando o firmware não reporta) e a **simulação de
 > job** virou o requisito **RF-PRV-7** (entregue na 0.5.0). Nesta data entrou
 > **RF-DSN-13 (camadas / multi-operação, P2.2)**: parâmetros por camada, ordem de
-> execução reordenável e `M5` antes das trocas de potência. `RF-SYM-9` (grade de
-> símbolos) segue pendente.
+> execução reordenável e `M5` antes das trocas de potência. Nesta data também
+> entrou **RF-DSN-14 (importação DXF ASCII, P2.4)**: geometria/blocos/camadas/
+> `$INSUNITS` → contornos e G-code; o **PDF** (RF-DSN-15) fica para depois.
+> `RF-SYM-9` (grade de símbolos) segue pendente.
 
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |

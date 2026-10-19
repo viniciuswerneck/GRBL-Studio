@@ -619,6 +619,14 @@ export const en = {
   'file.infoGeneratedTime':
     '{file} — {lines} lines · {size} · ~{time} (generated from {image})',
   'file.saved': 'G-code saved to {path}',
+  'dxf.loaded':
+    'DXF imported: {contours} contour(s), {width} × {height} mm (source unit: {unit})',
+  'dxf.hidden': 'DXF: {n} entit(ies) on hidden layers ignored.',
+  'dxf.ignored': 'DXF: {n} unsupported entit(ies) ignored: {types}.',
+  'dxf.empty':
+    'No geometry recognized in the DXF (text, hatches and dimensions are not converted).',
+  'dxf.binary': 'Binary DXF is not supported. Export the file as ASCII DXF.',
+  'dxf.moduleMissing': 'DXF import module not loaded.',
   'gcode.summary':
     'G-code generated: {lines} lines, {size}, {rows}×{cols} samples, ~{time}',
   'run.play': '▶ Start',
@@ -910,6 +918,7 @@ export const en = {
   'dlg.openImage': 'Open image',
   'dlg.openGcode': 'Open G-code',
   'dlg.openSvg': 'Open SVG',
+  'dlg.openDxf': 'Open DXF',
   'dlg.saveGcode': 'Save G-code',
   'dlg.importMacros': 'Import macros',
   'dlg.exportMacros': 'Export macros',
@@ -1067,6 +1076,7 @@ export const en = {
   'menu.file': 'File',
   'menu.openGcode': 'Open G-code…',
   'menu.openSvg': 'Import SVG…',
+  'menu.openDxf': 'Import DXF…',
   'menu.quit': 'Quit',
   'menu.view': 'View',
   'menu.tools': 'Tools',

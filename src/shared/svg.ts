@@ -543,14 +543,21 @@ export function parseSvg(text: string): SvgDocument {
   return { width: w > 0 ? w : width, height: h > 0 ? h : height, contours };
 }
 
-/** Converte um documento SVG em G-code de contorno. */
-export function svgToGcode(
+/**
+ * Converte contornos já normalizados (mm) em G-code de contorno.
+ *
+ * Compartilhado com o importador DXF (`dxf.ts`): o `header` só muda o
+ * comentário e o `flipY` fica a cargo de cada formato (SVG é y-down, DXF é
+ * y-up).
+ */
+export function contoursToGcode(
   doc: SvgDocument,
   opts: Partial<SvgToGcodeOptions> = {},
+  header = 'GRBL Studio — importação SVG',
 ): string {
   const o = { ...DEFAULT_OPTS, ...opts };
   const lines: string[] = [];
-  lines.push('; GRBL Studio — importação SVG');
+  lines.push(`; ${header}`);
   lines.push(
     `; ${doc.contours.length} contorno(s), ${doc.width.toFixed(2)} x ${doc.height.toFixed(2)} mm`,
   );
@@ -584,6 +591,14 @@ export function svgToGcode(
   lines.push('G0 X0 Y0');
   lines.push('');
   return lines.join('\n');
+}
+
+/** Converte um documento SVG em G-code de contorno. */
+export function svgToGcode(
+  doc: SvgDocument,
+  opts: Partial<SvgToGcodeOptions> = {},
+): string {
+  return contoursToGcode(doc, opts);
 }
 
 /** Atalho: texto SVG → G-code. */

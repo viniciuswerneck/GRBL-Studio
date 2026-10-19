@@ -97,6 +97,8 @@ const api = {
     ipcRenderer.invoke(CHANNELS.fileOpenGcode),
   openSvg: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenSvg),
+  openDxf: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenDxf),
   openMacros: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.macrosOpen),
   saveMacros: (content: string): Promise<string | null> =>

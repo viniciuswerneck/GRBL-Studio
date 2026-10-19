@@ -75,6 +75,12 @@ export const SVG_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
+/** DXF ASCII (CAD). A GTK casa maiúsculas/minúsculas, então vão as duas. */
+export const DXF_DIALOG_FILTERS: FileDialogFilter[] = [
+  { name: 'DXF (dxf)', extensions: ['dxf', 'DXF'] },
+  { name: 'Todos os arquivos', extensions: ['*'] },
+];
+
 const IMAGE_SET = new Set(IMAGE_EXTENSIONS.map((e) => e.toLowerCase()));
 const GCODE_SET = new Set(GCODE_EXTENSIONS.map((e) => e.toLowerCase()));
 

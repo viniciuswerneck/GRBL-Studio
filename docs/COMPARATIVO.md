@@ -21,7 +21,7 @@
 | **GRBL 1.1** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (protocolo próprio) |
 | **DSP / galvo (Ruida, EZCad)** | ❌ | ✅ (Pro) | Ruida (exp.) | ❌ | ✅ | ✅ (fibra) |
 | **Design 2D / CAD** | ✅ básico-médio (prancheta, booleanas, offset, texto, matriz) | ✅ completo | ✅ **paramétrico** | ❌ | 🟡 (SVG) | ✅ |
-| **Import vetorial** | 🟡 SVG | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (exp.) | 🟡 SVG/DXF | 🟡 SVG/DXF |
+| **Import vetorial** | 🟡 SVG/DXF | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (exp.) | 🟡 SVG/DXF | 🟡 SVG/DXF |
 | **Camadas / multi-operação** | ✅ (parâmetros por camada + ordem de execução) | ✅ | ✅ | ❌ | ✅ | ✅ (16 camadas) |
 | **Nesting / matriz** | 🟡 matriz de cópias (sem nesting) | ✅ Quick + True (Pro) | 🟡 padrões | ❌ | ❌ | ✅ Smart Nesting |
 | **Câmera / rotativa** | ❌ | ✅ / ✅ | ✅ / ✅ (4 eixos) | ❌ / ❌ | ✅ / ✅ | ✅ / ✅ |
@@ -35,7 +35,7 @@
 | **Plugins / CLI / API** | ❌ | ✅ REST API | ✅ addons + CLI | ❌ | 🟡 console/CLI | ❌ |
 | **Nuvem / IA / biblioteca de artes** | ❌ (tudo local, sem conta) | ❌ (local) | 🟡 IA opcional | ❌ | ❌ | ✅ |
 | **Diagnóstico da máquina / pré-voo** | ✅ painel `$I/$$/$#/$G/$N` + pré-voo MX-1…15 antes de gravar | 🟡 console | ❌ | 🟡 console | 🟡 console | 🟡 |
-| **Robustez de protocolo testada** | ✅ **674 testes + E2E Playwright** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
+| **Robustez de protocolo testada** | ✅ **689 testes + E2E Playwright** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
 | **Status do projeto** | Ativo | **Muito ativo** | **Muito ativo** | Lento (só Windows) | Manutenção | **Muito ativo** |
 
 ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicado.
@@ -46,7 +46,7 @@
    arquivo e sem plano Pro. Roda nativo em Linux, Windows e macOS.
 2. **Robustez de protocolo** — janela de envio medida em bytes (nunca estoura o
    buffer), comandos de tempo real corretos, alarmes com ação recomendada e uma
-   suíte com 674 testes unitários/integração + E2E Playwright, incluindo job real
+   suíte com 689 testes unitários/integração + E2E Playwright, incluindo job real
    por PTY. Nenhum rival publica esse nível de verificação.
 3. **Fabricação de peças integrada** — desenho 2D, booleanas, contorno paralelo,
    grade de teste de material e **QR/Data Matrix/código de barras** no mesmo
@@ -61,7 +61,7 @@
 1. **Câmera e rotativa** — presentes no LightBurn, Rayforge, MeerK40t e xTool.
 2. **Simulação 3D** — Rayforge e LightBurn mostram o resultado em 3D antes de
    gravar; nós já temos o playback 2D com tempo (P2.3).
-3. **Importação vetorial** — só SVG; Rayforge lê DXF/PDF/AI/EPS/HPGL.
+3. **Importação vetorial** — SVG e DXF ASCII; Rayforge lê também PDF/AI/EPS/HPGL.
 4. **Catálogo de máquinas** — 22 perfis contra dezenas; importar `.lbdev` ainda
    não existe.
 5. **Nesting, API/CLI e plugins** — ausentes.

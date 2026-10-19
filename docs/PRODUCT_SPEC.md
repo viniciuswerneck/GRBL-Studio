@@ -270,6 +270,8 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-DSN-11 | **Preferências do desenho** lembradas entre sessões (velocidade, potência, passadas, modo M3/M4, grade e último texto). | Should | ✅ |
 | RF-DSN-12 | **"Gerar e visualizar"**: perguntar o tamanho da arte, abrir o posicionamento (contorno/centro + parâmetros) e regerar o G-code; o preview pinta **só a queima** (a caixa da área de trabalho é referência). | Must | ✅ |
 | RF-DSN-13 | **Camadas / multi-operação**: cada objeto pertence a uma camada; a ordem das camadas é a ordem de execução e cada uma tem potência/velocidade/passadas/modo próprios (vazio herda o global). Permite **gravar + cortar numa execução**, reordenar **arrastando** (ou ↑/↓) e move a seleção entre camadas. O G-code emite **`M5` antes de trocar potência/modo** e repete as passadas da camada × objeto. | Must | ✅ |
+| RF-DSN-14 | **Importação DXF ASCII**: converte arquivos de CAD em G-code de contorno — `LINE`, `LWPOLYLINE`/`POLYLINE` (com *bulge*), `CIRCLE`, `ARC`, `ELLIPSE` e `SPLINE` (NURBS), blocos/`INSERT` (translação, escala, rotação e arrays), `$INSUNITS` → mm, camadas congeladas/desligadas ignoradas e aviso das entidades não convertidas (texto, hatch, dimensões). Contornos normalizados em (0,0), com preview/salvar; DXF binário é recusado com orientação. | Should | ✅ |
+| RF-DSN-15 | **Importação PDF vetorial**: extrair os caminhos do conteúdo da página (streams `FlateDecode`, matriz `cm`) e reusar o pipeline de contornos. Texto/fontes ficam fora do escopo até haver conversão para curvas. | Could | ⬜ |
 
 ### M14 — Informação da máquina, pré-voo e diagnóstico
 
