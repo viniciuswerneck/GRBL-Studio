@@ -13,20 +13,28 @@ job, latência de status com hardware e DPI).
 
 ## 1. Resumo
 
-Medição em 18/10/2026, numa sessão **Wayland** (Ubuntu 26.04.1, Intel Core
-i3-5015U, 4 threads, Electron 44.8.0, o mesmo do `package-lock.json`). A
-referência de RAM/CPU/latência usa **10 min de dwell**; o startup foi repetido
-**3×** em execuções curtas para reduzir o ruído de uma máquina de
-desenvolvimento com carga ~3–4.
+Medição em 18/10/2026 (Ubuntu 26.04.1, Intel Core i3-5015U, 4 threads,
+Electron 44.8.0, o mesmo do `package-lock.json`). A referência de RAM/CPU/
+latência usa **10 min de dwell** numa sessão **X11** (`DISPLAY=:0`, XWayland);
+o startup tem também o **A/B intercalado** com a 0.7.0 (§6.3). A máquina estava
+com carga ~3–5 (outros processos de desenvolvimento).
+
+> **Tentativas que não concluíram:** duas execuções de 10 min em **Wayland
+> nativo** terminaram com o processo encerrado durante o dwell (a janela fica
+> visível e foi fechada/interrompida) e uma terceira em **Xvfb** foi cancelada
+> por SIGTERM. Os números de 10 min abaixo são os da sessão X11 que concluiu;
+> não há número de 10 min em Wayland nativo nesta versão.
 
 | Métrica | Medido | Orçamento | Status |
 | :--- | ---: | ---: | :---: |
-| Startup (melhor de 3, carga 3,7–4,3) | **1 827 ms** | ≤ 1 500 ms | ❌ |
-| Startup (execução de 10 min, carga 3,2) | **2 323 ms** | ≤ 1 500 ms | ❌ |
-| RAM (RSS total após 10 min) | **781,3 MB** | ≤ 200 MB | ❌ |
-| RAM (PSS total, referência) | **227,3 MB** | ≤ 200 MB | ❌ |
-| CPU ociosa (média de 5 s) | **0,00 %** de 1 core | ≈ 0 % | ✅ |
-| Latência de interação (p95) | **1,1 ms** | ≤ 100 ms | ✅ |
+| Startup (execução de 10 min, X11) | **1 720,6 ms** | ≤ 1 500 ms | ⚠ |
+| Startup (A/B, mediana, carga ~4,7) | **1 779 ms** | ≤ 1 500 ms | ⚠ |
+| Melhor par do A/B | **1 337 ms** | ≤ 1 500 ms | ✅ |
+| RAM (RSS total após 10 min) | **826,7 MB** | ≤ 200 MB | ❌ |
+| RAM (PSS total após 10 min, inclui GPU) | **366,3 MB** | ≤ 200 MB | ❌ |
+| CPU ociosa (média de 5 s aos 10 min) | **7,40 %** de 1 core | ≈ 0 % | ❌ |
+| CPU ociosa (primeiros 20 s) | **0,00 %** de 1 core | ≈ 0 % | ✅ |
+| Latência de interação (p95) | **2,59 ms** | ≤ 100 ms | ✅ |
 | FPS durante job | — | ≥ 55 fps | manual |
 | Latência de status (`?`) | — | ≤ 200 ms | manual |
 | DPI 100/125/150/200 % | — | nítido | manual |
@@ -36,13 +44,16 @@ RSS ≤ 220 MB, CPU ≤ 3 %, p95 ≤ 150 ms); ❌ acima disso; `manual` = fora d
 escopo automático.
 
 **Leitura:** os orçamentos de startup e RAM **não** são atendidos nesta
-máquina/versão. A melhor execução (1 827 ms, com carga menor) fica ~22 % acima
-de 1,5 s; a execução de 10 min ficou em 2 323 ms. O PSS (227,3 MB) é a leitura
-mais justa do consumo total e ainda excede 200 MB em ~27 MB; o RSS total é
-muito maior (781,3 MB) porque soma páginas compartilhadas, e só o processo main
-já tem 250,5 MB de RSS. CPU ociosa e latência de handler estão bem dentro do
-orçamento. FPS, latência de status e DPI continuam pendentes de procedimento
-manual (§7–§9).
+máquina/versão. O startup de 10 min (1 720,6 ms) fica ~15 % acima de 1,5 s; o
+A/B mostra a mediana em 1 779 ms e o melhor par em 1 337 ms — a variância da
+máquina é grande. O **PSS** agora inclui o processo GPU (366,3 MB; antes
+227,3 MB sem ele), então os dois números **não são comparáveis**; de todo modo,
+366,3 MB excede 200 MB. O RSS total (826,7 MB) soma páginas compartilhadas e só
+o main já tem 208 MB. A **CPU ociosa é 0 % nos primeiros 20 s**, mas sobe para
+7,40 % de um core depois de 10 min (compositor/GPU em software e o renderer
+crescendo de 135 para 202 MB de RSS) — **fora** do "≈ 0 %" no repouso longo.
+A latência de handler (p95 2,59 ms) está bem dentro. FPS, latência de status e
+DPI continuam pendentes de procedimento manual (§7–§9).
 
 ## 2. O que é medido × o que é manual
 
@@ -219,7 +230,7 @@ usa a invocação direta para não depender dele.
 > RAM/PSS e a latência são menos sensíveis a isso. O script imprime a carga no
 > início e no fim e avisa quando ela passa do número de núcleos.
 
-## 6.3 Otimizações de boot (v0.7.1) — A/B intercalado
+## 6.3 Otimizações de boot (v0.8.0) — A/B intercalado
 
 Em 18/10/2026, depois da 0.7.0, o boot foi atacado em três frentes. A medição
 abaixo é um **A/B intercalado** (commit da 0.7.0 × árvore otimizada), 4 pares
