@@ -75,6 +75,21 @@ En Linux, el acceso al puerto serie puede requerir el grupo `dialout` — consul
 - Smoke (headless): `GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .`
 - Guía completa: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
+## Comparativa
+
+Cómo se compara GRBL Studio con los principales programas de láser — datos del
+**18/10/2026**, con las fuentes: **[comparativa completa](docs/COMPARATIVO.md)**
+(en portugués).
+
+| | GRBL Studio | LightBurn | Rayforge | LaserGRBL | xTool Studio |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Precio / licencia | **Gratis, MIT** | US$ 99/199 + updates | Gratis, MIT | Gratis, GPLv3 | Gratis (solo xTool) |
+| Linux nativo | ✅ | ✅ | ✅ | ❌ | ❌ |
+| QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (con lote) |
+| Capas / multioperación | ❌ (en el roadmap) | ✅ | ✅ | ❌ | ✅ |
+| Cámara / rotativa | ❌ (en el roadmap) | ✅ | ✅ | ❌ | ✅ |
+| Protocolo probado | ✅ 584 tests + 13 E2E | n/d | n/d | ❌ | n/d |
+
 ## Documentación
 
 Índice completo en [`docs/README.md`](docs/README.md) (en portugués).
@@ -85,6 +100,7 @@ En Linux, el acceso al puerto serie puede requerir el grupo `dialout` — consul
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Desarrollo](docs/DEVELOPMENT.md)
 - [Comparación con LaserGRBL](docs/FEATURES_COMPARISON.md)
+- [Comparativa con el mercado](docs/COMPARATIVO.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Licencia

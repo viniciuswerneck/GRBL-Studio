@@ -16,6 +16,7 @@ rodam firmware GRBL.
 | [BENCHMARK.md](BENCHMARK.md) | **Benchmark dos orçamentos** (RNF-11/12) no Linux: startup, RAM, CPU ociosa e latência medidos por `npm run bench`; FPS/DPI como procedimento manual. |
 | [FEATURES_COMPARISON.md](FEATURES_COMPARISON.md) | Matriz de paridade de funcionalidades com o LaserGRBL. |
 | [ANALISE_COMPETITIVA.md](ANALISE_COMPETITIVA.md) | Análise interna (fortes/fracos) + **comparativo com o mercado 2026** (pagos e gratuitos). |
+| [COMPARATIVO.md](COMPARATIVO.md) | **Página pública** do comparativo (P0.5): resumo, onde ganhamos/perdemos, orçamentos e fontes. |
 | [ROADMAP.md](ROADMAP.md) | Roadmap histórico por versão (resumo de alto nível) + **anexo de glossário** em linguagem simples (o que é · onde usa · onde entra). |
 | [PLANO_PREMIUM.md](PLANO_PREMIUM.md) | **Plano para ser o melhor do mercado**: placar de liderança, gap × meta, fases P0–P4 (na ordem de prioridade), fosso e invariantes. |
 | [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) | **Planejamento** das ferramentas de geração de **QR Code** e **código de barras** (fases S1–S3, RF-SYM-*). |
