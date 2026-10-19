@@ -270,6 +270,9 @@ export function registerIpc(
     },
   );
 
+  // Painel "Máquina" (P0.7): um retrato só, consultas seriais no client.
+  ipcMain.handle(CHANNELS.machineSnapshot, () => client.snapshot());
+
   ipcMain.handle(CHANNELS.settingsSpecial, async (_evt, kind: SpecialQuery) => {
     const line = SPECIAL_LINE[kind];
     if (!line) throw new Error(t('settings.unknownQuery'));

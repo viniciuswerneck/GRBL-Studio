@@ -91,6 +91,10 @@ export function rebuildMenu(): void {
       label: t('menu.tools'),
       submenu: [
         {
+          label: t('machine.open'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.machine),
+        },
+        {
           label: t('menu.materialTest'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.materialTest),
         },

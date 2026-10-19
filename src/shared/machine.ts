@@ -13,10 +13,15 @@
  * Especificação: `docs/PLANO_MAQUINA.md` §4.
  */
 
-/** Vetor de 3 eixos (mm ou mm/min, conforme o campo). */
-export type Vec3 = [number, number, number];
+/**
+ * Vetor de 3 eixos (mm ou mm/min, conforme o campo) — o mesmo `Vec3` do
+ * protocolo (`{ x, y, z }`), para não haver duas formas no mesmo app.
+ */
+export type { Vec3 } from './types';
 
 /** `$I` — `[VER:…]` + `[OPT:…]`. */
+import type { Vec3 } from './types';
+
 export interface FirmwareInfo {
   /** Linha `[VER:…]` crua (para o diagnóstico). */
   raw: string;

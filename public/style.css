@@ -2400,3 +2400,68 @@ html[data-theme^="hc-"] a:focus-visible {
 .tour-spacer {
   flex: 1;
 }
+
+/* ------------------------------------------- painel "Máquina" (P0.7) */
+.machine-modal {
+  width: min(920px, 94vw);
+  max-height: 88vh;
+  overflow: auto;
+}
+
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--sp-2);
+  margin-block: var(--sp-2);
+}
+
+.machine-card {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  padding: var(--sp-3);
+  min-width: 0;
+}
+
+.machine-card h4 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-sub);
+}
+
+.machine-card dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-14);
+}
+
+.machine-card dt {
+  color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.machine-card dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-line;
+}
+
+.machine-card .machine-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+}
+
+#machineReport {
+  width: 100%;
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  resize: vertical;
+}

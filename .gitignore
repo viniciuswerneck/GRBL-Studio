@@ -9,6 +9,7 @@ public/machines.js
 public/preview.js
 public/qrcode.js
 public/barcode.js
+public/machine.js
 public/resume.js
 public/contour.js
 public/boolean.js

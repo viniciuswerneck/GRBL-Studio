@@ -1840,6 +1840,53 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="machineOverlay">
+      <div
+        class="modal machine-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="machineTitle"
+      >
+        <header class="modal-head">
+          <h3 id="machineTitle" data-i18n="machine.title">Máquina</h3>
+          <button type="button" id="machineClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+
+        <div class="modal-toolbar">
+          <button
+            type="button"
+            id="machineRefresh"
+            class="primary"
+            data-i18n="machine.read"
+          >
+            Ler da máquina
+          </button>
+          <button type="button" id="machineCopy" data-i18n="machine.copy">
+            Copiar diagnóstico
+          </button>
+          <span class="hint" id="machineStatus" role="status"></span>
+        </div>
+
+        <div class="machine-grid" id="machineGrid"></div>
+
+        <details class="group">
+          <summary data-i18n="machine.report">Diagnóstico</summary>
+          <p class="hint" data-i18n="machine.reportHint">
+            Texto técnico para suporte — sem dados pessoais.
+          </p>
+          <textarea
+            id="machineReport"
+            rows="12"
+            readonly
+            spellcheck="false"
+            data-i18n-placeholder="machine.reportEmpty"
+          ></textarea>
+        </details>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="settingsOverlay">
       <div
         class="modal"

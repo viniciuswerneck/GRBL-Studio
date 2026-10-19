@@ -32,6 +32,7 @@ import type {
   JogCommand,
   JobInfo,
   JobProgress,
+  MachineSnapshot,
 } from '../../shared/types';
 import { SerialTransport } from './SerialTransport';
 import { TcpTransport } from './TcpTransport';
@@ -231,6 +232,34 @@ export class GrblClient extends EventEmitter {
     this.transport = transport;
     this.setConnection('connected');
     this.startPolling();
+  }
+
+  /**
+   * Retrato completo da máquina para o painel "Máquina" (P0.7).
+   *
+   * As consultas são **seriais** (o GRBL aceita uma por vez) e só entram com a
+   * janela de envio vazia — `query()` garante as duas coisas. `$N` é opcional:
+   * firmware sem blocos de inicialização responde `error:` e devolvemos `[]`.
+   */
+  async snapshot(): Promise<MachineSnapshot> {
+    const build = await this.query('$I');
+    const settings = await this.query('$$');
+    const offsets = await this.query('$#');
+    const modal = await this.query('$G');
+    let startup: string[] = [];
+    try {
+      startup = await this.query('$N');
+    } catch {
+      startup = [];
+    }
+    return {
+      build,
+      settings,
+      offsets,
+      modal,
+      startup,
+      status: this.lastStatus ?? null,
+    };
   }
 
   async disconnect(): Promise<void> {

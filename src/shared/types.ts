@@ -141,6 +141,26 @@ export interface ConnectOptions {
   tcpPort?: number;
 }
 
+/**
+ * Retrato da máquina lido de uma vez (P0.7): linhas cruas de `$I`, `$$`, `$#`,
+ * `$G` e `$N` + o último `?`. O parse é feito no renderer com as funções puras
+ * de `shared/machine.ts` — o main não interpreta.
+ */
+export interface MachineSnapshot {
+  /** `$I` — `[VER:…]`, `[OPT:…]`. */
+  build: string[];
+  /** `$$` — `$100=…` … */
+  settings: string[];
+  /** `$#` — `[G54:…]` … */
+  offsets: string[];
+  /** `$G` — `[GC:…]`. */
+  modal: string[];
+  /** `$N` — `$N0=…` (vazio se o firmware não suportar). */
+  startup: string[];
+  /** Último status reportado, se houver. */
+  status: GrblStatus | null;
+}
+
 /** Porta serial exposta à UI. */
 export interface PortInfo {
   path: string;

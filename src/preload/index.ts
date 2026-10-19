@@ -18,6 +18,7 @@ import type {
   JobInfo,
   JobProgress,
   Lang,
+  MachineSnapshot,
   OpenedImageFile,
   OpenedTextFile,
   OverrideAction,
@@ -77,6 +78,9 @@ const api = {
     ipcRenderer.invoke(CHANNELS.settingsApply, req),
   querySpecial: (kind: SpecialQuery): Promise<string[]> =>
     ipcRenderer.invoke(CHANNELS.settingsSpecial, kind),
+  /** Retrato da máquina para o painel (P0.7): `$I`/`$$`/`$#`/`$G`/`$N` + `?`. */
+  machineSnapshot: (): Promise<MachineSnapshot> =>
+    ipcRenderer.invoke(CHANNELS.machineSnapshot),
   getPrefs: (): Promise<Prefs> => ipcRenderer.invoke(CHANNELS.prefsGet),
   setPrefs: (patch: Partial<Prefs>): Promise<Prefs> =>
     ipcRenderer.invoke(CHANNELS.prefsSet, patch),

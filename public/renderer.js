@@ -210,6 +210,13 @@ const el = {
   settingsBtn: $('settingsBtn'),
   settingsOverlay: $('settingsOverlay'),
   settingsClose: $('settingsClose'),
+  machineOverlay: $('machineOverlay'),
+  machineClose: $('machineClose'),
+  machineRefresh: $('machineRefresh'),
+  machineCopy: $('machineCopy'),
+  machineStatus: $('machineStatus'),
+  machineGrid: $('machineGrid'),
+  machineReport: $('machineReport'),
   frameOverlay: $('frameOverlay'),
   frameClose: $('frameClose'),
   frameYp: $('frameYp'),
@@ -7405,6 +7412,7 @@ for (const overlay of [
   el.appearanceOverlay,
   el.aboutOverlay,
   el.settingsOverlay,
+  el.machineOverlay,
   el.frameOverlay,
   el.matTestOverlay,
   el.qrOverlay,
@@ -7429,6 +7437,7 @@ function openOverlays() {
     el.appearanceOverlay,
     el.aboutOverlay,
     el.settingsOverlay,
+    el.machineOverlay,
     el.frameOverlay,
     el.matTestOverlay,
     el.qrOverlay,
@@ -7496,6 +7505,7 @@ if (window.grbl.onAction)
     else if (name === 'material-test') openMatTestModal();
     else if (name === 'qr-code') openQrModal();
     else if (name === 'bar-code') openBarModal();
+    else if (name === 'machine') openMachineModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'design') openDesignModal();
     else if (name === 'tour') openTour();
@@ -7649,6 +7659,247 @@ function maybeAutoConnect() {
 let settingRows = [];
 /** Aba ativa do modal: '' ($$), 'offsets', 'info' ou 'state'. */
 let settingsTab = '';
+
+// ------------------------------------------------- painel "Máquina" (P0.7)
+
+/** Último retrato parseado — o relatório e os cartões saem daqui. */
+state.machine = null;
+
+/** Nome do transporte atual, para o diagnóstico (sem caminho de usuário). */
+function machineTransportLabel() {
+  const p = state.prefs ?? {};
+  if (p.transport === 'tcp') return `tcp ${p.host ?? '?'}:${p.tcpPort ?? 23}`;
+  if (p.port) return `serial ${p.port} @ ${p.baud ?? '?'}`;
+  return undefined;
+}
+
+/** Número com casas fixas e sem zeros à toa; ausente → "não informado". */
+function machineNum(value, digits = 1, unit = '') {
+  if (value === undefined || value === null || !Number.isFinite(value)) {
+    return t('machine.notInformed');
+  }
+  const n = Number(value.toFixed(digits));
+  return unit ? `${n} ${unit}` : String(n);
+}
+
+function machineVec(vec, digits = 1, unit = '') {
+  if (!vec) return t('machine.notInformed');
+  return ['x', 'y', 'z']
+    .map((axis) => machineNum(vec[axis], digits, ''))
+    .join(' × ')
+    .concat(unit ? ` ${unit}` : '');
+}
+
+function machineBool(value) {
+  if (value === undefined || value === null) return t('machine.notInformed');
+  return value ? t('machine.on') : t('machine.off');
+}
+
+function machineCard(titleKey, rows) {
+  const card = document.createElement('section');
+  card.className = 'machine-card';
+  const title = document.createElement('h4');
+  title.textContent = t(titleKey);
+  const list = document.createElement('dl');
+  for (const [labelKey, value] of rows) {
+    const dt = document.createElement('dt');
+    dt.textContent = t(labelKey);
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    list.append(dt, dd);
+  }
+  card.append(title, list);
+  return card;
+}
+
+/** Cartões do painel. Tudo que o firmware não informa aparece explicitamente. */
+function renderMachineCards(snap, parsed) {
+  const { firmware: fw, facts, modal, offsets, startup } = parsed;
+  const options = fw.options ?? {};
+  const enabled = Object.entries(options)
+    .filter(([, on]) => on)
+    .map(([key]) =>
+      t(
+        `machine.opt.${key === 'variableSpindle' ? 'V' : key === 'coreXY' ? 'C' : 'M'}`,
+      ),
+    );
+  const pins = snap.status?.pn ?? '';
+
+  const cards = [
+    machineCard('machine.section.firmware', [
+      ['machine.firmware.version', fw.version ?? t('machine.notInformed')],
+      ['machine.firmware.build', fw.build ?? t('machine.notInformed')],
+      ['machine.firmware.platform', fw.platform ?? t('machine.notInformed')],
+      [
+        'machine.firmware.options',
+        enabled.length ? enabled.join(' · ') : t('machine.notInformed'),
+      ],
+      [
+        'machine.firmware.planner',
+        fw.plannerBlocks === undefined
+          ? t('machine.notInformed')
+          : `${machineNum(fw.plannerBlocks, 0, '')} ${t('machine.unit.blocks')}`,
+      ],
+      [
+        'machine.firmware.buffer',
+        fw.rxBufferSize === undefined
+          ? t('machine.notInformed')
+          : `${machineNum(fw.rxBufferSize, 0, '')} ${t('machine.unit.bytes')}`,
+      ],
+    ]),
+    machineCard('machine.section.travel', [
+      [
+        'machine.travel.x',
+        machineNum(facts.travel?.x, 1, t('machine.unit.mm')),
+      ],
+      [
+        'machine.travel.y',
+        machineNum(facts.travel?.y, 1, t('machine.unit.mm')),
+      ],
+      [
+        'machine.travel.z',
+        machineNum(facts.travel?.z, 1, t('machine.unit.mm')),
+      ],
+      ['machine.limits.soft', machineBool(facts.softLimits)],
+      ['machine.limits.hard', machineBool(facts.hardLimits)],
+      ['machine.limits.homing', machineBool(facts.homing)],
+    ]),
+    machineCard('machine.section.laser', [
+      ['machine.laser.mode', machineBool(facts.laserMode)],
+      ['machine.laser.smax', machineNum(facts.sMax, 0, '')],
+      ['machine.laser.smin', machineNum(facts.sMin, 0, '')],
+      ['machine.laser.pwm', machineNum(facts.pwmFreq, 0, t('machine.unit.hz'))],
+    ]),
+    machineCard('machine.section.motion', [
+      [
+        'machine.motion.maxRate',
+        machineVec(facts.maxRate, 0, t('machine.unit.mmmin')),
+      ],
+      [
+        'machine.motion.accel',
+        machineVec(facts.accel, 0, `${t('machine.unit.mm')}/s²`),
+      ],
+      ['machine.motion.steps', machineVec(facts.stepsPerMm, 3, '')],
+    ]),
+    machineCard('machine.section.modal', [
+      ['machine.status', snap.status?.state ?? t('machine.notInformed')],
+      ['machine.modal.motion', modal.motion ?? t('machine.notInformed')],
+      ['machine.modal.wcs', modal.wcs ?? t('machine.notInformed')],
+      ['machine.modal.units', modal.units ?? t('machine.notInformed')],
+      ['machine.modal.distance', modal.distance ?? t('machine.notInformed')],
+      ['machine.modal.spindle', modal.spindle ?? t('machine.notInformed')],
+      [
+        'machine.modal.feed',
+        machineNum(modal.feed, 0, t('machine.unit.mmmin')),
+      ],
+      ['machine.modal.speed', machineNum(modal.speed, 0, '')],
+      ['machine.pins', pins || t('machine.pins.none')],
+    ]),
+  ];
+
+  const work = ['g54', 'g55', 'g56', 'g57', 'g58', 'g59']
+    .filter((key) => offsets[key])
+    .map((key) => [
+      key.toUpperCase(),
+      machineVec(offsets[key], 3, t('machine.unit.mm')),
+    ]);
+  cards.push(
+    machineCard('machine.section.offsets', [
+      ...work,
+      [
+        'machine.offsets.refs',
+        machineVec(offsets.g28 ?? offsets.g30, 3, t('machine.unit.mm')),
+      ],
+      ['machine.offsets.tlo', machineNum(offsets.tlo, 3, t('machine.unit.mm'))],
+      ['machine.offsets.prb', machineVec(offsets.prb, 3, t('machine.unit.mm'))],
+    ]),
+  );
+
+  cards.push(
+    machineCard('machine.section.startup', [
+      [
+        'machine.section.startup',
+        startup.length ? startup.join('\n') : t('machine.startup.none'),
+      ],
+      [
+        'machine.startup.warn',
+        startup.length ? t('machine.startup.warn') : '—',
+      ],
+    ]),
+  );
+
+  el.machineGrid.replaceChildren(...cards);
+}
+
+async function refreshMachine() {
+  el.machineStatus.textContent = t('machine.reading');
+  el.machineRefresh.disabled = true;
+  try {
+    const snap = await window.grbl.machineSnapshot();
+    await loadBundle('machine.js');
+    const M = window.GRBL_MACHINE;
+    if (!M) throw new Error('bundle machine.js indisponível');
+    const settingsMap = M.parseSettings(snap.settings ?? []);
+    const startup = M.parseStartupBlocks(snap.startup ?? []);
+    const parsed = {
+      firmware: M.parseFirmware(snap.build ?? []),
+      facts: M.deriveFacts(settingsMap, startup),
+      modal: M.parseModalState(snap.modal ?? []),
+      offsets: M.parseOffsets(snap.offsets ?? []),
+      startup,
+    };
+    state.machine = { ...parsed, snap };
+    renderMachineCards(snap, parsed);
+
+    const settingsRecord = {};
+    for (const [code, row] of settingsMap) settingsRecord[code] = row.value;
+    const status = snap.status
+      ? {
+          state: snap.status.state,
+          pin: snap.status.pn,
+          mpos: snap.status.mpos,
+          wpos: snap.status.wpos,
+        }
+      : undefined;
+    el.machineReport.value = M.buildMachineReport({
+      app: {
+        name: APP_INFO.name || 'GRBL Studio',
+        version: APP_INFO.version || '',
+      },
+      transport: machineTransportLabel(),
+      firmware: parsed.firmware,
+      settings: settingsRecord,
+      facts: parsed.facts,
+      modal: parsed.modal,
+      offsets: parsed.offsets,
+      status,
+      alarms: (state.alarms ?? [])
+        .slice(-10)
+        .map((a) => `code ${a.code}: ${a.message}`),
+    });
+    el.machineStatus.textContent = '';
+  } catch (err) {
+    el.machineStatus.textContent = t('machine.fail', { msg: err.message });
+    el.machineReport.value = '';
+  } finally {
+    el.machineRefresh.disabled = false;
+  }
+}
+
+async function openMachineModal() {
+  el.machineOverlay.classList.remove('hidden');
+  if (!state.connected) {
+    el.machineStatus.textContent = t('machine.connectFirst');
+    el.machineGrid.replaceChildren();
+    el.machineReport.value = '';
+    return;
+  }
+  await refreshMachine();
+}
+
+function closeMachineModal() {
+  el.machineOverlay.classList.add('hidden');
+}
 
 function openSettings() {
   el.settingsOverlay.classList.remove('hidden');
@@ -7887,6 +8138,21 @@ async function applySetting(row, input) {
 
 el.settingsBtn.addEventListener('click', openSettings);
 el.settingsClose.addEventListener('click', closeSettings);
+el.machineClose.addEventListener('click', closeMachineModal);
+el.machineRefresh.addEventListener('click', () => {
+  if (state.connected) refreshMachine();
+  else el.machineStatus.textContent = t('machine.connectFirst');
+});
+el.machineCopy.addEventListener('click', async () => {
+  const text = el.machineReport.value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    el.machineStatus.textContent = t('machine.copied');
+  } catch (err) {
+    el.machineStatus.textContent = t('machine.copyFail', { msg: err.message });
+  }
+});
 el.settingsOverlay.addEventListener('click', (e) => {
   if (e.target === el.settingsOverlay) closeSettings();
 });
