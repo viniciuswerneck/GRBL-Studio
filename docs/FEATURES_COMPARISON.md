@@ -1,13 +1,15 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 17/10/2026 (v0.4.0). Status reflete o código atual em `main`.
+> Atualizado em 18/10/2026 (**v0.5.1**). Status reflete o código atual em `main`.
+> Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
+> Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
 ## Core
 | Feature | LaserGRBL (C#) | GRBL Studio (Electron) | Status |
 |---|---|---|---|
 | Conexão Serial | Sim | Sim | ✅ |
 | Envio G-Code (janela por bytes) | Sim | Sim | ✅ |
-| JOG (X/Y, contínuo ao segurar) | Sim | Sim (X/Y; Z em andamento) | 🟡 |
+| JOG (X/Y/Z, contínuo ao segurar) | Sim (X/Y; Z limitado) | Sim (X/Y/Z) | ✅ |
 | Console (com respostas da máquina) | Sim | Sim (pausar/limpar/exportar) | ✅ |
 | Status GRBL (pos/feed) | Sim | Sim (MPos/WPos, DTG, overrides) | ✅ |
 | Override Feed/Spindle/Rapid | Sim | Sim (feed/spindle/rapid) | ✅ |
@@ -19,6 +21,17 @@
 | Importar/exportar config | Sim | Sim (perfis) | ✅ |
 | Decodificação de alarmes | Sim | Sim (com ação recomendada) | ✅ |
 | Flash de firmware | Sim | Não | ⬜ |
+
+## Design e ferramentas
+| Feature | LaserGRBL | GRBL Studio | Status |
+|---|---|---|---|
+| Editor vetorial (formas, caneta, nós) | Não | Sim (retângulo, elipse, linha, caneta, nós) | ✅ |
+| Texto no app | Não | Sim (vetor, traço único, preenchido) | ✅ |
+| Booleanas / contorno paralelo (offset) | Não | Sim | ✅ |
+| Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
+| Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |
+| Camadas / multi-operação (gravar + cortar) | Não | Não (P2.2) | ⬜ |
+| Nesting | Não | Não | ⬜ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -55,19 +68,20 @@
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
 | Interface Windows | Sim | Inspirada/Moderna (Fluent) | Parcial |
-| Linux nativo | Via Wine | Nativo | ✅ |
-| macOS | Não | Não (planejado) | ⬜ |
-| Windows | Sim | Não (planejado) | ⬜ |
+| Linux nativo | Via Wine | Nativo (AppImage/deb) | ✅ |
+| macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
+| Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (484 chaves) | ✅ |
+| i18n | Não | pt-BR/en/es (746 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
-| Auto-update | Não | Não (planejado) | ⬜ |
+| Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
-1. Builds Windows/macOS (P1.1).
-2. Auto-update (P1.2).
-3. Simulação de job (P2.3).
-4. Ferramentas de desenho + camadas (P2.1/P2.2).
-5. Câmera + rotativa (P3.1/P3.2).
-6. Geradores de QR Code e código de barras (P2.7/P2.8 — `PLANO_QR_BARCODE.md`).
+1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
+2. **Camadas / multi-operação** (P2.2) — maior lacuna de produção.
+3. **Catálogo de máquinas** (P2.5) + import de perfis `.lbdev` do LightBurn.
+4. **Simulação de job** (P2.3).
+5. **Importação DXF/PDF** (P2.4) — SVG já existe (P1.6).
+6. **Câmera + rotativa** (P3.1/P3.2).
+7. Geradores de QR Code e código de barras (P2.7/P2.8 — `PLANO_QR_BARCODE.md`).

@@ -14,9 +14,11 @@ rodam firmware GRBL.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura de software (atual e alvo), módulos, fluxo de dados e decisões técnicas. |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Setup de ambiente, build, execução, testes e convenções de código. |
 | [FEATURES_COMPARISON.md](FEATURES_COMPARISON.md) | Matriz de paridade de funcionalidades com o LaserGRBL. |
+| [ANALISE_COMPETITIVA.md](ANALISE_COMPETITIVA.md) | Análise interna (fortes/fracos) + **comparativo com o mercado 2026** (pagos e gratuitos). |
 | [ROADMAP.md](ROADMAP.md) | Roadmap histórico por versão (resumo de alto nível). |
-| [PLANO_PREMIUM.md](PLANO_PREMIUM.md) | Plano para superar LaserGRBL/LightBurn (fases P1–P4, aparência premium). |
+| [PLANO_PREMIUM.md](PLANO_PREMIUM.md) | **Plano para ser o melhor do mercado**: placar de liderança, gap × meta, fases P0–P4 (na ordem de prioridade), fosso e invariantes. |
 | [PLANO_QR_BARCODE.md](PLANO_QR_BARCODE.md) | **Planejamento** das ferramentas de geração de **QR Code** e **código de barras** (fases S1–S3, RF-SYM-*). |
+| [PLANO_MAQUINA.md](PLANO_MAQUINA.md) | **Spec técnica** do módulo **M14** (RF-MAQ-*): leitura estruturada da máquina (`$I`/`$$`/`$#`/`$G`/`$N`), painel "Máquina", **pré-voo MX-1…MX-15**, diagnóstico copiável e achados da máquina real (§11). |
 | [../CHANGELOG.md](../CHANGELOG.md) | Registro de mudanças por versão. |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Como contribuir (setup, DoD, estilo, testes). |
 | [../LICENSE](../LICENSE) | Licença do projeto (MIT). |

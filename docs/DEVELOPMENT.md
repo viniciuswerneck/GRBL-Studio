@@ -173,6 +173,34 @@ Um "GRBL falso" mínimo (responde `ok` a cada linha e emite status) pode ser
 escrito em Node e ligado à outra ponta do PTY. Ver a skill
 `.opencode/skills/grbl-protocol/`.
 
+### Máquina real — leitura e comandos explícitos
+
+Duas ferramentas para **estudar a máquina de verdade** sem arriscar material.
+As duas exigem a porta livre: **o app tem de estar desconectado**.
+
+```bash
+npm run probe                 # lê ? $I $$ $# $G $N e salva um JSON (só leitura)
+npm run grbl:send             # dry-run: mostra o que seria enviado
+npm run grbl:send -- --yes -- 'M5' '?' '$J=X5 F500' '?'   # envia de verdade
+```
+
+- `scripts/probe-machine.mjs`: **allowlist** de consultas (`? $I $$ $# $G $N`),
+  abre a porta com `dtr:false, rts:false` (não reseta a máquina) e grava o
+  transcript cru em `/tmp/opencode/grbl-probe.json`.
+- `scripts/grbl-send.mjs`: todo comando vai **na linha de comando** (nada
+  escondido no script). Sem `--yes` é simulação; `M3`/`M4` (ligar o laser) só
+  passam com `--laser`; `$RST=` e `$SLP` são sempre bloqueados. Comandos de
+  tempo real: `?`, `!`, `~` e `RESET` (0x18).
+- Coletas viram **fixture de teste** (`tests/fixtures/`) e o perfil da máquina
+  (`src/shared/machines.ts`). Exemplo pronto: Sculpfun C1 — ver
+  [`PLANO_MAQUINA.md`](PLANO_MAQUINA.md) §11.
+
+> **Antes de mover ou ligar o laser:** óculos, material fixado, nada de olhar
+> direto para o ponto e extintor/pano úmido à mão. Movimento sem laser: use
+> `$J=` (jog) com `F` baixo; nunca `G1 X…` sem `M5` — em modo laser (`$32=1`) o
+> GRBL **mantém o `S` do job anterior** e o primeiro movimento pode queimar
+> (regra **MX-12**).
+
 ## Estrutura
 
 ```

@@ -1,219 +1,268 @@
 # GRBL Studio — Plano para ser o melhor controlador laser do mercado
 
-> Complementa `PLANO_DE_ACAO.md` (fases 0–8, já concluídas) e
-> `ANALISE_COMPETITIVA.md`. Objetivo: tornar o GRBL Studio **superior a
-> LaserGRBL, LightBurn e Meerk40t** para o público-alvo (gravadoras GRBL,
-> hobbyistas e pequenos ateliês), sendo ao mesmo tempo **fácil, rápido e
-> perfeito**, com aparência de **programa premium**, sem perder o caráter
-> gratuito e de código aberto.
+> **Atualizado em 18/10/2026 (v0.5.1)** — refeito depois do comparativo de
+> mercado (`ANALISE_COMPETITIVA.md` §7), que revelou um rival novo: o
+> **Rayforge** (MIT, multiplataforma, muito completo e ativo).
+>
+> Complementa `PLANO_DE_ACAO.md` (fases 0–8), `PRODUCT_SPEC.md` (RF/RNF),
+> `ANALISE_COMPETITIVA.md` (§7 = mercado) e `PLANO_QR_BARCODE.md` (detalhe S1–S3).
+> A **execução por versão** (v0.6 → v1.0, com checklist) está em
+> [`ROADMAP.md`](ROADMAP.md).
+>
+> Os IDs (**P2.7**, **P3.1**, …) são **estáveis** — outros documentos os citam.
+> A **ordem** das fases segue a prioridade de hoje e é refletida no `ROADMAP.md`.
 
 ---
 
-## 1. Visão e princípios
+## 1. O que significa "melhor de todos" (definição honesta)
 
-**Visão:** "O controlador laser gratuito que parece e se comporta como um
-produto pago de US$ 200 — nativo em qualquer sistema, com o melhor pipeline
-de imagem do mercado e zero fricção."
+"Não perder para ninguém em nada" é impossível: o LightBurn domina galvo/fibra
+(marcadoras industriais) e o Rayforge tem um CAD paramétrico completo. Perseguir
+tudo de uma vez dilui o produto e quebra os orçamentos de performance.
 
-**Princípios (não negociáveis):**
-1. **Fácil** — onboarding em < 5 min; cada ação desabilitada explica o motivo;
-   Assistente para leigos (já existe) como porta de entrada.
-2. **Rápido** — orçamentos RNF-11/12 são requisitos, não sugestões; nada de
-   espera perceptível (>100 ms) para interação.
-3. **Perfeito** — precisão de 0,001 mm, sem jitter, sem perda de material,
-   sem travamento de máquina; erros sempre com causa + solução.
-4. **Premium** — Fluent/Windows 11, 11 temas, micro-interações só em
-   `transform`/`opacity`, estados vazios/loading/erro polidos, hi-DPI.
-5. **Seguro** — `contextIsolation`, protocolo robusto, `M5` antes de `G0`,
-   janela por bytes, parada de emergência.
-6. **Aberto** — gratuito, código aberto, i18n (pt-BR/en/es), plugins.
+**Definição em três arenas:**
 
-**Posicionamento:** "LaserGRBL para Linux (e além), com qualidade de
-engenharia" — gratuito, nativo, GRBL-only, com pipeline de imagem superior e
-UX moderna. Não competir com LightBurn em design/câmera/rotativa no curto
-prazo; usar **importação SVG** como ponte para design (Inkscape).
+| Arena | Meta | Justificativa |
+| :-- | :-- | :-- |
+| **A. Gratuito e código aberto** | **#1 sem discussão** | Hoje basta vencer LaserGRBL, MeerK40t (em manutenção), LaserWeb4 (parado), UGS/gSender (são *senders*, não software a laser) — e **superar o Rayforge** naquilo que importa ao usuário de diodo. |
+| **B. GRBL / diodo (nosso público)** | **#1 em confiabilidade, velocidade e fluxo de fabricação** | É onde o app já nasceu forte e onde nenhum rival junta: protocolo testado + imagem otimizada + ferramentas prontas. |
+| **C. Geral (inclui pago/industrial)** | **Melhor da categoria no fluxo GRBL**; galvo/DSP e nuvem **fora de escopo** | Comprar briga com LightBurn em Ruida/fibra exige outro produto — e não agrega ao público-alvo. |
+
+**A tese (o "fosso"):** *nenhum concorrente junta, no mesmo app grátis,*
+**confiabilidade medida** (não travar máquina) **+ leveza premium** (abre rápido,
+100 ms, 11 temas, 3 idiomas) **+ fabricação integrada** (teste de material,
+**QR/código de barras**, **lote com dados variáveis**) **+ zero amarras** (MIT,
+offline, sem conta, sem nuvem, sem limite de arquivo, multiplataforma).
+
+Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 ---
 
-## 2. Gap analysis (atual × meta)
+## 2. Placar de liderança (onde temos de ser #1 ou empatar no topo)
 
-| Capacidade | Atual | Meta | Gap |
-| :--- | :--- | :--- | :--- |
-| Sistemas | Linux | Win + macOS + Linux | Alto |
-| Ferramentas de desenho | Nenhuma | Básicas (formas, texto, offset) | Alto |
-| Importação SVG/DXF/AI/PDF | Não | SVG + DXF | Alto |
-| Câmera | Não | Captura + alinhamento | Alto |
-| Rotativa (eixo A) | Não | Sim | Médio |
-| Simulação de job | Não | Playback visual + tempo | Médio |
-| Jobs multi-operação | Não | Camadas (gravar + cortar) | Médio |
-| Grade de teste de material | Não | Gerador 1-clique | Baixo |
-| Geradores de QR Code / código de barras | Não | 2 ferramentas (Ferramentas) | Alto |
-| Z-axis no jog | Não | Sim | Baixo |
-| Editor de G-code | Não | Syntax highlight | Baixo |
-| Auto-update | Não | electron-updater | Baixo |
-| Catálogo de máquinas | Só COMGO Z1 | 10+ perfis | Baixo |
-| Flatpak | Scaffold | Publicado | Baixo |
-| Preview de arquivos grandes | Canvas 2D | WebGL (opcional) | Baixo |
-| Testes E2E | 4 básicos | Fluxos de job/protocolo | Médio |
-| Checklist perf. (DPI/RAM/fps) | Não medido | Medido e documentado | Baixo |
+| Critério | Líder hoje | Nossa meta | Como provar |
+| :-- | :-- | :-- | :-- |
+| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 381+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
+| Startup / RAM / FPS / DPI | ninguém publica | **#1 medido** | benchmark publicado (badge no README) — RNF-11/12 |
+| Pipeline de imagem (tempo por peça) | LaserGRBL / LightBurn | **#1** | benchmark por material (mesma máquina, mesmo arquivo) |
+| Fluxo "abrir → gravar" | LightBurn | **#1 (≤ 3 cliques)** | teste cronometrado, gravado em vídeo |
+| Fabricação integrada (material test, QR, barcode, lote) | LightBurn (*Bar Code*) / xTool | **#1 no segmento aberto**; empatar com o LightBurn | recursos + demo |
+| Camadas / multi-operação | LightBurn / Rayforge | **paridade** | gravar + cortar numa passada |
+| Import vetorial (SVG/DXF/PDF) | Rayforge | **paridade** | abrir os mesmos arquivos |
+| Simulação de job | Rayforge (3D) | **paridade (2D + tempo)** | play/pause/seek antes de gravar |
+| Câmera / rotativa | LightBurn / Rayforge | **paridade em 12 meses** | peça real alinhada / cilindro gravado |
+| Catálogo de máquinas | LightBurn | **paridade (30+ e import `.lbdev`)** | conectar 5 modelos da lista |
+| Distribuição (instalar em 1 passo em qualquer SO) | LightBurn | **#1** | AppImage/deb/**Flatpak**/winget/brew/AUR |
+| Extensibilidade (API/CLI/plugins) | Rayforge / gSender | **paridade** | script headless + addon de exemplo |
+| Preço e licença | empate (MIT) | **#1 (MIT, sem travas, sem plano Pro)** | comparativo público |
+| Nuvem / AI / biblioteca de arte | xTool / Glowforge | **não competir** (decisão) | — |
 
 ---
 
-## 3. Fases de execução
+## 3. Gap analysis (v0.5.1 → meta)
 
-### Fase P1 — "Premium base" (4–6 semanas) · alto impacto, baixo risco
+✅ = já entregue · ⬜ = a fazer
 
-Objetivo: fechar o que falta para ser "produto pronto" e ampliar público.
+| Capacidade | Atual (v0.5.1) | Meta | Gap |
+| :-- | :-- | :-- | :-- |
+| Sistemas | Linux validado; Win/macOS empacotados | 3 SÓ validados em hardware | Médio |
+| Ferramentas de desenho / texto / booleanas / offset | ✅ | manter e evoluir | Baixo |
+| SVG (P1.6) · material test (P1.7) · Z no jog (P1.5) · auto-update (P1.2) | ✅ | manter | Baixo |
+| Builds Win/macOS (P1.1) | ✅ no CI | + validação e assinatura de código | Médio |
+| **Camadas / multi-operação (P2.2)** | ⬜ | gravar + cortar numa execução | **Alto** |
+| **Simulação de job (P2.3)** | ⬜ | playback + tempo | Médio |
+| **DXF/PDF (P2.4)** | ⬜ | parser + paths | Médio |
+| **Catálogo de máquinas (P2.5)** | 1 perfil | 30+ + import `.lbdev` + "smart connect" | Baixo |
+| **QR Code / código de barras (P2.7/P2.8)** | ⬜ (planejado) | 2 ferramentas em Ferramentas | Alto |
+| **Lote / dados variáveis** | ⬜ | CSV → fila de gravação (etiquetas) | Médio |
+| **Biblioteca de jobs** | ⬜ | histórico com miniatura + re-executar | Baixo |
+| Câmera (P3.1) / Rotativa (P3.2) | ⬜ | paridade LightBurn | Alto |
+| Nesting | ⬜ (matriz de cópias ✅) | encaixe real | Médio |
+| Editor de G-code (P1.10) | ⬜ | highlight + numeração | Baixo |
+| API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
+| Flatpak (P1.3) · onboarding (P1.4) | scaffold / ⬜ | publicados | Baixo |
+| Orçamentos RNF-11/12 medidos e publicados (P1.8) | parcial | ✅ público | Baixo |
+| E2E de job/protocolo (Fase 8) | 4 casos básicos | fluxo completo de job | Médio |
+| i18n | 3 idiomas | 5+ (fr/de) | Baixo |
+| Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
+
+---
+
+## 4. Fases de execução (na ordem de prioridade)
+
+### Fase P0 — "Liderança agora" (1–2 semanas) · barato, alto retorno · **v0.6**
+
+Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
 | # | Entregável | Esforço | DoD |
-| :--- | :--- | :--- | :--- |
-| P1.1 | **Builds Win + macOS no CI** (matrix no `release.yml`) | M | ✅ Implementado (matrix ubuntu/windows/macos). |
-| P1.2 | **Auto-update** (`electron-updater`) para AppImage/.deb | S | ✅ Implementado (checkForUpdatesAndNotify + publish.provider=github). |
-| P1.3 | **Publicar Flatpak** (scaffold → Flathub) | M | `flatpak install` funcional, permissões de porta serial documentadas. |
-| P1.4 | **Onboarding / tour** (primeira execução) | S | Tour de 5 passos + link para docs. |
-| P1.5 | **Z-axis no jog** (UI + `frameJog`) | S | Jog Z visível quando `$22`/`$21` indicam Z; testes. |
-| P1.6 | **Importação SVG** (parser + paths → G-code) | M | Abrir `.svg`, preview, gerar G-code de contorno. |
-| P1.7 | **Grade de teste de material** (gerador) | S | ✅ Implementado (modal + gerador + 9 testes). |
-| P1.8 | **Medir orçamentos RNF-11/12** (startup, RAM, fps, DPI) | S | ✅ Parcial (preview 3 ms; startup ~1,2 s; restante a medir em HW). |
-| P1.9 | **Atualizar `FEATURES_COMPARISON.md`** | S | ✅ Atualizado. |
-| P1.10 | **G-code editor** (syntax highlight + numeração) | M | Editar e reenviar linhas; validação. |
+| :-- | :-- | :-- | :-- |
+| P0.1 | **Benchmark público** dos orçamentos (`docs/DEVELOPMENT.md` + badge no README) | S | Startup/RAM/FPS/DPI medidos em 3 SOs, tabela publicada. |
+| P0.2 | **E2E de job/protocolo** (PTY/socat) no CI | M | Job completo com pausa/retomada/cancelamento/alarme verde no CI. |
+| P0.3 | **Distribuição 1-clique**: Flatpak → Flathub, winget, brew tap, AUR (= P1.3) | M | `flatpak install` + `winget install` documentados. |
+| P0.4 | **Onboarding** de primeira execução (P1.4) | S | Tour de 5 passos: conectar → perfil → abrir → preview → gravar. |
+| P0.5 | **Comparativo público** (tabela de `ANALISE_COMPETITIVA.md` §7.5 no README/site) | S | Página publicada com data e fontes. |
+| P0.6 | Cobertura do parser > 90 % + *fuzz* do protocolo | M | Nenhum crash com entrada corrompida. |
+| P0.7 | **Painel "Máquina"** (`$I`/`$$`/`$#`/`$G`/`$N` → fatos + diagnóstico copiável) — M14/RF-MAQ-1…8 | M | Firmware, curso, limites, laser e offsets visíveis (com "não informado" quando faltar); "copiar diagnóstico" sem rede. |
+| P0.8 | **Pré-voo MX-1…MX-15** antes de gravar + chip de pinos (`Pn`) | M | Cada regra com teste + fixture real (Sculpfun C1); `block` só no que o GRBL rejeita ou queima errado. |
 
-### Fase P2 — "Design & produção" (6–8 semanas) · fecha a lacuna com LightBurn
+### Fase P2 — "Paridade de produção" (4–6 semanas) · fecha o que trava o uso · **v0.7**
 
 | # | Entregável | Esforço | DoD |
-| :--- | :--- | :--- | :--- |
-| P2.1 | **Ferramentas de desenho básicas** (formas, texto, offset, booleanas) | L | ✅ Formas (retângulo/elipse/linha), **texto** (vetor/preenchido/traço) como bloco, seleção múltipla + marquee, mover/redimensionar/rotacionar, ordem Z, agrupar, duplicar, **matriz de cópias**, **espelhar** H/V, **distribuir** espaçamento, **snap a objetos** com guias, alinhamento à página, réguas, undo/redo; fontes do sistema; **potência/velocidade/espessura do traço por objeto** + copiar estilo; **booleanas** (unir/subtrair/intersecção/exclusão com furos por paridade) e **contorno paralelo** (distância/passadas/cantos). |
-| P2.1b | **Caneta + edição de nós** | M | ✅ Ferramenta **caneta** (desenho livre `P`, simplificação RDP, fechamento automático); **edição de nós** (`N`) — mover nós, inserir em segmentos (`clique`), remover (`Del`), `Esc` para sair; nós desenhados com zoom (WYSIWYG). |
-| P2.2 | **Camadas (layers)** com parâmetros por camada | M | Gravar + cortar numa execução; reordenação. |
-| P2.3 | **Simulação de job** (playback visual + tempo) | M | Play/pause/seek do caminho com velocidade real. |
-| P2.4 | **Importação DXF** | M | Parser + conversão para paths. |
-| P2.5 | **Catálogo de máquinas** (10+ perfis) | S | Ortur, AtomStack, Sculpfun S9/S10, xTool, etc. |
-| P2.6 | **Jobs multi-operação** (engrave + cut) | M | Uma execução, múltiplas passadas/ops. |
-| P2.7 | **Gerador de QR Code** (Ferramentas) | M | Conteúdo → matriz (ISO/IEC 18004) → G-code; ECC, dimensões em mm, preview, salvar/gravar. Plano: `PLANO_QR_BARCODE.md` (fase S1). |
-| P2.8 | **Gerador de código de barras** (Ferramentas) | M | Code 128 / EAN-13 / EAN-8 / UPC-A / Code 39 com checksum e quiet zone; HRI opcional. Plano: `PLANO_QR_BARCODE.md` (fases S2/S3). |
+| :-- | :-- | :-- | :-- |
+| P2.2 | **Camadas / multi-operação** (parâmetros por camada) | M | Gravar + cortar numa execução; reordenar arrastando; G-code com `M5`/troca de potência corretos. |
+| P2.3 | **Simulação de job** (playback + tempo) | M | Play/pause/seek à velocidade real; reusa o preview. |
+| P2.4 | **Importação DXF + PDF** | M | Reusa `shared/svg.ts`/pipeline de contornos; testes por arquivo real. |
+| P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
+| P1.10 | **Editor de G-code** (highlight + numeração + reenvio) | M | Editar, validar e reenviar trecho. |
+| P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) | S | Últimos 50 jobs persistidos com parâmetros. |
+| P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
+| — | **Validar Win/macOS** em hardware real (+ assinatura de código) | M | Vídeo/relato por SO; instalador sem aviso de "desenvolvedor desconhecido". |
 
-### Fase P3 — "Pro features" (8–12 semanas) · paridade com LightBurn/Meerk40t
+### Fase P2b — "Diferenciais que ninguém junta" (3–4 semanas) · o fosso
+> QR (P2.7) e código de barras (P2.8) entram já na **v0.6** (junto com a Fase P0);
+> lote/dados variáveis (P2.10) e o resto fecham na **v0.8**.
 
 | # | Entregável | Esforço | DoD |
-| :--- | :--- | :--- | :--- |
-| P3.1 | **Câmera** (captura USB + alinhamento visual) | L | Overlay da imagem na peça; drag-to-position. |
-| P3.2 | **Rotativa (eixo A)** | L | Suporte a rotary em jog e job. |
-| P3.3 | **Plugin/extension system** | L | Generaliza macros; API documentada. |
-| P3.4 | **Preview WebGL** (arquivos gigantes) | M | 14 M de linhas sem travar. |
-| P3.5 | **Telemetria opt-in** (Sentry/GlitchTip) | S | Crash reporting + métricas de uso. |
-| P3.6 | **Migração do renderer para TS** (Svelte + electron-vite) | XL | ADR-2 concluído; `renderer.js` sai do repo. |
+| :-- | :-- | :-- | :-- |
+| P2.7 | **Gerador de QR Code** (ISO/IEC 18004) | M | Conteúdo → matriz → G-code; ECC, mm, quiet zone, preview (**S1**). |
+| P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI | M | Checksum + quiet zone + texto legível (**S2**). |
+| P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** | M | Cada linha = 1 peça (QR/barcode/texto variável), pausa para trocar a peça, contador. ⇢ *nenhum concorrente grátis faz isso completo*. |
+| P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
+| P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis; efeito de rede. |
+| P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
 
-### Fase P4 — "Ecossistema" (contínuo)
+### Fase P3 — "Pro features" (8–12 semanas) · paridade com LightBurn/Rayforge · **v0.9**
 
-- Documentação do usuário (manual, screenshots, vídeos).
-- Comunidade (Discord, galeria de perfis).
-- Internacionalização de novos idiomas (fr, de, it, ru, zh).
-- Integração com Inkscape (watch de arquivo).
-- App móvel companion (status + pausa) — opcional.
+| # | Entregável | Esforço | DoD |
+| :-- | :-- | :-- | :-- |
+| P3.1 | **Câmera** (captura USB + alinhamento visual) | L | Overlay da peça; posicionar arrastando. |
+| P3.2 | **Rotativa (eixo A)** | L | Jog e job em cilindro; calibração por diâmetro. |
+| P3.7 | **Nesting** (encaixe real, reusa booleanas/offset) | M | Aproveitamento de chapa demonstrado. |
+| P3.4 | **Preview WebGL** (arquivos gigantes) | M | 14 M de linhas sem travar; fallback canvas. |
+| P3.5 | **Telemetria opt-in** + crash reporting (Sentry/GlitchTip) | S | Diagnóstico de campo; 0 dados sem consentimento. |
+| P3.6 | **Migração do renderer para TS** (Svelte + electron-vite) | XL | ADR-2 concluído; `renderer.js` sai do repo; bundling instantâneo. |
+
+### Fase P4 — "Ecossistema" (contínuo) · **v1.0**
+
+| # | Entregável | Esforço | DoD |
+| :-- | :-- | :-- | :-- |
+| P4.1 | **API REST/WebSocket + CLI headless** | L | Automatizar lote, Raspberry Pi, integração (paridade LightBurn 2.2 REST / Rayforge CLI). |
+| P3.3 | **Sistema de plugins/scripts** (generaliza macros) | L | API documentada + 3 exemplos. |
+| P4.2 | **i18n fr/de (+ it/ru)** | M | Paridade garantida por type-check. |
+| P4.3 | **Manual do usuário, vídeos e site** com comparativo e benchmarks | M | Publicados e linkados no app. |
+| P4.4 | **Integração com Inkscape** (watch/round-trip) | M | Salvar no Inkscape → atualiza no app. |
+| P4.5 | Mobile companion (status + pausa) | L | **avaliar**; só se as fases anteriores estiverem verdes. |
 
 ---
 
-## 4. Aparência premium (transversal)
+## 5. Os 5 invariantes (o que nunca será negociado)
 
-Checklist de polish (Fase 7 + contínuo):
-
-- [ ] **Estados vazios** em todas as telas (sem imagem, sem G-code, sem conexão)
-  com ilustração + ação primária.
-- [ ] **Loading states** (skeleton/spinner) em operações longas (conversão de
-  imagem, leitura de `$$`).
-- [ ] **Micro-interações** só em `transform`/`opacity`, ≤150 ms, respeitando
-  `prefers-reduced-motion`.
-- [ ] **Hi-DPI** verificado em 100/125/150/200 % (sem blur, sem pixel-fuzz).
-- [ ] **Dark/light** consistentes em todos os modais e componentes.
-- [ ] **Acessibilidade**: foco visível, atalhos de teclado, ARIA, contraste
-  WCAG AA.
-- [ ] **Tipografia**: escala de 4 tamanhos, `tabular-nums` em números.
-- [ ] **Espaçamento**: grade de 4 px em toda a UI.
-- [ ] **Ícones**: SVG (Fluent), sem pixel blur.
-- [ ] **Empty states ilustrados** + onboarding.
+1. **Nunca travar a máquina** — janela por bytes, comandos de tempo real
+   corretos, parada de emergência sempre acessível; coberto por testes + E2E.
+2. **Nunca perder precisão** — 0,001 mm, sem arredondar G-code do usuário.
+3. **Nunca mais de 3 cliques** para abrir → gerar → gravar; interação ≤ 100 ms.
+4. **Nada de amarras** — offline, sem conta, sem nuvem, sem limite de arquivo,
+   sem plano Pro, MIT, 3 SOs.
+5. **Todo erro com causa + solução** — nunca uma caixa vermelha sem saída.
 
 ---
 
-## 5. Métricas de sucesso (KPIs)
+## 6. Métricas de sucesso (KPIs)
 
 | Métrica | Meta | Como medir |
-| :--- | :--- | :--- |
+| :-- | :-- | :-- |
 | Startup | ≤ 1,5 s | `performance.now()` no bootstrap |
 | RAM após 10 min | ≤ 200 MB | `process.memoryUsage()` |
 | CPU ociosa | ≈ 0 % | DevTools Performance |
 | Resposta a clique/tecla | ≤ 100 ms | DevTools interaction |
-| Latência de status | ≤ 200 ms | parser → paint |
+| Latência de status (`?`) | ≤ 200 ms | parser → paint |
 | FPS durante job | ≥ 55 | DevTools FPS meter |
-| Render do preview (50k linhas) | ≤ 2 s (1º) / ≤ 16 ms (job) | `performance.now()` |
-| Adoção (downloads/release) | +50 % por release | GitHub insights |
-| Issues de "travou a máquina" | 0 por release | Issue tracker |
-| Satisfação (NPS) | ≥ 50 | Survey in-app (opt-in) |
+| Preview (50k linhas) | ≤ 2 s (1º) / ≤ 16 ms (job) | `performance.now()` |
+| **Tempo até o 1º job** | ≤ 5 min (leigo) | teste com usuário novo |
+| **Issues "travou a máquina"** | 0 por release | issue tracker |
+| Adoção | +50 % downloads/release | GitHub insights |
+| Satisfação | NPS ≥ 50 | pesquisa opt-in in-app |
 
 ---
 
-## 6. Riscos e mitigações
+## 7. Riscos e mitigações
 
 | Risco | Prob. | Impacto | Mitigação |
-| :--- | :--- | :--- | :--- |
-| Migração para framework (P3.6) quebra a UI | Alta | Alto | Migração incremental por componente; manter vanilla como fallback. |
-| Escopo inflar (feature creep) | Alta | Alto | Gate de fases; DoD rígido; priorização por valor×esforço. |
-| Suporte multi-OS sem hardware | Média | Alto | CI matrix + beta testers por plataforma. |
-| Câmera/rotativa complexas | Alta | Médio | Pesquisa técnica antes de comprometer; protótipo isolado. |
-| Perda de foco no core | Média | Crítico | Gate: Fase 1 (protocolo) é pré-requisito de tudo. |
-| Manutenção do código gerado (bundles) | Média | Médio | Migrar para electron-vite (P3.6) elimina o atrito. |
+| :-- | :-- | :-- | :-- |
+| **Rayforge avança mais rápido** | Alta | Alto | Focar no fosso (§1) e publicar prova (benchmark/comparativo); não correr atrás de tudo. |
+| Escopo inflar (*feature creep*) | Alta | Alto | Gate de fases + DoD rígido; priorizar por valor × esforço. |
+| Multi-OS sem hardware | Média | Alto | CI matrix + beta testers por plataforma; marcar "beta" até validar. |
+| Câmera/rotativa mais complexas que o previsto | Alta | Médio | Protótipo isolado antes de comprometer; *spike* de 1 semana. |
+| Migração do renderer quebrar a UI (P3.6) | Média | Alto | Migração incremental; vanilla como *fallback*. |
+| Perda de foco no core | Média | **Crítico** | Protocolo é pré-requisito de tudo; invariantes da §5. |
+| Manutenção dos bundles gerados | Média | Médio | P3.6 (electron-vite) elimina o atrito. |
+| Depender de dongle/assinatura paga | Baixa | Médio | Assinatura de código é opcional; nunca bloquear o uso. |
 
 ---
 
-## 7. Ordem de execução recomendada (critical path)
+## 8. Ordem de execução (caminho crítico)
 
 ```
-P1.1 (Win/macOS) ─┐
-P1.2 (auto-update) ─┤
-P1.5 (Z-axis) ─────┤──► P1.8 (perf) ──► P2.1 (design tools) ──► P2.3 (simulação)
-P1.6 (SVG import) ─┘                                              │
-                                                                  ▼
-                                                          P3.1 (câmera)
-                                                          P3.2 (rotativa)
-                                                          P3.6 (migração TS)
+v0.6 (0–30 dias)  P0.1 benchmark ─┐
+                  P0.2 E2E job ───┤
+                  P0.3 Flatpak ───┼──► P2.7 QR ──► P2.8 CÓDIGO DE BARRAS   ◄── o fosso já na 1ª entrega
+                  P0.4 onboarding ┤    └──► Fase 7/8 restante (polish, cobertura, hardware)
+                  P0.5 comparativo┘
+                  P0.6 fuzz ──────┼──► P0.7 PAINEL MÁQUINA ──► P0.8 PRÉ-VOO (MX)
+v0.7 (30–75 dias) P2.2 CAMADAS ──► P2.3 SIMULAÇÃO ──► P2.4 DXF/PDF ──► P2.5 CATÁLOGO ──► P1.10 ──► P2.9 ──► validação Win/macOS
+v0.8              P2.10 LOTE/DADOS VARIÁVEIS ──► P2.11 MODO PRODUÇÃO ──► P2.12 PRESETS ──► P2.13 FOCO
+v0.9              P3.1 CÂMERA ──► P3.2 ROTATIVA ──► P3.7 NESTING ──► P3.4 WebGL ──► P3.5 ──► P3.6 TS
+v1.0              P4.1 API/CLI ──► P3.3 PLUGINS ──► P4.2 i18n ──► P4.3 DOCS/SITE ──► P4.4 INKSCAPE
 ```
 
-**Primeiros 30 dias (quick wins de alto impacto):**
-1. P1.1 Win/macOS builds
-2. P1.2 auto-update
-3. P1.5 Z-axis
-4. P1.7 grade de teste de material
-5. P1.9 atualizar docs
-6. P1.8 medir perf
+**v0.6 (primeiros 30 dias):** P0.1–P0.8 (provar + distribuir + **conhecer a
+máquina**) **e** P2.7 QR → P2.8 código de barras — o diferencial que nenhum
+concorrente grátis tem, junto com o que falta da Fase 7/8 (polish, cobertura,
+teste em hardware).
 
-**Próximos 60 dias:**
-7. P1.6 SVG import
-8. P1.10 G-code editor
-9. P1.3 Flatpak
-10. P1.4 onboarding
-11. P2.1 design tools (início)
-12. P2.3 simulação
+**v0.7 (30–75 dias):** P2.2 camadas, P2.3 simulação, P2.4 DXF/PDF, P2.5 catálogo
++ `.lbdev`, P1.10 editor de G-code, P2.9 biblioteca e validação Win/macOS.
 
-**90+ dias:**
-13. P2.2/P2.6 camadas + multi-op
-14. P3.1 câmera
-15. P3.2 rotativa
-16. P3.6 migração TS (longo prazo)
+**v0.8:** P2.10 lote/dados variáveis, P2.11 modo produção, P2.12 presets,
+P2.13 teste de foco.
+
+**v0.9 / v1.0 (90+ dias):** P3.1 câmera, P3.2 rotativa, P3.7 nesting, P3.4 WebGL,
+P3.5 telemetria, P3.6 migração TS, P4.1 API/CLI, P3.3 plugins, P4.2 i18n,
+P4.3 docs/site, P4.4 Inkscape.
 
 ---
 
-## 8. Definição de "superior a todos"
+## 9. Definição de "melhor de todos" (critério de aceite)
 
-O GRBL Studio será considerado **superior** quando, em uma mesma máquina e
-mesmo material, um usuário conseguir:
+Consideramos a meta atingida quando, **na mesma máquina e material**, um usuário
+novo conseguir (e nós comprovarmos por vídeo/benchmark):
 
-1. **Instalar em < 2 min** em qualquer SO (Win/macOS/Linux) sem Wine.
-2. **Gravar uma imagem em < 3 cliques** (abrir → gerar → gravar) com resultado
-   igual ou melhor que o LightBurn (qualidade de imagem, velocidade).
-3. **Nunca travar a máquina** (buffer, pausa, cancelamento, alarmes).
-4. **Ver o resultado antes de gravar** (simulação + preview por intensidade).
-5. **Trabalhar em pt-BR/en/es** com UI premium (Fluent, temas, acessibilidade).
-6. **Gratuito e de código aberto**, com comunidade ativa.
+1. Instalar em **< 2 min** em qualquer SO, sem Wine, sem terminal.
+2. Gravar uma **imagem** em **≤ 3 cliques** com qualidade/tempo ≥ LightBurn.
+3. Gravar uma **etiqueta com QR/código de barras** em ≤ 3 cliques — algo que
+   **nenhum concorrente grátis** faz ponta a ponta.
+4. **Gerar 20 etiquetas variáveis** de uma planilha, trocando a peça com pausa.
+5. Gravar + **cortar** o mesmo desenho numa execução (camadas).
+6. **Ver o resultado antes** (simulação) e nunca travar a máquina.
+7. Trabalhar em **pt-BR/en/es** com aparência de produto premium.
+8. Fazer tudo isso **grátis, offline e sem conta**.
+
+E quando o placar da §2 estiver **#1 em A e B** e **em empate no topo** nos
+critérios de paridade — com os números da §6 publicados.
 
 ---
 
-*Plano criado em 17/10/2026. Revisar a cada release.*
+## 10. O que NÃO vamos fazer (por decisão)
+
+| Fora de escopo (agora) | Por quê |
+| :-- | :-- |
+| Galvo / fibra / DSP (Ruida, Trocen, EZCAD, Epilog) | Outro produto e outro público (marcação industrial); exigiria outro core de comunicação. |
+| Nuvem, AI generativa, marketplace de artes | Amarras que negam o posicionamento "offline, sem conta"; xTool/Glowforge já dominam. |
+| Assinatura / plano Pro | O diferencial é ser MIT sem travas — o comparativo usa isso a nosso favor. |
+| Suporte a Marlin/LinuxCNC/Mach4 | Somos GRBL (diodo). Dialetos extras diluem o foco. |
+| App mobile próprio | Só depois de P4.1 (API) — o celular vira cliente da API, não um app novo. |
+
+---
+
+*Plano criado em 17/10/2026 e **reescrito em 18/10/2026 (v0.5.1)** com o
+comparativo de mercado; revisar a cada release.*

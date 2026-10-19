@@ -232,6 +232,25 @@ UI: Play ──▶ ipc ──▶ GrblClient.enqueue(lines)
 
 ---
 
+## 6.2 Perfis de máquina como dado (RF-MAQ-10)
+
+- **Fonte única:** `src/shared/machines.ts` (catálogo tipado, `MachineProfile`).
+  O esbuild empacota em `public/machines.js` (IIFE `GRBL_MACHINES`), carregado
+  **antes** de `renderer.js` — mesmo padrão de `materials.ts`.
+- **O que vive no perfil:** curso (`$130`/`$131`), homing (`$22`), módulo do
+  laser, teto de `S` (`$30`), potência do laser "de apontar" e o conjunto
+  **mínimo** de settings que o app garante (modo laser, limites, curso).
+- **Quem consome:** `applyMachineProfile()` no renderer (aplica no formulário e,
+  só com a máquina conectada, escreve os settings); `machineSMax()` é a
+  referência da conversão % → `S` de imagens, materiais, desenho e QR Code.
+- **Regra:** nenhum valor de máquina chumbado no renderer. A máquina é a fonte
+  da verdade; o perfil é o ponto de partida (e o alvo do *smart connect*, P2.5).
+- **Teste:** `tests/machines.test.ts` confere o catálogo e, principalmente, o
+  perfil **Sculpfun C1** contra a coleta real
+  (`tests/fixtures/machine-sculpfun-c1.json`) — ver `PLANO_MAQUINA.md` §11.
+
+---
+
 ## 7. Padrões de código
 
 - **TypeScript estrito** em main, preload e renderer.
