@@ -47,8 +47,9 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > entraram **RF-DSN-14 (importação DXF ASCII)** e **RF-DSN-15 (importação PDF
 > vetorial)** do **P2.4**: geometria/blocos/camadas/`$INSUNITS` e caminhos de
 > PDF (object streams, `cm`, Form XObjects, rotação da 1ª página) → contornos e
-> G-code. Texto de PDF não vira curva (aviso).
-> `RF-SYM-9` (grade de símbolos) segue pendente.
+> G-code. Texto de PDF não vira curva (aviso). Nesta data, por fim, entrou
+> **RF-SYM-9 (grade de símbolos)**: uma lista (1 por linha) → vários símbolos em
+> colunas/linhas com espaçamento configurável, num único programa de G-code.
 
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
@@ -68,7 +69,7 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | :--- | :--- | :--- |
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
 | RF-SYM-7 | 🟡 | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; falta PDF417/Aztec |
-| RF-SYM-9 | ⬜ | Vários símbolos em grade a partir de uma lista (fase S3) |
+| RF-SYM-9 | ✅ | Vários símbolos em grade a partir de uma lista (colunas/espaçamento configuráveis) |
 
 > **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,
 > RF-CFG-4/5 e RNF-9 foram **implementados** nesta data: log de sessão

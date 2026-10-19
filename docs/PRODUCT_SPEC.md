@@ -246,7 +246,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-SYM-6 | **Texto legível (HRI)** sob o código de barras, opcional. | Could | ✅ |
 | RF-SYM-7 | Simbologias adicionais: 1D (ITF-14, Codabar, Code 93, GS1-128) e 2D (Data Matrix, PDF417, Aztec). **Entregue:** 1D extras + Data Matrix ECC200 (v0.7.0). **Pendente:** PDF417/Aztec. | Could | 🟡 |
 | RF-SYM-8 | **Salvar `.gcode`** ou enviar direto para a área de execução (preview + Play), sem IPC novo. | Should | ✅ |
-| RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ⬜ |
+| RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ✅ |
 | RF-ONB-1 | **Onboarding** de primeira execução: tour de 5 passos (conectar → perfil da máquina → abrir → preview → gravar), reabrível pela Ajuda e dispensável (“não mostrar”). | Should | ✅ |
 
 ### M13 — Editor vetorial ("Desenhar")

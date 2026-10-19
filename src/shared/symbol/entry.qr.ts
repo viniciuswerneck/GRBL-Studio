@@ -13,6 +13,9 @@ export type {
   QrGcodeParams,
   QrGcodeResult,
   SymbolGcodeResult,
+  SymbolGridCell,
+  SymbolGridParams,
+  SymbolGridResult,
   SymbolWarningCode,
 } from './gcode';
 export {
@@ -21,9 +24,14 @@ export {
   MIN_MODULE_MM,
   QR_QUIET_ZONE_MODULES,
   applyOverscan,
+  dataMatrixGridToGcode,
+  dataMatrixToCell,
   dataMatrixToGcode,
+  qrGridToGcode,
   qrModuleSizes,
+  qrToCell,
   qrToGcode,
+  symbolGridToGcode,
   symbolToGcode,
   symbolWarnings,
 } from './gcode';

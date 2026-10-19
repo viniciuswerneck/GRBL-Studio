@@ -35,7 +35,7 @@
 | **Plugins / CLI / API** | ❌ | ✅ REST API | ✅ addons + CLI | ❌ | 🟡 console/CLI | ❌ |
 | **Nuvem / IA / biblioteca de artes** | ❌ (tudo local, sem conta) | ❌ (local) | 🟡 IA opcional | ❌ | ❌ | ✅ |
 | **Diagnóstico da máquina / pré-voo** | ✅ painel `$I/$$/$#/$G/$N` + pré-voo MX-1…15 antes de gravar | 🟡 console | ❌ | 🟡 console | 🟡 console | 🟡 |
-| **Robustez de protocolo testada** | ✅ **705 testes + E2E Playwright** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
+| **Robustez de protocolo testada** | ✅ **715 testes + E2E Playwright** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
 | **Status do projeto** | Ativo | **Muito ativo** | **Muito ativo** | Lento (só Windows) | Manutenção | **Muito ativo** |
 
 ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicado.
@@ -46,7 +46,7 @@
    arquivo e sem plano Pro. Roda nativo em Linux, Windows e macOS.
 2. **Robustez de protocolo** — janela de envio medida em bytes (nunca estoura o
    buffer), comandos de tempo real corretos, alarmes com ação recomendada e uma
-   suíte com 705 testes unitários/integração + E2E Playwright, incluindo job real
+   suíte com 715 testes unitários/integração + E2E Playwright, incluindo job real
    por PTY. Nenhum rival publica esse nível de verificação.
 3. **Fabricação de peças integrada** — desenho 2D, booleanas, contorno paralelo,
    grade de teste de material e **QR/Data Matrix/código de barras** no mesmo

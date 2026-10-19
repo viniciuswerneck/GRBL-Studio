@@ -10,12 +10,18 @@ export type {
   BarcodeGcodeParams,
   BarcodeGcodeResult,
   SymbolGcodeResult,
+  SymbolGridCell,
+  SymbolGridParams,
+  SymbolGridResult,
   SymbolWarningCode,
 } from './gcode';
 export {
   DEFAULT_SPOT_MM,
   applyOverscan,
+  barcodeGridToGcode,
+  barcodeToCell,
   barcodeToGcode,
+  symbolGridToGcode,
   symbolToGcode,
   symbolWarnings,
 } from './gcode';

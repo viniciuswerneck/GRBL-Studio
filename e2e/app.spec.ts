@@ -362,6 +362,61 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('gera uma grade de QR Codes a partir de uma lista (RF-SYM-9)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      // Os campos da grade só aparecem com a grade ligada.
+      await expect(page.locator('#qrGridColsField')).toBeHidden();
+      await expect(page.locator('#qrGridGapField')).toBeHidden();
+      await page.check('#qrGrid');
+      await expect(page.locator('#qrGridColsField')).toBeVisible();
+      await expect(page.locator('#qrGridGapField')).toBeVisible();
+      await page.fill('#qrContent', 'GRBL-001\nGRBL-002\nGRBL-003');
+      await page.fill('#qrGridCols', '2');
+      await page.fill('#qrGridGap', '6');
+      await page.click('#qrGenerate');
+      // 3 símbolos em 2 colunas → 2 linhas; o status resume a grade.
+      await expect(page.locator('#qrStatus')).toContainText('Grade gerada');
+      await expect(page.locator('#qrStatus')).toContainText('3 símbolo');
+      await expect(page.locator('#qrStatus')).toContainText('2 × 2');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
+  test('gera uma grade de códigos de barras (RF-SYM-9)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'bar-code',
+        );
+      });
+      await expect(page.locator('#barcodeOverlay')).toBeVisible();
+      await expect(page.locator('#barGridColsField')).toBeHidden();
+      await page.check('#barGrid');
+      await expect(page.locator('#barGridColsField')).toBeVisible();
+      await page.fill('#barContent', 'L1\nL2\nL3\nL4');
+      await page.fill('#barGridCols', '2');
+      await page.click('#barGenerate');
+      await expect(page.locator('#barStatus')).toContainText('Grade gerada');
+      await expect(page.locator('#barStatus')).toContainText('4 símbolo');
+      await expect(page.locator('#barStatus')).toContainText('2 × 2');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
   test('o editor vetorial carrega sob demanda (RNF-11)', async () => {
     const { app, page, close } = await launchApp();
     try {

@@ -232,6 +232,14 @@ export const en = {
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': '2D code (QR / Data Matrix)…',
+  // Symbol grid (RF-SYM-9): shared by the 2D and 1D modals.
+  'sym.grid': 'Grid: one list, one symbol per line',
+  'sym.gridHint':
+    'With the grid on, each line of the content becomes a symbol, laid out in columns and rows.',
+  'sym.gridColumns': 'Columns (empty = auto)',
+  'sym.gridGap': 'Spacing (mm)',
+  'sym.status.grid':
+    'Grid generated: {count} symbol(s) · {cols} × {rows} · {w} × {h} mm. Check the preview and send or save.',
   'qr.title': '2D code',
   'qr.hint':
     'Generates a QR Code or a Data Matrix as raster G-code: pick the symbol, ' +

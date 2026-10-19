@@ -45,13 +45,13 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1037 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1042 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
       Code 39) com **HRI** e avisos de legibilidade — v0.6.0. Continuados na
       **v0.7.0** com ITF-14, Codabar, Code 93 Full ASCII, GS1-128 e **Data
-      Matrix ECC200**.
+      Matrix ECC200**; **grade a partir de uma lista** (RF-SYM-9, 19/10/2026).
 - [x] **Simulação de job** (P2.3/RF-PRV-7): playback 2D com play/pause/seek,
       velocidade 1×–10× e tempo estimado — v0.5.0.
 - [x] **Painel "Máquina"** (P0.7/RF-MAQ-1…4/7/8), **área de trabalho do preview**
@@ -60,7 +60,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **705 testes** (Vitest, 40 arquivos) + E2E Playwright + smoke headless.
+- [x] **715 testes** (Vitest, 41 arquivos) + E2E Playwright + smoke headless.
 
 ---
 
@@ -180,7 +180,7 @@ diferencial que nenhum concorrente grátis tem.
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
 | — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0**; restam PDF417/Aztec | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
-| — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. |
+| — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
 
 ### v0.9 — Pro features (paridade com LightBurn/Rayforge)
 
@@ -304,7 +304,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | # | Item | O que é | Onde usa | Onde entra |
 | :-- | :-- | :-- | :-- | :-- |
 | 6 | **Número de série / contador** | Número diferente em cada peça (001, 002…). | Peça numerada, controle de lote. | `P2.10` |
-| 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | `P2.10` (RF-SYM-9) |
+| 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | `P2.10` |
 | 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | Nesting simples (v0.7) · `P3.7` |
 | 9 | **Abas de retenção** | "Pestanhas" que seguram a peça pra ela não cair/voar. | Peça pequena que se solta no meio do corte. | ⬜ novo |
 | 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ⬜ novo |

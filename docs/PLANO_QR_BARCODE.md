@@ -364,7 +364,7 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 | :--- | :--- | :--- | :--- |
 | **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
 | **S2 — 1D + HRI** ✅ | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. **(feito — §16 e §17)** |
-| **S3 — Extras** (parcial: 1D extras + Data Matrix ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** PDF417/Aztec, grade/lote (RF-SYM-9) e símbolo como objeto. |
+| **S3 — Extras** (parcial: 1D extras + Data Matrix ✅ + grade ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** PDF417/Aztec e símbolo como objeto. (A **grade** RF-SYM-9 saiu em 19/10/2026.) |
 
 Sequência sugerida: **S1 → S2** (MVP útil: QR + Code 128/EAN) e só então S3.
 As fases são independentes de P2.1 (design) e P3.x (câmera/rotativa), mas
@@ -581,5 +581,5 @@ de G-code do DM/ITF-14 e E2E dos dois modais e da persistência.
 
 **Fora do escopo (segue aberto).** PDF417 e Aztec; Data Matrix retangular e os
 modos C40/Text/X12/EDIFACT/Base256/ECI; Code 93 Full ASCII; validação de AIs do
-GS1; **lote/grade** de símbolos (RF-SYM-9) e o símbolo como **objeto** no editor
-"Desenhar" (S3).
+GS1; e o símbolo como **objeto** no editor "Desenhar" (S3). A **grade** de
+símbolos (RF-SYM-9) foi **entregue** em 19/10/2026.

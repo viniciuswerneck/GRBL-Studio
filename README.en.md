@@ -30,8 +30,9 @@ firmware.
   (X0 Y0)**, ready to engrave with the workpiece already in place.
 - **Symbol tools**: **QR Code** and **Data Matrix ECC200** (ECC L/M/Q/H, size in
   mm, quiet zone, legibility warnings) and **1D barcodes** — Code 128/GS1-128,
-  EAN-13/8, UPC-A, Code 39, ITF-14, Codabar and Code 93 — with HRI; all of it
-  becomes G-code in the same preview/Play flow.
+  EAN-13/8, UPC-A, Code 39, ITF-14, Codabar and Code 93 — with HRI; **grid from a
+  list** (one symbol per line); all of it becomes G-code in the same
+  preview/Play flow.
 - **Machine profiles** for 22 models + Generic GRBL (work area, homing, laser
   module and `S` ceiling) as data, not hardcoded.
 - **Basic Mode** with a 6-step wizard for beginners; a full Advanced mode and a
@@ -85,7 +86,7 @@ with sources: **[full comparison](docs/COMPARATIVO.md)** (in Portuguese).
 | QR / Data Matrix / barcode | ✅ | ✅ | ❌ | ❌ | ✅ (batch) |
 | Layers / multi-operation | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Camera / rotary | ❌ (roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocol tested | ✅ 705 tests + E2E | n/a | n/a | ❌ | n/a |
+| Protocol tested | ✅ 715 tests + E2E | n/a | n/a | ❌ | n/a |
 
 ## Documentation
 

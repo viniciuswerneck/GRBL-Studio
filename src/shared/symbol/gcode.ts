@@ -73,6 +73,50 @@ export interface SymbolGcodeResult {
   travelMm: number;
 }
 
+// ------------------------------------------------------------- grade (RF-SYM-9)
+
+/** Um símbolo já codificado, pronto para ser posicionado numa grade. */
+export interface SymbolGridCell {
+  /** Segmentos no sistema local (canto inferior esquerdo em 0,0). */
+  segments: SymbolSegment[];
+  extent: SymbolExtent;
+  /** Rótulo do conteúdo (comentário e status). */
+  label: string;
+  /**
+   * Segmentos já na ordem de gravação (varredura vertical do 1D): a grade
+   * **não** reordena em zigue-zague.
+   */
+  presorted?: boolean;
+  /** Avisos de legibilidade do símbolo (RF-SYM-6), agregados na grade. */
+  warnings: SymbolWarningCode[];
+}
+
+export interface SymbolGridParams extends SymbolGcodeParams {
+  /** Espaço horizontal entre células, em mm. Padrão 5. */
+  gapXMm?: number;
+  /** Espaço vertical entre células, em mm. Padrão 5. */
+  gapYMm?: number;
+  /**
+   * Colunas fixas; `0`/omitido usa um quadrado aproximado
+   * (`ceil(sqrt(n))`). Linhas são calculadas.
+   */
+  columns?: number;
+  /** Máximo de caracteres do rótulo de cada célula no comentário. Padrão 60. */
+  labelMaxChars?: number;
+}
+
+export interface SymbolGridResult extends SymbolGcodeResult {
+  /** Símbolos posicionados. */
+  count: number;
+  columns: number;
+  rows: number;
+  /** Maior largura/altura de célula (as colunas/linhas ficam alinhadas). */
+  cellWidthMm: number;
+  cellHeightMm: number;
+  /** Avisos agregados de todos os símbolos (sem repetição). */
+  warnings: SymbolWarningCode[];
+}
+
 const fmt = (v: number): string => v.toFixed(3);
 
 /** Valor positivo e finito, ou o padrão. */
@@ -447,20 +491,24 @@ interface MatrixSymbol {
   details: string[];
 }
 
-/** Pipeline comum dos símbolos 2D: matriz → varredura → G-code + avisos. */
-function matrixToGcode(
-  symbol: MatrixSymbol,
-  params: MatrixGcodeParams,
-): {
-  result: SymbolGcodeResult;
+/** Geometria de um símbolo 2D: segmentos prontos, extensão e comentários. */
+interface MatrixGeometry {
+  segments: SymbolSegment[];
   extent: SymbolExtent;
+  header: string[];
   moduleXMm: number;
   moduleYMm: number;
   quietZoneModules: number;
   linesPerMm: number;
   warnings: SymbolWarningCode[];
   stretched: boolean;
-} {
+}
+
+/** Pipeline comum dos símbolos 2D: matriz → varredura → segmentos + avisos. */
+function matrixGeometry(
+  symbol: MatrixSymbol,
+  params: MatrixGcodeParams,
+): MatrixGeometry {
   const linesPerMm = positive(params.linesPerMm, 10);
   const quietZoneModules = Number.isFinite(params.quietZoneModules)
     ? Math.max(0, Math.floor(params.quietZoneModules as number))
@@ -502,11 +550,6 @@ function matrixToGcode(
     `varredura ${linesPerMm} linhas/mm${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
   ].map((line) => truncateBytes(line, HEADER_MAX_BYTES));
 
-  const result = symbolToGcode(applyOverscan(segments, overscanMm), extent, {
-    ...params,
-    header,
-  });
-
   // Avisos pelo **menor** lado do módulo: é ele que limita a legibilidade.
   const warnings = symbolWarnings({
     moduleMm: Math.min(moduleXMm, moduleYMm),
@@ -523,14 +566,46 @@ function matrixToGcode(
   if (stretched) warnings.push('stretched');
 
   return {
-    result,
+    segments: applyOverscan(segments, overscanMm),
     extent,
+    header,
     moduleXMm,
     moduleYMm,
     quietZoneModules,
     linesPerMm,
     warnings,
     stretched,
+  };
+}
+
+/** Pipeline comum dos símbolos 2D: geometria → G-code (um símbolo). */
+function matrixToGcode(
+  symbol: MatrixSymbol,
+  params: MatrixGcodeParams,
+): {
+  result: SymbolGcodeResult;
+  extent: SymbolExtent;
+  moduleXMm: number;
+  moduleYMm: number;
+  quietZoneModules: number;
+  linesPerMm: number;
+  warnings: SymbolWarningCode[];
+  stretched: boolean;
+} {
+  const g = matrixGeometry(symbol, params);
+  const result = symbolToGcode(g.segments, g.extent, {
+    ...params,
+    header: g.header,
+  });
+  return {
+    result,
+    extent: g.extent,
+    moduleXMm: g.moduleXMm,
+    moduleYMm: g.moduleYMm,
+    quietZoneModules: g.quietZoneModules,
+    linesPerMm: g.linesPerMm,
+    warnings: g.warnings,
+    stretched: g.stretched,
   };
 }
 
@@ -644,6 +719,66 @@ export function dataMatrixToGcode(
   };
 }
 
+/**
+ * QR Code → célula de grade (RF-SYM-9): a mesma geometria do símbolo único,
+ * mas sem G-code, para posicionar vários num único programa.
+ */
+export function qrToCell(text: string, params: QrGcodeParams): SymbolGridCell {
+  const qr = encodeQr(text, {
+    ecc: params.ecc,
+    version: params.version,
+    mask: params.mask,
+  });
+  const g = matrixGeometry(
+    {
+      matrix: qr.matrix,
+      size: qr.size,
+      quietZoneModules: QR_QUIET_ZONE_MODULES,
+      quietZoneMinModules: QR_QUIET_ZONE_MODULES,
+      title: 'QR Code (GRBL Studio)',
+      details: [
+        `versão ${qr.version} · ECC ${qr.ecc} · máscara ${qr.mask} · ${qr.size}×${qr.size} módulos`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+  return {
+    segments: g.segments,
+    extent: g.extent,
+    label: text,
+    warnings: g.warnings,
+  };
+}
+
+/**
+ * Data Matrix → célula de grade (RF-SYM-9). Mesma geometria do símbolo único.
+ */
+export function dataMatrixToCell(
+  text: string,
+  params: DataMatrixGcodeParams,
+): SymbolGridCell {
+  const dm = encodeDataMatrix(text, { size: params.size });
+  const g = matrixGeometry(
+    {
+      matrix: dm.matrix,
+      size: dm.size,
+      quietZoneModules: DATA_MATRIX_QUIET_ZONE,
+      quietZoneMinModules: DATA_MATRIX_QUIET_ZONE,
+      title: 'Data Matrix ECC200 (GRBL Studio)',
+      details: [
+        `${dm.size}×${dm.size} módulos · ${dm.eccBlocks} bloco(s) EC · ${dm.dataCodewords} codewords de dados`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+  return {
+    segments: g.segments,
+    extent: g.extent,
+    label: text,
+    warnings: g.warnings,
+  };
+}
+
 // ------------------------------------------------------------ 1D → G-code
 
 /** Nome curto da simbologia (só para o comentário do G-code). */
@@ -714,15 +849,33 @@ export interface BarcodeGcodeResult extends SymbolGcodeResult {
   warnings: SymbolWarningCode[];
 }
 
+/** Geometria de um código de barras: segmentos, extensão e comentários. */
+interface BarcodeGeometry {
+  segments: SymbolSegment[];
+  extent: SymbolExtent;
+  header: string[];
+  warnings: SymbolWarningCode[];
+  barcode: {
+    symbology: BarcodeSymbology;
+    data: string;
+    hri: string;
+    totalModules: number;
+    checkDigit?: number;
+    checkChar?: string;
+  };
+  xDimMm: number;
+  barHeightMm: number;
+  quietZoneModules: number;
+  linesPerMm: number;
+}
+
 /**
- * Texto → G-code do código de barras 1D. Preenche as barras com varredura
- * **vertical** (§5.2 do plano) e desenha o HRI com a fonte de traço único
- * (`fonts.ts`) sob o símbolo. Puro: sem DOM e sem máquina.
+ * Codifica o 1D e devolve a geometria (sem G-code) — compartilhado com a grade.
  */
-export function barcodeToGcode(
+function barcodeGeometry(
   text: string,
   params: BarcodeGcodeParams,
-): BarcodeGcodeResult {
+): BarcodeGeometry {
   const spec = BARCODE_SPECS[params.symbology] ?? BARCODE_SPECS.code128;
   const barcode = encodeBarcode(text, {
     symbology: params.symbology,
@@ -819,12 +972,6 @@ export function barcodeToGcode(
     `${fmt(extent.widthMm)} × ${fmt(extent.heightMm)} mm · varredura ${linesPerMm} linhas/mm${showHri ? ` · HRI ${fmt(hriHeightMm)} mm` : ''}${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
   ].map((line) => truncateBytes(line, HEADER_MAX_BYTES));
 
-  const result = symbolToGcode(applyOverscan(segments, overscanMm), extent, {
-    ...params,
-    header,
-    presorted: true,
-  });
-
   const warnings = symbolWarnings({
     moduleMm: xDimMm,
     quietZoneModules,
@@ -850,7 +997,10 @@ export function barcodeToGcode(
   }
 
   return {
-    ...result,
+    segments: applyOverscan(segments, overscanMm),
+    extent,
+    header,
+    warnings,
     barcode: {
       symbology: params.symbology,
       data: barcode.data,
@@ -862,7 +1012,235 @@ export function barcodeToGcode(
     xDimMm,
     barHeightMm,
     quietZoneModules,
-    linesPerModule: scanLinesPerModule(xDimMm, linesPerMm),
-    warnings,
+    linesPerMm,
   };
+}
+
+/**
+ * Texto → G-code do código de barras 1D. Preenche as barras com varredura
+ * **vertical** (§5.2 do plano) e desenha o HRI com a fonte de traço único
+ * (`fonts.ts`) sob o símbolo. Puro: sem DOM e sem máquina.
+ */
+export function barcodeToGcode(
+  text: string,
+  params: BarcodeGcodeParams,
+): BarcodeGcodeResult {
+  const g = barcodeGeometry(text, params);
+  const result = symbolToGcode(g.segments, g.extent, {
+    ...params,
+    header: g.header,
+    presorted: true,
+  });
+
+  return {
+    ...result,
+    barcode: g.barcode,
+    xDimMm: g.xDimMm,
+    barHeightMm: g.barHeightMm,
+    quietZoneModules: g.quietZoneModules,
+    linesPerModule: scanLinesPerModule(g.xDimMm, g.linesPerMm),
+    warnings: g.warnings,
+  };
+}
+
+/**
+ * Código de barras → célula de grade (RF-SYM-9). Segmentos já em ordem de
+ * gravação (`presorted`), então a grade não os reordena.
+ */
+export function barcodeToCell(
+  text: string,
+  params: BarcodeGcodeParams,
+): SymbolGridCell {
+  const g = barcodeGeometry(text, params);
+  return {
+    segments: g.segments,
+    extent: g.extent,
+    label: g.barcode.data,
+    presorted: true,
+    warnings: g.warnings,
+  };
+}
+
+// ------------------------------------------------------------- grade (RF-SYM-9)
+
+/** Colunas padrão: quadrado aproximado com todas as células preenchidas. */
+function gridColumns(count: number, requested: number | undefined): number {
+  if (Number.isFinite(requested) && (requested as number) >= 1) {
+    return Math.min(count, Math.floor(requested as number));
+  }
+  return Math.max(1, Math.ceil(Math.sqrt(count)));
+}
+
+/**
+ * Vários símbolos → **um** programa de G-code em grade (RF-SYM-9). As células
+ * têm o tamanho da **maior** (colunas e linhas alinhadas), preenchidas da
+ * esquerda para a direita e de **cima para baixo** (a primeira linha da lista
+ * fica no **topo**, na ordem de leitura). Cabeçalho/rodapé (`G21 G90 G94 M5 … M5
+ * G0 X0 Y0`) são emitidos uma vez; as passadas varrem a grade inteira. Puro.
+ */
+export function symbolGridToGcode(
+  cells: ReadonlyArray<SymbolGridCell>,
+  params: SymbolGridParams,
+): SymbolGridResult {
+  const feed = positive(params.feed, 1000);
+  const travelFeed = positive(params.travelFeed, 3000);
+  const sMax = positive(params.sMax, 1000);
+  const powerPercent = Number.isFinite(params.powerPercent)
+    ? clamp(params.powerPercent as number, 0, 100)
+    : 100;
+  const passes = Number.isFinite(params.passes)
+    ? Math.max(1, Math.floor(params.passes as number))
+    : 1;
+  const arm = params.mode === 'M3' ? 'M3' : 'M4';
+  const originX = Number.isFinite(params.originX)
+    ? (params.originX as number)
+    : 0;
+  const originY = Number.isFinite(params.originY)
+    ? (params.originY as number)
+    : 0;
+  const power = Math.round((powerPercent / 100) * sMax);
+
+  const count = cells.length;
+  const gapX = Number.isFinite(params.gapXMm)
+    ? Math.max(0, params.gapXMm as number)
+    : 5;
+  const gapY = Number.isFinite(params.gapYMm)
+    ? Math.max(0, params.gapYMm as number)
+    : 5;
+  const columns = count > 0 ? gridColumns(count, params.columns) : 0;
+  const rows = count > 0 ? Math.ceil(count / columns) : 0;
+
+  let cellWidthMm = 0;
+  let cellHeightMm = 0;
+  for (const cell of cells) {
+    cellWidthMm = Math.max(cellWidthMm, cell.extent.widthMm);
+    cellHeightMm = Math.max(cellHeightMm, cell.extent.heightMm);
+  }
+  const widthMm = count > 0 ? columns * cellWidthMm + (columns - 1) * gapX : 0;
+  const heightMm = count > 0 ? rows * cellHeightMm + (rows - 1) * gapY : 0;
+
+  const lines: string[] = [];
+  for (const comment of params.header ?? []) lines.push(`; ${comment}`);
+  lines.push('; Grade de símbolos (GRBL Studio)');
+  lines.push(
+    `; ${count} símbolo(s) · ${columns} × ${rows} · célula ${fmt(cellWidthMm)} × ${fmt(cellHeightMm)} mm · espaçamento ${fmt(gapX)} × ${fmt(gapY)} mm`,
+  );
+  lines.push(
+    `; potência ${Math.round(powerPercent)}% (S${power}) · ${Math.round(feed)} mm/min · passadas ${passes} · ${arm}`,
+  );
+  lines.push(
+    `; origem X${fmt(originX)} Y${fmt(originY)} · ${fmt(widthMm)} × ${fmt(heightMm)} mm`,
+  );
+  // Rótulos por célula, no orçamento de bytes do cabeçalho (nunca estoura o RX).
+  const labelBudget = Math.max(8, params.labelMaxChars ?? 60);
+  let usedBytes = 0;
+  for (let i = 0; i < count && lines.length < 400; i++) {
+    const label = truncateBytes(cells[i].label, labelBudget);
+    const line = `; [${i + 1}] ${label}`;
+    const cost = utf8.encode(line).length + 1;
+    if (usedBytes + cost > HEADER_MAX_BYTES * 32) {
+      lines.push('; …');
+      break;
+    }
+    lines.push(line);
+    usedBytes += cost;
+  }
+  lines.push('G21');
+  lines.push('G90');
+  lines.push('G94');
+  lines.push('M5');
+  lines.push(`G0 X0 Y0 F${Math.round(travelFeed)}`);
+
+  const placed = cells.map((cell, i) => {
+    const col = i % columns;
+    const row = Math.floor(i / columns);
+    const dx = originX + col * (cellWidthMm + gapX);
+    const dy = originY + (rows - 1 - row) * (cellHeightMm + gapY);
+    const ordered = cell.presorted
+      ? finiteSegments(cell.segments)
+      : zigzagHatch(finiteSegments(cell.segments));
+    return ordered.map(
+      (s): SymbolSegment => ({
+        x0: s.x0 + dx,
+        y0: s.y0 + dy,
+        x1: s.x1 + dx,
+        y1: s.y1 + dy,
+      }),
+    );
+  });
+
+  let burnMm = 0;
+  let travelMm = 0;
+  let emitted = 0;
+  let cursorX = 0;
+  let cursorY = 0;
+  for (let pass = 0; pass < passes; pass++) {
+    if (passes > 1) lines.push(`; pass ${pass + 1}/${passes}`);
+    for (const cell of placed) {
+      for (const s of cell) {
+        lines.push(`G0 X${fmt(s.x0)} Y${fmt(s.y0)}`);
+        lines.push(`${arm} S${power}`);
+        lines.push(`G1 X${fmt(s.x1)} Y${fmt(s.y1)} F${Math.round(feed)}`);
+        lines.push('M5');
+        travelMm += Math.hypot(s.x0 - cursorX, s.y0 - cursorY);
+        burnMm += Math.hypot(s.x1 - s.x0, s.y1 - s.y0);
+        cursorX = s.x1;
+        cursorY = s.y1;
+        emitted++;
+      }
+    }
+  }
+  lines.push('M5');
+  lines.push('G0 X0 Y0');
+  travelMm += Math.hypot(cursorX, cursorY);
+  lines.push('');
+
+  return {
+    gcode: lines.join('\n'),
+    lines: lines.length,
+    segments: emitted,
+    widthMm,
+    heightMm,
+    burnMm,
+    travelMm,
+    count,
+    columns,
+    rows,
+    cellWidthMm,
+    cellHeightMm,
+    warnings: [...new Set(cells.flatMap((cell) => cell.warnings))],
+  };
+}
+
+/** Vários QR Codes → G-code em grade (RF-SYM-9). */
+export function qrGridToGcode(
+  texts: ReadonlyArray<string>,
+  params: QrGcodeParams & SymbolGridParams,
+): SymbolGridResult {
+  return symbolGridToGcode(
+    texts.map((text) => qrToCell(text, params)),
+    params,
+  );
+}
+
+/** Vários Data Matrix → G-code em grade (RF-SYM-9). */
+export function dataMatrixGridToGcode(
+  texts: ReadonlyArray<string>,
+  params: DataMatrixGcodeParams & SymbolGridParams,
+): SymbolGridResult {
+  return symbolGridToGcode(
+    texts.map((text) => dataMatrixToCell(text, params)),
+    params,
+  );
+}
+
+/** Vários códigos de barras 1D → G-code em grade (RF-SYM-9). */
+export function barcodeGridToGcode(
+  texts: ReadonlyArray<string>,
+  params: BarcodeGcodeParams & SymbolGridParams,
+): SymbolGridResult {
+  return symbolGridToGcode(
+    texts.map((text) => barcodeToCell(text, params)),
+    params,
+  );
 }

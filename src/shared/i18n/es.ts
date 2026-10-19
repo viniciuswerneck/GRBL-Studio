@@ -238,6 +238,14 @@ export const es = {
 
   // ------------------------------------------------ Código QR (v0.6, RF-SYM-1)
   'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
+  // Cuadrícula de símbolos (RF-SYM-9): común a los modales 2D y 1D.
+  'sym.grid': 'Cuadrícula: una lista, 1 símbolo por línea',
+  'sym.gridHint':
+    'Con la cuadrícula activada, cada línea del contenido se convierte en un símbolo, dispuesto en columnas y filas.',
+  'sym.gridColumns': 'Columnas (vacío = automático)',
+  'sym.gridGap': 'Espaciado (mm)',
+  'sym.status.grid':
+    'Cuadrícula generada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Revisa la vista previa y envía o guarda.',
   'qr.title': 'Código 2D',
   'qr.hint':
     'Genera un código QR como G-code de barrido: elige el contenido, el ' +

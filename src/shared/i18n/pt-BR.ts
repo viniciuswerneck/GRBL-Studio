@@ -247,6 +247,14 @@ export const ptBR = {
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
+  // Grade de símbolos (RF-SYM-9): comum aos modais 2D e 1D.
+  'sym.grid': 'Grade: uma lista, 1 símbolo por linha',
+  'sym.gridHint':
+    'Com a grade ligada, cada linha do conteúdo vira um símbolo, disposto em colunas e linhas.',
+  'sym.gridColumns': 'Colunas (vazio = automático)',
+  'sym.gridGap': 'Espaçamento (mm)',
+  'sym.status.grid':
+    'Grade gerada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Confira no preview e envie ou salve.',
   'qr.title': 'Código 2D',
   'qr.hint':
     'Gera um QR Code ou um Data Matrix como G-code de varredura: escolha o ' +

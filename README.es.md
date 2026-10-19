@@ -32,8 +32,8 @@ firmware **GRBL 1.1**.
 - **Herramientas de símbolos**: **QR Code** y **Data Matrix ECC200** (ECC
   L/M/Q/H, tamaño en mm, quiet zone, avisos de legibilidad) y **códigos de
   barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar y
-  Code 93 — con HRI; todo se convierte en G-code en el mismo flujo de
-  vista previa/Play.
+  Code 93 — con HRI; **cuadrícula a partir de una lista** (1 símbolo por línea);
+  todo se convierte en G-code en el mismo flujo de vista previa/Play.
 - **Perfiles de máquina** de 22 modelos + Genérico GRBL (área de trabajo, homing,
   módulo láser y techo de `S`) como dato, no fijado en el código.
 - **Modo Básico** con un asistente de 6 pasos para principiantes; modo Avanzado
@@ -88,7 +88,7 @@ Cómo se compara GRBL Studio con los principales programas de láser — datos d
 | QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (con lote) |
 | Capas / multioperación | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Cámara / rotativa | ❌ (en el roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo probado | ✅ 705 tests + E2E | n/d | n/d | ❌ | n/d |
+| Protocolo probado | ✅ 715 tests + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentación
 

@@ -30,7 +30,8 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 - **Ferramentas de símbolos**: **QR Code** e **Data Matrix ECC200** (ECC
   L/M/Q/H, tamanho em mm, quiet zone, avisos de legibilidade) e **código de
   barras 1D** — Code 128/GS1-128, EAN-13/8, UPC-A, Code 39, ITF-14, Codabar e
-  Code 93 — com HRI; tudo vira G-code no mesmo preview/Play.
+  Code 93 — com HRI; **grade a partir de uma lista** (1 símbolo por linha); tudo
+  vira G-code no mesmo preview/Play.
 - **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
   laser e teto de `S`) como dado, não chumbado no código.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado
@@ -84,7 +85,7 @@ Como o GRBL Studio se compara aos principais programas de laser — dados de
 | QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (com lote) |
 | Camadas / multi-operação | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Câmera / rotativa | ❌ (no roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo testado | ✅ 705 testes + E2E | n/d | n/d | ❌ | n/d |
+| Protocolo testado | ✅ 715 testes + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentação
 

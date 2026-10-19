@@ -63,7 +63,7 @@
 | Simbologias 1D extras (ITF-14, Codabar, Code 93 Full ASCII, GS1-128) | Não | Sim (v0.7.0) | ✅ |
 | Texto legível sob o código (HRI) | Não | Sim (fonte de traço único) | ✅ |
 | Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Data Matrix ECC200 (v0.7.0); faltam PDF417/Aztec | 🟡 |
-| Vários símbolos em grade (RF-SYM-9) | Não | Não (planejado S3) | ⬜ |
+| Vários símbolos em grade (RF-SYM-9) | Não | Sim (lista → grade, com espaçamento) | ✅ |
 
 > Comparação: o **LightBurn** tem `Tools → Create Bar Code` (motor **zint**,
 > ~50 simbologias); o **LaserGRBL** não tem nenhuma ferramenta de geração.
@@ -77,7 +77,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1037 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1042 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
@@ -88,4 +88,4 @@
    (importação SVG/DXF/PDF, P1.6/P2.4, já existe).
 3. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
 4. **Câmera + rotativa** (P3.1/P3.2).
-5. **Simbologias restantes** (PDF417/Aztec) e **grade de símbolos** (RF-SYM-9).
+5. **Simbologias restantes** (PDF417/Aztec).

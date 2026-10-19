@@ -57,6 +57,24 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - Testes: **15 unitários** (inclusive object stream, rotação, filtros e XObject)
   e **E2E** com diálogo simulado. Com isso o **P2.4 (DXF + PDF) fecha**.
 
+### Added — grade de símbolos (RF-SYM-9)
+
+- **Lista → grade**: com a opção **Grade** ligada nos modais 2D (QR/Data Matrix)
+  e 1D, cada linha do conteúdo vira um símbolo. Escolha as **colunas** (vazio =
+  quadrado automático) e o **espaçamento** (mm) — a primeira linha fica no topo,
+  em ordem de leitura.
+- Um **único programa de G-code** com um só cabeçalho/rodapé (`G21 G90 G94 M5 …
+  M5 G0 X0 Y0`); as células usam o tamanho da maior (colunas/linhas alinhadas) e
+  cada uma é varrida localmente (zigue-zague no 2D, ordem de gravação no 1D).
+  Avisos de legibilidade são agregados sem repetição.
+- Módulo puro `symbolGridToGcode` (+ `qrGridToGcode`, `dataMatrixGridToGcode`,
+  `barcodeGridToGcode`) em `src/shared/symbol/gcode.ts`; os encoders 2D/1D foram
+  refatorados para expor a geometria (`matrixGeometry`/`barcodeGeometry`) e
+  reusá-la na grade. G-code **não arredonda** a geometria (AGENTS.md).
+- Testes: **10 unitários** (2×2, colunas automáticas, origem, invariantes
+  `M5`/`S ≤ sMax`, avisos agregados, lista vazia) + **2 E2E** (grade de QR e de
+  códigos de barras). Com isso o **RF-SYM-9 sai do ⬜**.
+
 ### Added — camadas / multi-operação (P2.2, RF-DSN-13)
 
 - **Camadas** no editor vetorial: cada objeto pertence a uma camada e a **ordem

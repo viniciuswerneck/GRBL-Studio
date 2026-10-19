@@ -995,6 +995,18 @@
                 data-i18n-placeholder="qr.contentPlaceholder"
               ></textarea>
             </label>
+            <label class="check field-wide" data-i18n-title="sym.gridHint">
+              <input type="checkbox" id="qrGrid" />
+              <span data-i18n="sym.grid">Grade: uma lista, 1 símbolo por linha</span>
+            </label>
+            <label class="field hidden" id="qrGridColsField">
+              <span data-i18n="sym.gridColumns">Colunas (vazio = automático)</span>
+              <input type="number" id="qrGridCols" min="1" max="50" step="1" placeholder="—" />
+            </label>
+            <label class="field hidden" id="qrGridGapField">
+              <span data-i18n="sym.gridGap">Espaçamento (mm)</span>
+              <input type="number" id="qrGridGap" min="0" max="200" step="1" value="5" />
+            </label>
             <label class="field" id="qrEccField">
               <span data-i18n="qr.ecc">Correção de erro</span>
               <select id="qrEcc">
@@ -1139,6 +1151,18 @@
                 placeholder="GRBL-STUDIO-001"
                 data-i18n-placeholder="bar.contentPlaceholder"
               ></textarea>
+            </label>
+            <label class="check field-wide" data-i18n-title="sym.gridHint">
+              <input type="checkbox" id="barGrid" />
+              <span data-i18n="sym.grid">Grade: uma lista, 1 símbolo por linha</span>
+            </label>
+            <label class="field hidden" id="barGridColsField">
+              <span data-i18n="sym.gridColumns">Colunas (vazio = automático)</span>
+              <input type="number" id="barGridCols" min="1" max="50" step="1" placeholder="—" />
+            </label>
+            <label class="field hidden" id="barGridGapField">
+              <span data-i18n="sym.gridGap">Espaçamento (mm)</span>
+              <input type="number" id="barGridGap" min="0" max="200" step="1" value="5" />
             </label>
             <label class="field hidden" id="barRatioField">
               <span data-i18n="bar.ratio">Razão largo:estreito</span>

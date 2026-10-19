@@ -286,6 +286,11 @@ const el = {
   qrMode: $('qrMode'),
   qrOverscan: $('qrOverscan'),
   qrInvert: $('qrInvert'),
+  qrGrid: $('qrGrid'),
+  qrGridColsField: $('qrGridColsField'),
+  qrGridCols: $('qrGridCols'),
+  qrGridGapField: $('qrGridGapField'),
+  qrGridGap: $('qrGridGap'),
   qrStatus: $('qrStatus'),
   qrSave: $('qrSave'),
   qrGenerate: $('qrGenerate'),
@@ -310,6 +315,11 @@ const el = {
   barMode: $('barMode'),
   barOverscan: $('barOverscan'),
   barInvert: $('barInvert'),
+  barGrid: $('barGrid'),
+  barGridColsField: $('barGridColsField'),
+  barGridCols: $('barGridCols'),
+  barGridGapField: $('barGridGapField'),
+  barGridGap: $('barGridGap'),
   barStatus: $('barStatus'),
   tourOverlay: $('tourOverlay'),
   tourClose: $('tourClose'),
@@ -4802,6 +4812,7 @@ async function openQrModal() {
   populateQrVersions();
   populateDmSizes();
   syncQrSymbology({ applyDefaults: false });
+  syncGridField(el.qrGrid, el.qrGridColsField, el.qrGridGapField);
   el.qrOverlay.classList.remove('hidden');
   if (el.qrStatus) el.qrStatus.textContent = '';
   if (el.qrContent) el.qrContent.focus();
@@ -4845,6 +4856,40 @@ function closeQrModal() {
   if (el.qrOverlay) el.qrOverlay.classList.add('hidden');
 }
 
+/** Lista de conteúdos da grade: uma linha não vazia por símbolo (RF-SYM-9). */
+function gridItems(text) {
+  return String(text ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/** Mostra/esconde os campos de colunas/espaçamento conforme a grade. */
+function syncGridField(toggle, colsField, gapField) {
+  const on = Boolean(toggle?.checked);
+  if (colsField) colsField.classList.toggle('hidden', !on);
+  if (gapField) gapField.classList.toggle('hidden', !on);
+}
+
+/** Status da grade (comum a 2D e 1D): dimensões e avisos agregados. */
+function gridStatusText(result, warnPrefix) {
+  const parts = [
+    t('sym.status.grid', {
+      count: result.count,
+      cols: result.columns,
+      rows: result.rows,
+      w: result.widthMm.toFixed(1),
+      h: result.heightMm.toFixed(1),
+    }),
+  ];
+  if (result.warnings?.length) {
+    parts.push(
+      ...result.warnings.map((code) => `⚠ ${t(`${warnPrefix}.${code}`)}`),
+    );
+  }
+  return parts.join(' ');
+}
+
 function readQrOptions() {
   const clampNum = (input, min, max, fallback) => {
     const raw = Number(input ? input.value : Number.NaN);
@@ -4877,6 +4922,9 @@ function readQrOptions() {
     mode: el.qrMode && el.qrMode.value === 'M3' ? 'M3' : 'M4',
     overscanMm: clampNum(el.qrOverscan, 0, 5, 0),
     invert: Boolean(el.qrInvert?.checked),
+    grid: Boolean(el.qrGrid?.checked),
+    gridColumns: Math.round(clampNum(el.qrGridCols, 0, 50, 0)),
+    gridGapMm: clampNum(el.qrGridGap, 0, 200, 5),
   };
 }
 
@@ -4889,6 +4937,7 @@ function syncQrSize(source) {
 
 /** Texto da linha de status: dimensões, módulo e avisos de legibilidade. */
 function qrStatusText(result) {
+  if (result.count !== undefined) return gridStatusText(result, 'qr.warn');
   const fmt2 = (v) => v.toFixed(2);
   const moduleText =
     Math.abs(result.moduleMm - result.moduleYMm) < 1e-9
@@ -4921,7 +4970,10 @@ async function generateQr() {
     return;
   }
   const opts = readQrOptions();
-  if (el.qrContent && !el.qrContent.value.trim()) {
+  const hasContent = opts.grid
+    ? gridItems(el.qrContent?.value).length > 0
+    : Boolean(el.qrContent?.value.trim());
+  if (!hasContent) {
     const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
     if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
@@ -4941,18 +4993,42 @@ async function generateQr() {
   }
   await persistSymbolPrefs('qr', opts);
   // Carrega como arquivo virtual (habilita Play e preview).
-  applyJobLines(
-    opts.symbology === 'datamatrix' ? 'datamatrix.gcode' : 'qr-code.gcode',
-    result.gcode,
-  );
+  applyJobLines(symbolFileName(opts, '2d'), result.gcode);
   if (el.qrStatus) el.qrStatus.textContent = qrStatusText(result);
   // Abre o posicionamento para alinhar a origem e gravar.
   openFrameModal();
 }
 
-/** Gera o G-code do símbolo 2D escolhido (QR ou Data Matrix). */
+/** Nome do arquivo virtual do símbolo conforme simbologia e grade (RF-SYM-9). */
+function symbolFileName(opts, kind) {
+  const dm = opts.symbology === 'datamatrix';
+  if (kind === '2d') {
+    if (opts.grid) return dm ? 'datamatrix-grid.gcode' : 'qr-code-grid.gcode';
+    return dm ? 'datamatrix.gcode' : 'qr-code.gcode';
+  }
+  return opts.grid ? 'barcode-grid.gcode' : 'barcode.gcode';
+}
+
+/** Gera o G-code do símbolo 2D escolhido (QR ou Data Matrix), sozinho ou em grade. */
 function generate2dGcode(opts) {
-  const common = { ...opts, sMax: machineSMax(), travelFeed: 3000 };
+  const common = {
+    ...opts,
+    sMax: machineSMax(),
+    travelFeed: 3000,
+    columns: opts.gridColumns,
+    gapXMm: opts.gridGapMm,
+    gapYMm: opts.gridGapMm,
+  };
+  if (opts.grid) {
+    const items = gridItems(el.qrContent?.value);
+    if (opts.symbology === 'datamatrix') {
+      delete common.ecc;
+      delete common.version;
+      return window.GRBL_QR.dataMatrixGridToGcode(items, common);
+    }
+    delete common.size;
+    return window.GRBL_QR.qrGridToGcode(items, common);
+  }
   if (opts.symbology === 'datamatrix') {
     return window.GRBL_QR.dataMatrixToGcode(el.qrContent.value.trim(), common);
   }
@@ -4963,7 +5039,10 @@ function generate2dGcode(opts) {
 async function saveQr() {
   if (!window.GRBL_QR) return;
   const opts = readQrOptions();
-  if (el.qrContent && !el.qrContent.value.trim()) {
+  const hasContent = opts.grid
+    ? gridItems(el.qrContent?.value).length > 0
+    : Boolean(el.qrContent?.value.trim());
+  if (!hasContent) {
     const prefix = opts.symbology === 'datamatrix' ? 'dm' : 'qr';
     if (el.qrStatus) el.qrStatus.textContent = t(`${prefix}.err.empty`);
     return;
@@ -4973,7 +5052,7 @@ async function saveQr() {
     await persistSymbolPrefs('qr', opts);
     const path = await window.grbl.saveGcode(
       result.gcode,
-      opts.symbology === 'datamatrix' ? 'datamatrix.gcode' : 'qr-code.gcode',
+      symbolFileName(opts, '2d'),
     );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
@@ -5115,6 +5194,7 @@ async function openBarModal() {
   if (!el.barcodeOverlay) return;
   await requireBundle('barcode.js');
   syncBarSymbology();
+  syncGridField(el.barGrid, el.barGridColsField, el.barGridGapField);
   el.barcodeOverlay.classList.remove('hidden');
   if (el.barStatus) el.barStatus.textContent = '';
   if (el.barContent) el.barContent.focus();
@@ -5153,6 +5233,9 @@ function readBarOptions() {
     mode: el.barMode && el.barMode.value === 'M3' ? 'M3' : 'M4',
     overscanMm: clampNum(el.barOverscan, 0, 5, 0),
     invert: Boolean(el.barInvert?.checked),
+    grid: Boolean(el.barGrid?.checked),
+    gridColumns: Math.round(clampNum(el.barGridCols, 0, 50, 0)),
+    gridGapMm: clampNum(el.barGridGap, 0, 200, 5),
   };
 }
 
@@ -5276,6 +5359,7 @@ function applySymbolPrefs() {
 
 /** Linha de status: dimensões, simbologia e avisos de legibilidade. */
 function barStatusText(result) {
+  if (result.count !== undefined) return gridStatusText(result, 'bar.warn');
   const parts = [
     t('bar.status.done', {
       sym: BAR_SYM_NAMES[result.barcode.symbology] || result.barcode.symbology,
@@ -5301,24 +5385,40 @@ function barErrorText(err, opts) {
   });
 }
 
+/** Gera o G-code do código de barras, sozinho ou em grade (RF-SYM-9). */
+function generateBarGcode(opts) {
+  const common = { ...opts, sMax: machineSMax(), travelFeed: 3000 };
+  if (opts.grid) {
+    return window.GRBL_BARCODE.barcodeGridToGcode(
+      gridItems(el.barContent?.value),
+      {
+        ...common,
+        columns: opts.gridColumns,
+        gapXMm: opts.gridGapMm,
+        gapYMm: opts.gridGapMm,
+      },
+    );
+  }
+  return window.GRBL_BARCODE.barcodeToGcode(el.barContent.value.trim(), common);
+}
+
 async function generateBar() {
   if (!window.GRBL_BARCODE) {
     appendLine(t('bar.moduleMissing'), 'error');
     return;
   }
   const opts = readBarOptions();
-  if (el.barContent && !el.barContent.value.trim()) {
+  const hasContent = opts.grid
+    ? gridItems(el.barContent?.value).length > 0
+    : Boolean(el.barContent?.value.trim());
+  if (!hasContent) {
     if (el.barStatus) el.barStatus.textContent = t('bar.err.empty');
     return;
   }
   if (el.barStatus) el.barStatus.textContent = t('bar.status.generating');
   let result;
   try {
-    result = window.GRBL_BARCODE.barcodeToGcode(el.barContent.value.trim(), {
-      ...opts,
-      sMax: machineSMax(),
-      travelFeed: 3000,
-    });
+    result = generateBarGcode(opts);
   } catch (err) {
     // Status traduzido (com o esperado × informado do verificador); o log
     // recebe a mensagem precisa do encoder.
@@ -5328,7 +5428,7 @@ async function generateBar() {
   }
   await persistSymbolPrefs('barcode', opts);
   // Carrega como arquivo virtual (habilita Play e preview).
-  applyJobLines('barcode.gcode', result.gcode);
+  applyJobLines(symbolFileName(opts, '1d'), result.gcode);
   if (el.barStatus) el.barStatus.textContent = barStatusText(result);
   openFrameModal();
 }
@@ -5336,17 +5436,20 @@ async function generateBar() {
 async function saveBar() {
   if (!window.GRBL_BARCODE) return;
   const opts = readBarOptions();
-  if (el.barContent && !el.barContent.value.trim()) {
+  const hasContent = opts.grid
+    ? gridItems(el.barContent?.value).length > 0
+    : Boolean(el.barContent?.value.trim());
+  if (!hasContent) {
     if (el.barStatus) el.barStatus.textContent = t('bar.err.empty');
     return;
   }
   try {
-    const result = window.GRBL_BARCODE.barcodeToGcode(
-      el.barContent.value.trim(),
-      { ...opts, sMax: machineSMax(), travelFeed: 3000 },
-    );
+    const result = generateBarGcode(opts);
     await persistSymbolPrefs('barcode', opts);
-    const path = await window.grbl.saveGcode(result.gcode, 'barcode.gcode');
+    const path = await window.grbl.saveGcode(
+      result.gcode,
+      symbolFileName(opts, '1d'),
+    );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
     if (el.barStatus) el.barStatus.textContent = barErrorText(err, opts);
@@ -9438,6 +9541,10 @@ if (el.qrKeepAspect)
     if (!el.qrKeepAspect.checked) return;
     syncQrSize(el.qrWidth?.value ? el.qrWidth : el.qrHeight);
   });
+if (el.qrGrid)
+  el.qrGrid.addEventListener('change', () =>
+    syncGridField(el.qrGrid, el.qrGridColsField, el.qrGridGapField),
+  );
 if (el.tourClose) el.tourClose.addEventListener('click', closeTour);
 if (el.tourSkip) el.tourSkip.addEventListener('click', closeTour);
 if (el.tourBack) el.tourBack.addEventListener('click', () => tourGo(-1));
@@ -9462,6 +9569,10 @@ if (el.barSymbology)
     syncBarSymbology();
     applyBarDefaults(el.barSymbology.value);
   });
+if (el.barGrid)
+  el.barGrid.addEventListener('change', () =>
+    syncGridField(el.barGrid, el.barGridColsField, el.barGridGapField),
+  );
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
 if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));
