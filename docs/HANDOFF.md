@@ -191,3 +191,45 @@ Detalhes em `docs/PLANO_QR_BARCODE.md` §16; resumo para retomar rápido:
 - **Validar com hardware:** gravar um Code 128 com X-dim 0,5 mm e ler com
   leitor/celular; se não ler, aumentar a quiet zone, a altura das barras ou o
   X-dimension (os avisos apontam qual).
+
+---
+
+## 9. v0.7.0 — símbolos extras, protocolo provado e onboarding (18/10/2026)
+
+**Estado:** publicado — tag `v0.7.0` (commit do bump `e9acc4f` + `601449e` do
+lint), release com os artefatos do CI. Resumo para retomar rápido:
+
+- **Simbologias 1D extras:** ITF-14, Codabar, Code 93 e GS1-128 em
+  `src/shared/symbol/barcode/` (tabelas em `tables.ts`, geradas por
+  `scripts/gen-barcode-tables.mjs` a partir do `jsbarcode`, devDependency).
+  Cross-check de módulos e verificadores (mod 10 GS1, C/K mod 47) em
+  `tests/symbol-barcode-extra.test.ts`.
+- **Data Matrix ECC200:** `src/shared/symbol/datamatrix.ts` (24 tamanhos
+  quadrados, modo ASCII/Latin-1, RS GF(256) 0x12D, intercalação, Utah). O
+  pipeline 2D é comum (`matrixToGcode` em `gcode.ts`) e o modal virou **Código
+  2D** (`#qrSymbology` = `qr` | `datamatrix`). Testes decodificam com o
+  `DataMatrixReader` do **ZXing** (`@zxing/library`, devDependency).
+- **`Prefs.symbols`** com sanitização no main (só enums/números/booleanos;
+  **o conteúdo nunca é persistido**).
+- **Tour de boas-vindas** (P0.4): `TOUR_VERSION`/`TOUR_STEPS` no renderer,
+  `#tourOverlay` no HTML, pref `onboarding` (versão vista) sanitizada.
+- **P0.2:** `tests/job-integration.test.ts` + `tests/helpers/{grbl-emulator,pty}.ts`
+  (job por PTY/socat, pausa/retomada/`0x18`/alarme/`error:9`).
+- **P0.6:** `tests/protocol-fuzz.test.ts` (6.000 casos, semente fixa) e
+  `vitest.config.ts` com 90 % global / 95 % em `protocol.ts`. O fuzz achou 5
+  bugs reais de `NaN`/`Infinity`.
+- **P0.1:** `scripts/bench.mjs` + `npm run bench` + `docs/BENCHMARK.md`.
+  **Cuidado:** startup (≥ 1 827 ms) e RAM (PSS 227,3 MB) **não** atendem ao
+  RNF-11 nesta máquina; CPU ociosa e latência estão dentro. Otimizar performance
+  é o trabalho aberto mais importante antes de divulgar o benchmark.
+- **Correções da revisão** (commit `804d0d6`/`6742d7d`): linha maior que o
+  buffer RX aborta o job em vez de corromper; `error:`/`ALARM:` com "ok" não
+  viram ACK; `splitLines` só quebra no `>` de status; consulta em fila é
+  rejeitada no Play; `Esc`/`Ctrl+X` funcionam com o foco num campo; Code 39 avisa
+  a conversão para maiúsculas.
+- **Pendências:** PDF417/Aztec, DM retangular/C40/Base256/ECI, Code 93 Full
+  ASCII, validação de AIs do GS1, lote/grade de símbolos e o símbolo como objeto
+  no editor (§17 de `PLANO_QR_BARCODE.md`); P0.3/P0.5/P0.7/P0.8; e a
+  performance do RNF-11.
+- **Validar com hardware:** ler um Data Matrix e um ITF-14 gravados com o
+  leitor/celular (o DM aceita só Latin-1 — travessão e emoji dão `bad-chars`).

@@ -94,6 +94,14 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
+> **Estado (18/10/2026, v0.7.0):** **P0.2** (E2E de job por PTY no CI),
+> **P0.4** (tour de boas-vindas) e **P0.6** (fuzz + cobertura 90 %/95 %)
+> **entregues**; **P0.1** só na **parte Linux** e com resultado honesto —
+> CPU ociosa e latência dentro, **startup e RAM acima do orçamento** nesta
+> máquina (`docs/BENCHMARK.md`), FPS/DPI/`?` manuais e Windows/macOS sem medir.
+> Seguem abertos **P0.3** (Flatpak/winget/brew/AUR), **P0.5** (comparativo
+> público), **P0.7** (painel "Máquina") e **P0.8** (pré-voo MX).
+
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |
 | P0.1 | **Benchmark público** dos orçamentos (`docs/DEVELOPMENT.md` + badge no README) | S | Startup/RAM/FPS/DPI medidos em 3 SOs, tabela publicada. |
