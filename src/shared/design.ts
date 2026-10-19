@@ -6,6 +6,12 @@
  * em G-code de contorno (G0/G1, M3/M4). Formas fechadas viram corte/contorno;
  * formas abertas (linhas) viram gravação.
  *
+ * **Camadas / multi-operação:** as formas podem pertencer a uma camada
+ * (`Shape.layer` → `DesignDocument.layers`). As camadas são emitidas na ordem
+ * do documento, cada uma com sua potência/velocidade/passadas/modo — é o que
+ * permite “gravar + cortar numa execução”. Formas sem camada (ou com um id
+ * desconhecido) vão por último, usando os parâmetros globais.
+ *
  * Módulo puro e testável; a interação (canvas, mouse) vive no renderer.
  */
 
@@ -48,6 +54,11 @@ export interface Shape {
   group?: string;
   /** Rótulo exibido no painel de objetos (`Retângulo 1`, `Texto 2`, …). */
   name?: string;
+  /**
+   * Id da camada/operação a que a forma pertence (`DesignDocument.layers`).
+   * Ausente ou desconhecido = usa os parâmetros globais e é emitida por último.
+   */
+  layer?: string;
   /** Metadados do bloco de texto (permite reeditá-lo como bloco inteiro). */
   text?: {
     value: string;
@@ -60,10 +71,36 @@ export interface Shape {
   };
 }
 
+/**
+ * Camada / operação do desenho. A ordem no array é a **ordem de execução**:
+ * a primeira camada é gravada inteira antes da segunda (ex.: gravar, depois
+ * cortar). Cada parâmetro ausente herda o global correspondente.
+ */
+export interface DesignLayer {
+  id: string;
+  /** Nome exibido na UI. Vazio/ausente = “Camada N”. */
+  name?: string;
+  /** Cor de identificação na UI (o G-code não usa). */
+  color?: string;
+  /** Potência em **porcentagem** (0–100). */
+  power?: number;
+  /** Velocidade de corte/gravação (mm/min). */
+  speed?: number;
+  /** Passadas da camada (multiplicam as passadas do objeto). */
+  passes?: number;
+  /** Modo do laser; ausente = modo global. */
+  mode?: 'M3' | 'M4';
+}
+
 export interface DesignDocument {
   shapes: Shape[];
   width: number;
   height: number;
+  /**
+   * Camadas na ordem de execução. Sem camadas, o documento inteiro é emitido
+   * na ordem das formas com os parâmetros globais (comportamento histórico).
+   */
+  layers?: DesignLayer[];
 }
 
 export interface DesignToGcodeOptions {
@@ -102,6 +139,15 @@ function positive(v: number | undefined, fallback: number): number {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Texto de comentário (`;`) seguro: remove quebras de linha, que de outro modo
+ * transformariam o nome de uma camada numa linha de G-code (um `\nM3 S1000`
+ * colado na prancheta/locale).
+ */
+function commentText(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ').trim();
 }
 
 /**
@@ -215,22 +261,64 @@ export function designToGcode(
       `; área ${(maxX - minX).toFixed(2)} x ${(maxY - minY).toFixed(2)} mm`,
     );
   }
+  // Agrupa as formas por camada preservando a ordem de execução declarada.
+  // Sem camadas (ou com id desconhecido), a forma cai no grupo “solta”, que
+  // usa os parâmetros globais e é emitido por último.
+  const declared = Array.isArray(doc.layers) ? doc.layers : [];
+  const byLayer = new Map<string, Shape[]>();
+  const loose: Shape[] = [];
+  for (const sh of doc.shapes) {
+    const id = sh.layer;
+    if (id && declared.some((l) => l.id === id)) {
+      const list = byLayer.get(id);
+      if (list) list.push(sh);
+      else byLayer.set(id, [sh]);
+    } else {
+      loose.push(sh);
+    }
+  }
+  const operations: Array<{ layer: DesignLayer | null; shapes: Shape[] }> =
+    declared.map((layer) => ({
+      layer,
+      shapes: byLayer.get(layer.id) ?? [],
+    }));
+  if (loose.length) operations.push({ layer: null, shapes: loose });
+
   lines.push('G21');
   lines.push('G90');
   lines.push('G94');
   lines.push('M5');
+  if (declared.length) {
+    lines.push(`; ${declared.length} camada(s) — ordem de execução`);
+    for (let i = 0; i < declared.length; i++) {
+      const l = declared[i];
+      const parts = [`; camada ${i + 1}`];
+      if (l.name) parts.push(`: ${commentText(l.name)}`);
+      const meta = [
+        typeof l.power === 'number' ? `P ${l.power}%` : '',
+        typeof l.speed === 'number' ? `F ${l.speed}` : '',
+        typeof l.passes === 'number' ? `N ${l.passes}` : '',
+        l.mode ? l.mode : '',
+      ].filter(Boolean);
+      if (meta.length) parts.push(` (${meta.join(', ')})`);
+      lines.push(parts.join(''));
+    }
+  }
 
   // Emite um caminho: deslocamento a laser desligado, seguimento ligado e
-  // desligamento no fim (coordenadas com 3 casas — ver `fmt`).
+  // desligamento no fim (coordenadas com 3 casas — ver `fmt`). O `M5` no fim
+  // garante que qualquer troca de potência/modo entre formas ou camadas
+  // aconteça com o laser desligado.
   const emit = (
     pts: ReadonlyArray<Point>,
     closed: boolean,
     feed: number,
     power: number,
+    laserMode: 'M3' | 'M4',
   ) => {
     const start = toMachine(pts[0]);
     lines.push(`G0 X${fmt(start.x)} Y${fmt(start.y)} F${travelFeed}`);
-    lines.push(`${arm} S${power}`);
+    lines.push(`${laserMode} S${power}`);
     for (let i = 1; i < pts.length; i++) {
       const m = toMachine(pts[i]);
       lines.push(`G1 X${fmt(m.x)} Y${fmt(m.y)} F${feed}`);
@@ -267,37 +355,62 @@ export function designToGcode(
     return best === 0 ? [...pts] : [...pts.slice(best), ...pts.slice(0, best)];
   };
 
-  for (let pass = 0; pass < passes; pass++) {
-    if (passes > 1) lines.push(`; pass ${pass + 1}/${passes}`);
-    for (const sh of doc.shapes) {
-      const src = finitePoints(sh.points);
-      if (src.length < 2) continue;
-      // Um contorno "fechado" com 2 pontos tem área zero: é uma linha. Tratá-lo
-      // como fechado o faria desaparecer ao ganhar espessura (`strokePaths`
-      // exige 3) e deixaria o `cursor` apontando para o canto errado.
-      const closed = Boolean(sh.closed) && src.length > 2;
-      const shapeFeed = positive(sh.speed, feed);
-      // `power` da forma é percentual (campo “P”); o S sai do $30 da máquina.
-      const pct =
-        typeof sh.power === 'number' && Number.isFinite(sh.power)
-          ? clamp(sh.power, 0, 100)
-          : powerPercent;
-      const power = Math.round((pct / 100) * sMax);
-      // Traço grosso: cobre a faixa de `width` mm centrada no caminho.
-      const paths =
-        sh.width && sh.width > 0 ? strokePaths(src, closed, sh.width) : [src];
-      // Passadas do próprio objeto, além das globais (`opts.passes`).
-      const shapePasses =
-        typeof sh.passes === 'number' && Number.isFinite(sh.passes)
-          ? Math.max(1, Math.floor(sh.passes))
-          : 1;
-      for (let sp = 0; sp < shapePasses; sp++) {
-        for (const raw of paths) {
-          if (raw.length < 2) continue;
-          const pts = orderFrom(raw, closed);
-          emit(pts, closed, shapeFeed, power);
-          const end = closed ? pts[0] : pts[pts.length - 1];
-          cursor = toMachine(end);
+  for (let oi = 0; oi < operations.length; oi++) {
+    const op = operations[oi];
+    if (!op.shapes.length) continue;
+    const layer = op.layer;
+    // Parâmetros efetivos da operação: a camada sobrescreve o global e cada
+    // forma pode sobrescrever a camada (potência/velocidade/passadas/modo).
+    const layerFeed = positive(layer?.speed, feed);
+    const layerPowerPct =
+      typeof layer?.power === 'number' && Number.isFinite(layer.power)
+        ? clamp(layer.power, 0, 100)
+        : powerPercent;
+    const layerPasses =
+      typeof layer?.passes === 'number' && Number.isFinite(layer.passes)
+        ? Math.max(1, Math.floor(layer.passes))
+        : passes;
+    const layerArm: 'M3' | 'M4' =
+      layer?.mode === 'M3' || layer?.mode === 'M4' ? layer.mode : arm;
+    if (layer && declared.length > 1) {
+      const name = layer.name ? `: ${commentText(layer.name)}` : '';
+      lines.push(`; camada ${oi + 1}${name}`);
+    }
+    for (let pass = 0; pass < layerPasses; pass++) {
+      if (layerPasses > 1) {
+        const suffix = layer?.name ? ` — ${commentText(layer.name)}` : '';
+        lines.push(`; pass ${pass + 1}/${layerPasses}${suffix}`);
+      }
+      for (const sh of op.shapes) {
+        const src = finitePoints(sh.points);
+        if (src.length < 2) continue;
+        // Um contorno "fechado" com 2 pontos tem área zero: é uma linha. Tratá-lo
+        // como fechado o faria desaparecer ao ganhar espessura (`strokePaths`
+        // exige 3) e deixaria o `cursor` apontando para o canto errado.
+        const closed = Boolean(sh.closed) && src.length > 2;
+        const shapeFeed = positive(sh.speed, layerFeed);
+        // `power` da forma é percentual (campo “P”); o S sai do $30 da máquina.
+        const pct =
+          typeof sh.power === 'number' && Number.isFinite(sh.power)
+            ? clamp(sh.power, 0, 100)
+            : layerPowerPct;
+        const power = Math.round((pct / 100) * sMax);
+        // Traço grosso: cobre a faixa de `width` mm centrada no caminho.
+        const paths =
+          sh.width && sh.width > 0 ? strokePaths(src, closed, sh.width) : [src];
+        // Passadas do próprio objeto, além das da camada (`layerPasses`).
+        const shapePasses =
+          typeof sh.passes === 'number' && Number.isFinite(sh.passes)
+            ? Math.max(1, Math.floor(sh.passes))
+            : 1;
+        for (let sp = 0; sp < shapePasses; sp++) {
+          for (const raw of paths) {
+            if (raw.length < 2) continue;
+            const pts = orderFrom(raw, closed);
+            emit(pts, closed, shapeFeed, power, layerArm);
+            const end = closed ? pts[0] : pts[pts.length - 1];
+            cursor = toMachine(end);
+          }
         }
       }
     }

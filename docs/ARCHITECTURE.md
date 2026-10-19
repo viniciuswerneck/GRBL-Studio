@@ -119,7 +119,7 @@ primeira tela usa**:
 
 | Módulo | Responsabilidade | Status |
 | :--- | :--- | :--- |
-| `shared/design.ts` | Formas (`Shape`), validação e `designToGcode` (contorno G0/G1 + M3/M4; **espessura do traço** = faixa centrada). | ✅ |
+| `shared/design.ts` | Formas (`Shape`), **camadas/operações** (`DesignLayer`, ordem de execução e parâmetros por camada), validação e `designToGcode` (contorno G0/G1 + M3/M4; **espessura do traço** = faixa centrada; **`M5` antes de trocar potência/modo**). | ✅ |
 | `shared/designEditor.ts` | Edição pura: hit-test, *handles*, marquee, zoom, espelhar, distribuir, matriz, agrupar. | ✅ |
 | `shared/fonts.ts` | Fonte single-stroke (Hershey Simplex) → polilinhas. | ✅ |
 | `shared/hatch.ts` | Preenchimento por varredura (`zigzagHatch`, máscara → linhas). | ✅ |

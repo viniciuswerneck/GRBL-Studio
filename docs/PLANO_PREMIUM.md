@@ -1,8 +1,9 @@
 # GRBL Studio — Plano para ser o melhor controlador laser do mercado
 
-> **Atualizado em 18/10/2026 (v0.5.1)** — refeito depois do comparativo de
+> **Atualizado em 18/10/2026 (v0.8.0)** — refeito depois do comparativo de
 > mercado (`ANALISE_COMPETITIVA.md` §7), que revelou um rival novo: o
-> **Rayforge** (MIT, multiplataforma, muito completo e ativo).
+> **Rayforge** (MIT, multiplataforma, muito completo e ativo). *Status
+> reconciliado com o código em 19/10/2026.*
 >
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8), `PRODUCT_SPEC.md` (RF/RNF),
 > `ANALISE_COMPETITIVA.md` (§7 = mercado) e `PLANO_QR_BARCODE.md` (detalhe S1–S3).
@@ -42,7 +43,7 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 | Critério | Líder hoje | Nossa meta | Como provar |
 | :-- | :-- | :-- | :-- |
-| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 381+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
+| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 674+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
 | Startup / RAM / FPS / DPI | ninguém publica | **#1 medido** | benchmark publicado (badge no README) — RNF-11/12 |
 | Pipeline de imagem (tempo por peça) | LaserGRBL / LightBurn | **#1** | benchmark por material (mesma máquina, mesmo arquivo) |
 | Fluxo "abrir → gravar" | LightBurn | **#1 (≤ 3 cliques)** | teste cronometrado, gravado em vídeo |
@@ -59,28 +60,28 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 ---
 
-## 3. Gap analysis (v0.5.1 → meta)
+## 3. Gap analysis (v0.8.0 → meta)
 
 ✅ = já entregue · ⬜ = a fazer
 
-| Capacidade | Atual (v0.5.1) | Meta | Gap |
+| Capacidade | Atual (v0.8.0) | Meta | Gap |
 | :-- | :-- | :-- | :-- |
 | Sistemas | Linux validado; Win/macOS empacotados | 3 SÓ validados em hardware | Médio |
 | Ferramentas de desenho / texto / booleanas / offset | ✅ | manter e evoluir | Baixo |
 | SVG (P1.6) · material test (P1.7) · Z no jog (P1.5) · auto-update (P1.2) | ✅ | manter | Baixo |
 | Builds Win/macOS (P1.1) | ✅ no CI | + validação e assinatura de código | Médio |
-| **Camadas / multi-operação (P2.2)** | ⬜ | gravar + cortar numa execução | **Alto** |
-| **Simulação de job (P2.3)** | ⬜ | playback + tempo | Médio |
+| **Camadas / multi-operação (P2.2)** | ✅ (0.8.0) | gravar + cortar numa execução | Baixo |
+| **Simulação de job (P2.3)** | ✅ (0.5.0) | playback + tempo | Baixo |
 | **DXF/PDF (P2.4)** | ⬜ | parser + paths | Médio |
-| **Catálogo de máquinas (P2.5)** | 1 perfil | 30+ + import `.lbdev` + "smart connect" | Baixo |
-| **QR Code / código de barras (P2.7/P2.8)** | ⬜ (planejado) | 2 ferramentas em Ferramentas | Alto |
+| **Catálogo de máquinas (P2.5)** | ✅ 22 perfis + Genérico | 30+ + import `.lbdev` + "smart connect" | Baixo |
+| **QR Code / código de barras (P2.7/P2.8)** | ✅ (0.6.0/0.7.0) | 2 ferramentas em Ferramentas | Baixo |
 | **Lote / dados variáveis** | ⬜ | CSV → fila de gravação (etiquetas) | Médio |
 | **Biblioteca de jobs** | ⬜ | histórico com miniatura + re-executar | Baixo |
 | Câmera (P3.1) / Rotativa (P3.2) | ⬜ | paridade LightBurn | Alto |
 | Nesting | ⬜ (matriz de cópias ✅) | encaixe real | Médio |
 | Editor de G-code (P1.10) | ⬜ | highlight + numeração | Baixo |
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
-| Flatpak (P1.3) · onboarding (P1.4) | scaffold / ⬜ | publicados | Baixo |
+| Flatpak (P1.3) · onboarding (P1.4) | scaffold / ✅ | publicados | Baixo |
 | Orçamentos RNF-11/12 medidos e publicados (P1.8) | parcial | ✅ público | Baixo |
 | E2E de job/protocolo (Fase 8) | 4 casos básicos | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
@@ -117,8 +118,8 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |
-| P2.2 | **Camadas / multi-operação** (parâmetros por camada) | M | Gravar + cortar numa execução; reordenar arrastando; G-code com `M5`/troca de potência corretos. |
-| P2.3 | **Simulação de job** (playback + tempo) | M | Play/pause/seek à velocidade real; reusa o preview. |
+| ✅ P2.2 | **Camadas / multi-operação** (parâmetros por camada) — entregue na **0.8.0** | M | Gravar + cortar numa execução; reordenar arrastando; G-code com `M5`/troca de potência corretos. |
+| ✅ P2.3 | **Simulação de job** (playback + tempo) — entregue na **0.5.0** | M | Play/pause/seek à velocidade real; reusa o preview. |
 | P2.4 | **Importação DXF + PDF** | M | Reusa `shared/svg.ts`/pipeline de contornos; testes por arquivo real. |
 | P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | P1.10 | **Editor de G-code** (highlight + numeração + reenvio) | M | Editar, validar e reenviar trecho. |
@@ -132,8 +133,8 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |
-| P2.7 | **Gerador de QR Code** (ISO/IEC 18004) | M | Conteúdo → matriz → G-code; ECC, mm, quiet zone, preview (**S1**). |
-| P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI | M | Checksum + quiet zone + texto legível (**S2**). |
+| ✅ P2.7 | **Gerador de QR Code** (ISO/IEC 18004) — entregue na **0.6.0** | M | Conteúdo → matriz → G-code; ECC, mm, quiet zone, preview (**S1**). |
+| ✅ P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI — entregue na **0.6.0** (extras na **0.7.0**) | M | Checksum + quiet zone + texto legível (**S2**). |
 | P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** | M | Cada linha = 1 peça (QR/barcode/texto variável), pausa para trocar a peça, contador. ⇢ *nenhum concorrente grátis faz isso completo*. |
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis; efeito de rede. |
@@ -223,13 +224,18 @@ v0.9              P3.1 CÂMERA ──► P3.2 ROTATIVA ──► P3.7 NESTING �
 v1.0              P4.1 API/CLI ──► P3.3 PLUGINS ──► P4.2 i18n ──► P4.3 DOCS/SITE ──► P4.4 INKSCAPE
 ```
 
+> **Entregue até 19/10/2026:** P0.2, P0.4, P0.5, P0.6, P0.7, P0.8, P2.2
+> (0.8.0), P2.3 (0.5.0), P2.7 e P2.8 (0.6.0) e as simbologias extras S2/S3
+> (0.7.0). O caminho crítico atual começa em **P2.4 (DXF/PDF)**.
+
 **v0.6 (primeiros 30 dias):** P0.1–P0.8 (provar + distribuir + **conhecer a
 máquina**) **e** P2.7 QR → P2.8 código de barras — o diferencial que nenhum
 concorrente grátis tem, junto com o que falta da Fase 7/8 (polish, cobertura,
 teste em hardware).
 
-**v0.7 (30–75 dias):** P2.2 camadas, P2.3 simulação, P2.4 DXF/PDF, P2.5 catálogo
-+ `.lbdev`, P1.10 editor de G-code, P2.9 biblioteca e validação Win/macOS.
+**v0.7 (30–75 dias):** P2.2 camadas ✅ (0.8.0), P2.3 simulação ✅, P2.4 DXF/PDF,
+P2.5 catálogo + `.lbdev`, P1.10 editor de G-code, P2.9 biblioteca e validação
+Win/macOS.
 
 **v0.8:** P2.10 lote/dados variáveis, P2.11 modo produção, P2.12 presets,
 P2.13 teste de foco.
@@ -272,5 +278,6 @@ critérios de paridade — com os números da §6 publicados.
 
 ---
 
-*Plano criado em 17/10/2026 e **reescrito em 18/10/2026 (v0.5.1)** com o
-comparativo de mercado; revisar a cada release.*
+*Plano criado em 17/10/2026, reescrito em 18/10/2026 (v0.5.1) com o
+comparativo de mercado e **reconciliado em 19/10/2026 (v0.8.0)**; revisar a cada
+release.*

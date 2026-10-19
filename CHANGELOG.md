@@ -4,6 +4,49 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Docs
+
+- **Reconciliação com o código (19/10/2026):** o módulo **M14** estava todo como
+  pendente no `PRODUCT_SPEC.md` embora o painel Máquina, o pré-voo e o
+  diagnóstico tenham saído na **0.8.0** — RF-MAQ-1…8 passaram a ✅ (o **chip de
+  pinos `Pn`** da barra de status, RF-MAQ-7, foi implementado nesta data).
+  Adicionado **RF-PRV-7** (simulação de job), que já existia no
+  código desde a **0.5.0** sem requisito nem registro. Atualizados
+  `ROADMAP.md`, `FEATURES_COMPARISON.md`, `COMPARATIVO.md`,
+  `ANALISE_COMPETITIVA.md`, `PLANO_PREMIUM.md`, `PLANO_DE_ACAO.md` e
+  `PLANO_MAQUINA.md` (contagens de teste/chaves i18n, status de P2.3/P2.7/P2.8
+  e catálogo).
+- **`CHANGELOG.md`:** a **simulação de job (P2.3 / RF-PRV-7)** foi adicionada à
+  seção da 0.5.0, de onde havia sido omitida.
+
+### Added — chip de pinos `Pn` na barra de status (RF-MAQ-7)
+
+- **Indicador de pinos** que lê o campo `Pn` do status: mostra os pinos ativos
+  (`Pn:XY` → `Pinos: X Y`) ou "nenhum" quando nenhum está acionado. Quando o
+  firmware **não reporta** pinos (máscara `$10`, como a Sculpfun C1), o chip fica
+  **desabilitado com explicação** no *tooltip* — sem sugerir escrever setting.
+- Helper puro `parsePins` em `src/shared/machines.ts` (bundle sempre carregado)
+  com testes unitários; **E2E** cobre os dois casos (com e sem `Pn`).
+
+### Added — camadas / multi-operação (P2.2, RF-DSN-13)
+
+- **Camadas** no editor vetorial: cada objeto pertence a uma camada e a **ordem
+  da lista é a ordem de execução** — dá para **gravar e cortar numa só
+  execução**. A lista aceita **arrastar para reordenar** (e ↑/↓, acessível pelo
+  teclado), criar/excluir camadas e **mover a seleção** para a camada ativa.
+- **Parâmetros por camada** (potência, velocidade, passadas e modo M3/M4); campo
+  vazio herda o padrão global da seção “Gravação”, e o objeto ainda pode
+  sobrescrever a camada. Cada forma mostra a cor da sua camada no canvas e na
+  lista de objetos.
+- **G-code**: `src/shared/design.ts` emite as camadas na ordem declarada e
+  garante **`M5` antes de cada troca de potência/modo** (laser desligado);
+  formas sem camada (ou com id desconhecido) usam os parâmetros globais e vão
+  por último. Sem camadas, a saída é idêntica à de antes.
+- Camadas são lembradas entre sessões (`localStorage`). Testes unitários das
+  operações + **E2E** da UI (criar/renomear/reordenar/mover/excluir).
+
 ## [0.8.0] - 2026-10-18
 
 ### Added — painel Máquina (P0.7, RF-MAQ-1…10)
@@ -408,6 +451,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 
 ## [0.5.0] - 2026-10-18
+
+### Added — simulação de job (P2.3, RF-PRV-7)
+
+- **Playback do caminho antes de gravar**: play/pause/parar, **seek** na linha do
+  tempo (0–100 %), velocidade **1×–10×** e **tempo estimado** (soma de
+  `dist / feed`, com `G0` a 3000 mm/min). A cabeça anda no preview e o trecho
+  já percorrido é pintado; reusa o preview 2D em camadas.
 
 ### Added — editor de desenho estilo CorelDRAW (P2.1)
 - **Workspace novo**: caixa de ferramentas vertical com **ícones SVG**, barra de

@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 18/10/2026 (v0.6.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 19/10/2026 (v0.8.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.6.0)
+## Estado atual (v0.8.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -39,17 +39,27 @@ Já entregue (não repetir no planejamento):
 - [x] **Design 2D**: formas, **texto** (3 modos), caneta + nós, booleanas,
       contorno paralelo, matriz, espelhar, distribuir, agrupar, snap, réguas,
       undo/redo, **estilo por objeto**.
+- [x] **Camadas / multi-operação** (P2.2): parâmetros por camada, ordem de
+      execução reordenável (arrastando ou ↑/↓) e **gravar + cortar numa
+      execução**, com `M5` antes de cada troca de potência/modo — v0.8.0.
 - [x] **Importação SVG** (P1.6) e **grade de teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (746 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1018 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
-      Code 39) com **HRI** e avisos de legibilidade — v0.6.0.
+      Code 39) com **HRI** e avisos de legibilidade — v0.6.0. Continuados na
+      **v0.7.0** com ITF-14, Codabar, Code 93 Full ASCII, GS1-128 e **Data
+      Matrix ECC200**.
+- [x] **Simulação de job** (P2.3/RF-PRV-7): playback 2D com play/pause/seek,
+      velocidade 1×–10× e tempo estimado — v0.5.0.
+- [x] **Painel "Máquina"** (P0.7/RF-MAQ-1…4/7/8), **área de trabalho do preview**
+      a partir de `$130/$131` (RF-MAQ-5), **pré-voo MX-1…MX-15** (P0.8/RF-MAQ-6)
+      e **diagnóstico copiável** — v0.8.0.
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **505 testes** (Vitest, 29 arquivos) + E2E Playwright + smoke headless.
+- [x] **674 testes** (Vitest, 38 arquivos) + E2E Playwright + smoke headless.
 
 ---
 
@@ -108,7 +118,13 @@ diferencial que nenhum concorrente grátis tem.
 > orçamento** nesta máquina, e Windows/macOS ainda não medidos) e
 > **RF-MAQ-10** (catálogo de perfis de máquina). Na mesma versão vieram as
 > simbologias extras (S2/S3: ITF-14, Codabar, Code 93, GS1-128 e Data Matrix).
+> **Na 0.8.0** vieram **P0.7** (painel Máquina), **P0.8** (pré-voo MX-1…MX-15) e
+> a **RF-MAQ-5** (área de trabalho do preview a partir de `$130/$131`).
 > O que segue na tabela ainda está aberto — e a ordem dele é a ordem de execução.
+>
+> **Status da tabela (19/10/2026):** ✅ = entregue. Seguem abertos na v0.6:
+> **P0.1** (só falta Windows/macOS) e **P0.3** (Flatpak/Flathub), além do
+> restante da Fase 7 (a11y, checklist visual) e da Fase 8 (hardware).
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
@@ -116,10 +132,10 @@ diferencial que nenhum concorrente grátis tem.
 | P0.2 | **E2E de job/protocolo** (PTY/socat) no CI | M | Job completo com pausa/retomada/cancelamento/alarme verde no CI. |
 | P0.3 | **Distribuição 1-clique**: Flatpak → Flathub, winget, brew, AUR (= P1.3) | M | `flatpak install` e `winget install` documentados; porta serial com permissão. |
 | P0.4 | **Onboarding** de primeira execução (P1.4) | S | Tour de 5 passos: conectar → perfil → abrir → preview → gravar. |
-| P0.5 | **Comparativo público** de mercado (tabela da §7.5) | S | Página no README/site com data e fontes. |
+| ✅ P0.5 | **Comparativo público** de mercado (tabela da §7.5) | S | Página no README/site com data e fontes. |
 | P0.6 | **Cobertura do parser > 90 % + fuzz** do protocolo | M | Nenhum crash com entrada corrompida. |
-| P0.7 | **Painel "Máquina"** (`$I`/`$$`/`$#`/`$G`/`$N` → fatos + diagnóstico copiável) — M14/RF-MAQ-1…8, `PLANO_MAQUINA.md` | M | Firmware, curso, limites, laser e offsets visíveis (com "não informado" quando faltar); "copiar diagnóstico" sem rede. |
-| P0.8 | **Pré-voo MX-1…MX-15** antes de gravar + chip de pinos (`Pn`) | M | Cada regra com teste + fixture real (Sculpfun C1); `block` só no que o GRBL rejeita ou queima errado. |
+| ✅ P0.7 | **Painel "Máquina"** (`$I`/`$$`/`$#`/`$G`/`$N` → fatos + diagnóstico copiável) — M14/RF-MAQ-1…8, `PLANO_MAQUINA.md` | M | Firmware, curso, limites, laser e offsets visíveis (com "não informado" quando faltar); "copiar diagnóstico" sem rede. |
+| ✅ P0.8 | **Pré-voo MX-1…MX-15** antes de gravar + chip de pinos (`Pn`) | M | Cada regra com teste + fixture real (Sculpfun C1); `block` só no que o GRBL rejeita ou queima errado. |
 | P2.7 | **Gerador de QR Code** (Ferramentas) — *S1* | M | Conteúdo → matriz ISO/IEC 18004 → G-code; ECC L/M/Q/H, dimensões em mm, quiet zone, preview, salvar/gravar. |
 | P2.8 | **Gerador de código de barras** (Ferramentas) — *S2* | M | Code 128/39, EAN-13/8, UPC-A com dígito verificador, quiet zone e **HRI**. |
 | — | **Avisos de legibilidade** (módulo × spot do laser) e de área de trabalho — *S1* | S | Aviso com sugestão quando o símbolo não é legível/grava fora da área. |
@@ -134,12 +150,14 @@ diferencial que nenhum concorrente grátis tem.
 > Code 93, GS1-128 e **Data Matrix ECC200**), `Prefs.symbols`, o **tour de
 > boas-vindas** (P0.4), o **E2E de job por PTY** (P0.2), **fuzz + cobertura
 > ≥ 90 %** (P0.6), o **benchmark Linux** (P0.1) e o **catálogo de perfis de
-> máquina** (RF-MAQ-10). Os itens abaixo continuam abertos.
+> máquina** (RF-MAQ-10). A **simulação de job (P2.3)** já existia desde a
+> **0.5.0**; na **0.8.0**, **P2.2** (camadas/multi-operação). Os demais itens
+> abaixo continuam abertos.
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
-| P2.2 | **Camadas / multi-operação** (parâmetros por camada) | M | Gravar + cortar numa execução; reordenar arrastando; `M5` e troca de potência corretos. |
-| P2.3 | **Simulação de job** (playback + tempo) | M | Play/pause/seek na velocidade real; reusa o preview. |
+| ✅ P2.2 | **Camadas / multi-operação** (parâmetros por camada) — entregue na **0.8.0** | M | Gravar + cortar numa execução; reordenar arrastando; `M5` e troca de potência corretos. |
+| ✅ P2.3 | **Simulação de job** (playback + tempo) — entregue na **0.5.0** | M | Play/pause/seek na velocidade real; reusa o preview. |
 | P2.4 | **Importação DXF + PDF** | M | Reusa `shared/svg.ts`/contornos; testado com arquivos reais. |
 | P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | P1.10 | **Editor de G-code** (syntax highlight + numeração + reenvio) | M | Editar, validar e reenviar trecho. |
@@ -234,19 +252,18 @@ da API. Justificativa: `PLANO_PREMIUM.md` §10.
 
 Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico). Resumo:
 
-1. **v0.6/v0.7 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) e os
-   avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
+1. **v0.6/v0.7/v0.8 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) e
+   os avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
    P0.4 (onboarding), P0.6 (fuzz + cobertura), as simbologias extras da S2/S3
-   (1D + **Data Matrix**) e o catálogo de perfis de máquina (RF-MAQ-10). O
-   **P0.1** saiu só na parte Linux e **startup/RAM ainda estão acima do
-   orçamento** — otimizar performance é trabalho aberto. Continuam abertos
-   **P0.3** (Flatpak/winget/brew/AUR), **P0.5** (comparativo público), e o
-   **P0.7/P0.8** (painel "Máquina" e pré-voo MX-1…MX-15) — ver
-   [`PLANO_MAQUINA.md`](PLANO_MAQUINA.md); o que falta das ferramentas de
-   símbolos (PDF417/Aztec, lote) está em
-   [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
-2. **v0.7** — camadas/multi-operação, simulação, DXF/PDF, catálogo 30+ + `.lbdev`,
-   editor de G-code, biblioteca de jobs e validação Win/macOS.
+   (1D + **Data Matrix**) e o catálogo de perfis de máquina (RF-MAQ-10); na
+   **0.8.0**, P0.7 (painel "Máquina"), P0.8 (pré-voo MX-1…MX-15) e **P2.2
+   (camadas/multi-operação)**. O **P0.1** saiu só na parte Linux e
+   **startup/RAM ainda estão acima do orçamento** — otimizar performance é
+   trabalho aberto. Continuam abertos **P0.3** (Flatpak/winget/brew/AUR),
+   **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
+   (PDF417/Aztec, lote) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+2. **v0.7 (restante)** — DXF/PDF, catálogo 30+ + `.lbdev`, editor de G-code,
+   biblioteca de jobs e validação Win/macOS.
 3. **v0.8** — lote/dados variáveis, modo produção, presets de material e
    simbologias extras.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
@@ -344,7 +361,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 
 | # | Item | O que é | Onde usa | Onde entra |
 | :-- | :-- | :-- | :-- | :-- |
-| 40 | **Camadas / multi-operação** | Grupos de objetos, cada grupo com sua potência. | Gravar e cortar numa única rodada. | `P2.2` |
+| 40 | **Camadas / multi-operação** | Grupos de objetos, cada grupo com sua potência. | Gravar e cortar numa única rodada. | ✅ `P2.2` (0.8.0) |
 | 41 | **Abrir arquivos de outros programas** | SVG, DXF, PDF, AI e os do LightBurn (`.lbrn2`). | Reaproveitar algo feito no Inkscape/AutoCAD. | `P2.4` · `P2.5` |
 | 42 | **Perfil da máquina** | Cadastro da máquina (curso, potência) pra não reconfigurar. | Trocar de máquina ou ajudar outro modelo. | ✅ RF-MAQ-10 · catálogo `P2.5` |
 | 43 | **Catálogo de materiais com avisos** | Lista de materiais com dica de segurança. | Saber se pode cortar certo plástico. | ⬜ novo |

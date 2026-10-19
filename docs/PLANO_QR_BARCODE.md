@@ -60,11 +60,11 @@ ou gravar direto.
 | Item no menu **Ferramentas** | `src/main/menu.ts:90-102` |
 | Ação tipada do renderer | `MENU_ACTIONS` em `src/shared/channels.ts:66-74` |
 | Ponte preload | `onAction` em `src/preload/index.ts:128-129` |
-| Dispatch | `window.grbl.onAction(...)` em `public/renderer.js:6723-6735` |
-| Overlay modal | `public/index.html` (`#matTestOverlay` 869-943, `#designOverlay` 945+) |
-| Abrir/fechar/ler opções/gerar/salvar | `public/renderer.js` (ex.: `openMatTestModal` 3832, `generateMatTest` 3863, `saveMatTest` 3879) |
-| Entrega ao job | `applyJobLines(name, gcode, source)` — `public/renderer.js:4800-4842` |
-| Enquadrar/Gravar | `openFrameModal()` — `public/renderer.js:524-566` |
+| Dispatch | `window.grbl.onAction(...)` em `public/renderer.js:7935-7938` |
+| Overlay modal | `public/index.html` (`#matTestOverlay` 887+, `#designOverlay` 1322+) |
+| Abrir/fechar/ler opções/gerar/salvar | `public/renderer.js` (ex.: `openMatTestModal` 4591, `generateMatTest` 4622, `saveMatTest` 4638) |
+| Entrega ao job | `applyJobLines(name, gcode, source)` — `public/renderer.js:5961` |
+| Enquadrar/Gravar | `openFrameModal()` — `public/renderer.js:629` |
 | Salvar arquivo | `window.grbl.saveGcode(...)` → `CHANNELS.fileSave` → `src/main/ipc.ts:411-435` |
 | Módulo puro + bundle esbuild | `src/shared/*.ts` → `public/*.js` (`package.json:9-25`) |
 | Testes puros | `tests/*.test.ts` (Vitest) |
@@ -282,13 +282,13 @@ Acessibilidade: foco visível, rótulos `data-i18n`, alvos ≥ 32 px, contraste 
 2. `openFrameModal()` ganha um ramo para `jobSource` das novas ferramentas:
    sincroniza F/S/passadas com os campos do símbolo e, ao clicar **Gravar**,
    **regenera** o G-code com os valores do modal — exatamente como o editor
-   "Desenhar" faz hoje (`renderer.js:540-557` e `dFrameParamsToDesign`).
+   "Desenhar" faz hoje (`dFrameParamsToDesign` em `renderer.js`).
 3. Salvar: `window.grbl.saveGcode(...)` (canal `file:save-gcode`) — **sem IPC
    novo** (RNF-3, IPC mínimo).
 4. Preferências: novo campo opcional `symbols?: { qr?, barcode? }` em `Prefs`
    (`src/shared/types.ts:243`) para lembrar a última configuração (RF-CFG-5).
 5. Menu: item em `src/main/menu.ts` (§Ferramentas) + valor em `MENU_ACTIONS`
-   (`src/shared/channels.ts`) + `else if` em `public/renderer.js:6723-6735`.
+   (`src/shared/channels.ts`) + `else if` em `public/renderer.js:7935-7938`.
    ⚠️ `tests/i18n.test.ts` exige que **todo** `MENU_ACTIONS` seja tratado no
    renderer — o teste pega esquecimento.
 6. Sinergia futura (S3): expor "símbolo" como **objeto** do editor "Desenhar",
@@ -363,8 +363,8 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 | Fase | Entregável | Esforço | DoD |
 | :--- | :--- | :--- | :--- |
 | **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
-| **S2 — 1D + HRI** | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. |
-| **S3 — Extras** | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. |
+| **S2 — 1D + HRI** ✅ | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. **(feito — §16 e §17)** |
+| **S3 — Extras** (parcial: 1D extras + Data Matrix ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** PDF417/Aztec, grade/lote (RF-SYM-9) e símbolo como objeto. |
 
 Sequência sugerida: **S1 → S2** (MVP útil: QR + Code 128/EAN) e só então S3.
 As fases são independentes de P2.1 (design) e P3.x (câmera/rotativa), mas

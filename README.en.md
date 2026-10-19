@@ -83,9 +83,9 @@ with sources: **[full comparison](docs/COMPARATIVO.md)** (in Portuguese).
 | Price / license | **Free, MIT** | US$ 99/199 + updates | Free, MIT | Free, GPLv3 | Free (xTool only) |
 | Native Linux | ✅ | ✅ | ✅ | ❌ | ❌ |
 | QR / Data Matrix / barcode | ✅ | ✅ | ❌ | ❌ | ✅ (batch) |
-| Layers / multi-operation | ❌ (roadmap) | ✅ | ✅ | ❌ | ✅ |
+| Layers / multi-operation | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Camera / rotary | ❌ (roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocol tested | ✅ 584 tests + 13 E2E | n/a | n/a | ❌ | n/a |
+| Protocol tested | ✅ 674 tests + E2E | n/a | n/a | ❌ | n/a |
 
 ## Documentation
 

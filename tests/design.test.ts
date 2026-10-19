@@ -226,6 +226,154 @@ describe('designToGcode', () => {
   });
 });
 
+describe('camadas / multi-operação (P2.2)', () => {
+  const rect = (x: number, y: number, extra: Partial<Shape> = {}): Shape => ({
+    kind: 'rect',
+    points: makeRect(x, y, 5, 5),
+    closed: true,
+    ...extra,
+  });
+
+  it('emite as camadas na ordem declarada, não na ordem das formas', () => {
+    const doc: DesignDocument = {
+      // A forma de corte vem primeiro no array; a camada “Gravar” vem antes.
+      shapes: [rect(20, 0, { layer: 'cut' }), rect(0, 0, { layer: 'engrave' })],
+      width: 30,
+      height: 10,
+      layers: [
+        { id: 'engrave', name: 'Gravar' },
+        { id: 'cut', name: 'Cortar' },
+      ],
+    };
+    const g = designToGcode(doc, baseOpts);
+    const grav = g.indexOf('G0 X0.000 Y0.000');
+    const cort = g.indexOf('G0 X20.000 Y0.000');
+    expect(grav).toBeGreaterThan(-1);
+    expect(cort).toBeGreaterThan(-1);
+    expect(cort).toBeGreaterThan(grav);
+    expect(g).toContain('; camada 1: Gravar');
+    expect(g).toContain('; camada 2: Cortar');
+  });
+
+  it('aplica potência/velocidade/passadas/modo da camada', () => {
+    const doc: DesignDocument = {
+      shapes: [rect(0, 0, { layer: 'cut' })],
+      width: 5,
+      height: 5,
+      layers: [
+        {
+          id: 'cut',
+          name: 'Cortar',
+          power: 30,
+          speed: 250,
+          passes: 2,
+          mode: 'M3',
+        },
+      ],
+    };
+    const g = designToGcode(doc, baseOpts);
+    expect(g).toContain('M3 S300'); // 30 % de 1000
+    expect(g).not.toContain('M4 S');
+    expect(g).toContain('F250');
+    expect(g).toContain('; pass 1/2 — Cortar');
+    expect(g).toContain('; pass 2/2 — Cortar');
+    expect(g.match(/^M3 S300$/gm)).toHaveLength(2); // 2 passadas
+  });
+
+  it('o objeto sobrescreve a camada; o resto herda', () => {
+    const doc: DesignDocument = {
+      shapes: [
+        rect(0, 0, { layer: 'engrave', power: 90, speed: 500 }),
+        rect(10, 0, { layer: 'engrave' }),
+      ],
+      width: 15,
+      height: 5,
+      layers: [{ id: 'engrave', power: 30, speed: 250 }],
+    };
+    const g = designToGcode(doc, baseOpts);
+    expect(g).toContain('M4 S900'); // objeto manda
+    expect(g).toContain('F500');
+    expect(g).toContain('M4 S300'); // a segunda herda a camada
+    expect(g).toContain('F250');
+  });
+
+  it('formas sem camada usam os parâmetros globais e vão por último', () => {
+    const doc: DesignDocument = {
+      shapes: [
+        rect(20, 0), // solta
+        rect(0, 0, { layer: 'engrave' }),
+      ],
+      width: 30,
+      height: 10,
+      layers: [{ id: 'engrave', power: 60 }],
+    };
+    const g = designToGcode(doc, baseOpts);
+    const camada = g.indexOf('M4 S600');
+    const solta = g.indexOf('M4 S800'); // global 80 %
+    expect(camada).toBeGreaterThan(-1);
+    expect(solta).toBeGreaterThan(camada);
+    // A solta é o retângulo à direita (X20), emitido depois.
+    expect(g.indexOf('G0 X20.000 Y0.000')).toBeGreaterThan(camada);
+  });
+
+  it('id de camada desconhecido cai no global (nada se perde)', () => {
+    const doc: DesignDocument = {
+      shapes: [rect(0, 0, { layer: 'nao-existe' })],
+      width: 5,
+      height: 5,
+      layers: [{ id: 'engrave', power: 10 }],
+    };
+    const g = designToGcode(doc, baseOpts);
+    expect(g).toContain('M4 S800');
+    expect(g).not.toContain('M4 S100');
+  });
+
+  it('cada operação começa com o laser desligado (M5 antes da nova potência)', () => {
+    const doc: DesignDocument = {
+      shapes: [rect(0, 0, { layer: 'engrave' }), rect(20, 0, { layer: 'cut' })],
+      width: 30,
+      height: 5,
+      layers: [
+        { id: 'engrave', power: 20 },
+        { id: 'cut', power: 100 },
+      ],
+    };
+    const lines = designToGcode(doc, baseOpts).split('\n');
+    for (const marker of ['M4 S200', 'M4 S1000']) {
+      const i = lines.indexOf(marker);
+      expect(i).toBeGreaterThan(0);
+      // O comando anterior ao ligar o laser é um deslocamento G0 e, antes
+      // dele, o M5 que encerrou a operação anterior.
+      expect(lines[i - 1]).toMatch(/^G0 X/);
+      expect(lines.slice(0, i)).toContain('M5');
+    }
+  });
+
+  it('nome de camada com quebra de linha não injeta G-code', () => {
+    const doc: DesignDocument = {
+      shapes: [rect(0, 0, { layer: 'x' })],
+      width: 5,
+      height: 5,
+      layers: [{ id: 'x', name: 'Gravar\nM5\nM3 S1000' }],
+    };
+    const g = designToGcode(doc, baseOpts);
+    expect(g).not.toMatch(/^M3 S1000$/m);
+    expect(g).toContain('; camada 1: Gravar M5 M3 S1000');
+  });
+
+  it('passadas da camada multiplicam as passadas do objeto', () => {
+    const doc: DesignDocument = {
+      shapes: [rect(0, 0, { layer: 'cut', passes: 2 })],
+      width: 5,
+      height: 5,
+      layers: [{ id: 'cut', passes: 3 }],
+    };
+    const g = designToGcode(doc, baseOpts);
+    // 3 passadas da camada × 2 do objeto = 6 lances de laser.
+    expect(g.match(/^M4 S800$/gm)).toHaveLength(6);
+  });
+});
+
 describe('entradas degeneradas e parâmetros inválidos', () => {
   const rect5 = (extra: Partial<Shape> = {}): Shape => ({
     kind: 'rect',

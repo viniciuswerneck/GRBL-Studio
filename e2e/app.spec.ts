@@ -392,6 +392,76 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await close();
     }
   });
+
+  test('camadas: cria, renomeia, reordena e move objetos (P2.2)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+
+      const rows = page.locator('#designLayerList .design-layer');
+      // Sempre existe ao menos uma camada (a padrão herda os globais).
+      await expect(rows).toHaveCount(1);
+      await expect(page.locator('#designLayerDelete')).toBeDisabled();
+
+      // Parâmetros por camada (campo vazio herda; preenchido sobrescreve).
+      await page.fill('#designLayerPower', '80');
+      await page.locator('#designLayerPower').blur();
+      await expect(rows.first()).toContainText('80%');
+
+      // Nova camada nasce ativa e pode ser renomeada.
+      await page.click('#designLayerAdd');
+      await expect(rows).toHaveCount(2);
+      await expect(rows.nth(1)).toHaveClass(/active/);
+      await expect(page.locator('#designLayerDelete')).toBeEnabled();
+      await page.fill('#designLayerName', 'Cortar');
+      await page.locator('#designLayerName').blur();
+      await expect(rows.nth(1)).toContainText('Cortar');
+
+      // Reordenar: a camada ativa sobe para a primeira posição (executa antes).
+      await page.click('#designLayerUp');
+      await expect(rows.first()).toContainText('Cortar');
+
+      // Desenhar na camada ativa: o objeto nasce nela (marca colorida).
+      await page.click('#designToolRect');
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.mouse.move(box.x + 120, box.y + 120);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 200, box.y + 180);
+      await page.mouse.up();
+      await expect(page.locator('#designObjectList .design-obj')).toHaveCount(
+        1,
+      );
+      const dot = page.locator('#designObjectList .design-obj-layer');
+      await expect(dot).toHaveCount(1);
+      await expect(dot).toHaveAttribute('title', 'Cortar');
+
+      // A camada padrão é a segunda; selecioná-la e mover a seleção (o objeto
+      // desenhado continua selecionado).
+      await rows.nth(1).click();
+      await page.click('#designLayerAssign');
+      await expect(page.locator('#designStatus')).toContainText('Camada 2');
+      await expect(
+        page.locator('#designObjectList .design-obj-layer'),
+      ).toHaveAttribute('title', 'Camada 2');
+
+      // Excluir a camada não apaga objetos: eles voltam ao padrão global.
+      await rows.first().click();
+      await page.click('#designLayerDelete');
+      await expect(rows).toHaveCount(1);
+      await expect(page.locator('#designObjectList .design-obj')).toHaveCount(
+        1,
+      );
+    } finally {
+      await close();
+    }
+  });
 });
 
 /**
@@ -400,7 +470,9 @@ test.describe('GRBL Studio — fluxo da UI', () => {
  * Responde só o que o painel "Máquina" consome; qualquer outro comando leva
  * `ok`.
  */
-function startGrblTcp(): Promise<{ port: number; close: () => void }> {
+function startGrblTcp(
+  statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>',
+): Promise<{ port: number; close: () => void }> {
   const settings = [
     '$0=10',
     '$1=25',
@@ -445,7 +517,7 @@ function startGrblTcp(): Promise<{ port: number; close: () => void }> {
       // `?` é comando de tempo real: byte único, sem `\n`.
       for (const byte of text) {
         if (byte === '?') {
-          socket.write('<Idle|MPos:1.500,2.250,0.000|FS:0,0>\r\n');
+          socket.write(`${statusLine}\r\n`);
         }
       }
       buffer += text.replace(/\?/g, '');
@@ -501,6 +573,91 @@ test.describe('GRBL Studio — painel "Máquina" (P0.7)', () => {
     } finally {
       await close();
       emulator.close();
+    }
+  });
+});
+
+test.describe('GRBL Studio — indicador de pinos (RF-MAQ-7)', () => {
+  test('desabilitado com explicação quando o firmware não reporta Pn', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({ prefs: { autoConnect: false } });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      const chip = page.locator('#pinChip');
+      await expect(chip).toBeDisabled();
+      await expect(chip).toContainText('Pinos');
+      await expect(chip).toHaveAttribute('title', /não reporta pinos/);
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('mostra os pinos ativos quando o status traz Pn', async () => {
+    const emulator = await startGrblTcp('<Idle|MPos:0.000,0.000,0.000|Pn:XY>');
+    const { page, close } = await launchApp({ prefs: { autoConnect: false } });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+
+      const chip = page.locator('#pinChip');
+      await expect(chip).toBeEnabled();
+      await expect(chip).toContainText('Pinos: X Y');
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+});
+
+test.describe('GRBL Studio — simulação de job (P2.3/RF-PRV-7)', () => {
+  test('play, seek e tempo estimado no preview', async () => {
+    const { page, close } = await launchApp();
+    try {
+      // Programa curto: 20 mm a 600 mm/min → 2 s de simulação.
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          applyJobLines: (name: string, text: string) => void;
+        };
+        w.applyJobLines(
+          'sim.gcode',
+          'G21\nG90\nM3 S500\nG1 X10 Y0 F600\nG1 X20 Y0 F600\n',
+        );
+      });
+
+      const bar = page.locator('#simBar');
+      await expect(bar).toHaveClass(/hidden/);
+
+      await page.evaluate(() => document.getElementById('simToggle')?.click());
+      await expect(bar).not.toHaveClass(/hidden/);
+      await expect(page.locator('#simPlay')).toBeDisabled();
+      await expect(page.locator('#simPause')).toBeEnabled();
+      await expect(page.locator('#simTime')).toContainText('/ 0:02');
+
+      // Seek até o fim sem quebrar a barra.
+      await page.evaluate(() => {
+        const seek = document.getElementById(
+          'simSeek',
+        ) as HTMLInputElement | null;
+        if (seek) {
+          seek.value = '1000';
+          seek.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+      await expect(page.locator('#simTime')).toContainText('0:02 / 0:02');
+
+      await page.evaluate(() => document.getElementById('simStop')?.click());
+      await expect(bar).toHaveClass(/hidden/);
+      await expect(page.locator('#simPlay')).toBeEnabled();
+    } finally {
+      await close();
     }
   });
 });

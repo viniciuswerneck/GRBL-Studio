@@ -188,16 +188,20 @@ Transporte: serial /dev/ttyUSB0 @115200
 
 ## 9. DoD
 
-- [ ] `src/shared/machine.ts` (puro) + testes com fixtures reais coletadas.
+- [x] `src/shared/machine.ts` (puro) + testes com fixtures reais coletadas
+      (`tests/machine.test.ts`, `tests/fixtures/machine-sculpfun-c1.json`).
 - [x] **Perfil de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10),
       com a Sculpfun C1 conferida contra a coleta real (`tests/machines.test.ts`).
-- [ ] `GrblClient` guardando `[VER:]`/`[OPT:]` do connect + `snapshot()`.
-- [ ] Canais `machine:snapshot`/`machine:report` (`channels.ts`, `ipc.ts`, `preload`).
-- [ ] Modal "Máquina" + chip `Pn` + banner de pré-voo (`index.html`, `renderer.js`, `style.css`).
-- [ ] i18n `machine.*`/`preflight.*` nos 3 idiomas (paridade ok).
-- [ ] "Copiar diagnóstico" funcionando sem rede.
-- [ ] Área de trabalho do preview vinda de `$130/$131` quando disponível.
-- [ ] `npm run typecheck`, `npm test`, `npm run lint` verdes; sem regressão de perf
+- [x] `GrblClient` guardando `[VER:]`/`[OPT:]` do connect + `snapshot()`.
+- [x] Canais `machine:snapshot`/`machine:report` (`channels.ts`, `ipc.ts`, `preload`).
+- [x] Modal "Máquina" + banner de pré-voo (`index.html`, `renderer.js`, `style.css`).
+- [x] Chip `Pn` dedicado na barra de status, desabilitado com explicação quando
+      `$10` não reporta pinos (**RF-MAQ-7**); o `Pn` também aparece no painel
+      Máquina.
+- [x] i18n `machine.*`/`preflight.*` nos 3 idiomas (paridade ok).
+- [x] "Copiar diagnóstico" funcionando sem rede.
+- [x] Área de trabalho do preview vinda de `$130/$131` quando disponível.
+- [x] `npm run typecheck`, `npm test`, `npm run lint` verdes; sem regressão de perf
       (nenhum polling novo; modal só lê sob demanda).
 
 ## 10. Riscos e degradação

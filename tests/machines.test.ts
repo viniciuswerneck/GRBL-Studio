@@ -7,6 +7,7 @@ import {
   MACHINE_PROFILES,
   findMachineProfile,
   machineProfile,
+  parsePins,
 } from '../src/shared/machines';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -153,3 +154,29 @@ describe('perfil Sculpfun C1 × máquina real', () => {
     expect(machineSetting(131)).toBe(130);
   });
 });
+
+describe('indicador de pinos do status (RF-MAQ-7)', () => {
+  it('Pn ausente = o firmware não reporta pinos', () => {
+    expect(parsePins(undefined)).toEqual({ reported: false, pins: [] });
+  });
+
+  it('Pn vazio = reporta, mas nenhum pino ativo', () => {
+    expect(parsePins('')).toEqual({ reported: true, pins: [] });
+    expect(parsePins('  ')).toEqual({ reported: true, pins: [] });
+  });
+
+  it('Pn com letras = pinos ativos, na ordem do firmware', () => {
+    expect(parsePins('X')).toEqual({ reported: true, pins: ['X'] });
+    expect(parsePins('XYZ')).toEqual({ reported: true, pins: ['X', 'Y', 'Z'] });
+    expect(parsePins('p')).toEqual({ reported: true, pins: ['P'] });
+    // O firmware real da C1 (`$10=1`) não manda `Pn` — cai no "não reportado".
+    expect(parsePins(fixturePn())).toEqual({ reported: false, pins: [] });
+  });
+});
+
+/** Extrai o campo `Pn` do status real da C1 (não existe em `$10=1`). */
+function fixturePn(): string | undefined {
+  const status = fixture.responses['?']?.[0] ?? '';
+  const match = status.match(/(?:^|\|)Pn:([^|>]*)/);
+  return match ? match[1] : undefined;
+}

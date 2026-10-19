@@ -489,6 +489,25 @@ export const ptBR = {
   'design.doc.width': 'Largura',
   'design.doc.height': 'Altura',
   'design.engraving': 'Gravação',
+  'design.layers': 'Camadas',
+  'design.layer.defaultName': 'Camada {n}',
+  'design.layer.name': 'Nome da camada',
+  'design.layer.add': 'Nova camada',
+  'design.layer.delete': 'Excluir camada',
+  'design.layer.up': 'Mover camada para cima',
+  'design.layer.down': 'Mover camada para baixo',
+  'design.layer.mode': 'Modo da camada',
+  'design.layer.inherit': 'Herdar',
+  'design.layer.power.hint':
+    'Potência da camada (%) — vazio usa o padrão de gravação',
+  'design.layer.speed.hint':
+    'Velocidade da camada (mm/min) — vazio usa o padrão de gravação',
+  'design.layer.passes.hint':
+    'Passadas da camada — vazio usa o padrão de gravação',
+  'design.layer.assign': 'Mover seleção',
+  'design.layer.assigned': '{n} objeto(s) movido(s) para {name}.',
+  'design.layer.needSelection': 'Selecione ao menos um objeto para mover.',
+  'design.layer.deleted': 'Camada {name} excluída.',
   'design.cancel': 'Cancelar',
   'design.text.title': 'Texto',
   'design.text.content': 'Texto',
@@ -705,6 +724,10 @@ export const ptBR = {
   'status.check': 'Verificação',
   'status.home': 'Home',
   'status.sleep': 'Dormindo',
+  'status.pins': 'Pinos',
+  'status.pinsHint': 'Pinos ativos reportados pela máquina (Pn).',
+  'status.pinsUnknown':
+    'A máquina não reporta pinos neste firmware (máscara de status $10). Veja o painel Máquina.',
 
   // -------------------------------------------------------------- preview
   'preview.hint.image':

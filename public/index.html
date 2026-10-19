@@ -661,6 +661,16 @@
       <main class="main">
         <div class="statusbar">
           <span id="stateBadge" class="badge" data-i18n="conn.disconnected">Desconectado</span>
+          <button
+            type="button"
+            id="pinChip"
+            class="chip pin-chip"
+            data-i18n-title="status.pinsUnknown"
+            data-i18n="status.pins"
+            disabled
+          >
+            Pinos
+          </button>
           <div class="dro">
             <div class="axis"><b>X</b><span id="droX">—</span></div>
             <div class="axis"><b>Y</b><span id="droY">—</span></div>
@@ -1632,6 +1642,49 @@
           </div>
 
           <aside class="design-dock">
+            <section class="design-dock-section design-layers-section">
+              <header class="design-dock-head">
+                <span data-i18n="design.layers">Camadas</span>
+                <div class="design-layer-tools">
+                  <button type="button" id="designLayerUp" class="design-mini-btn" data-i18n-title="design.layer.up" title="Mover para cima">↑</button>
+                  <button type="button" id="designLayerDown" class="design-mini-btn" data-i18n-title="design.layer.down" title="Mover para baixo">↓</button>
+                  <button type="button" id="designLayerAdd" class="design-mini-btn" data-i18n-title="design.layer.add" title="Nova camada">+</button>
+                  <button type="button" id="designLayerDelete" class="design-mini-btn" data-i18n-title="design.layer.delete" title="Excluir camada">×</button>
+                </div>
+              </header>
+              <ul id="designLayerList" class="design-layer-list"></ul>
+              <div class="design-layer-editor">
+                <label class="design-field">
+                  <span data-i18n="design.layer.name">Nome da camada</span>
+                  <input type="text" id="designLayerName" spellcheck="false" />
+                </label>
+                <div class="design-dock-row">
+                  <label class="design-mini" data-i18n-title="design.layer.power.hint" title="Potência da camada (%); vazio herda o padrão">
+                    <span data-i18n="design.obj.power">P</span>
+                    <input type="number" id="designLayerPower" min="0" max="100" step="1" placeholder="—" />
+                  </label>
+                  <label class="design-mini" data-i18n-title="design.layer.speed.hint" title="Velocidade da camada (mm/min); vazio herda o padrão">
+                    <span data-i18n="design.obj.speed">V</span>
+                    <input type="number" id="designLayerSpeed" min="100" max="20000" step="50" placeholder="—" />
+                  </label>
+                  <label class="design-mini" data-i18n-title="design.layer.passes.hint" title="Passadas da camada; vazio herda o padrão">
+                    <span data-i18n="design.obj.passes">N</span>
+                    <input type="number" id="designLayerPasses" min="1" max="99" step="1" placeholder="—" />
+                  </label>
+                </div>
+                <div class="design-dock-row">
+                  <label class="design-field">
+                    <span data-i18n="design.layer.mode">Modo</span>
+                    <select id="designLayerMode">
+                      <option value="" data-i18n="design.layer.inherit">Herdar</option>
+                      <option value="M3">M3</option>
+                      <option value="M4">M4</option>
+                    </select>
+                  </label>
+                  <button type="button" id="designLayerAssign" data-i18n="design.layer.assign" disabled>Mover seleção</button>
+                </div>
+              </div>
+            </section>
             <section class="design-dock-section grow">
               <header class="design-dock-head">
                 <span data-i18n="design.objects">Objetos</span>

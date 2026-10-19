@@ -1925,6 +1925,128 @@ html[data-theme="sand"] .design-canvas-wrap {
   color: var(--text-disabled);
 }
 
+/* camadas / multi-operação */
+.design-layer-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.design-mini-btn {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-color: transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-sub);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.design-mini-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.design-mini-btn:disabled {
+  opacity: 0.4;
+}
+
+.design-layer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 116px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.design-layer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+  cursor: pointer;
+  user-select: none;
+}
+
+.design-layer:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.design-layer.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.design-layer.dragover {
+  border-color: var(--accent);
+}
+
+.design-layer-grip {
+  flex: 0 0 auto;
+  color: var(--text-disabled);
+  cursor: grab;
+  letter-spacing: -2px;
+}
+
+.design-layer-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.design-layer-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.design-layer-meta {
+  flex: 0 0 auto;
+  color: var(--text-disabled);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.design-layer-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.design-layer-editor .design-dock-row {
+  align-items: flex-end;
+}
+
+.design-layer-editor button {
+  min-height: 26px;
+}
+
+/* Marca da camada na lista de objetos (mesma cor do canvas). */
+.design-obj-layer {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
 /* barra de status */
 .design-statusbar {
   display: flex;
@@ -2494,6 +2616,22 @@ html[data-theme^="hc-"] a:focus-visible {
 .chip.danger {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+.pin-chip {
+  font-size: var(--fs-11, 11px);
+}
+
+.chip:disabled,
+.chip.muted {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.chip:disabled:hover,
+.chip.muted:hover {
+  background: var(--bg-card);
+  color: var(--text-sub);
 }
 
 .preflight-modal {

@@ -182,6 +182,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-PRV-4 | Exibir caixa delimitadora e área de trabalho da máquina. | Could | ✅ |
 | RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`), colorir o trecho já gravado por passada e usar a potência `S` como intensidade (imagem aparece como será gravada). | Could | ✅ |
 | RF-PRV-6 | **Posicionar a gravadora**: desenhar o **contorno** da área (laser bem fraco) e **marcar o centro** da imagem levando a cabeça até ele (laser desligado). | Should | ✅ |
+| RF-PRV-7 | **Simulação de job**: playback 2D do caminho à velocidade real (play/pause/parar, *seek* na linha do tempo e velocidade 1×–10×), com **tempo estimado** (soma `dist/feed`, `G0` a 3000 mm/min) e a cabeça andando no preview; reusa o preview 2D. | Should | ✅ |
 
 ### M8 — Configuração do GRBL e preferências
 
@@ -268,6 +269,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-DSN-10 | **G-code do desenho sempre válido**: `F` > 0, `0 ≤ S ≤ $30`, `passes ≥ 1` e nenhuma coordenada `NaN`/`Infinity` — entradas inválidas caem em padrão seguro em vez de gerar `error:` no meio do job. | Must | ✅ |
 | RF-DSN-11 | **Preferências do desenho** lembradas entre sessões (velocidade, potência, passadas, modo M3/M4, grade e último texto). | Should | ✅ |
 | RF-DSN-12 | **"Gerar e visualizar"**: perguntar o tamanho da arte, abrir o posicionamento (contorno/centro + parâmetros) e regerar o G-code; o preview pinta **só a queima** (a caixa da área de trabalho é referência). | Must | ✅ |
+| RF-DSN-13 | **Camadas / multi-operação**: cada objeto pertence a uma camada; a ordem das camadas é a ordem de execução e cada uma tem potência/velocidade/passadas/modo próprios (vazio herda o global). Permite **gravar + cortar numa execução**, reordenar **arrastando** (ou ↑/↓) e move a seleção entre camadas. O G-code emite **`M5` antes de trocar potência/modo** e repete as passadas da camada × objeto. | Must | ✅ |
 
 ### M14 — Informação da máquina, pré-voo e diagnóstico
 
@@ -278,14 +280,14 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
-| RF-MAQ-1 | **Ler `$I`**: firmware, plataforma, opções (`V`/`C`/`M`), profundidade do planner e buffer RX, tolerando variações (`[VER:1.3a.20250324:]`, `[OPT:H]` sem números) e o `[MSG:…]` de auto-identificação. | Must | ⬜ |
-| RF-MAQ-2 | **Ler `$$`** e derivar fatos: curso (`$130/$131/$132`), velocidade/aceleração máximas, passos/mm, faixa de `S` (`$30/$31`), modo laser/PWM (`$32/$33`), limites (`$20/$21`), homing (`$22-$26`), inversões, máscara de status e unidade — todo campo **opcional**. | Must | ⬜ |
-| RF-MAQ-3 | **Ler `$G`** (estado modal), **`$#`** (G54–G59, G28/G30, G92, TLO, PRB) e **`$N`** (*startup blocks*, ignorando linhas vazias). | Must | ⬜ |
-| RF-MAQ-4 | **Painel "Máquina"** com firmware, curso, limites, laser, offsets e "agora", com **degradação graciosa**: o que o firmware não informa aparece como `—` + "o firmware não informa". | Must | ⬜ |
-| RF-MAQ-5 | **Área de trabalho do preview** vinda do curso real da máquina, com aviso quando o job não cabe. | Must | 🟡 |
-| RF-MAQ-6 | **Pré-voo MX-1…MX-15** antes de iniciar o job, com severidade (`block`/`warn`/`info`), causa explícita e ação de 1 clique; `block` só no que o GRBL rejeitaria (`error:15/17/22`) ou que **queima errado**. | Must | ⬜ |
-| RF-MAQ-7 | **Indicador de pinos** (`Pn`) na barra de status; quando o firmware não reporta (máscara `$10`), fica desabilitado **com explicação** — sem sugerir escrita de setting por conta própria. | Should | ⬜ |
-| RF-MAQ-8 | **"Copiar diagnóstico"**: texto único e colável (firmware, transporte, curso, limites, laser, offsets, status, startup e alarmes), sem dados pessoais, funcionando **sem rede**. | Should | ⬜ |
+| RF-MAQ-1 | **Ler `$I`**: firmware, plataforma, opções (`V`/`C`/`M`), profundidade do planner e buffer RX, tolerando variações (`[VER:1.3a.20250324:]`, `[OPT:H]` sem números) e o `[MSG:…]` de auto-identificação. | Must | ✅ |
+| RF-MAQ-2 | **Ler `$$`** e derivar fatos: curso (`$130/$131/$132`), velocidade/aceleração máximas, passos/mm, faixa de `S` (`$30/$31`), modo laser/PWM (`$32/$33`), limites (`$20/$21`), homing (`$22-$26`), inversões, máscara de status e unidade — todo campo **opcional**. | Must | ✅ |
+| RF-MAQ-3 | **Ler `$G`** (estado modal), **`$#`** (G54–G59, G28/G30, G92, TLO, PRB) e **`$N`** (*startup blocks*, ignorando linhas vazias). | Must | ✅ |
+| RF-MAQ-4 | **Painel "Máquina"** com firmware, curso, limites, laser, offsets e "agora", com **degradação graciosa**: o que o firmware não informa aparece como `—` + "o firmware não informa". | Must | ✅ |
+| RF-MAQ-5 | **Área de trabalho do preview** vinda do curso real da máquina, com aviso quando o job não cabe. | Must | ✅ |
+| RF-MAQ-6 | **Pré-voo MX-1…MX-15** antes de iniciar o job, com severidade (`block`/`warn`/`info`), causa explícita e ação de 1 clique; `block` só no que o GRBL rejeitaria (`error:15/17/22`) ou que **queima errado**. | Must | ✅ |
+| RF-MAQ-7 | **Indicador de pinos** (`Pn`) na barra de status; quando o firmware não reporta (máscara `$10`), fica desabilitado **com explicação** — sem sugerir escrita de setting por conta própria. | Should | ✅ |
+| RF-MAQ-8 | **"Copiar diagnóstico"**: texto único e colável (firmware, transporte, curso, limites, laser, offsets, status, startup e alarmes), sem dados pessoais, funcionando **sem rede**. | Should | ✅ |
 | RF-MAQ-9 | **Nenhuma escrita de setting sem consentimento**: toda correção sugerida pelo pré-voo ou pelo perfil mostra valor **antes/depois** e pede confirmação. | Must | ✅ |
 | RF-MAQ-10 | **Perfil de máquina é o lugar dos valores específicos**: curso, homing, `S-max` (`$30`), módulo do laser, potência do laser "de apontar" e o conjunto mínimo de settings ficam no perfil, não chumbados no código. | Must | ✅ |
 

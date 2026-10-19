@@ -119,6 +119,7 @@ const el = {
   progressBar: $('progressBar'),
   progressText: $('progressText'),
   stateBadge: $('stateBadge'),
+  pinChip: $('pinChip'),
   droX: $('droX'),
   droY: $('droY'),
   droZ: $('droZ'),
@@ -780,6 +781,14 @@ const designState = {
   textEdit: null,
   clipboard: null,
   seq: 0,
+  /** Camadas/operações na ordem de execução (`Shape.layer` → `id`). */
+  layers: [],
+  /** Id da camada que recebe formas novas e cujos parâmetros são editados. */
+  activeLayer: null,
+  /** Id da camada sendo arrastada na lista (drag & drop). */
+  dragLayer: null,
+  /** Contador de ids de camada (`l1`, `l2`, …). */
+  layerSeq: 1,
   /** Linhas de guia do snap a objetos em mm (`{x, y}`, `null` = sem guia). */
   guides: null,
 };
@@ -1097,6 +1106,10 @@ function dNextName(kind) {
 }
 
 function dAddShape(shape) {
+  // Formas novas nascem na camada ativa (a primeira, por padrão).
+  if (!shape.layer && designState.activeLayer) {
+    shape.layer = designState.activeLayer;
+  }
   designState.shapes.push(shape);
   dPushHistory();
   designState.selection = designState.shapes
@@ -1328,6 +1341,7 @@ function dStyleOf(shape) {
   if (shape.speed !== undefined) style.speed = shape.speed;
   if (shape.power !== undefined) style.power = shape.power;
   if (shape.passes !== undefined) style.passes = shape.passes;
+  if (shape.layer !== undefined) style.layer = shape.layer;
   return style;
 }
 
@@ -1924,12 +1938,373 @@ function dUpdateObjectList() {
     });
 
     li.addEventListener('click', (e) => dSelectShape(idxs[0], e.shiftKey));
+    // Marca da camada (mesma cor usada no canvas).
+    const layer = dLayerById(sh.layer);
+    if (layer) {
+      const dot = document.createElement('span');
+      dot.className = 'design-obj-layer';
+      dot.style.background =
+        layer.color || dLayerColor(designState.layers.indexOf(layer));
+      dot.title = dLayerLabel(layer);
+      li.appendChild(dot);
+    }
     li.appendChild(ic);
     li.appendChild(label);
     if (info) li.appendChild(info);
     li.appendChild(del);
     ul.appendChild(li);
   }
+}
+
+// ------------------------------------------------------ camadas / operações
+//
+// A ordem da lista é a ordem de execução do job. Cada camada pode ter sua
+// potência/velocidade/passadas/modo; campo vazio herda o padrão global da
+// seção “Gravação” (que continua valendo para objetos sem camada).
+
+const D_LAYERS_KEY = 'grbl-design-layers';
+const D_LAYER_COLORS = [
+  '#e05252',
+  '#e0a252',
+  '#7bbf5a',
+  '#4bb3b3',
+  '#5a8fe0',
+  '#9b6be0',
+  '#e05aa8',
+  '#8a8a8a',
+];
+
+function dLayerColor(index) {
+  return D_LAYER_COLORS[index % D_LAYER_COLORS.length];
+}
+
+function dLayerById(id) {
+  return designState.layers.find((l) => l.id === id) || null;
+}
+
+function dActiveLayer() {
+  return dLayerById(designState.activeLayer) || designState.layers[0] || null;
+}
+
+function dLayerLabel(layer) {
+  if (!layer) return '';
+  if (layer.name) return layer.name;
+  const i = designState.layers.findIndex((l) => l.id === layer.id);
+  return t('design.layer.defaultName', { n: i + 1 });
+}
+
+/** Garante ao menos uma camada válida e ids únicos (`l1`, `l2`, …). */
+function dEnsureLayers() {
+  if (!Array.isArray(designState.layers)) designState.layers = [];
+  designState.layers = designState.layers
+    .filter((l) => l && typeof l.id === 'string' && l.id)
+    .map((l, i) => ({ ...l, color: l.color || dLayerColor(i) }));
+  if (!designState.layers.length) {
+    designState.layers.push({ id: 'l1', color: dLayerColor(0) });
+  }
+  let max = 0;
+  for (const l of designState.layers) {
+    const m = /^l(\d+)$/.exec(l.id);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  designState.layerSeq = Math.max(designState.layerSeq, max + 1);
+  if (!dLayerById(designState.activeLayer)) {
+    designState.activeLayer = designState.layers[0].id;
+  }
+  // Objetos apontando para camadas que não existem mais voltam ao padrão.
+  const ids = new Set(designState.layers.map((l) => l.id));
+  for (const sh of designState.shapes) {
+    if (sh.layer && !ids.has(sh.layer)) delete sh.layer;
+  }
+}
+
+function dSaveLayers() {
+  try {
+    localStorage.setItem(
+      D_LAYERS_KEY,
+      JSON.stringify({
+        layers: designState.layers,
+        active: designState.activeLayer,
+      }),
+    );
+  } catch {
+    /* sem localStorage: camadas só valem nesta sessão */
+  }
+}
+
+function dRestoreLayers() {
+  try {
+    const raw = localStorage.getItem(D_LAYERS_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p && Array.isArray(p.layers)) designState.layers = p.layers;
+    if (p && typeof p.active === 'string') designState.activeLayer = p.active;
+  } catch {
+    /* preferência inválida: volta ao padrão */
+  }
+}
+
+function dSetActiveLayer(id) {
+  if (!dLayerById(id)) return;
+  designState.activeLayer = id;
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+/** Liga/desliga os botões de camada conforme seleção e posição. */
+function dUpdateLayerButtons() {
+  const layer = dActiveLayer();
+  const idx = layer ? designState.layers.indexOf(layer) : -1;
+  const set = (id, disabled) => {
+    const node = $(id);
+    if (node) node.disabled = disabled;
+  };
+  set('designLayerDelete', designState.layers.length <= 1);
+  set('designLayerUp', idx <= 0);
+  set('designLayerDown', idx < 0 || idx >= designState.layers.length - 1);
+  set('designLayerAssign', !layer || !designState.selection.length);
+}
+
+/** Lista de camadas (topo = primeira a executar), com drag & drop. */
+function dUpdateLayerList() {
+  const ul = $('designLayerList');
+  if (!ul) return;
+  ul.textContent = '';
+  const active = dActiveLayer();
+  for (let index = 0; index < designState.layers.length; index++) {
+    const layer = designState.layers[index];
+    const li = document.createElement('li');
+    li.className = `design-layer${active && active.id === layer.id ? ' active' : ''}`;
+    li.draggable = true;
+    li.dataset.layer = layer.id;
+
+    const grip = document.createElement('span');
+    grip.className = 'design-layer-grip';
+    grip.textContent = '⋮⋮';
+    grip.setAttribute('aria-hidden', 'true');
+
+    const dot = document.createElement('span');
+    dot.className = 'design-layer-dot';
+    dot.style.background = layer.color || dLayerColor(index);
+
+    const label = document.createElement('span');
+    label.className = 'design-layer-label';
+    label.textContent = dLayerLabel(layer);
+
+    const meta = [];
+    if (typeof layer.power === 'number' && Number.isFinite(layer.power))
+      meta.push(`${Math.round(layer.power)}%`);
+    if (typeof layer.speed === 'number' && Number.isFinite(layer.speed))
+      meta.push(`${Math.round(layer.speed)}`);
+    if (typeof layer.passes === 'number' && Number.isFinite(layer.passes))
+      meta.push(`×${Math.round(layer.passes)}`);
+
+    li.append(grip, dot, label);
+    if (meta.length) {
+      const info = document.createElement('span');
+      info.className = 'design-layer-meta';
+      info.textContent = meta.join(' · ');
+      li.appendChild(info);
+    }
+
+    li.addEventListener('click', () => dSetActiveLayer(layer.id));
+    li.addEventListener('dragstart', (e) => {
+      designState.dragLayer = layer.id;
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', layer.id);
+      }
+      li.classList.add('dragging');
+    });
+    li.addEventListener('dragend', () => {
+      designState.dragLayer = null;
+      li.classList.remove('dragging');
+      for (const row of ul.children) row.classList.remove('dragover');
+    });
+    li.addEventListener('dragover', (e) => {
+      if (!designState.dragLayer || designState.dragLayer === layer.id) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      li.classList.add('dragover');
+    });
+    li.addEventListener('dragleave', () => li.classList.remove('dragover'));
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      li.classList.remove('dragover');
+      dMoveLayer(designState.dragLayer, layer.id);
+    });
+
+    ul.appendChild(li);
+  }
+  dUpdateLayerButtons();
+}
+
+/** Reordena a camada `id` para a posição da camada `targetId`. */
+function dMoveLayer(id, targetId) {
+  if (!id || !targetId || id === targetId) return;
+  const from = designState.layers.findIndex((l) => l.id === id);
+  const target = designState.layers.findIndex((l) => l.id === targetId);
+  if (from < 0 || target < 0) return;
+  const [layer] = designState.layers.splice(from, 1);
+  const after = designState.layers.findIndex((l) => l.id === targetId);
+  const insertAt = from < target ? after + 1 : after;
+  designState.layers.splice(insertAt, 0, layer);
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+function dMoveLayerBy(delta) {
+  const layer = dActiveLayer();
+  if (!layer) return;
+  const i = designState.layers.indexOf(layer);
+  const j = i + delta;
+  if (j < 0 || j >= designState.layers.length) return;
+  designState.layers.splice(i, 1);
+  designState.layers.splice(j, 0, layer);
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+function dAddLayer() {
+  const id = `l${designState.layerSeq++}`;
+  designState.layers.push({
+    id,
+    color: dLayerColor(designState.layers.length),
+  });
+  designState.activeLayer = id;
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+  dRender();
+}
+
+function dDeleteLayer() {
+  if (designState.layers.length <= 1) return;
+  const layer = dActiveLayer();
+  if (!layer) return;
+  const label = dLayerLabel(layer);
+  designState.layers = designState.layers.filter((l) => l.id !== layer.id);
+  // Os objetos da camada não somem: voltam a usar os parâmetros globais.
+  for (const sh of designState.shapes) {
+    if (sh.layer === layer.id) delete sh.layer;
+  }
+  designState.activeLayer = designState.layers[0].id;
+  dPushHistory();
+  dSaveLayers();
+  dRender();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+  dUpdateObjectList();
+  dStatus(t('design.layer.deleted', { name: label }), 'ok');
+}
+
+/** Move os objetos selecionados para a camada ativa. */
+function dAssignSelectionToLayer() {
+  const layer = dActiveLayer();
+  if (!layer) return;
+  if (!designState.selection.length) {
+    dStatus(t('design.layer.needSelection'), 'error');
+    return;
+  }
+  for (const i of designState.selection) {
+    const sh = designState.shapes[i];
+    if (sh) sh.layer = layer.id;
+  }
+  dPushHistory();
+  dRender();
+  dUpdateObjectList();
+  dUpdateLayerButtons();
+  dStatus(
+    t('design.layer.assigned', {
+      name: dLayerLabel(layer),
+      n: designState.selection.length,
+    }),
+    'ok',
+  );
+}
+
+/** Aplica um campo numérico da camada ativa (vazio = herda o global). */
+function dApplyLayerParam(id, key, lo, hi) {
+  const layer = dActiveLayer();
+  const node = $(id);
+  if (!layer || !node) return;
+  const raw = node.value.trim();
+  if (raw === '') {
+    delete layer[key];
+  } else {
+    const n = Number(raw.replace(',', '.'));
+    if (!Number.isFinite(n)) return;
+    layer[key] = dClamp(n, lo, hi);
+  }
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+function dApplyLayerName() {
+  const layer = dActiveLayer();
+  const node = $('designLayerName');
+  if (!layer || !node) return;
+  const name = node.value.trim();
+  if (name) layer.name = name;
+  else delete layer.name;
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+function dApplyLayerMode() {
+  const layer = dActiveLayer();
+  const node = $('designLayerMode');
+  if (!layer || !node) return;
+  if (node.value === 'M3' || node.value === 'M4') layer.mode = node.value;
+  else delete layer.mode;
+  dSaveLayers();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+}
+
+/** Preenche os campos da camada ativa; vazio = herda (placeholder). */
+function dUpdateLayerEditor() {
+  const layer = dActiveLayer();
+  for (const id of [
+    'designLayerName',
+    'designLayerPower',
+    'designLayerSpeed',
+    'designLayerPasses',
+    'designLayerMode',
+  ]) {
+    const node = $(id);
+    if (node) node.disabled = !layer;
+  }
+
+  const name = $('designLayerName');
+  if (name) {
+    name.value = layer?.name || '';
+    name.placeholder = layer ? dLayerLabel(layer) : '';
+  }
+
+  const setNum = (id, key, globalId) => {
+    const node = $(id);
+    if (!node) return;
+    const v = layer ? layer[key] : undefined;
+    node.value =
+      typeof v === 'number' && Number.isFinite(v) ? String(Math.round(v)) : '';
+    const g = dNum(globalId, 0);
+    node.placeholder = g ? String(Math.round(g)) : '—';
+  };
+  setNum('designLayerPower', 'power', 'designPower');
+  setNum('designLayerSpeed', 'speed', 'designSpeed');
+  setNum('designLayerPasses', 'passes', 'designPasses');
+
+  const mode = $('designLayerMode');
+  if (mode) {
+    mode.value = layer?.mode === 'M3' || layer?.mode === 'M4' ? layer.mode : '';
+  }
+  dUpdateLayerButtons();
 }
 
 function dUpdateStatus() {
@@ -2015,6 +2390,7 @@ function dUpdateButtons() {
     redo.disabled = designState.historyIdx >= designState.history.length - 1;
   const lock = $('designLockAspect');
   if (lock) lock.classList.toggle('active', designState.lockAspect);
+  dUpdateLayerButtons();
 }
 
 function dUpdateDocBadge() {
@@ -2130,6 +2506,9 @@ function dPaint() {
   ctx.scale(v.scale, v.scale);
   const accent = '#0a84ff';
   const baseLw = 1.4 / v.scale;
+  const layerColors = new Map(
+    designState.layers.map((l, i) => [l.id, l.color || dLayerColor(i)]),
+  );
   for (let i = 0; i < designState.shapes.length; i++) {
     const sh = designState.shapes[i];
     if (!sh.points.length) continue;
@@ -2139,7 +2518,10 @@ function dPaint() {
       ctx.fillStyle = selected ? 'rgba(10,132,255,0.10)' : 'rgba(0,0,0,0.035)';
       ctx.fill();
     }
-    ctx.strokeStyle = selected ? accent : '#1b1b1b';
+    // Fora da seleção, a cor identifica a camada/operação da forma.
+    ctx.strokeStyle = selected
+      ? accent
+      : (sh.layer && layerColors.get(sh.layer)) || '#1b1b1b';
     // Espessura do traço em mm (mesma unidade do contexto), centrada no
     // caminho — é exatamente a faixa que a gravação cobre.
     const thick = sh.width && sh.width > 0 ? sh.width : 0;
@@ -2637,7 +3019,7 @@ async function dCommitText() {
     keep = designState.shapes[edit.indices[0]] ?? null;
   const style = {};
   if (keep) {
-    for (const k of ['speed', 'power', 'passes', 'width']) {
+    for (const k of ['speed', 'power', 'passes', 'width', 'layer']) {
       if (keep[k] !== undefined) style[k] = keep[k];
     }
   }
@@ -2658,6 +3040,9 @@ async function dCommitText() {
     sh.name = name;
     sh.text = { value, font, size, mode, bold, spacing };
     Object.assign(sh, style);
+    if (!sh.layer && designState.activeLayer) {
+      sh.layer = designState.activeLayer;
+    }
   }
   const base = designState.shapes.length;
   designState.shapes.push(...shapes);
@@ -3546,6 +3931,8 @@ function dLoadPrefs() {
   const h = $('designPageH');
   if (h) h.value = String(designState.page.h);
   dRestoreDesignPrefs();
+  dRestoreLayers();
+  dEnsureLayers();
 }
 
 // --------------------------------------------------------------- modal/open
@@ -3575,6 +3962,8 @@ async function openDesignModal() {
     dFitPage();
     dUpdateZoom();
     dUpdateProps();
+    dUpdateLayerList();
+    dUpdateLayerEditor();
     dUpdateObjectList();
     dUpdateStatus();
     dUpdateButtons();
@@ -3654,6 +4043,7 @@ function designGenerate({ autoStart = false } = {}) {
       shapes: designState.shapes,
       width: designState.page.w,
       height: designState.page.h,
+      layers: designState.layers,
     },
     dReadEngraveOptions(),
   );
@@ -3677,6 +4067,7 @@ async function designSave() {
       shapes: designState.shapes,
       width: designState.page.w,
       height: designState.page.h,
+      layers: designState.layers,
     },
     dReadEngraveOptions(),
   );
@@ -3930,6 +4321,36 @@ function dConfirmSize() {
   if (styleCopy) styleCopy.addEventListener('click', dCopyStyle);
   const stylePaste = $('designPasteStyle');
   if (stylePaste) stylePaste.addEventListener('click', dPasteStyle);
+
+  // camadas / multi-operação
+  const layerAdd = $('designLayerAdd');
+  if (layerAdd) layerAdd.addEventListener('click', dAddLayer);
+  const layerDelete = $('designLayerDelete');
+  if (layerDelete) layerDelete.addEventListener('click', dDeleteLayer);
+  const layerUp = $('designLayerUp');
+  if (layerUp) layerUp.addEventListener('click', () => dMoveLayerBy(-1));
+  const layerDown = $('designLayerDown');
+  if (layerDown) layerDown.addEventListener('click', () => dMoveLayerBy(1));
+  const layerAssign = $('designLayerAssign');
+  if (layerAssign)
+    layerAssign.addEventListener('click', dAssignSelectionToLayer);
+  const layerName = $('designLayerName');
+  if (layerName) {
+    layerName.addEventListener('input', dApplyLayerName);
+    layerName.addEventListener('change', dApplyLayerName);
+  }
+  for (const [id, key, lo, hi] of [
+    ['designLayerPower', 'power', 0, 100],
+    ['designLayerSpeed', 'speed', 100, 20000],
+    ['designLayerPasses', 'passes', 1, 99],
+  ]) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('change', () => dApplyLayerParam(id, key, lo, hi));
+    }
+  }
+  const layerMode = $('designLayerMode');
+  if (layerMode) layerMode.addEventListener('change', dApplyLayerMode);
 
   const genBtn = $('designGenerate');
   if (genBtn) genBtn.addEventListener('click', dOpenSizeDialog);
@@ -7309,6 +7730,14 @@ function refreshTexts() {
     // Re-traduz o modal (os valores dos inputs não mudam).
   }
   renderPreview();
+  updatePinChip(state.lastStatus);
+  // O editor de desenho monta as listas com `t()`; ao trocar de idioma,
+  // re-renderiza (nomes de camada, objetos e botões contextuais).
+  if (el.designOverlay && !el.designOverlay.classList.contains('hidden')) {
+    dUpdateObjectList();
+    dUpdateLayerList();
+    dUpdateLayerEditor();
+  }
 }
 
 /** Atualiza o título do botão Home e o hint do perfil conforme a máquina atual. */
@@ -8659,6 +9088,30 @@ function updateDtg(s) {
     state.units === 'in' ? (d * IN_PER_MM).toFixed(4) : d.toFixed(3);
 }
 
+/**
+ * Indicador de pinos `Pn` na barra de status (RF-MAQ-7). Fica **desabilitado
+ * com explicação** quando o firmware não reporta pinos (máscara `$10`), sem
+ * sugerir escrever setting por conta própria.
+ */
+function updatePinChip(s) {
+  if (!el.pinChip) return;
+  const parsePins = window.GRBL_MACHINES?.parsePins;
+  const report = parsePins
+    ? parsePins(s?.pn)
+    : { reported: s?.pn !== undefined, pins: [] };
+  const value = report.pins.length
+    ? report.pins.join(' ')
+    : t('machine.pins.none');
+  el.pinChip.disabled = !report.reported;
+  el.pinChip.classList.toggle('muted', !report.reported);
+  el.pinChip.textContent = `${t('status.pins')}: ${
+    report.reported ? value : '—'
+  }`;
+  el.pinChip.title = report.reported
+    ? t('status.pinsHint')
+    : t('status.pinsUnknown');
+}
+
 /** Tempo restante estimado (RF-GC-5) a partir do progresso do job. */
 function updateEta(p) {
   if (!el.progressEta) return;
@@ -8750,6 +9203,7 @@ window.grbl.onStatus((s) => {
   el.stateBadge.textContent = stateLabel(s.state);
 
   updateDro();
+  updatePinChip(s);
   el.metaFeed.textContent = s.fs ? `${s.fs.feed}` : '—';
   el.metaS.textContent = s.fs ? `${s.fs.spindle}` : '—';
   updateDtg(s);

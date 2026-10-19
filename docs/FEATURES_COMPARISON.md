@@ -1,6 +1,6 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 18/10/2026 (**v0.5.1**). Status reflete o código atual em `main`.
+> Atualizado em 19/10/2026 (**v0.8.0**). Status reflete o código atual em `main`.
 > Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
 > Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
@@ -30,7 +30,7 @@
 | Booleanas / contorno paralelo (offset) | Não | Sim | ✅ |
 | Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |
-| Camadas / multi-operação (gravar + cortar) | Não | Não (P2.2) | ⬜ |
+| Camadas / multi-operação (gravar + cortar) | Não | Sim (parâmetros por camada + ordem de execução) | ✅ |
 | Nesting | Não | Não | ⬜ |
 
 ## Preview
@@ -40,6 +40,7 @@
 | OpenGL Preview | Sim | Não | ⬜ |
 | Visualização tempo real | Sim | Sim (crosshair + trecho por passada) | ✅ |
 | Cores por passada / intensidade (S) | Parcial | Sim | ✅ |
+| Simulação de job (playback + tempo) | Não | Sim (P2.3/RF-PRV-7: play/pause/seek, 1×–10×, tempo estimado) | ✅ |
 
 ## Importação
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -55,10 +56,12 @@
 ## Ferramentas de geração (RF-SYM-*)
 | Feature | LaserGRBL | GRBL Studio | Status |
 |---|---|---|---|
-| Gerador de **QR Code** (ECC L/M/Q/H, dimensões em mm, quiet zone) | Não | Planejado (fase S1) | ⬜ |
-| Gerador de **código de barras** (Code 128, EAN-13/8, UPC-A, Code 39) | Não | Planejado (fase S2) | ⬜ |
-| Texto legível sob o código (HRI) | Não | Planejado (fase S2) | ⬜ |
-| Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Planejado (fase S3) | ⬜ |
+| Gerador de **QR Code** (ECC L/M/Q/H, dimensões em mm, quiet zone) | Não | Sim (ISO/IEC 18004 próprio, v0.6.0) | ✅ |
+| Gerador de **código de barras** (Code 128, EAN-13/8, UPC-A, Code 39) | Não | Sim (v0.6.0) | ✅ |
+| Simbologias 1D extras (ITF-14, Codabar, Code 93 Full ASCII, GS1-128) | Não | Sim (v0.7.0) | ✅ |
+| Texto legível sob o código (HRI) | Não | Sim (fonte de traço único) | ✅ |
+| Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Data Matrix ECC200 (v0.7.0); faltam PDF417/Aztec | 🟡 |
+| Vários símbolos em grade (RF-SYM-9) | Não | Não (planejado S3) | ⬜ |
 
 > Comparação: o **LightBurn** tem `Tools → Create Bar Code` (motor **zint**,
 > ~50 simbologias); o **LaserGRBL** não tem nenhuma ferramenta de geração.
@@ -72,16 +75,15 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (746 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1018 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Camadas / multi-operação** (P2.2) — maior lacuna de produção.
+2. **Importação DXF/PDF** (P2.4) — SVG já existe (P1.6).
 3. **Catálogo de máquinas** (P2.5) + import de perfis `.lbdev` do LightBurn.
-4. **Simulação de job** (P2.3).
-5. **Importação DXF/PDF** (P2.4) — SVG já existe (P1.6).
-6. **Câmera + rotativa** (P3.1/P3.2).
-7. Geradores de QR Code e código de barras (P2.7/P2.8 — `PLANO_QR_BARCODE.md`).
+4. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
+5. **Câmera + rotativa** (P3.1/P3.2).
+6. **Simbologias restantes** (PDF417/Aztec) e **grade de símbolos** (RF-SYM-9).

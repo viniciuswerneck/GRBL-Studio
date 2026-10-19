@@ -482,6 +482,25 @@ export const es = {
   'design.doc.width': 'Ancho',
   'design.doc.height': 'Alto',
   'design.engraving': 'Grabado',
+  'design.layers': 'Capas',
+  'design.layer.defaultName': 'Capa {n}',
+  'design.layer.name': 'Nombre de la capa',
+  'design.layer.add': 'Nueva capa',
+  'design.layer.delete': 'Eliminar capa',
+  'design.layer.up': 'Subir capa',
+  'design.layer.down': 'Bajar capa',
+  'design.layer.mode': 'Modo de la capa',
+  'design.layer.inherit': 'Heredar',
+  'design.layer.power.hint':
+    'Potencia de la capa (%) — vacío usa el valor de grabado',
+  'design.layer.speed.hint':
+    'Velocidad de la capa (mm/min) — vacío usa el valor de grabado',
+  'design.layer.passes.hint':
+    'Pasadas de la capa — vacío usa el valor de grabado',
+  'design.layer.assign': 'Mover selección',
+  'design.layer.assigned': '{n} objeto(s) movido(s) a {name}.',
+  'design.layer.needSelection': 'Selecciona al menos un objeto para mover.',
+  'design.layer.deleted': 'Capa {name} eliminada.',
   'design.cancel': 'Cancelar',
   'design.text.title': 'Texto',
   'design.text.content': 'Texto',
@@ -700,6 +719,10 @@ export const es = {
   'status.check': 'Verificación',
   'status.home': 'Home',
   'status.sleep': 'Reposo',
+  'status.pins': 'Pines',
+  'status.pinsHint': 'Pines activos informados por la máquina (Pn).',
+  'status.pinsUnknown':
+    'La máquina no informa pines en este firmware (máscara de estado $10). Ver el panel Máquina.',
 
   // -------------------------------------------------------------- preview
   'preview.hint.image': 'Cargue una imagen para preparar el archivo de grabado',

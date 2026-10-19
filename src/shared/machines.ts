@@ -335,3 +335,29 @@ export function findMachineProfile(id?: string): MachineProfile | undefined {
 export function machineProfile(id?: string): MachineProfile {
   return findMachineProfile(id) ?? MACHINE_PROFILES[0];
 }
+
+/** Leitura do campo `Pn` do status (`?`) — indicador de pinos (RF-MAQ-7). */
+export interface PinReport {
+  /** `false` quando o firmware **não incluiu** `Pn` no status (máscara `$10`). */
+  reported: boolean;
+  /** Letras dos pinos ativos, na ordem em que o firmware reporta (`Pn:XYZ`). */
+  pins: string[];
+}
+
+/**
+ * Interpreta o campo `Pn` do status do GRBL (RF-MAQ-7):
+ * - **ausente** (`undefined`) → o firmware não reporta pinos (ex.: `$10=1`);
+ * - **vazio** (`Pn:`) → reporta, mas nenhum pino está ativo;
+ * - **com letras** → pinos ativos (limite X/Y/Z, sonda `P`, etc.).
+ *
+ * Mora neste bundle (o de máquina, sempre carregado) porque a barra de status
+ * precisa responder **sem** abrir o painel Máquina, que carrega sob demanda.
+ */
+export function parsePins(pn?: string): PinReport {
+  if (pn === undefined) return { reported: false, pins: [] };
+  const pins = pn
+    .toUpperCase()
+    .split('')
+    .filter((ch) => ch >= 'A' && ch <= 'Z');
+  return { reported: true, pins };
+}

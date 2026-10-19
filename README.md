@@ -82,9 +82,9 @@ Como o GRBL Studio se compara aos principais programas de laser — dados de
 | Preço / licença | **Grátis, MIT** | US$ 99/199 + updates | Grátis, MIT | Grátis, GPLv3 | Grátis (só xTool) |
 | Linux nativo | ✅ | ✅ | ✅ | ❌ | ❌ |
 | QR / Data Matrix / código de barras | ✅ | ✅ | ❌ | ❌ | ✅ (com lote) |
-| Camadas / multi-operação | ❌ (no roadmap) | ✅ | ✅ | ❌ | ✅ |
+| Camadas / multi-operação | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Câmera / rotativa | ❌ (no roadmap) | ✅ | ✅ | ❌ | ✅ |
-| Protocolo testado | ✅ 584 testes + 13 E2E | n/d | n/d | ❌ | n/d |
+| Protocolo testado | ✅ 674 testes + E2E | n/d | n/d | ❌ | n/d |
 
 ## Documentação
 

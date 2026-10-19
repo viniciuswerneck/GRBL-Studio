@@ -470,6 +470,24 @@ export const en = {
   'design.doc.width': 'Width',
   'design.doc.height': 'Height',
   'design.engraving': 'Engraving',
+  'design.layers': 'Layers',
+  'design.layer.defaultName': 'Layer {n}',
+  'design.layer.name': 'Layer name',
+  'design.layer.add': 'New layer',
+  'design.layer.delete': 'Delete layer',
+  'design.layer.up': 'Move layer up',
+  'design.layer.down': 'Move layer down',
+  'design.layer.mode': 'Layer mode',
+  'design.layer.inherit': 'Inherit',
+  'design.layer.power.hint':
+    'Layer power (%) — empty uses the engraving default',
+  'design.layer.speed.hint':
+    'Layer speed (mm/min) — empty uses the engraving default',
+  'design.layer.passes.hint': 'Layer passes — empty uses the engraving default',
+  'design.layer.assign': 'Move selection',
+  'design.layer.assigned': '{n} object(s) moved to {name}.',
+  'design.layer.needSelection': 'Select at least one object to move.',
+  'design.layer.deleted': 'Layer {name} deleted.',
   'design.cancel': 'Cancel',
   'design.text.title': 'Text',
   'design.text.content': 'Text',
@@ -682,6 +700,10 @@ export const en = {
   'status.check': 'Check',
   'status.home': 'Home',
   'status.sleep': 'Sleep',
+  'status.pins': 'Pins',
+  'status.pinsHint': 'Active pins reported by the machine (Pn).',
+  'status.pinsUnknown':
+    'The machine does not report pins in this firmware (status mask $10). See the Machine panel.',
 
   // -------------------------------------------------------------- preview
   'preview.hint.image': 'Load an image to prepare the engraving file',

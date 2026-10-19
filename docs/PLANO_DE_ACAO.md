@@ -37,6 +37,14 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > mas **startup e RAM seguem acima do orçamento** nesta máquina — números e
 > ressalvas em `docs/BENCHMARK.md`. `RF-SYM-7` ganhou Code 93 Full ASCII e a
 > validação de AIs GS1-128; PDF417/Aztec continuam fora.
+>
+> **Nota (19/10/2026):** o módulo **M14** foi reconciliado no `PRODUCT_SPEC.md`
+> (RF-MAQ-1…8 ✅, incluindo o **chip de pinos `Pn`** na barra de status,
+> desabilitado com explicação quando o firmware não reporta) e a **simulação de
+> job** virou o requisito **RF-PRV-7** (entregue na 0.5.0). Nesta data entrou
+> **RF-DSN-13 (camadas / multi-operação, P2.2)**: parâmetros por camada, ordem de
+> execução reordenável e `M5` antes das trocas de potência. `RF-SYM-9` (grade de
+> símbolos) segue pendente.
 
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
@@ -56,6 +64,7 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | :--- | :--- | :--- |
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
 | RF-SYM-7 | 🟡 | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; falta PDF417/Aztec |
+| RF-SYM-9 | ⬜ | Vários símbolos em grade a partir de uma lista (fase S3) |
 
 > **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,
 > RF-CFG-4/5 e RNF-9 foram **implementados** nesta data: log de sessão
