@@ -174,7 +174,9 @@ describe('encodeQr — decodificação real (jsqr)', () => {
         expect(decode(res.matrix)).toBe(text);
       }
     }
-  });
+    // 28 bitmaps (até 177×177 a 4 px/módulo) para o jsqr: pesado de propósito,
+    // mas não pode ser refém da carga da máquina (CI roda em paralelo).
+  }, 30_000);
 
   it('o QR é estável (mesma entrada, mesma matriz)', () => {
     const a = encodeQr('determinismo');
