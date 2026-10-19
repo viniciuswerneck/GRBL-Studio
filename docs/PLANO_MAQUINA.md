@@ -371,7 +371,7 @@ Correção (vigia de silêncio, §11.6.4):
 | Regra | Porquê |
 | :--- | :--- |
 | Sedo ≥ 5 s sem **nenhum** status (`?`) → **enlace caído** | o GRBL responde **todo** `?`; silêncio em repouso é porta morta |
-| Só em repouso (`job.state === 'idle'` e janela vazia) | um stall de job (8 s reais na coleta) é do **job**, e o vigia de `ok` já cobre |
+| Só com job **em curso** (`running`/`paused`) o silêncio é esperado | um stall de job (8 s reais na coleta) é do **job**, e o vigia de `ok` já cobre. Depois de `finished`/`aborted` o silêncio volta a ser anomalia — foi **exatamente** o caso da coleta (o `ALARM:1` abortou o job e a porta morreu em seguida, 46 s mentindo) |
 | Avisa no console e volta a `disconnected` | a UI para de mentir; o botão de conexão reconecta (a porta pode voltar como `ttyACM1`) |
 | Sem código GRBL → **não** entra no histórico de alarmes | não é alarme da máquina; é o enlace (RF-STA-7 é para o que o operador remedia) |
 | `SerialTransport.close()` resolve mesmo sem callback | com o fd morto o `close` pode nunca chamar de volta — travaria a UI em "conectado" |
@@ -380,8 +380,15 @@ Os 5 s são folgados de propósito: a máquina responde `?` mesmo em movimento �
 inclusive durante o homing (`<Home\|MPos:-100.088,…\|Pn:XY>`, dos 7 `$H` reais
 nos logs). Silêncio assim só se explica por enlace caído.
 
-Testes: `tests/grbl-client.test.ts` (avisa/desconecta/para o polling; e **não**
-dispara com job na fila) e `tests/serial-transport.test.ts` (callback ausente).
+Testes: `tests/grbl-client.test.ts` (avisa/desconecta/para o polling; **não**
+dispara com job em curso; e vale depois de `finished`/`aborted`) e
+`tests/serial-transport.test.ts` (callback ausente e escrita em voo no
+fechamento).
+
+Dois desfechos de job que a caça revelou de lambuja: `stopJob()` checava só
+`state === 'idle'` (com um job terminado ainda mandaria **soft reset** e
+derrubaria a origem) e um `ALARM` depois do fim reemitia `aborted`. Ambos agora
+usam a mesma noção de "job em curso" (`running`/`paused`).
 
 *Spec criada em 18/10/2026 para a v0.6 (P0.7/P0.8). Primeira revisão com dados de
 máquina real feita na mesma data (§11) — Sculpfun C1.*

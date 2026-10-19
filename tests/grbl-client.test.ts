@@ -640,7 +640,7 @@ describe('GrblClient — porta morta (§11.6.4)', () => {
     expect(fake.realtime.length).toBeGreaterThan(0);
   });
 
-  it('não declara porta morta com job na fila (stall tem o seu próprio vigia)', async () => {
+  it('não declara porta morta com job **em curso** (aí o vigia é o do `ok`)', async () => {
     vi.useFakeTimers();
     const fake = new FakeTransport();
     const client = new GrblClient({
@@ -654,11 +654,65 @@ describe('GrblClient — porta morta (§11.6.4)', () => {
 
     await client.connect(CONNECT);
     client.startJob(['G1 X1', 'G1 X2']);
-    // Aqui há trabalho em voo: silêncio é do job (o vigia de `ok` cobre esse
-    // caso — foi ele que pegou o stall real de 8 s na coleta).
+    // Trabalho em voo: o silêncio é do job (foi o vigia de `ok` que pegou o
+    // stall real de 8 s na coleta).
     await vi.advanceTimersByTimeAsync(600);
 
     expect(client.isConnected()).toBe(true);
     expect(errors).toEqual([]);
+  });
+
+  it('vale depois do job terminar — o cenário real (§11.5/§11.8)', async () => {
+    // No log: job completou (4554/4554), o operador mandou Ir para zero, veio o
+    // `ALARM:1` e o controlador reiniciou. O estado do job fica `aborted`, não
+    // `idle` — e é aí que a porta morreu e o app mentiu por 46 s.
+    vi.useFakeTimers();
+    const fake = new FakeTransport();
+    const client = new GrblClient({
+      statusPollMs: 50,
+      statusSilenceMs: 200,
+      stallMs: 100000,
+      transportFactory: () => fake,
+    });
+    const states: string[] = [];
+    const errors: ErrorPayload[] = [];
+    client.on('job', (job) => states.push(job.state));
+    client.on('error', (err) => errors.push(err));
+
+    await client.connect(CONNECT);
+    client.startJob(['G1 X1']);
+    fake.feed('ok\n'); // job termina
+    await vi.advanceTimersByTimeAsync(10);
+    expect(states).toEqual(['running', 'finished']);
+
+    // A máquina para de responder (fd morto depois do reset).
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(client.isConnected()).toBe(false);
+    expect(errors.at(-1)!.message).toMatch(/parou de responder/i);
+    // O job terminou *antes* da queda: nada de `aborted` inventado pelo enlace
+    // (o `idle` no fim é o reset padrão de qualquer `disconnect()`).
+    expect(states).toEqual(['running', 'finished', 'idle']);
+    expect(states).not.toContain('aborted');
+  });
+
+  it('não manda soft reset (0x18) quando o job já terminou', async () => {
+    const { fake, client } = setup();
+    await client.connect(CONNECT);
+    client.startJob(['G1 X1']);
+    fake.feed('ok\n');
+    client.stopJob();
+    expect(fake.realtime).toEqual([]);
+  });
+
+  it('alarme depois do job terminado não reabre "aborted"', async () => {
+    const { fake, client } = setup();
+    const states: string[] = [];
+    client.on('job', (job) => states.push(job.state));
+    await client.connect(CONNECT);
+    client.startJob(['G1 X1']);
+    fake.feed('ok\n');
+    fake.feed('ALARM:1\n');
+    expect(states).toEqual(['running', 'finished']);
   });
 });

@@ -424,7 +424,10 @@ export class GrblClient extends EventEmitter {
 
   /** Para o job atual: soft reset (aborta) e limpa a fila. */
   stopJob(): void {
-    if (this.job.state === 'idle') return;
+    // Só um job **em curso** para com soft reset: depois de `finished`/
+    // `aborted` (ou sem job) o 0x18 só faria a máquina reiniciar e perder a
+    // origem sem motivo.
+    if (!this.jobStreaming()) return;
     this.abortJob(t('client.stopped'));
     // O soft reset descarta o buffer da máquina: nada mais será confirmado.
     this.clearInFlight();
@@ -568,8 +571,11 @@ export class GrblClient extends EventEmitter {
       // reset) o `?` sai para o vazio e o app continuava **"conectado"** — na
       // coleta foram 46 s mentindo, até um write devolver `bad file descriptor`
       // (`PLANO_MAQUINA` §11.6.4). O GRBL responde todo `?`; silêncio só é
-      // esperado com job na fila (stall/pausa), e aí o vigia de `ok` cuida.
-      if (this.job.state === 'idle' && this.inFlight.length === 0) {
+      // esperado com job **em curso** (stall/pausa), e aí o vigia de `ok` cuida.
+      // Depois de um job o estado fica `finished`/`aborted` — e aí o silêncio
+      // volta a ser anomalia: foi exatamente esse o caso da coleta (o alarme
+      // abortou o job e a porta morreu em seguida).
+      if (!this.jobStreaming() && this.inFlight.length === 0) {
         if (Date.now() - this.lastStatusAt > this.statusSilenceMs) {
           void this.onLinkLost();
           return;
@@ -577,6 +583,11 @@ export class GrblClient extends EventEmitter {
       }
       this.emitRealtime(REALTIME.statusReport);
     }, this.statusPollMs);
+  }
+
+  /** Há job sendo transmitido? (idle/finished/aborted não contam.) */
+  private jobStreaming(): boolean {
+    return this.job.state === 'running' || this.job.state === 'paused';
   }
 
   private stopPolling(): void {
@@ -846,7 +857,7 @@ export class GrblClient extends EventEmitter {
     // O alarme para a máquina e descarta o que estava na fila dela.
     this.clearInFlight();
     this.queue = [];
-    if (this.job.state !== 'idle') this.abortJob(message);
+    if (this.jobStreaming()) this.abortJob(message);
     this.emit('error', {
       message,
       code,
