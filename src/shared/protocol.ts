@@ -81,8 +81,19 @@ export function isStatusReport(line: string): boolean {
 
 function parseVec3(value: string): Vec3 | undefined {
   const parts = value.split(',').map((p) => Number.parseFloat(p));
-  if (parts.length < 2 || parts.some((n) => Number.isNaN(n))) return undefined;
+  // `parseFloat` devolve Infinity para `1e999`/`Infinity`; um DRO nunca pode
+  // receber isso (o tipo promete número finito), então cai no fallback.
+  if (parts.length < 2 || parts.some((n) => !Number.isFinite(n))) {
+    return undefined;
+  }
   return { x: parts[0]!, y: parts[1]!, z: parts[2] ?? 0 };
+}
+
+/** `parseInt` tolerante: entrada corrompida cai no valor padrão do campo. */
+function parseIntOr(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 /**
@@ -141,18 +152,23 @@ export function parseStatusReport(line: string): GrblStatus | null {
         break;
       }
       case 'Ov': {
-        const ov = value.split(',').map((v) => Number.parseInt(v, 10));
-        status.ov = [ov[0] ?? 100, ov[1] ?? 100, ov[2] ?? 100];
+        const ov = value.split(',');
+        status.ov = [
+          parseIntOr(ov[0], 100),
+          parseIntOr(ov[1], 100),
+          parseIntOr(ov[2], 100),
+        ];
         break;
       }
       case 'Pn':
         status.pn = value;
         break;
       case 'Bf': {
-        const [planned, rx] = value
-          .split(',')
-          .map((v) => Number.parseInt(v, 10));
-        status.bf = { planned: planned ?? 0, rx: rx ?? 0 };
+        const [planned, rx] = value.split(',');
+        status.bf = {
+          planned: parseIntOr(planned, 0),
+          rx: parseIntOr(rx, 0),
+        };
         break;
       }
       default:
@@ -168,7 +184,7 @@ function extractCode(line: string): number | undefined {
   const match = line.match(/:(\d+)\s*$/);
   if (!match) return undefined;
   const n = Number.parseInt(match[1]!, 10);
-  return Number.isNaN(n) ? undefined : n;
+  return Number.isFinite(n) ? n : undefined;
 }
 
 /**
@@ -245,6 +261,8 @@ export function parseSettingLine(line: string): ParsedSetting | null {
   const match = line.trim().match(/^\$(\d+)\s*=\s*(.+?)\s*$/);
   if (!match) return null;
   const key = Number.parseInt(match[1]!, 10);
+  // Uma chave absurdamente longa vira Infinity; não é um setting válido.
+  if (!Number.isSafeInteger(key)) return null;
   const value = match[2]!;
   const num = Number.parseFloat(value);
   return { key, value, number: Number.isFinite(num) ? num : undefined };

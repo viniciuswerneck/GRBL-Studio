@@ -196,3 +196,36 @@ describe('classifyLine — casos de borda', () => {
     expect(classifyLine('   ').kind).toBe('other');
   });
 });
+
+describe('regressões encontradas pelo fuzz (entrada corrompida)', () => {
+  it('não propaga NaN em Ov/Bf; usa os padrões documentados', () => {
+    const full = parseStatusReport('<Idle|Ov:abc,50,|Bf:x,>')!;
+    expect(full.ov).toEqual([100, 50, 100]);
+    expect(full.bf).toEqual({ planned: 0, rx: 0 });
+
+    const missing = parseStatusReport('<Idle|Ov:|Bf:>')!;
+    expect(missing.ov).toEqual([100, 100, 100]);
+    expect(missing.bf).toEqual({ planned: 0, rx: 0 });
+  });
+
+  it('rejeita posições infinitas (1e999/Infinity) em vez de expor Infinity', () => {
+    expect(parseStatusReport('<Idle|MPos:1e999,2,3>')!.mpos).toBeUndefined();
+    expect(parseStatusReport('<Idle|WPos:Infinity,2,3>')!.wpos).toBeUndefined();
+    expect(parseStatusReport('<Idle|WCO:-Infinity,2,3>')!.wco).toBeUndefined();
+  });
+
+  it('não deixa código/código de setting virar Infinity', () => {
+    const huge = '9'.repeat(400);
+    const error = classifyLine(`error:${huge}`);
+    expect(error.kind).toBe('error');
+    expect(error.code).toBeUndefined();
+    expect(error.message).toBe(`error:${huge}`);
+
+    const alarm = classifyLine(`ALARM:${huge}`);
+    expect(alarm.kind).toBe('alarm');
+    expect(alarm.code).toBeUndefined();
+    expect(alarm.message).toBe(`ALARM:${huge}`);
+
+    expect(parseSettingLine(`$${huge}=1`)).toBeNull();
+  });
+});
