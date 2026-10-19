@@ -596,7 +596,9 @@ function openFrameModal() {
   } else {
     if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
     if (el.framePower && el.imgSmax) {
-      const pct = Math.round((Number(el.imgSmax.value) || 0) / 10);
+      const pct = Math.round(
+        ((Number(el.imgSmax.value) || 0) / machineSMax()) * 100,
+      );
       el.framePower.value = String(Math.max(0, Math.min(100, pct)));
     }
   }
@@ -4162,14 +4164,6 @@ function closeQrModal() {
   if (el.qrOverlay) el.qrOverlay.classList.add('hidden');
 }
 
-/**
- * Referência de `S` da conversão (%) → `S`: o `$30` da máquina, lido do campo
- * da interface (mesmo padrão da grade de teste de material).
- */
-function qrSMax() {
-  return Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
-}
-
 function readQrOptions() {
   const clampNum = (input, min, max, fallback) => {
     const raw = Number(input ? input.value : Number.NaN);
@@ -4244,7 +4238,7 @@ function generateQr() {
   try {
     result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
       ...opts,
-      sMax: qrSMax(),
+      sMax: machineSMax(),
       travelFeed: 3000,
     });
   } catch (err) {
@@ -4271,7 +4265,7 @@ async function saveQr() {
   try {
     const result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
       ...opts,
-      sMax: qrSMax(),
+      sMax: machineSMax(),
       travelFeed: 3000,
     });
     const path = await window.grbl.saveGcode(result.gcode, 'qr-code.gcode');
@@ -4292,14 +4286,6 @@ const BAR_SYM_NAMES = {
   upca: 'UPC-A',
   code39: 'Code 39',
 };
-
-/**
- * `$30` da máquina para os geradores de símbolo (QR/código de barras): lido do
- * campo da interface, como o resto do app.
- */
-function symbolSMax() {
-  return Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000;
-}
 
 /** Mostra os campos que só valem para o Code 39 (razão e mod 43). */
 function syncBarSymbology() {
@@ -4412,7 +4398,7 @@ function generateBar() {
   try {
     result = window.GRBL_BARCODE.barcodeToGcode(el.barContent.value.trim(), {
       ...opts,
-      sMax: symbolSMax(),
+      sMax: machineSMax(),
       travelFeed: 3000,
     });
   } catch (err) {
@@ -4438,7 +4424,7 @@ async function saveBar() {
   try {
     const result = window.GRBL_BARCODE.barcodeToGcode(
       el.barContent.value.trim(),
-      { ...opts, sMax: symbolSMax(), travelFeed: 3000 },
+      { ...opts, sMax: machineSMax(), travelFeed: 3000 },
     );
     const path = await window.grbl.saveGcode(result.gcode, 'barcode.gcode');
     if (path) appendLine(t('file.saved', { path }), 'ok');
@@ -4465,7 +4451,7 @@ function frameJog(axis, sign) {
 function drawFrameOutline() {
   if (!state.connected || !frameBounds) return;
   const b = frameBounds;
-  const sPower = 5; // S=5 ≈ 0,5 % do Smax: contorno bem fraco, só para marcar
+  const sPower = pointingPowerS(); // ~0,5 % da máquina: contorno bem fraco
   // Contorno visível: laser ligado em baixa potência e G1, para a marca
   // aparecer na superfície sem queimar.
   const lines = [
@@ -4492,12 +4478,12 @@ function moveToFrameCenter() {
   const cx = (b.xMin + b.xMax) / 2;
   const cy = (b.yMin + b.yMax) / 2;
   // Vai até o centro (laser desligado) e **aponta com laser bem fraco**
-  // (S=5, ~0,5 %) por um breve instante, para o usuário ver com a ponta
-  // onde será o centro — igual ao contorno, sem queimar o material.
+  // (≈0,5 % da máquina, do perfil) por um breve instante, para o usuário ver
+  // com a ponta onde será o centro — igual ao contorno, sem queimar.
   // Usa M3 (potência constante): em M4 a potência é proporcional à
   // velocidade e durante o dwell (G4) a velocidade é zero → o laser não
   // acende. M3 mantém o laser ligado mesmo parado.
-  const sPower = 5;
+  const sPower = pointingPowerS();
   const step = 0.3;
   for (const line of [
     'G90',
@@ -4514,261 +4500,33 @@ function moveToFrameCenter() {
   if (el.frameStatus) el.frameStatus.textContent = t('frame.center.done');
 }
 
-const MACHINE_PROFILES = [
-  {
-    id: 'generic',
-    name: 'Genérica (GRBL)',
-    module: '5W',
-    area: [0, 0],
-    homing: false,
-    spot: 0.08,
-    lines: 8,
-    mode: 'M4',
-    settings: {},
-  },
-  {
-    id: 'sculpfun-c1',
-    name: 'Sculpfun C1 (3 W)',
-    module: '3W',
-    area: [150, 130],
-    homing: false,
-    spot: 0.04,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 150, 131: 130, 22: 0, 20: 0, 32: 1 },
-  },
-  {
-    id: 'sculpfun-s6',
-    name: 'Sculpfun S6 (5,5 W)',
-    module: '5W',
-    area: [410, 420],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'sculpfun-s9',
-    name: 'Sculpfun S9 (5,5 W)',
-    module: '5W',
-    area: [410, 420],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'sculpfun-s10',
-    name: 'Sculpfun S10 (10 W)',
-    module: '10W',
-    area: [410, 420],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'sculpfun-s30',
-    name: 'Sculpfun S30 (10-20 W)',
-    module: '10W',
-    area: [410, 420],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 420, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'ortur-lm2',
-    name: 'Ortur Laser Master 2',
-    module: '5W',
-    area: [400, 430],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 430, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'ortur-lm3',
-    name: 'Ortur Laser Master 3',
-    module: '5W',
-    area: [400, 400],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'ortur-aufero2',
-    name: 'Ortur Aufero 2',
-    module: '5W',
-    area: [390, 390],
-    homing: false,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 390, 131: 390, 22: 0, 20: 0, 32: 1 },
-  },
-  {
-    id: 'atomstack-a5',
-    name: 'AtomStack A5 Pro',
-    module: '5W',
-    area: [410, 400],
-    homing: true,
-    spot: 0.06,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'atomstack-x7',
-    name: 'AtomStack X7 Pro',
-    module: '10W',
-    area: [410, 400],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 410, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'twotrees-ts2',
-    name: 'TwoTrees TS2',
-    module: '5W',
-    area: [300, 300],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 300, 131: 300, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'twotrees-ts3',
-    name: 'TwoTrees TS3',
-    module: '10W',
-    area: [300, 300],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 300, 131: 300, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'foxalien-masuter',
-    name: 'FoxAlien Masuter',
-    module: '5W',
-    area: [400, 400],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'genmitsu-cubiko',
-    name: 'Genmitsu Cubiko',
-    module: '3W',
-    area: [150, 150],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 150, 131: 150, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'genmitsu-3018',
-    name: 'Genmitsu 3018-PRO',
-    module: '5W',
-    area: [300, 180],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 300, 131: 180, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'wainlux-k6',
-    name: 'Wainlux K6 (portátil)',
-    module: '3W',
-    area: [80, 80],
-    homing: false,
-    spot: 0.03,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 80, 131: 80, 22: 0, 20: 0, 32: 1 },
-  },
-  {
-    id: 'wainlux-k8',
-    name: 'Wainlux K8 (portátil)',
-    module: '3W',
-    area: [80, 80],
-    homing: false,
-    spot: 0.03,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 80, 131: 80, 22: 0, 20: 0, 32: 1 },
-  },
-  {
-    id: 'comgrow-z1',
-    name: 'Comgrow Z1',
-    module: '5W',
-    area: [130, 150],
-    homing: false,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 130, 131: 150, 22: 0, 20: 0, 32: 1 },
-  },
-  {
-    id: 'xtool-d1',
-    name: 'xTool D1',
-    module: '10W',
-    area: [430, 390],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 430, 131: 390, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'creality-falcon2',
-    name: 'Creality Falcon 2',
-    module: '10W',
-    area: [400, 415],
-    homing: true,
-    spot: 0.1,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 415, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'neje-master2',
-    name: 'NEJE Master 2S',
-    module: '10W',
-    area: [400, 400],
-    homing: true,
-    spot: 0.05,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-  {
-    id: 'longer-ray5',
-    name: 'Longer Ray5',
-    module: '5W',
-    area: [400, 400],
-    homing: true,
-    spot: 0.08,
-    lines: 10,
-    mode: 'M4',
-    settings: { 130: 400, 131: 400, 22: 1, 20: 1, 32: 1 },
-  },
-];
+/**
+ * Perfis de máquina — catálogo **tipado e testado** em `src/shared/machines.ts`,
+ * empacotado por esbuild em `public/machines.js` (`GRBL_MACHINES`).
+ *
+ * Nenhum valor de máquina é chumbado aqui: curso, homing, `S-max`, módulo do
+ * laser e potência do laser "de apontar" vêm do perfil (RF-MAQ-10).
+ */
+const machines = window.GRBL_MACHINES;
+
+/** Sem o bundle (build incompleto), sobra um perfil genérico — sem curso,
+ * sem homing e sem settings — para o app não quebrar. */
+const MACHINE_PROFILES =
+  machines?.MACHINE_PROFILES?.length > 0
+    ? machines.MACHINE_PROFILES
+    : [
+        {
+          id: 'generic',
+          name: 'Genérica (GRBL)',
+          module: '5W',
+          area: [0, 0],
+          homing: false,
+          spot: 0.08,
+          lines: 8,
+          mode: 'M4',
+          settings: {},
+        },
+      ];
 
 function populateMachineProfiles() {
   if (!el.machineProfile) return;
@@ -4783,7 +4541,7 @@ function populateMachineProfiles() {
   if (current && MACHINE_PROFILES.some((p) => p.id === current)) {
     el.machineProfile.value = current;
   } else {
-    el.machineProfile.value = 'sculpfun-c1';
+    el.machineProfile.value = machines?.DEFAULT_MACHINE_ID ?? 'generic';
   }
 }
 
@@ -4798,6 +4556,23 @@ function applyMachineProfile(profile) {
   if (el.imgDot) el.imgDot.value = String(prof.spot);
   if (el.imgLines) el.imgLines.value = String(prof.lines);
   if (el.imgMode) el.imgMode.value = prof.mode;
+  // Módulo de laser e `S-max` são propriedades da **máquina**: alimentam o
+  // catálogo de materiais (RF-IMG-8) e a conversão % → `S`. Valores no perfil,
+  // não chumbados no código.
+  if (el.profileModule && prof.module) {
+    el.profileModule.value = prof.module;
+    populateMaterials();
+  }
+  if (el.imgSmax) {
+    // O perfil semeia o `$30` da interface; sem `sMax` no perfil, o padrão do
+    // app. Sempre escreve, para trocar de máquina não herdar o valor anterior.
+    const sMax = Number(prof.sMax);
+    el.imgSmax.value = String(
+      Number.isFinite(sMax) && sMax > 0
+        ? sMax
+        : (window.GRBL_MATERIALS?.PROFILE_MAX_S ?? 1000),
+    );
+  }
   if (el.homeBtn) {
     el.homeBtn.disabled = !prof.homing;
     el.homeBtn.title = prof.homing
@@ -4988,12 +4763,47 @@ function updateControls() {
   el.macroHint.classList.toggle('hidden', conn);
 }
 
+/** Perfil da máquina selecionada (nunca `undefined`). */
+function currentMachineProfile() {
+  const id = el.machineProfile?.value;
+  if (machines?.machineProfile) return machines.machineProfile(id);
+  return MACHINE_PROFILES.find((p) => p.id === id) || MACHINE_PROFILES[0];
+}
+
 /** O perfil de máquina atual declara homing de fábrica? */
 function machineHoming() {
-  const prof =
-    MACHINE_PROFILES.find((p) => p.id === el.machineProfile?.value) ||
-    MACHINE_PROFILES[0];
-  return Boolean(prof?.homing);
+  return Boolean(currentMachineProfile()?.homing);
+}
+
+/**
+ * Referência de `S` da máquina (`$30`) — **uma só** para o app inteiro.
+ *
+ * O campo da interface manda (é o valor que o usuário vê e pode editar); o
+ * perfil da máquina apenas **semeia** esse campo (`applyMachineProfile`). Sem
+ * campo válido, vale o `sMax` do perfil e, por fim, o padrão do app.
+ */
+function machineSMax() {
+  const fromField = Number(el.imgSmax?.value);
+  if (Number.isFinite(fromField) && fromField > 0) return fromField;
+  const fromProfile = Number(currentMachineProfile()?.sMax);
+  if (Number.isFinite(fromProfile) && fromProfile > 0) return fromProfile;
+  return window.GRBL_MATERIALS?.PROFILE_MAX_S ?? 1000;
+}
+
+/**
+ * Potência `S` do laser "de apontar" (contorno da moldura e centro): bem fraca,
+ * só para marcar a superfície — nunca queimar. O percentual fica no perfil da
+ * máquina (`pointPercent`), porque o mesmo `S` não significa a mesma potência
+ * em módulos diferentes. Nunca devolve `0` (com `0` o laser não acende e o
+ * usuário não vê onde vai gravar).
+ */
+function pointingPowerS() {
+  const percent = Number(currentMachineProfile()?.pointPercent);
+  const s = window.GRBL_MATERIALS?.powerPercentToS(
+    Number.isFinite(percent) ? percent : 0.5,
+    machineSMax(),
+  );
+  return Math.max(1, Number.isFinite(s) ? s : 1);
 }
 
 /** O GRBL está em um estado que recusa movimento (RF-STA-5)? */
@@ -6039,7 +5849,8 @@ function populateMaterials() {
 
 /**
  * Aplica o perfil escolhido: preenche velocidade e S-max e mostra as notas.
- * A coluna "Power (%)" vira `S` com referência `PROFILE_MAX_S` (≈ `$30 = 1000`).
+ * A coluna "Power (%)" vira `S` sobre a referência da **máquina** (`$30`, do
+ * perfil de máquina) — não sobre um `1000` fixo.
  */
 function applyProfile() {
   const material = el.profileMaterial.value;
@@ -6051,7 +5862,7 @@ function applyProfile() {
   );
   if (!profile) return;
 
-  const sMax = materials.powerPercentToS(profile.powerPercent);
+  const sMax = materials.powerPercentToS(profile.powerPercent, machineSMax());
   el.imgSpeed.value = String(profile.speedMmMin);
   el.imgSmax.value = String(sMax);
   if (el.frameSpeed) el.frameSpeed.value = String(profile.speedMmMin);
@@ -7426,7 +7237,8 @@ async function loadPrefs() {
 
   // Perfil de máquina (catálogo).
   populateMachineProfiles();
-  const profile = state.prefs.machineProfile || 'sculpfun-c1';
+  const profile =
+    state.prefs.machineProfile || machines?.DEFAULT_MACHINE_ID || 'generic';
   if (el.machineProfile) el.machineProfile.value = profile;
   applyMachineProfile(profile);
 
@@ -8299,7 +8111,7 @@ if (el.frameStart)
           0,
           Math.min(100, Number(el.framePower.value) || 0),
         );
-        el.imgSmax.value = String(Math.round(pct * 10));
+        el.imgSmax.value = String(Math.round((pct / 100) * machineSMax()));
       }
       if (el.frameSpeed && el.imgSpeed) {
         el.imgSpeed.value = String(el.frameSpeed.value);
@@ -8489,7 +8301,7 @@ if (el.guideMaterial) {
       el.guideMaterial.value,
     );
     if (!profile) return;
-    const sMax = materials.powerPercentToS(profile.powerPercent);
+    const sMax = materials.powerPercentToS(profile.powerPercent, machineSMax());
     if (el.imgSpeed) el.imgSpeed.value = String(profile.speedMmMin);
     if (el.imgSmax) el.imgSmax.value = String(sMax);
     if (el.imgPasses) el.imgPasses.value = '1';

@@ -6,7 +6,7 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n && npm run build:qrcode && npm run build:barcode",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:machines && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:svg && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n && npm run build:qrcode && npm run build:barcode",
     "build:boolean": "esbuild src/shared/boolean.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_BOOLEAN --outfile=public/boolean.js",
     "build:offset": "esbuild src/shared/offset.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_OFFSET --outfile=public/offset.js",
     "build:contour": "esbuild src/shared/image/contour.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_CONTOUR --outfile=public/contour.js",
@@ -22,6 +22,9 @@
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload/index.js",
     "build:worker": "esbuild src/renderer/gcode.worker.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=public/gcode.worker.js",
     "build:materials": "esbuild src/shared/materials.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIALS --outfile=public/materials.js",
+    "build:machines": "esbuild src/shared/machines.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MACHINES --outfile=public/machines.js",
+    "probe": "node scripts/probe-machine.mjs",
+    "grbl:send": "node scripts/grbl-send.mjs",
     "build:preview": "esbuild src/shared/preview.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_PREVIEW --outfile=public/preview.js",
     "build:resume": "esbuild src/shared/resume.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_RESUME --outfile=public/resume.js",
     "build:macros": "esbuild src/shared/macros.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MACROS --outfile=public/macros.js",
