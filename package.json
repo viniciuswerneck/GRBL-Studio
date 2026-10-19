@@ -41,6 +41,7 @@
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "bench": "node scripts/bench.mjs",
     "bench:preview": "xvfb-run -a node scripts/bench-preview.mjs",
     "package": "npm run build && electron-builder --publish never --config electron-builder.yml",
     "package:linux": "npm run build && electron-builder --linux --publish never --config electron-builder.yml",
