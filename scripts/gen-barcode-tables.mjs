@@ -2,8 +2,8 @@
 /**
  * Gera `src/shared/symbol/barcode/tables.ts` a partir de `jsbarcode` (MIT,
  * **devDependency**): as tabelas são *dados da norma* (ISO/IEC 15417, 15420,
- * 16388) que não vale a pena transcrever à mão — e transcrever seria a maior
- * fonte de erro do encoder.
+ * 16388, 16390, AIM USS-93 e USS-Codabar) que não vale a pena transcrever à
+ * mão — e transcrever seria a maior fonte de erro do encoder.
  *
  * A verificação **não** depende deste script: `tests/symbol-barcode.test.ts`
  * reencoda os símbolos e compara o resultado com o `jsbarcode` (cross-check) e
@@ -25,6 +25,8 @@ const OUT = path.join(ROOT, 'src/shared/symbol/barcode/tables.ts');
 const JsBarcode = require('jsbarcode');
 const code128Const = require('jsbarcode/bin/barcodes/CODE128/constants.js');
 const eanConst = require('jsbarcode/bin/barcodes/EAN_UPC/constants.js');
+const itfConst = require('jsbarcode/bin/barcodes/ITF/constants.js');
+const code93Const = require('jsbarcode/bin/barcodes/CODE93/constants.js');
 
 const fail = (msg) => {
   console.error(`gen-barcode-tables: ${msg}`);
@@ -103,6 +105,67 @@ for (const set of ['L', 'G', 'R']) {
 }
 if (!Array.isArray(PARITY) || PARITY.length !== 10) fail('paridade inesperada');
 
+// -------------------------------------------------------------------- ITF
+// Interleaved 2 of 5: cada dígito tem 5 elementos, **exatamente 2 largos**;
+// o par entrelaça as barras (1º dígito) com os espaços (2º dígito).
+const itfBinaries = itfConst.BINARIES;
+if (!Array.isArray(itfBinaries) || itfBinaries.length !== 10) {
+  fail(`ITF BINARIES inesperado (${itfBinaries?.length})`);
+}
+for (const [digit, bits] of itfBinaries.entries()) {
+  if (!/^[01]{5}$/.test(bits)) fail(`ITF ${digit}: ${bits}`);
+  if ((bits.match(/1/g) ?? []).length !== 2) {
+    fail(`ITF ${digit}: ${bits} não tem 2 elementos largos`);
+  }
+}
+if (!/^[01]{4}$/.test(itfConst.START_BIN)) {
+  fail(`ITF start inesperado: ${itfConst.START_BIN}`);
+}
+if (!/^[01]{5}$/.test(itfConst.END_BIN)) {
+  fail(`ITF stop inesperado: ${itfConst.END_BIN}`);
+}
+
+// ----------------------------------------------------------------- Codabar
+// O módulo não exporta a tabela; a instância expõe `getEncodings()`. O gap
+// entre caracteres (um espaço estreito) é responsabilidade do encoder.
+const Codabar = JsBarcode.getModule('codabar');
+const codabarEncodings = new Codabar('A0A', {}).getEncodings();
+const CODABAR_CHARS = '0123456789-$:/.+ABCD';
+if (Object.keys(codabarEncodings).length !== CODABAR_CHARS.length) {
+  fail(`Codabar: ${Object.keys(codabarEncodings).length} caracteres`);
+}
+const codabar = CODABAR_CHARS.split('').map((ch) => {
+  const pattern = codabarEncodings[ch];
+  if (typeof pattern !== 'string') fail(`Codabar ${ch}: ausente`);
+  // 9, 10 ou 11 módulos (os wide são 2:1 na referência), sempre barra-espaço.
+  if (!/^1[01]{7,9}1$/.test(pattern)) fail(`Codabar ${ch}: ${pattern}`);
+  return [ch, pattern];
+});
+
+// ----------------------------------------------------------------- Code 93
+// 47 símbolos (43 básicos + 4 shifts) + start/stop (índice 47), 9 módulos.
+const code93Symbols = code93Const.SYMBOLS;
+const code93Binaries = code93Const.BINARIES;
+if (!Array.isArray(code93Symbols) || code93Symbols.length !== 48) {
+  fail(`Code 93 SYMBOLS inesperado (${code93Symbols?.length})`);
+}
+if (!Array.isArray(code93Binaries) || code93Binaries.length !== 48) {
+  fail(`Code 93 BINARIES inesperado (${code93Binaries?.length})`);
+}
+const CODE93_BASIC = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
+if (code93Symbols.slice(0, 43).join('') !== CODE93_BASIC) {
+  fail('Code 93: alfabeto básico inesperado');
+}
+if (code93Symbols.slice(43, 47).join('') !== '($)(%)(/)(+)') {
+  fail('Code 93: símbolos de shift inesperados');
+}
+if (code93Symbols[47] !== '\xff') fail('Code 93: start/stop inesperado');
+for (const [i, bits] of code93Binaries.entries()) {
+  if (!/^[01]{9}$/.test(bits) || bits[0] !== '1') {
+    fail(`Code 93 ${i}: ${bits}`);
+  }
+}
+
 const quote = (s) => `'${s}'`;
 /** Chave de objeto: sem aspas quando é um identificador válido (formato Biome). */
 const key = (s) => (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(s) ? s : quote(s));
@@ -121,9 +184,12 @@ lines.push(
   ' * (MIT, **apenas devDependency**): os padrões são os dados das normas',
 );
 lines.push(
-  ' * ISO/IEC 15417 (Code 128), 15420 (EAN/UPC) e 16388 (Code 39). O encoder é',
+  ' * ISO/IEC 15417 (Code 128), 15420 (EAN/UPC), 16388 (Code 39), 16390',
 );
-lines.push(' * próprio — este arquivo é só dado, como `qr.tables.ts`.');
+lines.push(
+  ' * (ITF), AIM USS-93 (Code 93) e AIM USS-Codabar. O encoder é próprio —',
+);
+lines.push(' * este arquivo é só dado, como `qr.tables.ts`.');
 lines.push(' *');
 lines.push(
   ' * Invariantes conferidas na geração: 107 padrões Code 128 (11 módulos,',
@@ -132,8 +198,12 @@ lines.push(
   ' * 13 no stop), Code 39 com 9 elementos e exatamente 3 largos por caractere,',
 );
 lines.push(
-  ' * EAN/UPC com L/G/R de 7 módulos e a tabela de paridade do EAN-13.',
+  ' * EAN/UPC com L/G/R de 7 módulos e a tabela de paridade do EAN-13, ITF com',
 );
+lines.push(
+  ' * 10 dígitos de 5 elementos (2 largos cada), Codabar com 20 caracteres e',
+);
+lines.push(' * Code 93 com 47 símbolos + start/stop, todos de 9 módulos.');
 lines.push(' */');
 lines.push('');
 lines.push('/**');
@@ -198,6 +268,60 @@ lines.push('/** Guardas: lado (início/fim) e centro dos símbolos EAN/UPC. */')
 lines.push(`export const EAN_SIDE_BIN = ${quote(eanConst.SIDE_BIN)};`);
 lines.push(`export const EAN_MIDDLE_BIN = ${quote(eanConst.MIDDLE_BIN)};`);
 lines.push('');
+lines.push('/**');
+lines.push(
+  ' * ITF (ISO/IEC 16390): cada dígito tem 5 elementos, com 2 largos. O par',
+);
+lines.push(
+  ' * entrelaça as barras do primeiro dígito com os espaços do segundo. As',
+);
+lines.push(' * larguras são 1 (estreito) e 3 (largo), como no Code 39.');
+lines.push(' */');
+lines.push('export const ITF_BINARIES: readonly string[] = [');
+for (const bits of itfBinaries) lines.push(`  ${quote(bits)},`);
+lines.push('];');
+lines.push(`export const ITF_START_BIN = ${quote(itfConst.START_BIN)};`);
+lines.push(`export const ITF_END_BIN = ${quote(itfConst.END_BIN)};`);
+lines.push('');
+lines.push('/**');
+lines.push(
+  ' * Codabar (AIM USS-Codabar): padrões de 9 a 11 módulos por caractere',
+);
+lines.push(
+  ' * (razão 2:1 na referência), incluindo os guards `A`–`D`. O gap entre',
+);
+lines.push(' * caracteres é um espaço estreito e não faz parte do padrão.');
+lines.push(' */');
+lines.push(
+  'export const CODABAR_PATTERNS: Readonly<Record<string, string>> = {',
+);
+for (const [ch, pattern] of codabar) {
+  lines.push(`  ${key(ch)}: ${quote(pattern)},`);
+}
+lines.push('};');
+lines.push('');
+lines.push('/**');
+lines.push(
+  ' * Code 93 (AIM USS-93): 47 símbolos (índices 0–46; 43 básicos + 4 shifts)',
+);
+lines.push(
+  ' * e o start/stop no índice 47. Todos os padrões têm 9 módulos; o símbolo',
+);
+lines.push(' * termina com uma barra de terminação de 1 módulo.');
+lines.push(' */');
+lines.push('export const CODE93_SYMBOLS: readonly string[] = [');
+for (const symbol of code93Symbols.slice(0, 47)) {
+  lines.push(`  ${quote(symbol)},`);
+}
+lines.push('];');
+lines.push('export const CODE93_BINARIES: readonly string[] = [');
+for (const bits of code93Binaries) lines.push(`  ${quote(bits)},`);
+lines.push('];');
+lines.push(
+  '/** Índice do start/stop do Code 93 em {@link CODE93_BINARIES}. */',
+);
+lines.push('export const CODE93_START_STOP = 47;');
+lines.push('');
 
 if (!lines.every((l) => typeof l === 'string')) orFail();
 
@@ -205,5 +329,7 @@ fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, `${lines.join('\n')}`, 'utf8');
 console.log(
   `barcode/tables.ts gerado: ${code128.length} padrões Code 128, ` +
-    `${Object.keys(code39).length} Code 39, EAN L/G/R + paridade`,
+    `${Object.keys(code39).length} Code 39, EAN L/G/R + paridade, ` +
+    `${itfBinaries.length} ITF, ${codabar.length} Codabar, ` +
+    `${code93Symbols.length - 1} Code 93 + start/stop`,
 );

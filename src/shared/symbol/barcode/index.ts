@@ -9,14 +9,34 @@
  * {@link BARCODE_SPECS}, para a UI e os avisos.
  */
 
+import { encodeCodabar } from './codabar';
 import { type Code128Options, encodeCode128 } from './code128';
+import { encodeCode93 } from './code93';
 import { type Code39Ratio, encodeCode39 } from './code39';
 import { encodeEan } from './ean';
 import { BarcodeError } from './error';
+import { encodeItf14 } from './itf';
 
+/**
+ * Simbologias conhecidas pelo G-code/UI da v0.6 (`gcode.ts` e
+ * `entry.barcode.ts`). As novas simbologias ficam em
+ * {@link BarcodeSymbologyExtra} até essas camadas serem atualizadas.
+ */
 export type BarcodeSymbology = 'code128' | 'ean13' | 'ean8' | 'upca' | 'code39';
 
+/**
+ * Simbologias acrescentadas depois da v0.6: **ITF-14**, **Codabar**,
+ * **Code 93** e **GS1-128**. A fachada (`encodeBarcode`) e `BARCODE_SPECS` já
+ * as aceitam; o G-code/UI desta tarefa ainda não as consomem.
+ */
+export type BarcodeSymbologyExtra = 'itf14' | 'codabar' | 'code93' | 'gs1-128';
+
+/** Qualquer simbologia aceita por {@link encodeBarcode}. */
+export type BarcodeSymbologyAll = BarcodeSymbology | BarcodeSymbologyExtra;
+
 export interface BarcodeSpec {
+  /** Nome canônico da simbologia (não é texto de UI traduzível). */
+  label: string;
   /** Quiet zone mínima de cada lado, em módulos (ISO/IEC 15417/15420/16388). */
   quietZoneMinModules: number;
   /** X-dimension mínimo da norma, em mm. */
@@ -33,8 +53,9 @@ export interface BarcodeSpec {
   example: string;
 }
 
-export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
+export const BARCODE_SPECS: Record<BarcodeSymbologyAll, BarcodeSpec> = {
   code128: {
+    label: 'Code 128',
     quietZoneMinModules: 10,
     xDimMinMm: 0.19,
     barHeightMinMm: 5,
@@ -44,6 +65,7 @@ export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
     example: 'GRBL-STUDIO-001',
   },
   ean13: {
+    label: 'EAN-13',
     quietZoneMinModules: 11,
     xDimMinMm: 0.264,
     barHeightMinMm: 6.35,
@@ -53,6 +75,7 @@ export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
     example: '590123412345',
   },
   ean8: {
+    label: 'EAN-8',
     quietZoneMinModules: 7,
     xDimMinMm: 0.264,
     barHeightMinMm: 6.35,
@@ -62,6 +85,7 @@ export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
     example: '9638507',
   },
   upca: {
+    label: 'UPC-A',
     quietZoneMinModules: 9,
     xDimMinMm: 0.264,
     barHeightMinMm: 6.35,
@@ -71,6 +95,7 @@ export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
     example: '03600029145',
   },
   code39: {
+    label: 'Code 39',
     quietZoneMinModules: 10,
     xDimMinMm: 0.19,
     barHeightMinMm: 5,
@@ -78,6 +103,49 @@ export const BARCODE_SPECS: Record<BarcodeSymbology, BarcodeSpec> = {
     defaultXDimMm: 0.5,
     digitsOnly: false,
     example: 'GRBL-STUDIO',
+  },
+  itf14: {
+    label: 'ITF-14',
+    quietZoneMinModules: 10,
+    xDimMinMm: 0.5,
+    barHeightMinMm: 12,
+    defaultBarHeightMm: 15,
+    defaultXDimMm: 0.5,
+    digitsOnly: true,
+    example: '0950110153000',
+  },
+  codabar: {
+    label: 'Codabar',
+    quietZoneMinModules: 10,
+    xDimMinMm: 0.19,
+    barHeightMinMm: 6.35,
+    defaultBarHeightMm: 10,
+    defaultXDimMm: 0.5,
+    digitsOnly: false,
+    example: 'A40156B',
+  },
+  code93: {
+    label: 'Code 93',
+    quietZoneMinModules: 10,
+    xDimMinMm: 0.19,
+    barHeightMinMm: 5,
+    defaultBarHeightMm: 10,
+    defaultXDimMm: 0.5,
+    digitsOnly: false,
+    example: 'GRBL-93',
+  },
+  // Exemplo: 16 dígitos de dados + `^` (FNC1) + campo alfanumérico. O encoder
+  // **não valida AIs** (Application Identifiers): só codifica os bytes; o
+  // dicionário GS1 fica com quem chama.
+  'gs1-128': {
+    label: 'GS1-128',
+    quietZoneMinModules: 10,
+    xDimMinMm: 0.25,
+    barHeightMinMm: 6.35,
+    defaultBarHeightMm: 10,
+    defaultXDimMm: 0.5,
+    digitsOnly: false,
+    example: '0109501101530003^10ABC123',
   },
 };
 
@@ -88,9 +156,14 @@ export interface BarcodeBar {
 }
 
 export interface BarcodeOptions {
-  symbology: BarcodeSymbology;
+  symbology: BarcodeSymbologyAll;
   /** Code 128: conjunto fixo ou `auto`. Padrão `auto`. */
   code128Charset?: Code128Options['charset'];
+  /**
+   * Code 128: modo **GS1-128** (FNC1 após o start e `^` como FNC1). Padrão
+   * falso. Com `symbology: 'gs1-128'` é sempre ligado. **Não** valida AIs.
+   */
+  gs1?: boolean;
   /** Code 39: razão largo:estreito. Padrão `3`. */
   code39Ratio?: Code39Ratio;
   /** Code 39: caractere de verificação mod 43. Padrão falso. */
@@ -98,14 +171,18 @@ export interface BarcodeOptions {
 }
 
 export interface BarcodeResult {
-  symbology: BarcodeSymbology;
+  symbology: BarcodeSymbologyAll;
   /** Barras em unidades de módulo (X-dimension), ordenadas e sem sobrepor. */
   bars: BarcodeBar[];
   /** Largura do símbolo em módulos (sem a quiet zone). */
   totalModules: number;
-  /** Conteúdo efetivo, já com o dígito/caractere de verificação. */
+  /**
+   * Conteúdo efetivo, já com o dígito/caractere de verificação. No Code 93 os
+   * verificadores C/K são símbolos internos: `data` e `hri` mostram o texto do
+   * usuário. No GS1-128, `^` marca os FNC1.
+   */
   data: string;
-  /** Texto legível (HRI). */
+  /** Texto legível (HRI). No Codabar não inclui os guards. */
   hri: string;
   /** Dígito verificador (EAN/UPC), quando houver. */
   checkDigit?: number;
@@ -131,7 +208,7 @@ export function modulesToBars(modules: string): BarcodeBar[] {
 }
 
 /** Válido para a UI: `symbology` desconhecida vira erro claro. */
-function isSymbology(value: string): value is BarcodeSymbology {
+function isSymbology(value: string): value is BarcodeSymbologyAll {
   return value in BARCODE_SPECS;
 }
 
@@ -152,8 +229,11 @@ export function encodeBarcode(
   }
   const symbology = opts.symbology;
 
-  if (symbology === 'code128') {
-    const res = encodeCode128(text, { charset: opts.code128Charset });
+  if (symbology === 'code128' || symbology === 'gs1-128') {
+    const res = encodeCode128(text, {
+      charset: opts.code128Charset,
+      gs1: symbology === 'gs1-128' || opts.gs1 === true,
+    });
     return {
       symbology,
       bars: modulesToBars(res.modules),
@@ -178,6 +258,40 @@ export function encodeBarcode(
     };
   }
 
+  if (symbology === 'itf14') {
+    const res = encodeItf14(text);
+    return {
+      symbology,
+      bars: modulesToBars(res.modules),
+      totalModules: res.modules.length,
+      data: res.data,
+      hri: res.hri,
+      checkDigit: res.checkDigit,
+    };
+  }
+
+  if (symbology === 'codabar') {
+    const res = encodeCodabar(text);
+    return {
+      symbology,
+      bars: modulesToBars(res.modules),
+      totalModules: res.modules.length,
+      data: res.data,
+      hri: res.hri,
+    };
+  }
+
+  if (symbology === 'code93') {
+    const res = encodeCode93(text);
+    return {
+      symbology,
+      bars: modulesToBars(res.modules),
+      totalModules: res.modules.length,
+      data: res.data,
+      hri: res.hri,
+    };
+  }
+
   const res = encodeEan(text, symbology);
   return {
     symbology,
@@ -189,7 +303,15 @@ export function encodeBarcode(
   };
 }
 
+export type { CodabarGuard, CodabarResult } from './codabar';
+export { encodeCodabar } from './codabar';
 export type { Code128Charset, Code128Options, Code128Result } from './code128';
+export { CODE128_FNC1, encodeCode128 } from './code128';
+export type { Code93Result } from './code93';
+export { CODE93_ALPHABET, code93Checks, encodeCode93 } from './code93';
 export type { Code39Options, Code39Ratio, Code39Result } from './code39';
 export type { EanResult, EanSymbology } from './ean';
+export { eanCheckDigit } from './ean';
 export { BarcodeError, type BarcodeErrorCode, checkDigitError } from './error';
+export type { Itf14Result } from './itf';
+export { encodeItf14, itf14CheckDigit } from './itf';
