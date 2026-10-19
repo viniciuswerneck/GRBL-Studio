@@ -2,9 +2,10 @@
 
 **Data:** 2026-10-18
 **Branch:** `main`
-**Estado:** código pronto, testado e commitado. App rodando na sessão Wayland.
-A **v0.6.0** (ferramentas de símbolo: QR Code + código de barras 1D) está
-**publicada** — ver §8.
+**Estado:** código pronto, testado e commitado. A **v0.8.0** (performance,
+painel "Máquina", pré-voo e Code 93 Full ASCII) está **publicada** — ver §10.
+A v0.6.0 (símbolos) e a v0.7.0 (1D extras + Data Matrix + onboarding) também
+estão publicadas — ver §8 e §9.
 
 ---
 
@@ -233,3 +234,71 @@ lint), release com os artefatos do CI. Resumo para retomar rápido:
   performance do RNF-11.
 - **Validar com hardware:** ler um Data Matrix e um ITF-14 gravados com o
   leitor/celular (o DM aceita só Latin-1 — travessão e emoji dão `bad-chars`).
+
+## 10. v0.8.0 — performance, painel "Máquina", pré-voo e Code 93 Full ASCII (18/10/2026)
+
+**Estado:** a publicar (bump `0.8.0`, tag e release com os artefatos do CI).
+O que entrou desde a 0.7.0:
+
+### Performance (RNF-11)
+
+- `electron-updater` e `serialport` carregados **sob demanda** (≈110 ms e
+  ≈33 ms + binding nativo fora do boot); splash adiado 400 ms e `show()` antes
+  de criá-lo; bundles de QR/Data Matrix/código de barras (108 KB) e do editor
+  vetorial (65 KB) sob demanda, com pré-aquecimento só dos símbolos em
+  `requestIdleCallback` (2 s). Os 19 `<script>` viraram 9.
+- **A/B intercalado (4 pares):** `ready-to-show` 1 500 → 1 314 ms (mediana),
+  hook do main 694 → 546 ms, startup total 1 846 → 1 779 ms.
+- Medição de 10 min (X11): startup 1 720,6 ms (⚠ acima de 1,5 s), RAM RSS
+  826,7 MB / **PSS 366,3 MB** (❌ acima de 200 MB; o PSS agora inclui o processo
+  GPU, por isso não é comparável ao 227,3 MB antigo), CPU ociosa 7,4 % de 1
+  core no fim do dwell (❌; 0 % nos primeiros 20 s), latência p95 2,59 ms (✅).
+  **Nada foi maquiado:** `docs/BENCHMARK.md` §1 e §6.3 têm os números e as
+  ressalvas. FPS, latência de `?` e DPI continuam manuais.
+
+### P0.7 — painel "Máquina"
+
+- `MachineSnapshot` no main: `$I`, `$$`, `$#`, `$G` e `$N` em **série** via
+  `query()` (janela de envio vazia); `$N` é opcional (`error:` → `[]`).
+- `src/shared/machine.ts` (contrato + parsers puros) e `entry.machine.ts`
+  (`GRBL_MACHINE`, carregado só ao abrir o painel).
+- Painel em **Ferramentas → Máquina**: firmware/versão/build, curso e limites,
+  laser, movimento, estado modal, offsets, sonda e blocos `$N`, com
+  "não informado" onde o firmware não responde; diagnóstico **copiável** em
+  `chave=valor`, sem caminhos de arquivo.
+- **Incidente:** o primeiro `public/machine.js` foi gerado antes da lane de
+  parsing, saiu com 1,7 KB e o painel quebrava com `parseFirmware is not a
+  function`. Rebuild + **E2E novo com emulador TCP** (main → IPC → renderer)
+  cobrem firmware, curso, offsets e relatório.
+
+### P0.8 — pré-voo
+
+- `src/shared/preflight.ts`: MX-1…MX-15 puras (sem texto de UI), com `block`
+  só no que o GRBL rejeita (`error:10/17/22`) ou queima errado (S acima do
+  teto, `Pn` ativo, primeiro corte sem `S`); `warn`/`info` para o resto.
+- **Iniciar** roda as regras com os fatos da máquina (snapshot do painel,
+  lido uma vez se não houver cache). Impedimento → overlay com severidade,
+  detalhe, sugestão e **"Gravar assim mesmo"/"Cancelar"**; avisos/informações →
+  chip `N aviso(s)` na aba Execução. Falha da checagem **não** impede o job.
+- i18n pt/en/es (42 chaves por idioma, paridade por type-check); E2E: `G1` sem
+  `F` bloqueia e a confirmação libera.
+
+### Símbolos (S3)
+
+- **Code 93 Full ASCII** (0–127 em pares de shift, C/K sobre os símbolos
+  expandidos, cross-check com `jsbarcode`).
+- **`validateGs1`** (AIs 00/01/02/10/11/13/15/17/20/21/30/37/240–242/250/251/
+  400/410/412/414/422) — **opt-in**, o encoder não valida sozinho.
+
+### Docs
+
+- `docs/COMPARATIVO.md` (P0.5) + tabela curta e link nos três READMEs.
+
+### Pendências
+
+- PDF417/Aztec; Data Matrix C40/Base256/ECI; dicionário GS1 completo e ligar a
+  validação à UI; P0.3 (Flatpak/winget/brew/AUR); câmera, rotativa, nesting,
+  WebGL; validação em hardware Windows/macOS; FPS/DPI/`?` manuais.
+- **Validar com hardware:** painel Máquina na COMGO Z1 (o emulador cobre o
+  parsing, não o firmware real) e o pré-voo num job com `G1` sem `F` de
+  propósito (deve bloquear, não enviar nada).

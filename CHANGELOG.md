@@ -4,7 +4,50 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [0.8.0] - 2026-10-18
+
+### Added — painel Máquina (P0.7, RF-MAQ-1…10)
+
+- **Ferramentas → Máquina** abre um painel que lê `$I`, `$$`, `$#`, `$G` e `$N`
+  (uma consulta por vez, com a janela de envio vazia) e mostra firmware, curso,
+  limites, laser, movimento, offsets, sonda e estado modal em cartões.
+- **Diagnóstico copiável** em `chave=valor` (app, transporte, firmware,
+  configurações, fatos derivados, estado, alarmes) para colar num relatório de
+  bug sem expor caminhos de arquivo.
+- As consultas são **seriais** e `$N` é opcional: firmware sem blocos de
+  inicialização responde `error:` e o painel segue com `startup=[]`.
+- E2E cobre o caminho completo main → IPC → renderer com um emulador GRBL por
+  TCP (firmware, curso, offsets e relatório).
+
+### Added — pré-voo antes de gravar (P0.8, MX-1…MX-15)
+
+- Antes de iniciar o job, as regras **MX-1…MX-15** cruzam o G-code com os fatos
+  da máquina (potência × `$30`, `$32`, curso × caixa do job, `$20`/`$22`,
+  `G28`/`G30`, `G1` sem `F`, `Pn` ativo, `M7`/`M8` sem suporte, `G20` × `$13`,
+  blocos `$N`, jog fora do limite, primeiro corte sem `S`, `sMax` do perfil ×
+  `$30`, buffer não informado, retorno ao zero com hard limits).
+- **Impedimento** abre um overlay com severidade, detalhe e sugestão; “Gravar
+  assim mesmo” segue, “Cancelar” aborta. Avisos e informações viram um **chip**
+  na aba Execução, sem bloquear.
+- Falha da própria checagem **não** impede o job (o pré-voo é consultivo); o
+  snapshot é reaproveitado do painel Máquina e lido uma vez se ainda não houver
+  cache. Textos em pt-BR/en/es com paridade garantida pelo type-check.
+
+### Added — símbolos (S3)
+
+- **Code 93 Full ASCII**: 0–127 expandidos em pares de *shift* (`($)`, `(%)`,
+  `(/)`, `(+)`), com C/K sobre os símbolos já expandidos e cross-check com o
+  `jsbarcode` para todo o ASCII.
+- **Validação de AIs GS1-128** (`validateGs1`): dicionário mínimo (00, 01, 02,
+  10, 11, 13, 15, 17, 20, 21, 30, 37, 240–242, 250/251, 400, 410/412/414, 422),
+  erros de formato/posição/data e integração testada com `encodeBarcode`.
+  A validação é **opt-in** — o encoder continua só codificando.
+
+### Docs
+
+- **`docs/COMPARATIVO.md`** (P0.5): LaserGRBL, LightBurn, LaserWeb, GRBL
+  Controller, Candle e GRBL Studio em 20 critérios, com data, fontes e a lista
+  do que **não** está no orçamento. Tabela curta e link nos três READMEs.
 
 ### Performance — startup (RNF-11)
 

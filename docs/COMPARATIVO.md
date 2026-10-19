@@ -33,7 +33,8 @@
 | **Temas de interface** | 11 (Fluent/Win 11, 2 de alto contraste) | ✅ | ✅ (GTK) | básico | básico | ✅ |
 | **Plugins / CLI / API** | ❌ | ✅ REST API | ✅ addons + CLI | ❌ | 🟡 console/CLI | ❌ |
 | **Nuvem / IA / biblioteca de artes** | ❌ (tudo local, sem conta) | ❌ (local) | 🟡 IA opcional | ❌ | ❌ | ✅ |
-| **Robustez de protocolo testada** | ✅ **584 testes + 13 E2E** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
+| **Diagnóstico da máquina / pré-voo** | ✅ painel `$I/$$/$#/$G/$N` + pré-voo MX-1…15 antes de gravar | 🟡 console | ❌ | 🟡 console | 🟡 console | 🟡 |
+| **Robustez de protocolo testada** | ✅ **648 testes + 15 E2E** (janela por bytes, tempo real, alarmes) | *n/d* | *n/d* | ❌ | *n/d* | *n/d* |
 | **Status do projeto** | Ativo | **Muito ativo** | **Muito ativo** | Lento (só Windows) | Manutenção | **Muito ativo** |
 
 ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicado.

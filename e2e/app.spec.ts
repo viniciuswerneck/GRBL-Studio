@@ -281,7 +281,7 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     // Sem tour: este teste olha só `Prefs.symbols`.
     writeFileSync(
       path.join(userData, 'prefs.json'),
-      JSON.stringify({ onboarding: 1, ...(options.prefs ?? {}) }),
+      JSON.stringify({ onboarding: 1 }),
       'utf8',
     );
     const launch = () =>

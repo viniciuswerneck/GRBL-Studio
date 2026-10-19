@@ -26,9 +26,17 @@ LaserGRBL; a meta é paridade nos recursos essenciais + distribuição nativa Li
 
 ---
 
-## 1.1 Status de execução (2026-10-17)
+## 1.1 Status de execução (2026-10-18)
 
 Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
+
+> **Nota (18/10/2026, v0.8.0):** P0.5 (comparativo público), P0.7 (painel
+> "Máquina") e P0.8 (pré-voo MX-1…MX-15 + chip) **entregues**, com E2E do
+> caminho main → IPC → renderer por emulador TCP. A performance do RNF-11 foi
+> trabalhada (updater/serial sob demanda, splash adiado, bundles sob demanda),
+> mas **startup e RAM seguem acima do orçamento** nesta máquina — números e
+> ressalvas em `docs/BENCHMARK.md`. `RF-SYM-7` ganhou Code 93 Full ASCII e a
+> validação de AIs GS1-128; PDF417/Aztec continuam fora.
 
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
