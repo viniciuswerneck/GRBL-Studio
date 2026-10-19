@@ -18,21 +18,32 @@ import { BarcodeError } from './error';
 import { encodeItf14 } from './itf';
 
 /**
- * Simbologias conhecidas pelo G-code/UI da v0.6 (`gcode.ts` e
- * `entry.barcode.ts`). As novas simbologias ficam em
- * {@link BarcodeSymbologyExtra} até essas camadas serem atualizadas.
+ * Simbologias 1D suportadas — as da v0.6 mais **ITF-14**, **Codabar**,
+ * **Code 93** e **GS1-128**. É o tipo consumido pelo G-code, pela fachada do
+ * bundle e pela UI (o `select` do modal de código de barras).
  */
-export type BarcodeSymbology = 'code128' | 'ean13' | 'ean8' | 'upca' | 'code39';
+export type BarcodeSymbology =
+  | 'code128'
+  | 'ean13'
+  | 'ean8'
+  | 'upca'
+  | 'code39'
+  | 'itf14'
+  | 'codabar'
+  | 'code93'
+  | 'gs1-128';
 
 /**
- * Simbologias acrescentadas depois da v0.6: **ITF-14**, **Codabar**,
- * **Code 93** e **GS1-128**. A fachada (`encodeBarcode`) e `BARCODE_SPECS` já
- * as aceitam; o G-code/UI desta tarefa ainda não as consomem.
+ * Simbologias que não existiam na v0.6. Mantido para quem precisa do recorte
+ * (ex.: realce na UI, testes de compatibilidade).
  */
-export type BarcodeSymbologyExtra = 'itf14' | 'codabar' | 'code93' | 'gs1-128';
+export type BarcodeSymbologyExtra = Exclude<
+  BarcodeSymbology,
+  'code128' | 'ean13' | 'ean8' | 'upca' | 'code39'
+>;
 
 /** Qualquer simbologia aceita por {@link encodeBarcode}. */
-export type BarcodeSymbologyAll = BarcodeSymbology | BarcodeSymbologyExtra;
+export type BarcodeSymbologyAll = BarcodeSymbology;
 
 export interface BarcodeSpec {
   /** Nome canônico da simbologia (não é texto de UI traduzível). */

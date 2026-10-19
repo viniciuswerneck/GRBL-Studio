@@ -14,6 +14,7 @@ import {
 import {
   applyOverscan,
   barcodeToGcode,
+  dataMatrixToGcode,
   qrToGcode,
   symbolToGcode,
   symbolWarnings,
@@ -713,5 +714,79 @@ describe('matrixToBands — eixos independentes', () => {
     });
     expect(geometry.bands).toEqual([]);
     expect(geometry.extent).toEqual({ widthMm: 0, heightMm: 0 });
+  });
+});
+
+describe('barcodeToGcode — simbologias novas (RF-SYM-7)', () => {
+  it('ITF-14 (13 dígitos → verificador) gera 135 módulos com HRI de 14', () => {
+    const res = barcodeToGcode('0950110153000', {
+      ...baseParams,
+      symbology: 'itf14',
+    });
+    expect(res.barcode.symbology).toBe('itf14');
+    expect(res.barcode.totalModules).toBe(135);
+    expect(res.barcode.checkDigit).toBe(3);
+    expect(res.barcode.hri).toBe('09501101530003');
+    expect(res.gcode).toContain('ITF-14');
+    expect(res.gcode).not.toMatch(/NaN|Infinity/);
+  });
+
+  it('Codabar, Code 93 e GS1-128 geram G-code com o nome no cabeçalho', () => {
+    const cases: Array<[string, string, string]> = [
+      ['codabar', 'A1234B', 'Codabar'],
+      ['code93', 'GRBL-STUDIO', 'Code 93'],
+      ['gs1-128', '0109501101530003^10ABC123', 'GS1-128'],
+    ];
+    for (const [symbology, text, name] of cases) {
+      const res = barcodeToGcode(text, {
+        ...baseParams,
+        symbology: symbology as never,
+      });
+      expect(res.gcode).toContain(name);
+      expect(res.lines).toBeGreaterThan(0);
+      expect(res.widthMm).toBeGreaterThan(0);
+      expect(res.gcode).not.toMatch(/NaN|Infinity/);
+      // Invariantes do G-code: M5 antes do G0 de retorno e na cauda.
+      expect(res.gcode).toContain('M5');
+      expect(res.gcode.trimEnd().endsWith('G0 X0 Y0')).toBe(true);
+    }
+  });
+});
+
+describe('dataMatrixToGcode (2D → G-code, RF-SYM-7)', () => {
+  it('gera ECC200 com quiet zone de 1 módulo e cabeçalho próprio', () => {
+    const res = dataMatrixToGcode('GRBL Studio', { ...baseParams });
+    expect(res.datamatrix.size).toBeGreaterThanOrEqual(10);
+    expect(res.quietZoneModules).toBe(1);
+    expect(res.gcode).toContain('Data Matrix ECC200');
+    expect(res.gcode).toContain('1 bloco(s) EC');
+    expect(res.gcode).not.toMatch(/NaN|Infinity/);
+    expect(res.gcode).toContain('M5');
+    expect(res.gcode.trimEnd().endsWith('G0 X0 Y0')).toBe(true);
+  });
+
+  it('respeita o tamanho alvo em mm (quiet zone incluída)', () => {
+    const res = dataMatrixToGcode('123456', {
+      ...baseParams,
+      targetWidthMm: 10,
+    });
+    expect(res.widthMm).toBeCloseTo(10, 6);
+    expect(res.heightMm).toBeCloseTo(10, 6);
+    // 10×10 módulos + 1 de quiet zone de cada lado = 12 → 10/12 mm por módulo.
+    expect(res.moduleMm).toBeCloseTo(10 / 12, 6);
+    expect(res.linesPerModule).toBeGreaterThanOrEqual(3);
+  });
+
+  it('aceita tamanho forçado e avisa quando o módulo fica pequeno', () => {
+    const res = dataMatrixToGcode('A', {
+      ...baseParams,
+      size: 144,
+      targetWidthMm: 8,
+      workAreaX: 5,
+      workAreaY: 5,
+    });
+    expect(res.datamatrix.size).toBe(144);
+    expect(res.warnings).toContain('module-small');
+    expect(res.warnings).toContain('outside-work-area');
   });
 });

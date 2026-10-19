@@ -67,6 +67,67 @@ describe('PrefsStore — sanitização das novas chaves', () => {
     expect(history[0]!.code).toBe(1);
   });
 
+  it('mantém só ajustes válidos de símbolos e nunca o conteúdo (RF-CFG-5)', async () => {
+    const store = await storeWith({
+      symbols: {
+        qr: {
+          symbology: 'datamatrix',
+          ecc: 'H',
+          version: 7,
+          dmSize: 32,
+          moduleMm: 0.8,
+          widthMm: 25,
+          keepAspect: true,
+          feed: 1200,
+          mode: 'M3',
+          // lixo/segredo: tem de ser descartado
+          content: 'não persistir',
+          moduleMmHack: 'x',
+          quietZoneModules: 999,
+        },
+        barcode: {
+          symbology: 'gs1-128',
+          xDimMm: 0.33,
+          barHeightMm: 12.7,
+          hri: true,
+          code39Ratio: 2,
+          code39Checksum: true,
+          targetWidthMm: 60,
+          content: 'também não',
+        },
+      },
+    });
+    const prefs = await store.read();
+    expect(prefs.symbols?.qr).toEqual({
+      symbology: 'datamatrix',
+      ecc: 'H',
+      version: 7,
+      dmSize: 32,
+      moduleMm: 0.8,
+      widthMm: 25,
+      keepAspect: true,
+      feed: 1200,
+      mode: 'M3',
+    });
+    expect(prefs.symbols?.barcode).toEqual({
+      symbology: 'gs1-128',
+      xDimMm: 0.33,
+      barHeightMm: 12.7,
+      hri: true,
+      code39Ratio: 2,
+      code39Checksum: true,
+      targetWidthMm: 60,
+    });
+    expect(JSON.stringify(prefs)).not.toContain('persistir');
+  });
+
+  it('descarta simbologia desconhecida e símbolos sem nada válido', async () => {
+    const store = await storeWith({
+      symbols: { barcode: { symbology: 'evil', content: 'x' } },
+    });
+    expect((await store.read()).symbols).toBeUndefined();
+  });
+
   it('ignora tipos inválidos sem quebrar', async () => {
     const store = await storeWith({
       fileDir: 42,

@@ -150,6 +150,109 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('gera um ITF-14 (13 dígitos) e mostra o verificador no status', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'bar-code',
+        );
+      });
+      await expect(page.locator('#barcodeOverlay')).toBeVisible();
+      await page.selectOption('#barSymbology', 'itf14');
+      await expect(page.locator('#barSymHint')).toBeVisible();
+      // ITF-14: quiet zone de 10 módulos e X-dimension mínimo de 0,5 mm.
+      await expect(page.locator('#barQuiet')).toHaveValue('10');
+      await page.fill('#barContent', '0950110153000');
+      await page.click('#barGenerate');
+      await expect(page.locator('#barStatus')).toContainText('ITF-14 gerado');
+      await expect(page.locator('#barStatus')).toContainText('135 módulos');
+      await expect(page.locator('#barStatus')).not.toContainText('⚠');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
+  test('gera um Data Matrix pelo modal 2D (Ferramentas → Código 2D…)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      await expect(page.locator('#qrEccField')).toBeVisible();
+      await expect(page.locator('#dmSizeField')).toBeHidden();
+      await page.selectOption('#qrSymbology', 'datamatrix');
+      // Campos exclusivos do QR somem; o tamanho do Data Matrix aparece.
+      await expect(page.locator('#qrEccField')).toBeHidden();
+      await expect(page.locator('#qrVersionField')).toBeHidden();
+      await expect(page.locator('#dmSizeField')).toBeVisible();
+      await page.fill('#qrContent', 'GRBL Studio - Data Matrix');
+      await page.fill('#qrWidth', '20');
+      await page.click('#qrGenerate');
+      await expect(page.locator('#qrStatus')).toContainText(
+        'Data Matrix gerado',
+      );
+      await expect(page.locator('#qrStatus')).not.toContainText('⚠');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
+  test('restaura os últimos ajustes dos símbolos ao reabrir o app', async () => {
+    // `Prefs.symbols` (RF-CFG-5): mesmo userData, duas execuções.
+    const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-prefs-'));
+    const launch = () =>
+      electron.launch({
+        args: [APP_ROOT, `--user-data-dir=${userData}`, '--no-sandbox'],
+        env: { ...process.env, GRBL_E2E: '1' },
+      });
+    try {
+      let app = await launch();
+      let page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      await page.selectOption('#qrSymbology', 'datamatrix');
+      await page.fill('#qrContent', 'persistir');
+      await page.fill('#qrWidth', '25');
+      await page.click('#qrGenerate');
+      await expect(page.locator('#qrStatus')).toContainText(
+        'Data Matrix gerado',
+      );
+      await app.close();
+
+      app = await launch();
+      page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      // Símbolo, tamanho em mm e o campo de tamanho do DM voltam como estavam.
+      await expect(page.locator('#qrSymbology')).toHaveValue('datamatrix');
+      await expect(page.locator('#qrWidth')).toHaveValue('25');
+      await expect(page.locator('#dmSizeField')).toBeVisible();
+      await app.close();
+    } finally {
+      rmSync(userData, { recursive: true, force: true });
+    }
+  });
+
   test('razão e verificação mod 43 só aparecem no Code 39', async () => {
     const { app, page, close } = await launchApp();
     try {

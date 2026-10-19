@@ -231,14 +231,17 @@ export const en = {
     'Grid generated. Check the preview, then send or save.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
-  'menu.qrCode': 'QR Code…',
-  'qr.title': 'QR Code',
+  'menu.qrCode': '2D code (QR / Data Matrix)…',
+  'qr.title': '2D code',
   'qr.hint':
-    'Generates a QR Code as raster G-code: pick the content, the size in mm ' +
-    '(or the module size) and engrave. The artwork origin is the bottom-left ' +
-    'corner (X0 Y0).',
+    'Generates a QR Code or a Data Matrix as raster G-code: pick the symbol, ' +
+    'the content and the size in mm (or the module size) and engrave. The ' +
+    'artwork origin is the bottom-left corner (X0 Y0).',
   'qr.content': 'Content',
   'qr.contentPlaceholder': 'https://example.com or some text',
+  'qr.symbology': 'Symbol',
+  'qr.sym.qr': 'QR Code',
+  'qr.sym.datamatrix': 'Data Matrix',
   'qr.ecc': 'Error correction',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -250,7 +253,7 @@ export const en = {
   'qr.width': 'Width (mm)',
   'qr.height': 'Height (mm)',
   'qr.keepAspect': 'Square',
-  'qr.keepAspectHint': 'Keeps width equal to height (a QR is square).',
+  'qr.keepAspectHint': 'Keeps width equal to height (the symbol is square).',
   'qr.sizeHint':
     'Blank uses the module size. Width ≠ height stretches the symbol and may ' +
     'hurt readability.',
@@ -289,6 +292,18 @@ export const en = {
 
   // ------------------------------------------- 1D barcode (v0.6, RF-SYM-2)
   'menu.barCode': 'Barcode…',
+  'dm.title': 'Data Matrix',
+  'dm.size': 'Symbol size',
+  'dm.sizeAuto': 'Automatic (smallest that fits)',
+  'dm.status.done':
+    'Data Matrix generated: {size}×{size} modules · {w} × {h} mm · module ' +
+    '{module} mm. Check the preview, then send or save.',
+  'dm.err.empty': 'Enter content to generate the Data Matrix.',
+  'dm.err.too-long': 'Content too long for a Data Matrix.',
+  'dm.err.bad-chars':
+    'The ECC200 Data Matrix accepts Latin-1 only (no emoji or other UTF-8).',
+  'dm.err.bad-size': 'Invalid Data Matrix size.',
+
   'bar.title': 'Barcode',
   'bar.hint':
     'Generates a 1D barcode as G-code: pick the symbology, the content and ' +
@@ -301,6 +316,18 @@ export const en = {
   'bar.sym.ean8': 'EAN-8 — 7 digits (+ check digit)',
   'bar.sym.upca': 'UPC-A — 11 digits (+ check digit)',
   'bar.sym.code39': 'Code 39 — A–Z, 0–9 and -.$/+%',
+  'bar.sym.itf14': 'ITF-14 — 13 digits (+ GS1 check digit)',
+  'bar.sym.codabar': 'Codabar — A–D, 0–9 and -$:/.+',
+  'bar.sym.code93': 'Code 93 — A–Z, 0–9 and -.$/+%',
+  'bar.sym.gs1-128': 'GS1-128 — Code 128 with FNC1 (^ separates fields)',
+  'bar.hint.itf14':
+    'Enter 13 digits (the mod 10 check digit is calculated) or 14 (checked).',
+  'bar.hint.codabar':
+    'Start and end with A–D (e.g. A1234B); without guards it uses A…A.',
+  'bar.hint.code93':
+    'Basic alphabet (47 symbols). The C and K check characters are automatic.',
+  'bar.hint.gs1':
+    'In GS1-128, ^ marks the end of a field (FNC1). AI validation is up to you.',
   'bar.content': 'Content',
   'bar.contentPlaceholder': 'GRBL-STUDIO-001',
   'bar.checksum': 'mod 43 check (Code 39)',

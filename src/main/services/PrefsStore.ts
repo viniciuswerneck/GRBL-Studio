@@ -11,7 +11,14 @@ import * as path from 'node:path';
 import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
 import { isThemeId } from '../../shared/themes';
-import type { AlarmEntry, Prefs, SettingProfile } from '../../shared/types';
+import type {
+  AlarmEntry,
+  BarcodePrefs,
+  Prefs,
+  SettingProfile,
+  Symbol2dPrefs,
+  SymbolPrefs,
+} from '../../shared/types';
 
 /** Perfis de configuração `$$` (RF-CFG-4): filtra e normaliza o que veio do disco. */
 function sanitizeSettingProfiles(input: unknown): SettingProfile[] | undefined {
@@ -62,6 +69,117 @@ function sanitizeAlarmHistory(input: unknown): AlarmEntry[] | undefined {
   return out.slice(-100);
 }
 
+/** Número finito dentro da faixa (senão `undefined`, para o campo sumir). */
+function finiteIn(
+  value: unknown,
+  min: number,
+  max: number,
+): number | undefined {
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value <= max
+    ? value
+    : undefined;
+}
+
+const SYMBOLOGIES = new Set([
+  'code128',
+  'ean13',
+  'ean8',
+  'upca',
+  'code39',
+  'itf14',
+  'codabar',
+  'code93',
+  'gs1-128',
+]);
+
+/**
+ * Ajustes das ferramentas de símbolo (RF-CFG-5): só números/booleanos/enums
+ * conhecidos. O **conteúdo** digitado nunca é aceito aqui — não é preferência.
+ */
+function sanitizeSymbols(input: unknown): SymbolPrefs | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const raw = input as Record<string, unknown>;
+  const out: SymbolPrefs = {};
+
+  if (raw.qr && typeof raw.qr === 'object') {
+    const q = raw.qr as Record<string, unknown>;
+    const qr: Symbol2dPrefs = {};
+    if (q.symbology === 'qr' || q.symbology === 'datamatrix') {
+      qr.symbology = q.symbology;
+    }
+    if (q.ecc === 'L' || q.ecc === 'M' || q.ecc === 'Q' || q.ecc === 'H') {
+      qr.ecc = q.ecc;
+    }
+    const version = finiteIn(q.version, 0, 40);
+    if (version !== undefined) qr.version = Math.round(version);
+    const dmSize = finiteIn(q.dmSize, 0, 144);
+    if (dmSize !== undefined) qr.dmSize = Math.round(dmSize);
+    const moduleMm = finiteIn(q.moduleMm, 0.05, 20);
+    if (moduleMm !== undefined) qr.moduleMm = moduleMm;
+    const quiet = finiteIn(q.quietZoneModules, 0, 10);
+    if (quiet !== undefined) qr.quietZoneModules = Math.round(quiet);
+    const lines = finiteIn(q.linesPerMm, 1, 40);
+    if (lines !== undefined) qr.linesPerMm = Math.round(lines);
+    const width = finiteIn(q.widthMm, 0, 1000);
+    if (width !== undefined) qr.widthMm = width;
+    const height = finiteIn(q.heightMm, 0, 1000);
+    if (height !== undefined) qr.heightMm = height;
+    if (typeof q.keepAspect === 'boolean') qr.keepAspect = q.keepAspect;
+    const power = finiteIn(q.powerPercent, 0, 100);
+    if (power !== undefined) qr.powerPercent = power;
+    const feed = finiteIn(q.feed, 1, 20000);
+    if (feed !== undefined) qr.feed = Math.round(feed);
+    const passes = finiteIn(q.passes, 1, 10);
+    if (passes !== undefined) qr.passes = Math.round(passes);
+    if (q.mode === 'M3' || q.mode === 'M4') qr.mode = q.mode;
+    const overscan = finiteIn(q.overscanMm, 0, 5);
+    if (overscan !== undefined) qr.overscanMm = overscan;
+    if (typeof q.invert === 'boolean') qr.invert = q.invert;
+    if (Object.keys(qr).length > 0) out.qr = qr;
+  }
+
+  if (raw.barcode && typeof raw.barcode === 'object') {
+    const b = raw.barcode as Record<string, unknown>;
+    const bar: BarcodePrefs = {};
+    if (typeof b.symbology === 'string' && SYMBOLOGIES.has(b.symbology)) {
+      bar.symbology = b.symbology;
+    }
+    const width = finiteIn(b.targetWidthMm, 0, 1000);
+    if (width !== undefined) bar.targetWidthMm = width;
+    const xDim = finiteIn(b.xDimMm, 0.05, 20);
+    if (xDim !== undefined) bar.xDimMm = xDim;
+    const height = finiteIn(b.barHeightMm, 1, 200);
+    if (height !== undefined) bar.barHeightMm = height;
+    const quiet = finiteIn(b.quietZoneModules, 0, 30);
+    if (quiet !== undefined) bar.quietZoneModules = Math.round(quiet);
+    const lines = finiteIn(b.linesPerMm, 1, 40);
+    if (lines !== undefined) bar.linesPerMm = Math.round(lines);
+    if (typeof b.hri === 'boolean') bar.hri = b.hri;
+    if (b.code39Ratio === 2 || b.code39Ratio === 3) {
+      bar.code39Ratio = b.code39Ratio;
+    }
+    if (typeof b.code39Checksum === 'boolean') {
+      bar.code39Checksum = b.code39Checksum;
+    }
+    const power = finiteIn(b.powerPercent, 0, 100);
+    if (power !== undefined) bar.powerPercent = power;
+    const feed = finiteIn(b.feed, 1, 20000);
+    if (feed !== undefined) bar.feed = Math.round(feed);
+    const passes = finiteIn(b.passes, 1, 10);
+    if (passes !== undefined) bar.passes = Math.round(passes);
+    if (b.mode === 'M3' || b.mode === 'M4') bar.mode = b.mode;
+    const overscan = finiteIn(b.overscanMm, 0, 5);
+    if (overscan !== undefined) bar.overscanMm = overscan;
+    if (typeof b.invert === 'boolean') bar.invert = b.invert;
+    if (Object.keys(bar).length > 0) out.barcode = bar;
+  }
+
+  return out.qr || out.barcode ? out : undefined;
+}
+
 /** Filtra o que veio do disco, mantendo só chaves/tipos conhecidos. */
 function sanitize(input: unknown): Prefs {
   if (!input || typeof input !== 'object') return {};
@@ -94,6 +212,8 @@ function sanitize(input: unknown): Prefs {
   if (profiles) prefs.settingProfiles = profiles;
   const history = sanitizeAlarmHistory(raw.alarmHistory);
   if (history) prefs.alarmHistory = history;
+  const symbols = sanitizeSymbols(raw.symbols);
+  if (symbols) prefs.symbols = symbols;
   return prefs;
 }
 

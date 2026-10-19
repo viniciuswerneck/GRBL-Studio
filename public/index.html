@@ -947,7 +947,7 @@
     <div class="overlay hidden" id="qrOverlay">
       <div class="modal sym-modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
         <header class="modal-head">
-          <h3 id="qrTitle" data-i18n="qr.title">QR Code</h3>
+          <h3 id="qrTitle" data-i18n="qr.title">Código 2D</h3>
           <button
             type="button"
             id="qrClose"
@@ -958,11 +958,18 @@
         </header>
         <div class="modal-body">
           <p class="mat-test-hint" data-i18n="qr.hint">
-            Gera um QR Code como G-code de varredura: escolha o conteúdo, o
-            tamanho do módulo e grave. A origem da arte é o canto inferior
-            esquerdo (X0 Y0).
+            Gera um QR Code ou um Data Matrix como G-code de varredura: escolha
+            o símbolo, o conteúdo e o tamanho. A origem da arte é o canto
+            inferior esquerdo (X0 Y0).
           </p>
           <div class="sym-fields">
+            <label class="field">
+              <span data-i18n="qr.symbology">Símbolo</span>
+              <select id="qrSymbology">
+                <option value="qr" selected data-i18n="qr.sym.qr">QR Code</option>
+                <option value="datamatrix" data-i18n="qr.sym.datamatrix">Data Matrix</option>
+              </select>
+            </label>
             <label class="field field-wide">
               <span data-i18n="qr.content">Conteúdo</span>
               <textarea
@@ -972,7 +979,7 @@
                 data-i18n-placeholder="qr.contentPlaceholder"
               ></textarea>
             </label>
-            <label class="field">
+            <label class="field" id="qrEccField">
               <span data-i18n="qr.ecc">Correção de erro</span>
               <select id="qrEcc">
                 <option value="L" data-i18n="qr.ecc.L">L — 7%</option>
@@ -981,7 +988,7 @@
                 <option value="H" data-i18n="qr.ecc.H">H — 30%</option>
               </select>
             </label>
-            <label class="field">
+            <label class="field" id="qrVersionField">
               <span data-i18n="qr.version">Versão</span>
               <select id="qrVersion">
                 <option value="0" data-i18n="qr.versionAuto">Automática</option>
@@ -1025,7 +1032,11 @@
               <span data-i18n="qr.module">Lado do módulo (mm)</span>
               <input type="number" id="qrModule" min="0.05" max="20" step="0.05" value="0.5" />
             </label>
-            <label class="field">
+            <label class="field hidden" id="dmSizeField">
+              <span data-i18n="dm.size">Tamanho do símbolo</span>
+              <select id="dmSize"></select>
+            </label>
+            <label class="field" id="qrQuietField">
               <span data-i18n="qr.quietZone">Quiet zone (módulos)</span>
               <input type="number" id="qrQuiet" min="0" max="10" step="1" value="4" />
             </label>
@@ -1097,8 +1108,13 @@
                 <option value="ean8" data-i18n="bar.sym.ean8">EAN-8 — 7 dígitos (+ verificador)</option>
                 <option value="upca" data-i18n="bar.sym.upca">UPC-A — 11 dígitos (+ verificador)</option>
                 <option value="code39" data-i18n="bar.sym.code39">Code 39 — A–Z, 0–9 e -.$/+%</option>
+                <option value="itf14" data-i18n="bar.sym.itf14">ITF-14 — 13 dígitos (+ verificador GS1)</option>
+                <option value="codabar" data-i18n="bar.sym.codabar">Codabar — A–D, 0–9 e -$:/.+</option>
+                <option value="code93" data-i18n="bar.sym.code93">Code 93 — A–Z, 0–9 e -.$/+%</option>
+                <option value="gs1-128" data-i18n="bar.sym.gs1-128">GS1-128 — Code 128 com FNC1 (^ separa campos)</option>
               </select>
             </label>
+            <p class="mat-test-hint field-wide hidden" id="barSymHint" role="note"></p>
             <label class="field field-wide">
               <span data-i18n="bar.content">Conteúdo</span>
               <textarea

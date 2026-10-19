@@ -27,6 +27,7 @@ import {
   matrixToBands,
   scanLinesPerModule,
 } from './mask';
+import { DATA_MATRIX_QUIET_ZONE, encodeDataMatrix } from './datamatrix';
 import { type QrEcc, type QrMode, encodeQr } from './qr';
 
 /** Ponto do laser da COMGO Z1 (usado nos avisos de legibilidade). */
@@ -295,13 +296,8 @@ export function symbolWarnings(
 
 // -------------------------------------------------------------- QR → G-code
 
-export interface QrGcodeParams extends SymbolGcodeParams {
-  /** Nível de correção. Padrão `M`. */
-  ecc?: QrEcc;
-  /** Versão fixa (1–40) ou automática. */
-  version?: number | 'auto';
-  /** Máscara fixa (0–7) ou automática. */
-  mask?: number | 'auto';
+/** Parâmetros **de geometria** comuns aos símbolos 2D (QR e Data Matrix). */
+export interface MatrixGcodeParams extends SymbolGcodeParams {
   /**
    * **Largura final** do símbolo em mm, já incluindo a quiet zone. Vence
    * `moduleMm`: o lado do módulo sai de `largura ÷ (módulos + 2 × quiet)`.
@@ -309,13 +305,13 @@ export interface QrGcodeParams extends SymbolGcodeParams {
   targetWidthMm?: number;
   /**
    * **Altura final** em mm (com a quiet zone). Omitida = igual à largura
-   * (símbolo quadrado, o normal de um QR). As duas juntas esticam o símbolo
-   * num eixo — o QR é quadrado, então esticar piora a leitura (aviso `stretched`).
+   * (símbolo quadrado). As duas juntas esticam o símbolo num eixo — num
+   * símbolo quadrado isso piora a leitura (aviso `stretched`).
    */
   targetHeightMm?: number;
   /** Lado do módulo em mm — usado quando não há alvo de largura/altura. Padrão 0,5. */
   moduleMm?: number;
-  /** Quiet zone em módulos. Padrão 4 (norma). */
+  /** Quiet zone em módulos. Padrão: o da simbologia (QR 4, Data Matrix 1). */
   quietZoneModules?: number;
   /** Linhas de varredura por mm. Padrão 10 (0,1 mm). */
   linesPerMm?: number;
@@ -330,6 +326,15 @@ export interface QrGcodeParams extends SymbolGcodeParams {
   label?: string;
   /** Máximo de caracteres do conteúdo no comentário. Padrão 60. */
   labelMaxChars?: number;
+}
+
+export interface QrGcodeParams extends MatrixGcodeParams {
+  /** Nível de correção. Padrão `M`. */
+  ecc?: QrEcc;
+  /** Versão fixa (1–40) ou automática. */
+  version?: number | 'auto';
+  /** Máscara fixa (0–7) ou automática. */
+  mask?: number | 'auto';
 }
 
 export interface QrGcodeResult extends SymbolGcodeResult {
@@ -397,29 +402,48 @@ export function qrModuleSizes(
 /** Esticamento tolerado antes do aviso `stretched` (5% de diferença). */
 const STRETCH_TOLERANCE = 0.05;
 
-/**
- * Texto → G-code do QR Code, pronto para o pipeline normal (preview → Play ou
- * salvar). Puro: nenhuma dependência de DOM ou de máquina.
- */
-export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
-  const qr = encodeQr(text, {
-    ecc: params.ecc,
-    version: params.version,
-    mask: params.mask,
-  });
+/** Símbolo já codificado, no que o pipeline 2D precisa saber. */
+interface MatrixSymbol {
+  matrix: boolean[][];
+  /** Módulos por lado, **sem** a quiet zone. */
+  size: number;
+  /** Quiet zone padrão da simbologia, em módulos. */
+  quietZoneModules: number;
+  /** Quiet zone mínima da norma (para o aviso `quiet-zone-small`). */
+  quietZoneMinModules: number;
+  /** Primeira linha do comentário, ex.: `'QR Code (GRBL Studio)'`. */
+  title: string;
+  /** Linhas de detalhe (versão/ECC ou blocos/codewords). */
+  details: string[];
+}
+
+/** Pipeline comum dos símbolos 2D: matriz → varredura → G-code + avisos. */
+function matrixToGcode(
+  symbol: MatrixSymbol,
+  params: MatrixGcodeParams,
+): {
+  result: SymbolGcodeResult;
+  extent: SymbolExtent;
+  moduleXMm: number;
+  moduleYMm: number;
+  quietZoneModules: number;
+  linesPerMm: number;
+  warnings: SymbolWarningCode[];
+  stretched: boolean;
+} {
   const linesPerMm = positive(params.linesPerMm, 10);
   const quietZoneModules = Number.isFinite(params.quietZoneModules)
     ? Math.max(0, Math.floor(params.quietZoneModules as number))
-    : QR_QUIET_ZONE_MODULES;
+    : symbol.quietZoneModules;
   const overscanMm = positive(params.overscanMm, 0);
 
-  const totalModules = qr.size + quietZoneModules * 2;
+  const totalModules = symbol.size + quietZoneModules * 2;
   const { moduleXMm, moduleYMm } = qrModuleSizes(params, totalModules);
   const stretched =
     Math.abs(moduleXMm - moduleYMm) >
     STRETCH_TOLERANCE * Math.max(moduleXMm, moduleYMm);
 
-  const geometry = matrixToBands(qr.matrix, {
+  const geometry = matrixToBands(symbol.matrix, {
     moduleMm: moduleXMm,
     moduleYMm,
     quietZoneModules,
@@ -432,7 +456,7 @@ export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
     minRunMm: params.minRunMm,
   });
 
-  const label = params.label ?? text;
+  const label = params.label ?? '';
   const maxChars = Math.max(8, params.labelMaxChars ?? 60);
   const shown =
     label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
@@ -440,9 +464,9 @@ export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
     ? `módulo ${fmt(moduleXMm)} × ${fmt(moduleYMm)} mm`
     : `módulo ${fmt(moduleXMm)} mm`;
   const header = [
-    'QR Code (GRBL Studio)',
-    `conteúdo: ${shown}`,
-    `versão ${qr.version} · ECC ${qr.ecc} · máscara ${qr.mask} · ${qr.size}×${qr.size} módulos`,
+    symbol.title,
+    ...(shown ? [`conteúdo: ${shown}`] : []),
+    ...symbol.details,
     `${moduleText} · quiet zone ${quietZoneModules} módulos · ${fmt(extent.widthMm)} × ${fmt(extent.heightMm)} mm`,
     `varredura ${linesPerMm} linhas/mm${params.invert ? ' · polaridade invertida' : ''}${overscanMm > 0 ? ` · overscan ${fmt(overscanMm)} mm` : ''}`,
   ];
@@ -456,7 +480,7 @@ export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
   const warnings = symbolWarnings({
     moduleMm: Math.min(moduleXMm, moduleYMm),
     quietZoneModules,
-    quietZoneMinModules: QR_QUIET_ZONE_MODULES,
+    quietZoneMinModules: symbol.quietZoneMinModules,
     linesPerMm,
     widthMm: extent.widthMm,
     heightMm: extent.heightMm,
@@ -468,7 +492,43 @@ export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
   if (stretched) warnings.push('stretched');
 
   return {
-    ...result,
+    result,
+    extent,
+    moduleXMm,
+    moduleYMm,
+    quietZoneModules,
+    linesPerMm,
+    warnings,
+    stretched,
+  };
+}
+
+/**
+ * Texto → G-code do QR Code, pronto para o pipeline normal (preview → Play ou
+ * salvar). Puro: nenhuma dependência de DOM ou de máquina.
+ */
+export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
+  const qr = encodeQr(text, {
+    ecc: params.ecc,
+    version: params.version,
+    mask: params.mask,
+  });
+  const g = matrixToGcode(
+    {
+      matrix: qr.matrix,
+      size: qr.size,
+      quietZoneModules: QR_QUIET_ZONE_MODULES,
+      quietZoneMinModules: QR_QUIET_ZONE_MODULES,
+      title: 'QR Code (GRBL Studio)',
+      details: [
+        `versão ${qr.version} · ECC ${qr.ecc} · máscara ${qr.mask} · ${qr.size}×${qr.size} módulos`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+
+  return {
+    ...g.result,
     qr: {
       version: qr.version,
       ecc: qr.ecc,
@@ -477,14 +537,79 @@ export function qrToGcode(text: string, params: QrGcodeParams): QrGcodeResult {
       mode: qr.mode,
       byteLength: qr.byteLength,
     },
-    moduleMm: moduleXMm,
-    moduleYMm,
-    quietZoneModules,
+    moduleMm: g.moduleXMm,
+    moduleYMm: g.moduleYMm,
+    quietZoneModules: g.quietZoneModules,
     linesPerModule: scanLinesPerModule(
-      Math.min(moduleXMm, moduleYMm),
-      linesPerMm,
+      Math.min(g.moduleXMm, g.moduleYMm),
+      g.linesPerMm,
     ),
-    warnings,
+    warnings: g.warnings,
+  };
+}
+
+// ------------------------------------------------------ Data Matrix → G-code
+
+export interface DataMatrixGcodeParams extends MatrixGcodeParams {
+  /** Lado em módulos (10…144) ou `'auto'` (o menor que couber). */
+  size?: number | 'auto';
+}
+
+export interface DataMatrixGcodeResult extends SymbolGcodeResult {
+  datamatrix: {
+    /** Lado do símbolo em módulos, sem a quiet zone. */
+    size: number;
+    /** Blocos Reed–Solomon intercalados. */
+    eccBlocks: number;
+    /** Codewords de dados do símbolo (com padding). */
+    dataCodewords: number;
+  };
+  moduleMm: number;
+  moduleYMm: number;
+  quietZoneModules: number;
+  linesPerModule: number;
+  warnings: SymbolWarningCode[];
+}
+
+/**
+ * Texto → G-code do **Data Matrix ECC200** (ISO/IEC 16022, modo ASCII).
+ * Mesmo pipeline do QR: matriz → bandas → varredura vertical → G-code; quiet
+ * zone de 1 módulo por lado (norma) e avisos de legibilidade iguais.
+ */
+export function dataMatrixToGcode(
+  text: string,
+  params: DataMatrixGcodeParams,
+): DataMatrixGcodeResult {
+  const dm = encodeDataMatrix(text, { size: params.size });
+  const g = matrixToGcode(
+    {
+      matrix: dm.matrix,
+      size: dm.size,
+      quietZoneModules: DATA_MATRIX_QUIET_ZONE,
+      quietZoneMinModules: DATA_MATRIX_QUIET_ZONE,
+      title: 'Data Matrix ECC200 (GRBL Studio)',
+      details: [
+        `${dm.size}×${dm.size} módulos · ${dm.eccBlocks} bloco(s) EC · ${dm.dataCodewords} codewords de dados`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+
+  return {
+    ...g.result,
+    datamatrix: {
+      size: dm.size,
+      eccBlocks: dm.eccBlocks,
+      dataCodewords: dm.dataCodewords,
+    },
+    moduleMm: g.moduleXMm,
+    moduleYMm: g.moduleYMm,
+    quietZoneModules: g.quietZoneModules,
+    linesPerModule: scanLinesPerModule(
+      Math.min(g.moduleXMm, g.moduleYMm),
+      g.linesPerMm,
+    ),
+    warnings: g.warnings,
   };
 }
 
@@ -497,6 +622,10 @@ const SYMBOLOGY_NAMES: Record<BarcodeSymbology, string> = {
   ean8: 'EAN-8',
   upca: 'UPC-A',
   code39: 'Code 39',
+  itf14: 'ITF-14',
+  codabar: 'Codabar',
+  code93: 'Code 93',
+  'gs1-128': 'GS1-128',
 };
 
 export interface BarcodeGcodeParams extends SymbolGcodeParams {

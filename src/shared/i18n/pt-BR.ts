@@ -246,14 +246,17 @@ export const ptBR = {
   'matTest.status.done': 'Grade gerada. Confira no preview e envie ou salve.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
-  'menu.qrCode': 'QR Code…',
-  'qr.title': 'QR Code',
+  'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
+  'qr.title': 'Código 2D',
   'qr.hint':
-    'Gera um QR Code como G-code de varredura: escolha o conteúdo, o tamanho ' +
-    'em mm (ou o lado do módulo) e grave. A origem da arte é o canto inferior ' +
-    'esquerdo (X0 Y0).',
+    'Gera um QR Code ou um Data Matrix como G-code de varredura: escolha o ' +
+    'símbolo, o conteúdo e o tamanho (mm ou lado do módulo) e grave. A origem ' +
+    'da arte é o canto inferior esquerdo (X0 Y0).',
   'qr.content': 'Conteúdo',
   'qr.contentPlaceholder': 'https://exemplo.com ou um texto',
+  'qr.symbology': 'Símbolo',
+  'qr.sym.qr': 'QR Code',
+  'qr.sym.datamatrix': 'Data Matrix',
   'qr.ecc': 'Correção de erro',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -265,7 +268,8 @@ export const ptBR = {
   'qr.width': 'Largura (mm)',
   'qr.height': 'Altura (mm)',
   'qr.keepAspect': 'Quadrado',
-  'qr.keepAspectHint': 'Mantém a largura igual à altura (o QR é quadrado).',
+  'qr.keepAspectHint':
+    'Mantém a largura igual à altura (o símbolo é quadrado).',
   'qr.sizeHint':
     'Em branco usa o lado do módulo. Largura ≠ altura estica o símbolo e ' +
     'pode atrapalhar a leitura.',
@@ -306,6 +310,18 @@ export const ptBR = {
 
   // ------------------------------- Código de barras 1D (v0.6, RF-SYM-2)
   'menu.barCode': 'Código de barras…',
+  'dm.title': 'Data Matrix',
+  'dm.size': 'Tamanho do símbolo',
+  'dm.sizeAuto': 'Automático (o menor que couber)',
+  'dm.status.done':
+    'Data Matrix gerado: {size}×{size} módulos · {w} × {h} mm · módulo ' +
+    '{module} mm. Confira no preview e envie ou salve.',
+  'dm.err.empty': 'Informe um conteúdo para gerar o Data Matrix.',
+  'dm.err.too-long': 'Conteúdo longo demais para um Data Matrix.',
+  'dm.err.bad-chars':
+    'O Data Matrix ECC200 aceita só Latin-1 (sem emoji ou outro UTF-8).',
+  'dm.err.bad-size': 'Tamanho de Data Matrix inválido.',
+
   'bar.title': 'Código de barras',
   'bar.hint':
     'Gera um código de barras 1D como G-code: escolha a simbologia, o conteúdo ' +
@@ -318,6 +334,19 @@ export const ptBR = {
   'bar.sym.ean8': 'EAN-8 — 7 dígitos (+ verificador)',
   'bar.sym.upca': 'UPC-A — 11 dígitos (+ verificador)',
   'bar.sym.code39': 'Code 39 — A–Z, 0–9 e -.$/+%',
+  'bar.sym.itf14': 'ITF-14 — 13 dígitos (+ verificador GS1)',
+  'bar.sym.codabar': 'Codabar — A–D, 0–9 e -$:/.+',
+  'bar.sym.code93': 'Code 93 — A–Z, 0–9 e -.$/+%',
+  'bar.sym.gs1-128': 'GS1-128 — Code 128 com FNC1 (^ separa campos)',
+  'bar.hint.itf14':
+    'Informe 13 dígitos (o verificador mod 10 é calculado) ou 14 (conferido).',
+  'bar.hint.codabar':
+    'Comece e termine com A–D (ex.: A1234B); sem guards, usa A…A.',
+  'bar.hint.code93':
+    'Alfabeto básico (47 símbolos). Os verificadores C e K são automáticos.',
+  'bar.hint.gs1':
+    'No GS1-128, ^ marca o fim de um campo (FNC1). A validação de AI fica ' +
+    'por sua conta.',
   'bar.content': 'Conteúdo',
   'bar.contentPlaceholder': 'GRBL-STUDIO-001',
   'bar.checksum': 'Verificação mod 43 (Code 39)',

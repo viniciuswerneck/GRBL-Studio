@@ -220,10 +220,17 @@ const el = {
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
   qrOverlay: $('qrOverlay'),
+  qrTitle: $('qrTitle'),
   qrClose: $('qrClose'),
   qrContent: $('qrContent'),
+  qrSymbology: $('qrSymbology'),
+  qrEccField: $('qrEccField'),
   qrEcc: $('qrEcc'),
+  qrVersionField: $('qrVersionField'),
   qrVersion: $('qrVersion'),
+  qrQuietField: $('qrQuietField'),
+  dmSizeField: $('dmSizeField'),
+  dmSize: $('dmSize'),
   qrWidth: $('qrWidth'),
   qrHeight: $('qrHeight'),
   qrKeepAspect: $('qrKeepAspect'),
@@ -242,6 +249,7 @@ const el = {
   barcodeOverlay: $('barcodeOverlay'),
   barClose: $('barClose'),
   barSymbology: $('barSymbology'),
+  barSymHint: $('barSymHint'),
   barContent: $('barContent'),
   barRatioField: $('barRatioField'),
   barRatio: $('barRatio'),
@@ -4155,9 +4163,45 @@ function populateQrVersions() {
 function openQrModal() {
   if (!el.qrOverlay) return;
   populateQrVersions();
+  populateDmSizes();
+  syncQrSymbology({ applyDefaults: false });
   el.qrOverlay.classList.remove('hidden');
   if (el.qrStatus) el.qrStatus.textContent = '';
   if (el.qrContent) el.qrContent.focus();
+}
+
+/** Preenche o seletor de tamanho do Data Matrix (0 = automático) uma vez. */
+function populateDmSizes() {
+  if (!el.dmSize || el.dmSize.options.length > 0) return;
+  const auto = document.createElement('option');
+  auto.value = '0';
+  auto.textContent = t('dm.sizeAuto');
+  el.dmSize.appendChild(auto);
+  const sizes = window.GRBL_QR?.DATA_MATRIX_SIZES ?? [];
+  for (const entry of sizes) {
+    const opt = document.createElement('option');
+    opt.value = String(entry.size);
+    opt.textContent = `${entry.size} × ${entry.size}`;
+    el.dmSize.appendChild(opt);
+  }
+}
+
+/** Mostra só os campos do símbolo escolhido (QR ou Data Matrix). */
+function syncQrSymbology({ applyDefaults = true } = {}) {
+  const kind = el.qrSymbology?.value === 'datamatrix' ? 'datamatrix' : 'qr';
+  const isDm = kind === 'datamatrix';
+  if (el.qrEccField) el.qrEccField.classList.toggle('hidden', isDm);
+  if (el.qrVersionField) el.qrVersionField.classList.toggle('hidden', isDm);
+  if (el.qrQuietField) el.qrQuietField.classList.toggle('hidden', isDm);
+  if (el.dmSizeField) el.dmSizeField.classList.toggle('hidden', !isDm);
+  // A quiet zone do Data Matrix é 1 módulo (norma) — mostrada no status.
+  if (applyDefaults && el.qrQuiet) {
+    el.qrQuiet.value = isDm ? '1' : '4';
+  }
+  if (el.qrTitle) {
+    el.qrTitle.textContent = isDm ? t('dm.title') : t('qr.title');
+  }
+  if (el.qrModule && applyDefaults) el.qrModule.value = '0.5';
 }
 
 function closeQrModal() {
@@ -4177,13 +4221,18 @@ function readQrOptions() {
     return Math.max(1, Math.min(1000, raw));
   };
   const version = clampNum(el.qrVersion, 0, 40, 0);
+  const isDm = el.qrSymbology?.value === 'datamatrix';
+  const dmSize = clampNum(el.dmSize, 0, 144, 0);
   return {
+    symbology: isDm ? 'datamatrix' : 'qr',
     ecc: el.qrEcc?.value || 'M',
     version: version > 0 ? Math.round(version) : 'auto',
+    size: dmSize > 0 ? Math.round(dmSize) : 'auto',
     targetWidthMm: targetNum(el.qrWidth),
     targetHeightMm: targetNum(el.qrHeight),
     moduleMm: clampNum(el.qrModule, 0.05, 20, 0.5),
-    quietZoneModules: Math.round(clampNum(el.qrQuiet, 0, 10, 4)),
+    // Data Matrix: quiet zone de 1 módulo (ISO/IEC 16022), não configurável.
+    quietZoneModules: isDm ? 1 : Math.round(clampNum(el.qrQuiet, 0, 10, 4)),
     linesPerMm: Math.round(clampNum(el.qrLines, 1, 40, 10)),
     powerPercent: clampNum(el.qrPower, 0, 100, 100),
     feed: Math.round(clampNum(el.qrFeed, 1, 20000, 1000)),
@@ -4208,22 +4257,28 @@ function qrStatusText(result) {
     Math.abs(result.moduleMm - result.moduleYMm) < 1e-9
       ? fmt2(result.moduleMm)
       : `${fmt2(result.moduleMm)} × ${fmt2(result.moduleYMm)}`;
-  const parts = [
-    t('qr.status.done', {
-      version: `v${result.qr.version}-${result.qr.ecc}`,
-      size: result.qr.size,
-      w: result.widthMm.toFixed(1),
-      h: result.heightMm.toFixed(1),
-      module: moduleText,
-    }),
-  ];
+  const done = result.datamatrix
+    ? t('dm.status.done', {
+        size: result.datamatrix.size,
+        w: result.widthMm.toFixed(1),
+        h: result.heightMm.toFixed(1),
+        module: moduleText,
+      })
+    : t('qr.status.done', {
+        version: `v${result.qr.version}-${result.qr.ecc}`,
+        size: result.qr.size,
+        w: result.widthMm.toFixed(1),
+        h: result.heightMm.toFixed(1),
+        module: moduleText,
+      });
+  const parts = [done];
   if (result.warnings?.length) {
     parts.push(...result.warnings.map((code) => `⚠ ${t(`qr.warn.${code}`)}`));
   }
   return parts.join(' ');
 }
 
-function generateQr() {
+async function generateQr() {
   if (!window.GRBL_QR) {
     appendLine(t('qr.moduleMissing'), 'error');
     return;
@@ -4236,23 +4291,33 @@ function generateQr() {
   if (el.qrStatus) el.qrStatus.textContent = t('qr.status.generating');
   let result;
   try {
-    result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
-      ...opts,
-      sMax: machineSMax(),
-      travelFeed: 3000,
-    });
+    result = generate2dGcode(opts);
   } catch (err) {
-    // QrError traz um `code` estável → a mensagem vem do i18n.
-    const key = `qr.err.${err?.code ?? 'bad-version'}`;
+    // QrError/DataMatrixError trazem um `code` estável → mensagem do i18n.
+    const key = `${opts.symbology === 'datamatrix' ? 'dm' : 'qr'}.err.${err?.code ?? 'bad-version'}`;
     if (el.qrStatus) el.qrStatus.textContent = t(key, opts);
     appendLine(t(key, opts), 'error');
     return;
   }
+  await persistSymbolPrefs('qr', opts);
   // Carrega como arquivo virtual (habilita Play e preview).
-  applyJobLines('qr-code.gcode', result.gcode);
+  applyJobLines(
+    opts.symbology === 'datamatrix' ? 'datamatrix.gcode' : 'qr-code.gcode',
+    result.gcode,
+  );
   if (el.qrStatus) el.qrStatus.textContent = qrStatusText(result);
   // Abre o posicionamento para alinhar a origem e gravar.
   openFrameModal();
+}
+
+/** Gera o G-code do símbolo 2D escolhido (QR ou Data Matrix). */
+function generate2dGcode(opts) {
+  const common = { ...opts, sMax: machineSMax(), travelFeed: 3000 };
+  if (opts.symbology === 'datamatrix') {
+    return window.GRBL_QR.dataMatrixToGcode(el.qrContent.value.trim(), common);
+  }
+  delete common.size;
+  return window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), common);
 }
 
 async function saveQr() {
@@ -4263,15 +4328,15 @@ async function saveQr() {
     return;
   }
   try {
-    const result = window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), {
-      ...opts,
-      sMax: machineSMax(),
-      travelFeed: 3000,
-    });
-    const path = await window.grbl.saveGcode(result.gcode, 'qr-code.gcode');
+    const result = generate2dGcode(opts);
+    await persistSymbolPrefs('qr', opts);
+    const path = await window.grbl.saveGcode(
+      result.gcode,
+      opts.symbology === 'datamatrix' ? 'datamatrix.gcode' : 'qr-code.gcode',
+    );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
-    const key = `qr.err.${err?.code ?? 'bad-version'}`;
+    const key = `${opts.symbology === 'datamatrix' ? 'dm' : 'qr'}.err.${err?.code ?? 'bad-version'}`;
     appendLine(t(key, opts), 'error');
   }
 }
@@ -4285,6 +4350,18 @@ const BAR_SYM_NAMES = {
   ean8: 'EAN-8',
   upca: 'UPC-A',
   code39: 'Code 39',
+  itf14: 'ITF-14',
+  codabar: 'Codabar',
+  code93: 'Code 93',
+  'gs1-128': 'GS1-128',
+};
+
+/** Dica extra de cada simbologia (o que o usuário precisa saber para digitar). */
+const BAR_SYM_HINTS = {
+  itf14: 'bar.hint.itf14',
+  codabar: 'bar.hint.codabar',
+  code93: 'bar.hint.code93',
+  'gs1-128': 'bar.hint.gs1',
 };
 
 /** Mostra os campos que só valem para o Code 39 (razão e mod 43). */
@@ -4297,6 +4374,12 @@ function syncBarSymbology() {
   // A dica de conteúdo passa a ser o exemplo da simbologia escolhida.
   const spec = window.GRBL_BARCODE?.BARCODE_SPECS?.[sym];
   if (spec && el.barContent) el.barContent.placeholder = spec.example;
+  // Cada simbologia tem uma regra de conteúdo própria (verificador, guards…).
+  const hintKey = BAR_SYM_HINTS[sym];
+  if (el.barSymHint) {
+    el.barSymHint.classList.toggle('hidden', !hintKey);
+    el.barSymHint.textContent = hintKey ? t(hintKey) : '';
+  }
 }
 
 /**
@@ -4356,6 +4439,124 @@ function readBarOptions() {
   };
 }
 
+/**
+ * Guarda os últimos ajustes de um modal de símbolo (RF-CFG-5). O **conteúdo**
+ * nunca é persistido; só o que o usuário ajustou.
+ */
+function persistSymbolPrefs(kind, opts) {
+  const symbols = { ...(state.prefs.symbols || {}) };
+  if (kind === 'qr') {
+    symbols.qr = {
+      symbology: opts.symbology,
+      ecc: opts.ecc,
+      version: opts.version === 'auto' ? 0 : opts.version,
+      dmSize: opts.size === 'auto' ? 0 : opts.size,
+      moduleMm: opts.moduleMm,
+      quietZoneModules: opts.quietZoneModules,
+      linesPerMm: opts.linesPerMm,
+      widthMm: opts.targetWidthMm ?? 0,
+      heightMm: opts.targetHeightMm ?? 0,
+      keepAspect: Boolean(el.qrKeepAspect?.checked),
+      powerPercent: opts.powerPercent,
+      feed: opts.feed,
+      passes: opts.passes,
+      mode: opts.mode,
+      overscanMm: opts.overscanMm,
+      invert: opts.invert,
+    };
+  } else {
+    symbols.barcode = {
+      symbology: opts.symbology,
+      targetWidthMm: opts.targetWidthMm ?? 0,
+      xDimMm: opts.xDimMm,
+      barHeightMm: opts.barHeightMm,
+      quietZoneModules: opts.quietZoneModules,
+      linesPerMm: opts.linesPerMm,
+      hri: opts.hri,
+      code39Ratio: opts.code39Ratio,
+      code39Checksum: opts.code39Checksum,
+      powerPercent: opts.powerPercent,
+      feed: opts.feed,
+      passes: opts.passes,
+      mode: opts.mode,
+      overscanMm: opts.overscanMm,
+      invert: opts.invert,
+    };
+  }
+  return persistPrefs({ symbols });
+}
+
+/** Restaura os últimos ajustes dos símbolos (chamado no boot). */
+function applySymbolPrefs() {
+  const qr = state.prefs.symbols?.qr;
+  populateQrVersions();
+  populateDmSizes();
+  if (qr) {
+    if (el.qrSymbology && qr.symbology) el.qrSymbology.value = qr.symbology;
+    if (el.qrEcc && qr.ecc) el.qrEcc.value = qr.ecc;
+    if (el.qrVersion) el.qrVersion.value = String(qr.version || 0);
+    if (el.dmSize) el.dmSize.value = String(qr.dmSize || 0);
+    if (el.qrModule && qr.moduleMm) el.qrModule.value = String(qr.moduleMm);
+    if (el.qrQuiet && qr.quietZoneModules != null) {
+      el.qrQuiet.value = String(qr.quietZoneModules);
+    }
+    if (el.qrLines && qr.linesPerMm) el.qrLines.value = String(qr.linesPerMm);
+    if (el.qrWidth) {
+      el.qrWidth.value = qr.widthMm ? String(qr.widthMm) : '';
+    }
+    if (el.qrHeight) {
+      el.qrHeight.value = qr.heightMm ? String(qr.heightMm) : '';
+    }
+    if (el.qrKeepAspect) el.qrKeepAspect.checked = qr.keepAspect !== false;
+    if (el.qrPower && qr.powerPercent != null) {
+      el.qrPower.value = String(qr.powerPercent);
+    }
+    if (el.qrFeed && qr.feed) el.qrFeed.value = String(qr.feed);
+    if (el.qrPasses && qr.passes) el.qrPasses.value = String(qr.passes);
+    if (el.qrMode && qr.mode) el.qrMode.value = qr.mode;
+    if (el.qrOverscan && qr.overscanMm != null) {
+      el.qrOverscan.value = String(qr.overscanMm);
+    }
+    if (el.qrInvert) el.qrInvert.checked = Boolean(qr.invert);
+  }
+  const bar = state.prefs.symbols?.barcode;
+  if (bar) {
+    if (el.barSymbology && bar.symbology) {
+      el.barSymbology.value = bar.symbology;
+    }
+    if (el.barWidth) {
+      el.barWidth.value = bar.targetWidthMm ? String(bar.targetWidthMm) : '';
+    }
+    if (el.barXDim && bar.xDimMm) el.barXDim.value = String(bar.xDimMm);
+    if (el.barHeight && bar.barHeightMm) {
+      el.barHeight.value = String(bar.barHeightMm);
+    }
+    if (el.barQuiet && bar.quietZoneModules != null) {
+      el.barQuiet.value = String(bar.quietZoneModules);
+    }
+    if (el.barLines && bar.linesPerMm) {
+      el.barLines.value = String(bar.linesPerMm);
+    }
+    if (el.barHri) el.barHri.checked = bar.hri !== false;
+    if (el.barRatio && bar.code39Ratio) {
+      el.barRatio.value = String(bar.code39Ratio);
+    }
+    if (el.barChecksum) el.barChecksum.checked = Boolean(bar.code39Checksum);
+    if (el.barPower && bar.powerPercent != null) {
+      el.barPower.value = String(bar.powerPercent);
+    }
+    if (el.barFeed && bar.feed) el.barFeed.value = String(bar.feed);
+    if (el.barPasses && bar.passes) el.barPasses.value = String(bar.passes);
+    if (el.barMode && bar.mode) el.barMode.value = bar.mode;
+    if (el.barOverscan && bar.overscanMm != null) {
+      el.barOverscan.value = String(bar.overscanMm);
+    }
+    if (el.barInvert) el.barInvert.checked = Boolean(bar.invert);
+  }
+  syncBarSymbology();
+  syncQrSymbology({ applyDefaults: false });
+}
+
 /** Linha de status: dimensões, simbologia e avisos de legibilidade. */
 function barStatusText(result) {
   const parts = [
@@ -4383,7 +4584,7 @@ function barErrorText(err, opts) {
   });
 }
 
-function generateBar() {
+async function generateBar() {
   if (!window.GRBL_BARCODE) {
     appendLine(t('bar.moduleMissing'), 'error');
     return;
@@ -4408,6 +4609,7 @@ function generateBar() {
     appendLine(err?.message ? err.message : String(err), 'error');
     return;
   }
+  await persistSymbolPrefs('barcode', opts);
   // Carrega como arquivo virtual (habilita Play e preview).
   applyJobLines('barcode.gcode', result.gcode);
   if (el.barStatus) el.barStatus.textContent = barStatusText(result);
@@ -4426,6 +4628,7 @@ async function saveBar() {
       el.barContent.value.trim(),
       { ...opts, sMax: machineSMax(), travelFeed: 3000 },
     );
+    await persistSymbolPrefs('barcode', opts);
     const path = await window.grbl.saveGcode(result.gcode, 'barcode.gcode');
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
@@ -7242,6 +7445,9 @@ async function loadPrefs() {
   if (el.machineProfile) el.machineProfile.value = profile;
   applyMachineProfile(profile);
 
+  // Últimos ajustes das ferramentas de símbolo (RF-CFG-5).
+  applySymbolPrefs();
+
   // Histórico de alarmes (RF-STA-7) e pasta de arquivos (RF-CFG-5).
   state.alarms = Array.isArray(state.prefs.alarmHistory)
     ? state.prefs.alarmHistory
@@ -8025,6 +8231,8 @@ if (el.qrOverlay)
   });
 if (el.qrGenerate) el.qrGenerate.addEventListener('click', generateQr);
 if (el.qrSave) el.qrSave.addEventListener('click', saveQr);
+if (el.qrSymbology)
+  el.qrSymbology.addEventListener('change', () => syncQrSymbology());
 if (el.qrWidth)
   el.qrWidth.addEventListener('input', () => syncQrSize(el.qrWidth));
 if (el.qrHeight)

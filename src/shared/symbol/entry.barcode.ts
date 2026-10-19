@@ -24,6 +24,8 @@ export type {
   BarcodeResult,
   BarcodeSpec,
   BarcodeSymbology,
+  BarcodeSymbologyAll,
+  BarcodeSymbologyExtra,
 } from './barcode';
 export {
   BARCODE_SPECS,

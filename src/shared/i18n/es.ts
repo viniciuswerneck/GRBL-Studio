@@ -237,14 +237,17 @@ export const es = {
     'Cuadrícula generada. Revisa la vista previa y envía o guarda.',
 
   // ------------------------------------------------ Código QR (v0.6, RF-SYM-1)
-  'menu.qrCode': 'Código QR…',
-  'qr.title': 'Código QR',
+  'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
+  'qr.title': 'Código 2D',
   'qr.hint':
     'Genera un código QR como G-code de barrido: elige el contenido, el ' +
     'tamaño en mm (o el lado del módulo) y graba. El origen del arte es la ' +
     'esquina inferior izquierda (X0 Y0).',
   'qr.content': 'Contenido',
   'qr.contentPlaceholder': 'https://ejemplo.com o un texto',
+  'qr.symbology': 'Símbolo',
+  'qr.sym.qr': 'QR Code',
+  'qr.sym.datamatrix': 'Data Matrix',
   'qr.ecc': 'Corrección de errores',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -256,7 +259,8 @@ export const es = {
   'qr.width': 'Ancho (mm)',
   'qr.height': 'Alto (mm)',
   'qr.keepAspect': 'Cuadrado',
-  'qr.keepAspectHint': 'Mantiene el ancho igual al alto (el QR es cuadrado).',
+  'qr.keepAspectHint':
+    'Mantiene el ancho igual al alto (el símbolo es cuadrado).',
   'qr.sizeHint':
     'En blanco usa el lado del módulo. Ancho ≠ alto deforma el símbolo y ' +
     'puede dificultar la lectura.',
@@ -297,6 +301,18 @@ export const es = {
 
   // ------------------------------------------- código de barras 1D (v0.6)
   'menu.barCode': 'Código de barras…',
+  'dm.title': 'Data Matrix',
+  'dm.size': 'Tamaño del símbolo',
+  'dm.sizeAuto': 'Automático (el menor que quepa)',
+  'dm.status.done':
+    'Data Matrix generado: {size}×{size} módulos · {w} × {h} mm · módulo ' +
+    '{module} mm. Revisa la vista previa y envía o guarda.',
+  'dm.err.empty': 'Indica un contenido para generar el Data Matrix.',
+  'dm.err.too-long': 'Contenido demasiado largo para un Data Matrix.',
+  'dm.err.bad-chars':
+    'El Data Matrix ECC200 solo acepta Latin-1 (sin emoji ni otro UTF-8).',
+  'dm.err.bad-size': 'Tamaño de Data Matrix no válido.',
+
   'bar.title': 'Código de barras',
   'bar.hint':
     'Genera un código de barras 1D como G-code: elige la simbología, el ' +
@@ -309,6 +325,20 @@ export const es = {
   'bar.sym.ean8': 'EAN-8 — 7 dígitos (+ verificador)',
   'bar.sym.upca': 'UPC-A — 11 dígitos (+ verificador)',
   'bar.sym.code39': 'Code 39 — A–Z, 0–9 y -.$/+%',
+  'bar.sym.itf14': 'ITF-14 — 13 dígitos (+ dígito de control GS1)',
+  'bar.sym.codabar': 'Codabar — A–D, 0–9 y -$:/.+',
+  'bar.sym.code93': 'Code 93 — A–Z, 0–9 y -.$/+%',
+  'bar.sym.gs1-128': 'GS1-128 — Code 128 con FNC1 (^ separa campos)',
+  'bar.hint.itf14':
+    'Introduce 13 dígitos (el dígito de control mod 10 se calcula) o 14 (se ' +
+    'comprueba).',
+  'bar.hint.codabar':
+    'Empieza y termina con A–D (ej.: A1234B); sin guards usa A…A.',
+  'bar.hint.code93':
+    'Alfabeto básico (47 símbolos). Los verificadores C y K son automáticos.',
+  'bar.hint.gs1':
+    'En GS1-128, ^ marca el fin de un campo (FNC1). La validación de AI es ' +
+    'por tu cuenta.',
   'bar.content': 'Contenido',
   'bar.contentPlaceholder': 'GRBL-STUDIO-001',
   'bar.checksum': 'Verificación mod 43 (Code 39)',

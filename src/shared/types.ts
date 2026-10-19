@@ -271,4 +271,63 @@ export interface Prefs {
   settingProfiles?: SettingProfile[];
   /** Histórico de alarmes/erros persistido (RF-STA-7). */
   alarmHistory?: AlarmEntry[];
+  /**
+   * Últimos ajustes das ferramentas de símbolo (RF-SYM-4/RF-CFG-5): o modal
+   * reabre com o que o usuário usou por último. O **conteúdo** não é salvo.
+   */
+  symbols?: SymbolPrefs;
+}
+
+/** Símbolos 2D disponíveis no modal "Código 2D". */
+export type Symbol2dKind = 'qr' | 'datamatrix';
+
+/** Ajustes persistidos do modal 2D (QR Code / Data Matrix). */
+export interface Symbol2dPrefs {
+  symbology?: Symbol2dKind;
+  /** QR: nível de correção. */
+  ecc?: 'L' | 'M' | 'Q' | 'H';
+  /** QR: versão fixa; 0/ausente = automática. */
+  version?: number;
+  /** Data Matrix: lado fixo em módulos; 0/ausente = automático. */
+  dmSize?: number;
+  moduleMm?: number;
+  quietZoneModules?: number;
+  linesPerMm?: number;
+  /** Tamanho final em mm (vazio/ausente = usa o módulo). */
+  widthMm?: number;
+  heightMm?: number;
+  keepAspect?: boolean;
+  powerPercent?: number;
+  feed?: number;
+  passes?: number;
+  mode?: 'M3' | 'M4';
+  overscanMm?: number;
+  invert?: boolean;
+}
+
+/** Ajustes persistidos do modal de código de barras 1D. */
+export interface BarcodePrefs {
+  symbology?: string;
+  targetWidthMm?: number;
+  xDimMm?: number;
+  barHeightMm?: number;
+  quietZoneModules?: number;
+  linesPerMm?: number;
+  hri?: boolean;
+  /** Code 39: razão largo:estreito. */
+  code39Ratio?: 2 | 3;
+  /** Code 39: verificador mod 43. */
+  code39Checksum?: boolean;
+  powerPercent?: number;
+  feed?: number;
+  passes?: number;
+  mode?: 'M3' | 'M4';
+  overscanMm?: number;
+  invert?: boolean;
+}
+
+/** Preferências das ferramentas de símbolo. */
+export interface SymbolPrefs {
+  qr?: Symbol2dPrefs;
+  barcode?: BarcodePrefs;
 }
