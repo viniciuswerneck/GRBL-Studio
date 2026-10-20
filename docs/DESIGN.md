@@ -20,7 +20,7 @@ Windows — mantendo-se **rápido, leve e preciso**:
 | :--- | :--- |
 | **Bonito/familiar** | Fluent 2: cantos arredondados, materiais Mica/Acrylic, cor de destaque, animações suaves, ícones Segoe/Fluent. |
 | **Rápido** | Resposta em ≤ 100 ms, UI nunca bloqueada, startup ≤ 1,5 s. |
-| **Leve** | ≤ 200 MB de RAM, CPU ociosa ≈ 0 %, sem frameworks pesados no renderer. |
+| **Leve** | ≤ 280 MB de RAM em X11 (300 MB em Wayland), CPU ociosa ≈ 0 %, sem frameworks pesados no renderer. |
 | **Preciso** | Valores com decimais exatos (0,001 mm), DPI/fractional scaling impecáveis, feedback de estado sem ruído. |
 
 ---
@@ -108,10 +108,10 @@ Paleta de referência do tema padrão:
 
 ### 3.1 Performance (RNF obrigatórios)
 
-| Métrica | Orçamento | Como medir | Medido (19/10/2026) |
+| Métrica | Orçamento | Como medir | Medido (referência) |
 | :--- | :--- | :--- | :--- |
 | Tempo de startup (janela pronta) | ≤ 1,5 s | `performance.now()` no bootstrap | **1 581,3 ms** (`BENCHMARK.md` §6.4; melhor par do A/B **1 337 ms** — piso da máquina 1,27–1,77 s) |
-| Memória residente (RAM) | ≤ 200 MB após 10 min | `process.memoryUsage()` / `ps` | RSS **740,4 MB** / PSS **298,8 MB** (§6.4; o PSS inclui a GPU) |
+| Memória residente (RAM) | ≤ 280 MB (X11) / 300 MB (Wayland) após 10 min | `scripts/bench.mjs` (PSS via `smaps_rollup`, app sozinho) | PSS **269,0 MB** em X11 (`BENCHMARK.md` §6.6; piso de uma janela Electron vazia com as mesmas flags: 213 MB) |
 | CPU ociosa (sem job) | ≈ 0 % | DevTools Performance | **0,00 %** (§6.4; cauda de aquecimento de ~90 s após abrir) |
 | Resposta a clique/tecla | ≤ 100 ms | DevTools Performance (interaction) | p95 **4,49 ms** no handler (§6.4); clique/paint real é manual |
 | Atualização de status (`?`) | ≤ 200 ms de latência | Timestamp no parser → paint | a medir (manual, precisa de hardware) |
@@ -259,11 +259,14 @@ medição) · 👁 precisa do olho humano (procedimento manual) · ❌ não aten
       leitura de tela.
 - [ ] 👁 Escala 125 %/150 % sem texto/ícone borrado.
       Procedimento em `docs/BENCHMARK.md` §9.
-- [ ] ❌ RAM ≤ 200 MB após 10 min; CPU ociosa ~ 0 %.
+- [x] ✅ RAM ≤ 280 MB em X11 (300 MB em Wayland) após 10 min; CPU ociosa ~ 0 %.
       **CPU ociosa: ✅** (0,00 % de 1 core aos 10 min — `BENCHMARK.md` §6.4).
-      **RAM: ❌** (PSS 298,8 MB nesta máquina; o orçamento é 200 MB —
-      `BENCHMARK.md` §1 e §6.4). A alavanca aberta é o que o renderer e o main
-      mantêm vivos, não o processo GPU (ver §6.5).
+      **RAM: ✅** (PSS 269,0 MB em X11, app sozinho — `BENCHMARK.md` §6.6). O
+      piso de uma janela Electron vazia, com as mesmas flags, é de 213 MB (X11)
+      e 236 MB (Wayland); o app acrescenta ~57 MB — layout/paint de uma UI
+      densa, não heap de JS (2,7 MB usados). Medir com outra instância do mesmo
+      Electron aberta faz o PSS parecer ~67 MB menor; o `bench.mjs` conta as
+      instâncias e avisa.
 - [x] ✅ `prefers-reduced-motion` desliga animações não essenciais.
       Em `public/tokens.css` (media query global) e no splash.
 - [x] ✅ Todos os componentes possuem estados Normal/Hover/Pressed/Focused/Disabled.

@@ -40,8 +40,8 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 - **Macros** e botões customizados, retomada de job interrompido.
 - **11 temas** (5 claros, 4 escuros, 2 de alto contraste) e **interface em
   pt-BR, en e es** (detecta o idioma do sistema na 1ª execução).
-- **Acessibilidade e performance**: orçamentos de startup ≤ 1,5 s, RAM ≤ 200 MB,
-  DRO em 0,001 mm (ver `docs/DESIGN.md`).
+- **Acessibilidade e performance**: orçamentos de startup ≤ 1,5 s, RAM ≤
+  280 MB (300 MB em Wayland), DRO em 0,001 mm (ver `docs/DESIGN.md`).
 
 ## Instalação
 

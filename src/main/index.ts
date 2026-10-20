@@ -9,6 +9,23 @@ import { DEFAULT_THEME, isThemeId } from '../shared/themes';
 import { registerIpc } from './ipc';
 import { initMenu, rebuildMenu } from './menu';
 
+/**
+ * RNF-11 (RAM): o serviço de rede do Chromium sobe num processo `utility`
+ * próprio que custa ~26 MB de PSS mesmo com o app ocioso — e o GRBL Studio só
+ * usa a rede para procurar atualizações. `NetworkServiceInProcess2` mantém o
+ * stack de rede no processo browser: no total são ~11 MB menos e um processo a
+ * menos (medido em `docs/BENCHMARK.md` §6.6). É uma feature flag do Chromium:
+ * se deixar de existir, o app apenas volta ao comportamento padrão.
+ */
+const NETWORK_IN_PROCESS_FEATURE = 'NetworkServiceInProcess2';
+const enabledFeatures = app.commandLine.getSwitchValue('enable-features');
+app.commandLine.appendSwitch(
+  'enable-features',
+  enabledFeatures
+    ? `${enabledFeatures},${NETWORK_IN_PROCESS_FEATURE}`
+    : NETWORK_IN_PROCESS_FEATURE,
+);
+
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 let splashTimer: ReturnType<typeof setTimeout> | null = null;

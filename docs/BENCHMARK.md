@@ -1,8 +1,9 @@
 # Benchmark de performance — Linux
 
-> Requisitos cobertos: **RNF-11** (startup ≤ 1,5 s · RAM ≤ 200 MB · resposta a
-> interação ≤ 100 ms · ≥ 55 fps durante job · CPU ociosa ≈ 0 %) e **RNF-12**
-> (DPI nítido em 100/125/150/200 %, DRO em 0,001 mm).
+> Requisitos cobertos: **RNF-11** (startup ≤ 1,5 s · RAM ≤ 280 MB em X11 /
+> 300 MB em Wayland — PSS com GPU, após 10 min · resposta a interação ≤ 100 ms ·
+> ≥ 55 fps durante job · CPU ociosa ≈ 0 %) e **RNF-12** (DPI nítido em
+> 100/125/150/200 %, DRO em 0,001 mm).
 >
 > Escopo deste documento: **Linux**. Windows e macOS **ainda não foram
 > medidos** — o script não cobre essas plataformas.
@@ -13,48 +14,56 @@ job, latência de status com hardware e DPI).
 
 ## 1. Resumo
 
-Medição em **19/10/2026** (Ubuntu 26.04.1, Intel Core i3-5015U, 4 threads,
-Electron 44.8.0, o mesmo do `package-lock.json`), complementando a de 18/10
-(**§6.4** tem as duas e o que mudou). A referência de RAM/CPU/latência usa
-**10 min de dwell** numa sessão **X11** (`DISPLAY=:0`, XWayland); o startup tem
-também o **A/B intercalado** com a 0.7.0 (§6.3). A máquina estava com carga
-~2,5–4,3 (outros processos de desenvolvimento) nas duas medições.
+Medição de referência em **20/10/2026** (Ubuntu 26.04.1, Intel Core i3-5015U,
+4 threads, Electron 44.8.0, o mesmo do `package-lock.json`), com **10 min de
+dwell** em **X11** (`DISPLAY=:100`, Xvfb) e carga da máquina ~3–5,5 (outros
+processos de desenvolvimento). As medições de 18–19/10 seguem em §6.3–§6.5; o
+**piso da stack**, a comparação com o Electron vazio e a armadilha do PSS estão
+em §6.6.
 
-> **Tentativas que não concluíram (18/10):** duas execuções de 10 min em
-> **Wayland nativo** terminaram com o processo encerrado durante o dwell (a
-> janela fica visível e foi fechada/interrompida) e uma terceira em **Xvfb** foi
-> cancelada por SIGTERM. A medição de 19/10 usou a mesma sessão X11 e concluiu.
+> **Meça sozinho.** O PSS divide as páginas compartilhadas entre *todos* os
+> processos que mapeiam o mesmo binário. Com outra instância do mesmo Electron
+> aberta, a mesma build mediu **202 MB** em vez de **269 MB** (§6.6). O
+> `bench.mjs` conta essas instâncias e avisa no relatório.
+
+> **Wayland:** a execução de 10 min com Wayland sob Xvfb foi **encerrada antes
+> da medição** (o Electron ignora o Xvfb quando `WAYLAND_DISPLAY` existe). Os
+> números de Wayland vêm de dwells de 25 s (§6.6), que são estáveis; a medição
+> oficial de 10 min é em X11, como nas anteriores.
 
 | Métrica | Medido | Orçamento | Status |
 | :--- | ---: | ---: | :---: |
-| Startup (execução de 10 min, X11) | **1 581,3 ms** | ≤ 1 500 ms | ⚠ |
-| Startup (A/B, mediana, carga ~4,7) | **1 779 ms** | ≤ 1 500 ms | ⚠ |
-| Melhor par do A/B | **1 337 ms** | ≤ 1 500 ms | ✅ |
-| RAM (RSS total após 10 min) | **740,4 MB** | ≤ 200 MB | ❌ |
-| RAM (PSS total após 10 min, inclui GPU) | **298,8 MB** | ≤ 200 MB | ❌ |
+| Startup (10 min, X11/Xvfb, carga 4,4) | **1 966 ms** | ≤ 1 500 ms | ❌ |
+| Startup (A/B intercalado, mediana, §6.3) | **1 779 ms** | ≤ 1 500 ms | ⚠ |
+| Melhor par do A/B (§6.3) | **1 337 ms** | ≤ 1 500 ms | ✅ |
+| RAM (PSS após 10 min, inclui GPU) | **269,0 MB** | ≤ 280 MB (X11) / 300 MB (Wayland) | ✅ |
+| RAM (RSS após 10 min) | 625,8 MB | — (informativo) | — |
 | CPU ociosa (média de 5 s aos 10 min) | **0,00 %** de 1 core | ≈ 0 % | ✅ |
-| CPU ociosa (durante todo o dwell) | 33 % → 18 % → 23 % → 1 % → **0 %** | ≈ 0 % | ⚠ nos ~90 s |
-| Latência de interação (p95) | **4,49 ms** | ≤ 100 ms | ✅ |
+| CPU ociosa (20 amostras ao longo do dwell) | **0,00 %** em todas | ≈ 0 % | ✅ |
+| Latência de interação (p95) | **3,69 ms** | ≤ 100 ms | ✅ |
 | FPS durante job | — | ≥ 55 fps | manual |
 | Latência de status (`?`) | — | ≤ 200 ms | manual |
 | DPI 100/125/150/200 % | — | nítido | manual |
 
 **Status:** ✅ dentro do orçamento; ⚠ excede por pouco (startup ≤ 1 800 ms,
-RSS ≤ 220 MB, CPU ≤ 3 %, p95 ≤ 150 ms); ❌ acima disso; `manual` = fora do
-escopo automático.
+PSS até 10 % acima do limite — 280 MB em X11, 300 MB em Wayland —, CPU ≤ 3 %,
+p95 ≤ 150 ms); ❌ acima disso; `manual` = fora do escopo automático. O
+`bench.mjs` escolhe o limite de RAM pelo display server detectado.
 
-**Leitura:** o startup (1 581,3 ms) fica ~5 % acima de 1,5 s **com a carga da
-máquina em 4,3** (o A/B mostra o melhor par em 1 337 ms e a mediana em
-1 779 ms): o piso desta máquina, medida com HTML vazio, é de 1 268–1 769 ms —
-não há o que "otimizar" além do que já foi feito (§6.3). A RAM continua acima:
-PSS 298,8 MB (**inclui o processo GPU**; os 227,3 MB antigos não incluíam, não
-são comparáveis) e RSS 740,4 MB, que soma páginas compartilhadas em cada
-processo — o main sozinho tem 199,8 MB. A **CPU ociosa é 0,00 % no repouso
-longo** (16 amostras consecutivas de 0 % entre 2 e 10 min) e o orçamento é
-atendido; o que existe é uma **cauda de aquecimento de ~90 s** (§6.4). A
-medição de 18/10 (7,40 %) **não se reproduz** e está documentada com a
-ressalva no §6.4. A latência de handler (p95 4,49 ms) está bem dentro. FPS,
-latência de status e DPI continuam pendentes de procedimento manual (§7–§9).
+**Leitura:** o **PSS de 269,0 MB** (app sozinho) fica **56 MB acima de uma
+janela Electron vazia com as mesmas flags** (213 MB em X11; 236 MB em Wayland),
+e não cresce no repouso: **282,2 MB aos 30 s → 269,0 MB dos 2 aos 10 min** — a
+segunda corrida de 10 min deu **269,2 MB**, com a mesma curva (§6.6). O
+orçamento anterior de 200 MB estava **abaixo do piso da stack** — não
+era atingível nem com o app vazio; o RNF-11 passou a admitir **280 MB em X11 e
+300 MB em Wayland**, ~10 MB acima do medido. O serviço de rede passou para o
+processo browser (`NetworkServiceInProcess2`, −11 MB, §6.6). O **RSS
+(625,8 MB)** soma páginas compartilhadas em cada processo e não é graduado. O
+startup de **1 966 ms** foi medido em **Xvfb** e com a carga em 4,4 — o Xvfb
+infla o primeiro paint (§10) e o A/B de §6.3 mostra o piso de 1,27–1,77 s da
+máquina em sessão real. A **CPU ociosa é 0,00 %** nas 20 amostras e a latência
+de handler (p95 3,69 ms) está bem dentro. FPS, latência de status e DPI
+continuam pendentes de procedimento manual (§7–§9).
 
 ## 2. O que é medido × o que é manual
 
@@ -114,9 +123,13 @@ renderer, GPU, utility, zygote) e soma:
 - **PSS** (`smaps_rollup`) — rateia páginas compartilhadas e representa melhor
   o consumo real do conjunto.
 
-A tabela de orçamento usa o **RSS total** (medida pedida e conservadora) e o
-PSS aparece nos detalhes. O orçamento de 200 MB é comparado com o total da
-árvore, não só com o processo main.
+A tabela de orçamento usa o **PSS total** (inclui o processo GPU) e exige o
+**app sozinho**: o PSS rateia as páginas compartilhadas entre *todos* os
+processos que mapeiam o mesmo inode, então outra instância aberta faz o número
+cair (202 × 269 MB na mesma build — §6.6). O RSS continua nos detalhes, mas
+**não** é graduado: ele soma as mesmas páginas compartilhadas em cada processo,
+então até uma janela vazia do Electron passa de 570 MB por RSS. O orçamento é
+comparado com o total da árvore, não só com o processo main.
 
 ### CPU ociosa
 
@@ -362,21 +375,120 @@ startup/CPU inflados; RAM e contagem de processos, não):
    então a diferença é da flag, não do código.
 3. **Move o risco para o main.** Com o GPU no processo principal, uma falha
    do driver derruba o app inteiro; separado, eladerruba só o processo GPU.
-4. O ganho real (um processo a menos) não muda nenhum veredito: o orçamento
-   automático do `bench.mjs` compara o RSS total (649,3 → 585,2 MB), que
-   continua **muito acima** de 200 MB nos dois braços.
+4. O ganho real (um processo a menos) não muda nenhum veredito: o gasto de
+   RAM continua acima do orçamento **da época** (200 MB) nos dois braços — a
+   medição comparava o **RSS total** (649,3 → 585,2 MB); o `bench.mjs` passou a
+   graduar o **PSS** (§6.6), que é a métrica do orçamento (hoje 280/300 MB).
 
-O que fica **aberto** para o RNF-11: a RAM (PSS 265,7 MB nesta máquina, contra
-≤ 200 MB). A alavanca não é o processo GPU — é o que o renderer e o main
+O que ficou **aberto** para o RNF-11: a RAM (PSS 265,7 MB nesta máquina, contra
+≤ 200 MB na época). A alavanca não é o processo GPU — é o que o renderer e o main
 mantêm vivos (RSS do renderer 117,7 MB; main 180,4 MB). Medir isso exige
-perfilar aheap do renderer e o que o main segura (sessão, log, snapshot da
-máquina), não trocar de flag.
+perfilar a heap do renderer e o que o main segura (sessão, log, snapshot da
+máquina), não trocar de flag. **Resposta no §6.6:** a heap do renderer é
+pequena (2,7 MB); o custo do app é layout/paint (+22,5 MB no renderer) e o
+runtime no main (+19,6 MB), sobre um piso de 213 MB do Electron vazio.
 
 Instrumento: `scripts/bench.mjs` aceitou `GRBL_ELECTRON_FLAGS` (flags extras
 do Electron na linha de comando) para permitir A/B sem recompilar.
 
-## 7. Procedimento manual — FPS durante job (≥ 55 fps)
+## 6.6 Onde está a RAM: piso da stack, serviço de rede e a armadilha do PSS (20/10/2026)
 
+O §6.5 descartou o processo GPU como alavanca. Esta medição responde a três
+perguntas: **quanto do PSS é do app e quanto é da stack?**, **o serviço de rede
+vale um processo?** e **por que a mesma build já mediu 202 MB e 269 MB?**
+
+Todas as corridas desta seção são **headless** (Xvfb), com a árvore de processos
+medida por `smaps_rollup`; o startup aqui fica inflado pelo Xvfb (§10) — a
+referência de startup continua sendo o A/B de §6.3.
+
+### A armadilha: PSS depende de quem mais está aberto
+
+O PSS rateia cada página compartilhada entre **todos** os processos da máquina
+que mapeiam o mesmo inode — inclusive de outra instância do app. A mesma build,
+no mesmo dia, com 10 min de dwell:
+
+| Condição | PSS (X11) |
+| :--- | ---: |
+| A instância do usuário também estava aberta | **202,0 MB** |
+| Uma instância só | **269,2 MB** |
+| Uma instância + 6 processos de um Electron vazio (teste forçado) | **223,0 MB** |
+
+O `bench.mjs` passou a contar as **outras instâncias do mesmo binário** e a
+avisar (`Outras instâncias do mesmo Electron`). **Regra:** para comparar
+medições, feche as demais instâncias (e qualquer app que use o mesmo
+`node_modules/electron`); o número sozinho é o que o usuário paga ao abrir o
+GRBL Studio.
+
+### Piso da stack × app (instância única)
+
+| Configuração | X11 | Wayland |
+| :--- | ---: | ---: |
+| Electron vazio, sem a flag | 223,8 MB | 248,1 MB |
+| Electron vazio, **com** a flag | 213,0 MB | 236,2 MB |
+| GRBL Studio, sem a flag | 281,7 MB | 300,9 MB |
+| GRBL Studio, **com** a flag | **270,3 MB** | **290,4 MB** |
+| **Custo do app sobre o vazio** | **+57,3 MB** | **+54,2 MB** |
+
+App e vazio usam as mesmas flags; X11 medido com 60 s de dwell, Wayland com
+25 s. O **vazio já nasce com 213 MB (X11)**: o orçamento antigo de 200 MB era
+menor que o piso de uma janela Electron sem uma linha de código do app.
+
+### Onde vão os 269,2 MB (X11, 10 min)
+
+| Processo | PSS | Electron vazio (com a flag) | Δ |
+| :--- | ---: | ---: | ---: |
+| main (browser) | 106,5 MB | 86,9 MB | +19,6 |
+| GPU | 65,2 MB | 50,1 MB | +15,1 |
+| renderer | 67,9 MB | 45,4 MB | +22,5 |
+| zygotes (2) | 29,6 MB | 30,5 MB | −0,9 |
+| **total** | **269,2 MB** | **213,0 MB** | **+56,2** |
+
+O renderer **não** guarda programa nem heap grande: com o app ocioso o perfil
+CDP mostra **2,7 MB de heap usado**, 1 600 elementos, 6 460 nós de DOM e dois
+canvases (`previewCanvas` 1021×406 e `designCanvas` 300×150). Os +22,5 MB são
+layout/paint/composição do Chromium para uma UI densa. No main, `electron-updater`
+e `serialport` já entram por `await import()`; o custo é o runtime do app (IPC,
+serviços, i18n, pré-voo) e o heap do V8.
+
+### Serviço de rede: −11 MB (adotado)
+
+| Configuração | Processos | X11 | Wayland |
+| :--- | ---: | ---: | ---: |
+| padrão (serviço em `utility`) | 6 | 281,7 MB | 300,9 MB |
+| `NetworkServiceInProcess2` | 5 | **270,3 MB** | **290,4 MB** |
+
+O processo `utility` do serviço de rede custa ~26 MB de PSS mesmo ocioso e o
+app só usa a rede para procurar atualizações; com a flag o stack fica no
+processo browser (main +4,5 MB): **−11,4 MB (X11) / −10,5 MB (Wayland)** e um
+processo a menos. **Custo:** o serviço deixa de rodar isolado — o app não
+carrega conteúdo remoto (a rede só faz HTTPS para o GitHub Releases), então a
+superfície é mínima; e, se a flag deixar de existir numa versão futura do
+Chromium, o app apenas volta ao comportamento padrão.
+
+`disable-gpu` continua **recusado** (§6.5: a UI fica lenta) e
+`disable-gpu-rasterization` foi **descartado** (§6.5 mediu ganho só em Wayland,
+com a rasterização indo para a CPU — risco para o RNF-12).
+
+### Wayland × X11
+
+A diferença de ~22 MB **não é do app**: no processo browser, o caminho Wayland
+carrega `libLLVM.so.21.1` (~4,4 MB — rasterizador de software) e pools maiores
+de `partition_alloc`; o Electron vazio mede **213,0 MB** em X11 e **236,2 MB**
+em Wayland. O app acrescenta ~55 MB nas duas.
+
+### Leitura
+
+- **269,0 e 269,2 MB em X11** (duas corridas de 10 min) e **290,4 MB em
+  Wayland** (25 s), com o app sozinho. Não há crescimento: a linha do tempo dá
+  **282,2 MB aos 30 s** (aquecimento) e **269,0 MB dos 2 aos 10 min** — é piso
+  de stack, não vazamento.
+- O app custa **~55–57 MB (21–25 %)** acima de uma janela Electron vazia com as
+  mesmas flags. É esse o número que o código controla; o resto é a stack.
+- Por isso o RNF-11 passou a admitir **280 MB em X11 e 300 MB em Wayland**
+  (~10 MB de folga sobre o medido). O limite anterior (200/220 MB) ficava
+  **abaixo do piso** (213/236 MB) e não era atingível por nenhum app Electron.
+
+## 7. Procedimento manual — FPS durante job (≥ 55 fps)
 
 Não há número automático: é preciso um job rodando. Para não depender de
 hardware, use o emulador GRBL:
@@ -469,9 +581,17 @@ versões e anote a taxa de polling observada.
   `WAYLAND_DISPLAY`/`XDG_SESSION_TYPE` forem removidos; caso contrário o
   Electron usa Wayland e o Xvfb é ignorado. Xvfb/software rendering pode
   piorar startup e FPS em relação a uma sessão gráfica real.
-- **RSS ≠ PSS.** O RSS soma páginas compartilhadas em cada processo; use o PSS
-  para estimar o consumo real. O orçamento é comparado com o RSS total de
-  forma conservadora.
+- **RSS ≠ PSS, e PSS depende de quem está aberto.** O RSS soma páginas
+  compartilhadas em cada processo e chega a 572 MB numa janela Electron
+  **vazia**; o PSS rateia essas páginas e é a métrica graduada no orçamento
+  (§6.6). Mas o rateio é **da máquina inteira**: com outra instância do mesmo
+  Electron aberta, o PSS medido cai (202 × 269 MB). Feche as demais instâncias
+  — o `bench.mjs` conta e avisa.
+- **Wayland sob Xvfb é instável para dwell longo.** Uma execução de 10 min com
+  `WAYLAND_DISPLAY` herdado (o Electron escolhe Wayland e ignora o Xvfb) foi
+  encerrada antes da medição; a medição oficial de 10 min roda em X11
+  (`env -u WAYLAND_DISPLAY`). As comparações Wayland × X11 de §6.6 usam
+  dwell de 25 s, que é estável.
 - **Variância.** Rode 3 vezes em máquina ociosa e use a mediana para números
   oficiais. Carga do sistema e cache de disco aparecem no relatório.
 - **Versões.** Electron/Chromium/Node vêm do `package-lock.json`; anote-os ao

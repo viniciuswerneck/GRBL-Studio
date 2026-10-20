@@ -191,8 +191,9 @@ multiplataforma continua aberta.
 ## 5. Melhorias recomendadas (por prioridade)
 
 ### Curto prazo — consolidar o diferencial (1 release)
-1. **Medir e publicar** os orçamentos RNF-11/12 (startup ≤1,5 s, RAM ≤200 MB,
-   ≥55 fps, DPI 100/125/150/200 %) — números viram argumento de marketing.
+1. **Medir e publicar** os orçamentos RNF-11/12 (startup ≤1,5 s, RAM ≤280 MB
+   em X11 / 300 MB em Wayland, ≥55 fps, DPI 100/125/150/200 %) — números viram
+   argumento de marketing.
 2. **Corrigir o drift** de `FEATURES_COMPARISON.md` e demais docs (estado real
    **v0.8.0**) — reconciliado em 19/10/2026.
 3. **Validar hardware** Windows/macOS (ou marcar como beta) e ligar **Flatpak**

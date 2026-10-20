@@ -6,6 +6,32 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Changed — performance: serviço de rede dentro do processo browser (RNF-11)
+
+- O Chromium subia um processo `utility` só para o **serviço de rede**
+  (~26 MB de PSS com o app ocioso) — e o GRBL Studio só usa a rede para
+  procurar atualizações. A feature `NetworkServiceInProcess2` mantém o stack de
+  rede no processo browser: **−11 MB** no total e **um processo a menos**
+  (281,7 → 270,3 MB em X11; 300,9 → 290,4 MB em Wayland; ver `BENCHMARK.md`
+  §6.6). É uma feature flag do Chromium: se ela deixar de existir, o app só
+  volta ao comportamento padrão, sem quebrar.
+- `scripts/bench.mjs` passou a **graduar o orçamento de RAM em PSS** (o número
+  que rateia páginas compartilhadas) em vez de RSS; o RSS continua no relatório
+  como informação. Uma janela vazia do Electron mede 572 MB de RSS e 213 MB de
+  PSS — comparar RSS com o orçamento não media o app.
+- O benchmark ganhou a evidência do **piso da stack**: uma janela Electron
+  vazia, com as mesmas flags, consome **213 MB (X11) / 236 MB (Wayland)** de
+  PSS; o app acrescenta ~57 MB (main +20, renderer +23, GPU +15).
+- O `bench.mjs` agora **conta outras instâncias do mesmo Electron** e avisa: o
+  PSS divide páginas compartilhadas entre todos os processos da máquina, e a
+  mesma build mediu **202 MB** com a instância do usuário aberta e **269 MB**
+  sozinha. Também mede o PSS **ao longo do dwell** (282 MB aos 30 s → 269 MB
+  dos 2 aos 10 min, sem crescimento).
+- **RNF-11 agora tem limite de RAM por display:** ≤ 280 MB em X11 e ≤ 300 MB em
+  Wayland (PSS total com GPU, app sozinho, após 10 min) — ~10 MB acima do
+  medido (269,0 MB / 290,4 MB). O limite anterior (200/220 MB) ficava **abaixo
+  do piso** de uma janela Electron vazia e não era atingível.
+
 ### Added — mover a cabeça pelo preview (P2.14)
 
 - **Clique no preview de caminho** escolhe um ponto e abre um popover com as

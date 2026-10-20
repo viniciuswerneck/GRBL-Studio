@@ -41,7 +41,13 @@ const reference = (text: string): boolean[][] => {
         data: number[],
         eccPercent: number,
         layers: number,
-      ) => { getMatrix: () => { get: (x: number, y: number) => boolean } };
+      ) => {
+        getMatrix: () => {
+          get: (x: number, y: number) => boolean;
+          getHeight: () => number;
+          getWidth: () => number;
+        };
+      };
     }
   ).encode(latin1(text), 33, 0);
   const matrix = code.getMatrix();

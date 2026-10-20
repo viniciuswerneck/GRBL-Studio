@@ -124,8 +124,12 @@ SMOKE_EVAL="$(cat probe.js)" GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-san
 ### Benchmark dos orçamentos (P0.1)
 
 Mede, com o app Electron real e sem hardware, os orçamentos de **RNF-11**:
-startup (spawn → primeiro frame), RAM (RSS/PSS da árvore de processos), CPU
-ociosa e latência de ida e volta main → renderer → IPC.
+startup (spawn → primeiro frame), RAM (PSS da árvore de processos, ao longo do
+dwell; o RSS aparece só como informação), CPU ociosa e latência de ida e volta
+main → renderer → IPC. O limite de RAM é escolhido pelo display server
+detectado (280 MB em X11, 300 MB em Wayland — `BENCHMARK.md` §6.6).
+Meça com o app sozinho: outra instância do mesmo Electron aberta faz o PSS
+parecer menor (o script conta e avisa).
 
 ```bash
 npm run build

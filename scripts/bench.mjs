@@ -149,7 +149,10 @@ Opções:
   --verbose      Ecoa stdout/stderr do app
   -h, --help     Esta ajuda
 
-Requer display (use xvfb-run em ambiente headless) e npm run build prévio.`);
+Requer display (use xvfb-run em ambiente headless) e npm run build prévio.
+
+Meça com o app fechado: outra instância do mesmo Electron faz o PSS parecer
+menor (o relatório conta as instâncias e avisa).`);
 }
 
 // ---------------------------------------------------------------- /proc
@@ -267,6 +270,37 @@ function snapshotProcesses(rootPid) {
   return { processes, totalRss, totalPss, pssComplete, rssByType };
 }
 
+/**
+ * Outras instâncias do **mesmo binário** do Electron rodando na máquina.
+ *
+ * O PSS divide as páginas compartilhadas (binário, libs do Chromium) entre
+ * **todos** os processos que mapeiam o mesmo inode, inclusive de outros apps.
+ * Com outra instância aberta, o app medido parece menor do que é: em 20/10 a
+ * mesma build mediu 202 MB com a instância do usuário aberta e 269 MB sozinha.
+ * O relatório conta as "irmãs" e avisa quando há mais de uma.
+ */
+function sharingPeers(rootPid) {
+  const own = new Set(listProcessTree(rootPid).map((stat) => stat.pid));
+  let exe;
+  try {
+    exe = fs.readlinkSync(`/proc/${rootPid}/exe`);
+  } catch {
+    return [];
+  }
+  const peers = [];
+  for (const entry of fs.readdirSync('/proc')) {
+    if (!/^\d+$/.test(entry)) continue;
+    const pid = Number(entry);
+    if (own.has(pid)) continue;
+    try {
+      if (fs.readlinkSync(`/proc/${pid}/exe`) === exe) peers.push(pid);
+    } catch {
+      // processo sumiu entre o readdir e o readlink
+    }
+  }
+  return peers;
+}
+
 function tickMap(rootPid) {
   const map = new Map();
   for (const stat of listProcessTree(rootPid)) {
@@ -377,6 +411,42 @@ function startCpuTimeline(rootPid, everyMs = 30_000, windowMs = 1000) {
 }
 
 // ------------------------------------------------------------- medição
+
+/**
+ * RAM **ao longo do dwell** (uma foto a cada `everyMs`).
+ *
+ * O orçamento é "≤ 280/300 MB (X11/Wayland) **após 10 min**": a foto única no
+ * fim mostra o total, mas não diz se ele estabilizou ou se ainda cresce (cache
+ * de código, GPU, vazamento). Com a linha do tempo dá para separar "piso da
+ * stack" de "crescimento" — as amostras ficam no JSON (`memory.timeline`).
+ */
+function startMemoryTimeline(rootPid, everyMs = 30_000) {
+  const samples = [];
+  const startedAt = performance.now();
+  let stopped = false;
+  let timer = null;
+  const tick = () => {
+    if (stopped) return;
+    const snap = snapshotProcesses(rootPid);
+    samples.push({
+      atMs: Math.round(performance.now() - startedAt),
+      pssMB: snap.pssComplete ? Number(mb(snap.totalPss).toFixed(1)) : null,
+      rssMB: Number(mb(snap.totalRss).toFixed(1)),
+      processes: snap.processes.length,
+    });
+    timer = setTimeout(tick, everyMs);
+  };
+  timer = setTimeout(tick, everyMs);
+  return {
+    everyMs,
+    samples,
+    stop: () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      return samples;
+    },
+  };
+}
 
 function deferred() {
   let resolve;
@@ -508,6 +578,7 @@ async function measure(options) {
     );
     const startupMs = performance.now() - startedAt;
     const rootPid = readyPayload.pid ?? child.pid;
+    const peers = sharingPeers(rootPid);
 
     const latencyResult = withTimeout(
       latency.promise,
@@ -521,8 +592,10 @@ async function measure(options) {
     // Durante o dwell a CPU é amostrada a cada 30 s (linha do tempo): a janela
     // única do fim não mostra se o consumo cresce com o tempo.
     const timeline = startCpuTimeline(rootPid);
+    const memTimeline = startMemoryTimeline(rootPid);
     await delay(options.dwellMs);
     timeline.stop();
+    memTimeline.stop();
     const memory = snapshotProcesses(rootPid);
     const cpu = await sampleIdleCpu(rootPid);
     cpu.timeline = {
@@ -538,6 +611,8 @@ async function measure(options) {
       ready: readyPayload,
       startupMs,
       memory,
+      memoryTimeline: memTimeline.samples,
+      peers,
       cpu,
       latency: latencyOutcome.ok ? latencyOutcome.value : null,
       latencyError: latencyOutcome.ok ? null : latencyOutcome.error,
@@ -611,6 +686,9 @@ function buildReport(run, options) {
     sandbox: options.sandbox,
     dwellMs: options.dwellMs,
     userDataIsolated: true,
+    // Outras instâncias do mesmo binário abrem o PSS compartilhado e fazem o
+    // app parecer menor: a medição só é comparável sozinha.
+    sharingPeers: run.peers?.length ?? 0,
   };
 
   const latency = run.latency;
@@ -618,6 +696,14 @@ function buildReport(run, options) {
   for (const [type, bytes] of Object.entries(run.memory.rssByType)) {
     rssByType[type] = Number(mb(bytes).toFixed(2));
   }
+
+  // RNF-11: 280 MB em X11 e 300 MB em Wayland — o stack Wayland custa ~20 MB
+  // a mais até numa janela vazia (236 × 213 MB, BENCHMARK.md §6.6). A faixa ⚠
+  // é 10 % acima do limite.
+  const ramLimit =
+    environment.displayServer === 'wayland'
+      ? { max: 300, warn: 330, label: '≤ 300 MB (Wayland)' }
+      : { max: 280, warn: 308, label: '≤ 280 MB (X11)' };
 
   const budgets = [
     {
@@ -630,13 +716,30 @@ function buildReport(run, options) {
       status: grade(run.startupMs, 1500, 1800),
     },
     {
-      key: 'rss',
-      metric: `RAM (RSS total após ${number(options.dwellMs / 1000, 0)} s)`,
-      measured: Number(mb(run.memory.totalRss).toFixed(1)),
+      // A RAM é graduada em **PSS**, não em RSS: o RSS soma as páginas
+      // compartilhadas (libs do Electron, binário, fontes) em cada processo, e
+      // até uma janela vazia do Electron passa de 570 MB por RSS — o número não
+      // mede o consumo real do app (ver docs/BENCHMARK.md §6.6). O PSS rateia
+      // essas páginas e é a métrica do orçamento do RNF-11.
+      //
+      // O limite depende do display: o stack Wayland já custa ~22 MB a mais
+      // que o X11 numa janela vazia (236,2 × 213,0 MB), então o RNF-11 admite
+      // 280 MB em X11 e 300 MB em Wayland (PRODUCT_SPEC.md, RNF-11).
+      key: 'pss',
+      metric: `RAM (PSS total após ${number(options.dwellMs / 1000, 0)} s, inclui GPU)`,
+      measured: run.memory.pssComplete
+        ? Number(mb(run.memory.totalPss).toFixed(1))
+        : null,
       unit: 'MB',
-      display: `${number(mb(run.memory.totalRss), 1)} MB`,
-      limit: '≤ 200 MB',
-      status: grade(mb(run.memory.totalRss), 200, 220),
+      display: run.memory.pssComplete
+        ? `${number(mb(run.memory.totalPss), 1)} MB`
+        : 'n/d (precisa de root para ler o PSS de outro usuário)',
+      limit: ramLimit.label,
+      status: grade(
+        run.memory.pssComplete ? mb(run.memory.totalPss) : null,
+        ramLimit.max,
+        ramLimit.warn,
+      ),
     },
     {
       key: 'cpu',
@@ -705,6 +808,7 @@ function buildReport(run, options) {
         : null,
       rssByTypeMB: rssByType,
       processes: run.memory.processes.length,
+      timeline: run.memoryTimeline ?? [],
       detail: run.memory.processes.map((proc) => ({
         pid: proc.pid,
         type: proc.type,
@@ -777,6 +881,13 @@ function markdown(report) {
   );
   lines.push(`| Dwell | ${number(env.dwellMs / 1000, 0)} s |`);
   lines.push('| userData | temporário/isolado |');
+  lines.push(
+    `| Outras instâncias do mesmo Electron | ${
+      env.sharingPeers > 0
+        ? `⚠️ ${env.sharingPeers} (PSS subestimado — feche-as)`
+        : 'nenhuma'
+    } |`,
+  );
   lines.push('');
   lines.push('### Detalhes da medição');
   lines.push('');
@@ -805,6 +916,17 @@ function markdown(report) {
     } |`,
   );
   lines.push(`| Processos | ${report.memory.processes} |`);
+  const memTimeline = report.memory.timeline ?? [];
+  if (memTimeline.length > 1) {
+    const sampleText = memTimeline
+      .filter((sample) => sample.pssMB !== null)
+      .map(
+        (sample) =>
+          `${number(sample.atMs / 1000, 0)} s: ${number(sample.pssMB, 1)} MB`,
+      )
+      .join(' → ');
+    lines.push(`| PSS ao longo do dwell | ${sampleText} |`);
+  }
   lines.push(
     `| CPU (média / pico) | ${number(report.cpu.avgPercent, 2)} / ${number(report.cpu.maxPercent, 2)} % de 1 core |`,
   );
@@ -898,6 +1020,11 @@ async function main() {
   if (report.environment.loadHigh) {
     console.error(
       `bench: aviso: carga do sistema ${report.environment.loadAverage1} em ${report.environment.cores} núcleos — números de startup/CPU podem estar inflados.`,
+    );
+  }
+  if (report.environment.sharingPeers > 0) {
+    console.error(
+      `bench: aviso: ${report.environment.sharingPeers} outra(s) instância(s) do mesmo Electron aberta(s) — o PSS fica subestimado; feche-as para a medição valer.`,
     );
   }
   if (options.json) console.log(JSON.stringify(report, null, 2));

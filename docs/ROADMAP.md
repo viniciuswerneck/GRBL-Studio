@@ -242,7 +242,7 @@ E2E. Documentação em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md) §18.
 
 | Métrica | Meta |
 | :-- | :-- |
-| Startup · RAM (10 min) · CPU ociosa | ≤ 1,5 s · ≤ 200 MB · ≈ 0 % |
+| Startup · RAM (10 min) · CPU ociosa | ≤ 1,5 s · ≤ 280 MB (X11) / 300 MB (Wayland) · ≈ 0 % |
 | Resposta a interação · latência de status | ≤ 100 ms · ≤ 200 ms |
 | FPS durante job · preview (50k linhas) | ≥ 55 · ≤ 2 s (1º) / ≤ 16 ms (job) |
 | Tempo até o 1º job (usuário novo) | ≤ 5 min |

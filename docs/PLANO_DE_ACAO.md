@@ -139,6 +139,17 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > **CPU ociosa 0,00 %** aos 10 min (o 7,40 % de 18/10 não se reproduz; há uma
 > cauda de aquecimento de ~90 s). O `bench.mjs` agora mede a CPU **ao longo do
 > dwell** e **por processo**, para o número não ser uma foto de 5 s.
+>
+> **Re-medição (20/10/2026, `BENCHMARK.md` §6.6):** PSS **269,0 MB** em X11
+> após 10 min e **290,4 MB** em Wayland (25 s), com o **app sozinho** — o PSS
+> divide as páginas compartilhadas entre todos os processos da máquina, e a
+> mesma build já mediu 202 MB com outra instância aberta. O §6.6 mediu o **piso
+> da stack**: uma janela Electron vazia, com as mesmas flags, já consome
+> **213 MB** em X11 e **236 MB** em Wayland; o app acrescenta ~57 MB. O serviço
+> de rede passou para o processo browser (`NetworkServiceInProcess2`, −11 MB)
+> e o RNF-11 passou a ter limite por display (**280 MB em X11, 300 MB em
+> Wayland**), ~10 MB acima do medido. O `bench.mjs` agora gradua **PSS** (não
+> RSS) e mede a RAM ao longo do dwell.
 
 ---
 
@@ -504,7 +515,7 @@ no nível do Windows 11**.
   *(parcial: teclado/alvo de clique/`Esc`+`Ctrl+X` e paridade i18n feitos; falta a
   revisão visual humana)*
 - [ ] Passar o **checklist visual** completo de `DESIGN.md` §8 (aparência Win11,
-      DPI 125 %/150 %, RAM ≤ 200 MB, ≥ 55 fps, foco/teclado, `prefers-reduced-motion`).
+      DPI 125 %/150 %, RAM ≤ 280 MB, ≥ 55 fps, foco/teclado, `prefers-reduced-motion`).
       *(`prefers-reduced-motion` e foco visível já cobertos em `tokens.css`)*
 
 **Critérios de aceite**

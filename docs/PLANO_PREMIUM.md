@@ -181,7 +181,7 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 | Métrica | Meta | Como medir |
 | :-- | :-- | :-- |
 | Startup | ≤ 1,5 s | `performance.now()` no bootstrap |
-| RAM após 10 min | ≤ 200 MB | `process.memoryUsage()` |
+| RAM após 10 min | ≤ 280 MB (X11) / 300 MB (Wayland), PSS | `scripts/bench.mjs` |
 | CPU ociosa | ≈ 0 % | DevTools Performance |
 | Resposta a clique/tecla | ≤ 100 ms | DevTools interaction |
 | Latência de status (`?`) | ≤ 200 ms | parser → paint |

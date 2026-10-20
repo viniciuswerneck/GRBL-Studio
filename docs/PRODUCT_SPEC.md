@@ -55,9 +55,9 @@ LaserGRBL e a qualidade de experiência de um software desktop contemporâneo.
 4. **Experiência moderna** — visual **estilo Windows 11 (Fluent Design 2)**:
    cantos arredondados, cor de acento, animações suaves, **11 temas** (5 claros,
    4 escuros, 2 de alto contraste), atalhos de teclado, feedback claro de
-   estado/alarme, **i18n (pt-BR/en/es)** — com
-   orçamento de performance (≤ 1,5 s de startup, ≤ 200 MB de RAM) e precisão de
-   instrumento (DRO em 0,001 mm). Ver `DESIGN.md`.
+   estado/alarme, **i18n (pt-BR/en/es)** — com orçamento de performance
+   (≤ 1,5 s de startup, ≤ 280 MB de RAM em X11 / 300 MB em Wayland) e precisão
+   de instrumento (DRO em 0,001 mm). Ver `DESIGN.md`.
 5. **Diagnóstico acessível** — console legível, mensagens de alarme com causa e
    solução (nos moldes do manual da COMGO).
 
@@ -312,7 +312,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RNF-8 | **Recuperação**: fechar o app durante um job não deve deixar a máquina em estado desconhecido sem aviso. | Segurança do equipamento. |
 | RNF-9 | **Observabilidade**: log persistente de sessão para diagnóstico. | Suporte ao usuário. |
 | RNF-10 | **Aparência**: seguir o design system Windows 11 (Fluent Design 2) — cantos 4/8 px, tokens de tema, cor de acento, estados de controle. Ver `DESIGN.md`. | Familiaridade e qualidade percebida. |
-| RNF-11 | **Performance**: startup ≤ 1,5 s · RAM ≤ 200 MB · resposta a interação ≤ 100 ms · UI ≥ 55 fps com job rodando · CPU ociosa ≈ 0 %. | "Rápido e leve" é requisito medível. |
+| RNF-11 | **Performance**: startup ≤ 1,5 s · RAM ≤ 280 MB em X11 e ≤ 300 MB em Wayland (PSS total com GPU, app sozinho, após 10 min; uma janela Electron vazia já mede 213/236 MB) · resposta a interação ≤ 100 ms · UI ≥ 55 fps com job rodando · CPU ociosa ≈ 0 %. | "Rápido e leve" é requisito medível. |
 | RNF-12 | **Precisão visual**: DRO em 0,001 mm com `tabular-nums`, nítido em DPI 100/125/150/200 %, canvas com `devicePixelRatio`, sem arredondar valores de G-code. | "Preciso" é requisito medível. |
 | RNF-13 | **Acessibilidade**: contraste AA, alvos de clique ≥ 32 px, foco visível, Stop sempre acessível por teclado, estados redundantes com texto. | Segurança e inclusão. |
 

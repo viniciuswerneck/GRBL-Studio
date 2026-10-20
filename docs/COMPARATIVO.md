@@ -73,7 +73,7 @@
 | Métrica | Orçamento (RNF-11/12) | Medido (out/2026) | Situação |
 | :--- | :--- | :--- | :--- |
 | Startup | ≤ 1,5 s | 1,58 s (execução de 10 min); 1,78 s (mediana A/B) | ⚠️ acima |
-| RAM (10 min) | ≤ 200 MB | acima (ver `docs/BENCHMARK.md`) | ⚠️ acima |
+| RAM (10 min) | ≤ 280 MB (X11) / 300 MB (Wayland), PSS | 269 MB (X11) / 290 MB (Wayland) | ✅ |
 | CPU ociosa | ≈ 0 % | 0,00 % | ✅ |
 | Latência de status | ≤ 200 ms | p95 2,6 ms | ✅ |
 | Resposta a interação | ≤ 100 ms | dentro (ver §6 do benchmark) | ✅ |

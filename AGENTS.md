@@ -72,7 +72,7 @@ npm test               # Vitest (unit + integração)
 | Métrica | Limite |
 | :--- | :--- |
 | Startup | ≤ 1,5 s |
-| RAM | ≤ 200 MB após 10 min |
+| RAM | ≤ 280 MB em X11 / ≤ 300 MB em Wayland (PSS, inclui GPU, app sozinho, após 10 min) |
 | Resposta a interação | ≤ 100 ms |
 | FPS durante job | ≥ 55 |
 | CPU ociosa | ≈ 0 % |

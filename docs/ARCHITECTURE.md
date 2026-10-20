@@ -77,6 +77,10 @@ primeira tela usa**:
   API serial, ao listar portas ou conectar. `BrowserWindow` principal é criada e
   recebe `loadFile` **antes** do splash; o splash entra só se a janela não
   estiver pronta em 400 ms.
+- **Rede:** o stack de rede fica no processo browser
+  (`NetworkServiceInProcess2`, `src/main/index.ts`). O app só faz rede para
+  procurar atualizações; sem isso o Chromium sobe um processo `utility` de
+  ~26 MB mesmo ocioso (−11 MB no total). Ver `BENCHMARK.md` §6.6.
 - **Renderer:** `index.html` referencia apenas os bundles do primeiro paint
   (i18n, materiais, máquinas, ajustes, preview, retomada, macros, teste de
   material e `renderer.js`). Tabelas de símbolos e editor vetorial usam

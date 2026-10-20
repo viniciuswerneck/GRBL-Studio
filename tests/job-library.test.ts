@@ -15,7 +15,7 @@ import {
   JOB_LIBRARY_MAX_PROGRAM_BYTES,
   JobLibrary,
 } from '../src/main/services/JobLibrary';
-import type { JobLibraryAdd } from '../src/shared/types';
+import type { JobLibraryAdd, JobLibraryEntry } from '../src/shared/types';
 
 /** PNG 1×1 válido (o main só confere o formato do data URL). */
 const PNG =
@@ -33,7 +33,7 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-function add(overrides: Partial<JobLibraryAdd> = {}): Promise<unknown> {
+function add(overrides: Partial<JobLibraryAdd> = {}): Promise<JobLibraryEntry> {
   return lib.add({
     name: 'peca.gcode',
     source: 'image',
