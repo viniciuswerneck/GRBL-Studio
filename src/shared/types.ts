@@ -341,9 +341,9 @@ export interface Prefs {
 }
 
 /** Símbolos 2D disponíveis no modal "Código 2D". */
-export type Symbol2dKind = 'qr' | 'datamatrix';
+export type Symbol2dKind = 'qr' | 'datamatrix' | 'pdf417' | 'aztec';
 
-/** Ajustes persistidos do modal 2D (QR Code / Data Matrix). */
+/** Ajustes persistidos do modal 2D (QR Code / Data Matrix / PDF417 / Aztec). */
 export interface Symbol2dPrefs {
   symbology?: Symbol2dKind;
   /** QR: nível de correção. */
@@ -352,6 +352,14 @@ export interface Symbol2dPrefs {
   version?: number;
   /** Data Matrix: lado fixo em módulos; 0/ausente = automático. */
   dmSize?: number;
+  /** PDF417: nível de correção de erro (0…8). */
+  pdfEcc?: number;
+  /** PDF417: colunas de dados; `undefined` = automático. */
+  pdfColumns?: number;
+  /** PDF417: altura da linha (mm). */
+  pdfRowHeightMm?: number;
+  /** Aztec: correção de erro em % (23…90). */
+  aztecEccPercent?: number;
   moduleMm?: number;
   quietZoneModules?: number;
   linesPerMm?: number;

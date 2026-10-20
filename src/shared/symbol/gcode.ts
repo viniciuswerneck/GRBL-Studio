@@ -1010,6 +1010,8 @@ export interface AztecGcodeParams extends MatrixGcodeParams {
 
 export interface AztecGcodeResult extends SymbolGcodeResult {
   aztec: {
+    /** Lado do símbolo em módulos. */
+    size: number;
     /** Camadas de dados do símbolo. */
     layers: number;
     /** Símbolo compacto (≤ 4 camadas). */
@@ -1058,6 +1060,7 @@ export function aztecToGcode(
   return {
     ...g.result,
     aztec: {
+      size: aztec.size,
       layers: aztec.layers,
       compact: aztec.compact,
       codeWords: aztec.codeWords,

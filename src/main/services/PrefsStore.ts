@@ -107,7 +107,12 @@ function sanitizeSymbols(input: unknown): SymbolPrefs | undefined {
   if (raw.qr && typeof raw.qr === 'object') {
     const q = raw.qr as Record<string, unknown>;
     const qr: Symbol2dPrefs = {};
-    if (q.symbology === 'qr' || q.symbology === 'datamatrix') {
+    if (
+      q.symbology === 'qr' ||
+      q.symbology === 'datamatrix' ||
+      q.symbology === 'pdf417' ||
+      q.symbology === 'aztec'
+    ) {
       qr.symbology = q.symbology;
     }
     if (q.ecc === 'L' || q.ecc === 'M' || q.ecc === 'Q' || q.ecc === 'H') {
@@ -117,6 +122,18 @@ function sanitizeSymbols(input: unknown): SymbolPrefs | undefined {
     if (version !== undefined) qr.version = Math.round(version);
     const dmSize = finiteIn(q.dmSize, 0, 144);
     if (dmSize !== undefined) qr.dmSize = Math.round(dmSize);
+    // PDF417 (RF-SYM-7).
+    const pdfEcc = finiteIn(q.pdfEcc, 0, 8);
+    if (pdfEcc !== undefined) qr.pdfEcc = Math.round(pdfEcc);
+    const pdfColumns = finiteIn(q.pdfColumns, 1, 30);
+    if (pdfColumns !== undefined) qr.pdfColumns = Math.round(pdfColumns);
+    const pdfRowHeightMm = finiteIn(q.pdfRowHeightMm, 0.1, 50);
+    if (pdfRowHeightMm !== undefined) qr.pdfRowHeightMm = pdfRowHeightMm;
+    // Aztec (RF-SYM-7): a norma pede no mínimo 23 %.
+    const aztecEccPercent = finiteIn(q.aztecEccPercent, 23, 90);
+    if (aztecEccPercent !== undefined) {
+      qr.aztecEccPercent = Math.round(aztecEccPercent);
+    }
     const moduleMm = finiteIn(q.moduleMm, 0.05, 20);
     if (moduleMm !== undefined) qr.moduleMm = moduleMm;
     const quiet = finiteIn(q.quietZoneModules, 0, 10);

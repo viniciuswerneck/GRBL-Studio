@@ -121,6 +121,33 @@ describe('PrefsStore — sanitização das novas chaves', () => {
     expect(JSON.stringify(prefs)).not.toContain('persistir');
   });
 
+  it('guarda os ajustes do PDF417 e do Aztec (RF-SYM-7)', async () => {
+    const store = await storeWith({
+      symbols: {
+        qr: {
+          symbology: 'aztec',
+          aztecEccPercent: 40,
+          pdfEcc: 4,
+          pdfColumns: 6,
+          pdfRowHeightMm: 1.4,
+        },
+      },
+    });
+    expect((await store.read()).symbols?.qr).toEqual({
+      symbology: 'aztec',
+      aztecEccPercent: 40,
+      pdfEcc: 4,
+      pdfColumns: 6,
+      pdfRowHeightMm: 1.4,
+    });
+
+    // Fora da faixa: descartado (a norma do Aztec pede no mínimo 23 %).
+    const bad = await storeWith({
+      symbols: { qr: { symbology: 'aztec', aztecEccPercent: 5 } },
+    });
+    expect((await bad.read()).symbols?.qr).toEqual({ symbology: 'aztec' });
+  });
+
   it('guarda o tour visto (P0.4) e descarta valor inválido', async () => {
     const store = await storeWith({ onboarding: 1 });
     expect((await store.read()).onboarding).toBe(1);

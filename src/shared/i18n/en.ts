@@ -242,7 +242,8 @@ export const en = {
     'Grid generated: {count} symbol(s) · {cols} × {rows} · {w} × {h} mm. Check the preview and send or save.',
   'qr.title': '2D code',
   'qr.hint':
-    'Generates a QR Code, a Data Matrix or a PDF417 as raster G-code: pick the ' +
+    'Generates a QR Code, a Data Matrix, a PDF417 or an Aztec code as raster ' +
+    'G-code: pick the ' +
     'symbol, the content and the size in mm (or the module size) and engrave. ' +
     'The artwork origin is the bottom-left corner (X0 Y0).',
   'qr.content': 'Content',
@@ -251,6 +252,7 @@ export const en = {
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
   'qr.sym.pdf417': 'PDF417',
+  'qr.sym.aztec': 'Aztec',
   'qr.ecc': 'Error correction',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -330,6 +332,22 @@ export const en = {
   'pdf.err.bad-chars':
     'The PDF417 accepts Latin-1 only (no emoji or other UTF-8).',
   'pdf.err.unknown': 'Could not generate the PDF417 with these settings.',
+
+  // ---------------------------------------- Aztec (RF-SYM-7)
+  'aztec.title': 'Aztec code',
+  'qr.aztec.ecc': 'Error correction (%)',
+  'qr.aztec.eccHint':
+    'ISO/IEC 24778 asks for at least 23%. More correction = bigger symbol.',
+  'aztec.status.done':
+    'Aztec generated: {size}×{size} modules · {layers} layers · {w} × {h} mm · ' +
+    'module {module} mm. Check the preview, then send or save.',
+  'aztec.err.empty': 'Enter content to generate the Aztec code.',
+  'aztec.err.too-long':
+    'Content too long for an Aztec code (32 layers is the maximum).',
+  'aztec.err.bad-chars':
+    'The Aztec code accepts Latin-1 only (no emoji or other UTF-8).',
+  'aztec.err.layers': 'Invalid layer count for this content.',
+  'aztec.err.unknown': 'Could not generate the Aztec code with these settings.',
 
   'bar.title': 'Barcode',
   'bar.hint':

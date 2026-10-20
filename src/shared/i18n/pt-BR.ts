@@ -257,7 +257,8 @@ export const ptBR = {
     'Grade gerada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Confira no preview e envie ou salve.',
   'qr.title': 'Código 2D',
   'qr.hint':
-    'Gera um QR Code, um Data Matrix ou um PDF417 como G-code de varredura: ' +
+    'Gera um QR Code, um Data Matrix, um PDF417 ou um Aztec como G-code de ' +
+    'varredura: ' +
     'escolha o símbolo, o conteúdo e o tamanho (mm ou lado do módulo) e grave. A ' +
     'origem da arte é o canto inferior esquerdo (X0 Y0).',
   'qr.content': 'Conteúdo',
@@ -266,6 +267,7 @@ export const ptBR = {
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
   'qr.sym.pdf417': 'PDF417',
+  'qr.sym.aztec': 'Aztec',
   'qr.ecc': 'Correção de erro',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -350,6 +352,22 @@ export const ptBR = {
     'Parâmetros de PDF417 inválidos (colunas de dados fora de 1…30).',
   'pdf.err.bad-chars': 'O PDF417 aceita só Latin-1 (sem emoji ou outro UTF-8).',
   'pdf.err.unknown': 'Não foi possível gerar o PDF417 com esses parâmetros.',
+
+  // ----------------------------------------- Aztec (RF-SYM-7)
+  'aztec.title': 'Código Aztec',
+  'qr.aztec.ecc': 'Correção de erro (%)',
+  'qr.aztec.eccHint':
+    'A norma ISO/IEC 24778 pede no mínimo 23 %. Mais correção = símbolo maior.',
+  'aztec.status.done':
+    'Aztec gerado: {size}×{size} módulos · {layers} camadas · {w} × {h} mm · ' +
+    'módulo {module} mm. Confira no preview e envie ou salve.',
+  'aztec.err.empty': 'Informe um conteúdo para gerar o Aztec.',
+  'aztec.err.too-long':
+    'Conteúdo longo demais para um Aztec (o máximo é 32 camadas).',
+  'aztec.err.bad-chars':
+    'O Aztec aceita só Latin-1 (sem emoji ou outro UTF-8).',
+  'aztec.err.layers': 'Camadas inválidas para esse conteúdo.',
+  'aztec.err.unknown': 'Não foi possível gerar o Aztec com esses parâmetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':

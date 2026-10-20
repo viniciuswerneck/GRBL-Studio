@@ -373,7 +373,7 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 | :--- | :--- | :--- | :--- |
 | **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
 | **S2 — 1D + HRI** ✅ | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. **(feito — §16 e §17)** |
-| **S3 — Extras** (parcial: 1D extras + Data Matrix + PDF417 + grade ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Faltam:** Aztec e símbolo como objeto. (A **grade** RF-SYM-9 saiu em 19/10/2026 e o **PDF417** em 19/10/2026.) |
+| **S3 — Extras** (quase fechado: 1D extras + Data Matrix + PDF417 + grade + **Aztec** ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Falta:** símbolo como objeto. (A **grade** RF-SYM-9 e o **PDF417** saíram em 19/10/2026; o **Aztec** em 19/10/2026, v0.10.0.) |
 
 Sequência sugerida: **S1 → S2** (MVP útil: QR + Code 128/EAN) e só então S3.
 As fases são independentes de P2.1 (design) e P3.x (câmera/rotativa), mas
@@ -588,7 +588,7 @@ referência e **decodifica** com o `DataMatrixReader` do **ZXing**
 144×144, incluindo acentos Latin-1 e 2/6/10 blocos intercalados. Há ainda testes
 de G-code do DM/ITF-14 e E2E dos dois modais e da persistência.
 
-**Fora do escopo (segue aberto).** Aztec; Data Matrix retangular e os
+**Fora do escopo (segue aberto).** Data Matrix retangular e os
 modos C40/Text/X12/EDIFACT/Base256/ECI; Code 93 Full ASCII; validação de AIs do
 GS1; e o símbolo como **objeto** no editor "Desenhar" (S3). A **grade** de
 símbolos (RF-SYM-9) e o **PDF417** foram **entregues** em 19/10/2026.
@@ -616,3 +616,31 @@ incluída) e E2E do modal.
 
 **Fora do escopo (PDF417).** Modo **Text** (900; mais denso para maiúsculas),
 micro-PDF417 e ECI explícito (além do Latin-1 padrão).
+
+## 19. Estado da implementação — Aztec (v0.10.0, 19/10/2026)
+
+**Entregue** (mesmo bundle/modal, sem IPC novo):
+
+| Item | Onde | O que foi feito |
+| :--- | :--- | :--- |
+| **Encoder Aztec** | `symbol/aztec.ts` | ISO/IEC 24778: encoder de alto nível com o conjunto de estados de Frank Yellin (*latch*/*shift*/*binary shift*), *stuffing* de bits, EC **Reed–Solomon** em GF(2⁴/2⁶/2⁸/2¹⁰/2¹²), mensagem de modo, "bull's eye" central, marcas de alinhamento e a matriz de dados em 4 blocos por camada (2 *upright* + 2 *rotated*). Símbolos **compactos** (1–4 camadas) e **normais** (4–32), escolhidos automaticamente. |
+| **Tabelas** | `symbol/aztec.tables.ts` | Caractere→código, *latch* e *shift* das 5 tabelas da norma **gerados** por `scripts/gen-aztec-tables.mjs` a partir do `@zxing/library` — não editar à mão. |
+| **G-code** | `symbol/gcode.ts` | `aztecToGcode`/`aztecToCell`/`aztecGridToGcode` reusam o pipeline 2D (`matrixToBands`/`bandsToScanSegments`); a **quiet zone** da norma é 0 (a UI sugere 1 módulo de margem). |
+| **UI 2D** | modal **Código 2D** | Quarto símbolo no `select`: campo próprio de **correção de erro em %** (a norma pede ≥ 23 %; padrão 33 %); o nível de EC do QR (L/M/Q/H) e a versão somem. |
+| **Preferências** | `Prefs.symbols.qr` | Guarda também `aztecEccPercent` (sanitizado). |
+
+**Conteúdo byte a byte.** O Aztec carrega **bytes** (Latin-1), não caracteres:
+acentos ocupam 1 byte. O *writer* do **ZXing-JS** converte a string em
+**UTF-8** e grava 2 bytes por acento (o leitor devolve "Ã§" no lugar de "ç") —
+é um bug do port, não da norma; o nosso encoder grava 0xE7 e o leitor devolve
+"ç".
+
+**Validação.** `tests/symbol-aztec.test.ts` (7 testes) compara a **matriz
+inteira** com a do encoder do ZXing (bit a bit, 10 conteúdos) e **decodifica
+de verdade** com o `AztecCodeReader` (inclusive acentos, 300 caracteres e
+camadas forçadas), além de determinismo e dos erros tipados (`empty`,
+`bad-chars`, `too-long`, `layers`). Há E2E do modal.
+
+**Fora do escopo (Aztec).** ECI explícito (fora do Latin-1), modo *full* com
+correção de erro maior que 90 % e symbology identifier (OID) gravado no
+símbolo.

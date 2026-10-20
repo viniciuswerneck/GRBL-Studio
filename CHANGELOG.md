@@ -4,6 +4,55 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Added — Aztec (RF-SYM-7): a última simbologia que faltava
+
+- **Código Aztec** (ISO/IEC 24778) no modal **Código 2D**, ao lado do QR
+  Code, Data Matrix e PDF417: conteúdo → matriz → G-code de varredura, com
+  **correção de erro em %** (a norma pede no mínimo 23 %; padrão 33 %) e
+  escolha **automática** do menor símbolo (compacto de 1–4 camadas ou normal
+  de 4–32).
+- **Encoder próprio** (`src/shared/symbol/aztec.ts`, sem dependência de
+  runtime — ADR-11): encoder de alto nível com *latch*/*shift*/*binary shift*
+  (o conjunto de estados de Frank Yellin), *stuffing* de bits, **Reed–Solomon**
+  em GF(2⁴/2⁶/2⁸/2¹⁰/2¹²), mensagem de modo, "bull's eye" central, marcas de
+  alinhamento e a matriz de dados em 4 blocos por camada. As **tabelas da
+  norma** são **geradas** (`scripts/gen-aztec-tables.mjs` →
+  `src/shared/symbol/aztec.tables.ts`) — não editar à mão.
+- O conteúdo é **byte a byte** (Latin-1): acentos saem corretos (`ç` → lê
+  "ç"). O *writer* do ZXing-JS converte o texto em UTF-8 e grava 2 bytes por
+  acento (lê "Ã§") — bug do port, não da norma.
+- Testes (7 novos, `tests/symbol-aztec.test.ts`): **matriz × matriz** com o
+  encoder do ZXing (bit a bit, 10 conteúdos), **decodificação real** pelo
+  `AztecCodeReader` (inclusive acentos), camadas forçadas, determinismo e os
+  erros tipados (`empty`, `bad-chars`, `too-long`, `layers`) + **E2E** do
+  modal.
+- Com isso o **RF-SYM-7 fecha**: as simbologias extras (1D: ITF-14, Codabar,
+  Code 93, GS1-128; 2D: Data Matrix, PDF417 e Aztec) estão todas entregues.
+
+### Added — novo ícone do app e novo splash
+
+- As fontes em `docs/` (`icone.png` e `splash.png`) são o **arquivo mestre**;
+  os artefatos do app são derivados e passam a ser gerados por
+  `scripts/gen-assets.py` (Python + Pillow), no mesmo espírito das tabelas
+  geradas — trocar a arte é um comando, não uma edição manual.
+- `build/icon.png` (512×512) e `public/splash.png` (984×437), com a janela do
+  splash ajustada para **738×328** — a janela passa a ter a proporção da
+  imagem (antes 738×401), então nada é cortado.
+
+### Changed — performance: a flag `in-process-gpu` foi recusada (RNF-11)
+
+- **A/B de 4 pares** (mesmo build, X11, `--dwell=30000`): com o GPU dentro do
+  processo main a árvore perde um processo (6 → 5) e o **RSS somado** cai
+  64 MB, mas o **PSS fica igual** (265,7 → 263,0 MB) — ou seja, **não há
+  economia real de memória** (o RSS conta página compartilhada duas vezes) — e
+  o **startup piora ~120 ms**. O risco de GPU também passaria a morar no
+  processo main.
+- Decisão: a flag **não** entra no app. Instrumento mantido:
+  `scripts/bench.mjs` aceita `GRBL_ELECTRON_FLAGS` para A/B sem recompilar.
+- Números, método e ressalvas em `docs/BENCHMARK.md` §6.5.
+
 ## [0.9.0] - 2026-10-19
 
 ### Docs

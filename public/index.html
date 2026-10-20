@@ -985,6 +985,7 @@
                 <option value="qr" selected data-i18n="qr.sym.qr">QR Code</option>
                 <option value="datamatrix" data-i18n="qr.sym.datamatrix">Data Matrix</option>
                 <option value="pdf417" data-i18n="qr.sym.pdf417">PDF417</option>
+                <option value="aztec" data-i18n="qr.sym.aztec">Aztec</option>
               </select>
             </label>
             <label class="field field-wide">
@@ -1082,6 +1083,19 @@
                 max="50"
                 step="0.1"
                 value="1.2"
+              />
+            </label>
+            <label class="field hidden" id="qrAztecEccField">
+              <span data-i18n="qr.aztec.ecc">Correção de erro (%)</span>
+              <input
+                type="number"
+                id="qrAztecEcc"
+                min="23"
+                max="90"
+                step="1"
+                value="33"
+                data-i18n-title="qr.aztec.eccHint"
+                data-i18n-aria="qr.aztec.ecc"
               />
             </label>
             <label class="field" id="qrQuietField">

@@ -248,7 +248,8 @@ export const es = {
     'Cuadrícula generada: {count} símbolo(s) · {cols} × {rows} · {w} × {h} mm. Revisa la vista previa y envía o guarda.',
   'qr.title': 'Código 2D',
   'qr.hint':
-    'Genera un código QR, un Data Matrix o un PDF417 como G-code de barrido: ' +
+    'Genera un código QR, un Data Matrix, un PDF417 o un Aztec como G-code de ' +
+    'barrido: ' +
     'elige el símbolo, el contenido y el tamaño en mm (o el lado del módulo) y ' +
     'graba. El origen del arte es la esquina inferior izquierda (X0 Y0).',
   'qr.content': 'Contenido',
@@ -257,6 +258,7 @@ export const es = {
   'qr.sym.qr': 'QR Code',
   'qr.sym.datamatrix': 'Data Matrix',
   'qr.sym.pdf417': 'PDF417',
+  'qr.sym.aztec': 'Aztec',
   'qr.ecc': 'Corrección de errores',
   'qr.ecc.L': 'L — 7%',
   'qr.ecc.M': 'M — 15%',
@@ -341,6 +343,22 @@ export const es = {
   'pdf.err.bad-chars':
     'El PDF417 solo admite Latin-1 (sin emoji ni otro UTF-8).',
   'pdf.err.unknown': 'No se pudo generar el PDF417 con estos parámetros.',
+
+  // ---------------------------------------- Aztec (RF-SYM-7)
+  'aztec.title': 'Código Aztec',
+  'qr.aztec.ecc': 'Corrección de errores (%)',
+  'qr.aztec.eccHint':
+    'La norma ISO/IEC 24778 pide al menos 23 %. Más corrección = símbolo más grande.',
+  'aztec.status.done':
+    'Aztec generado: {size}×{size} módulos · {layers} capas · {w} × {h} mm · ' +
+    'módulo {module} mm. Revisa la vista previa y envía o guarda.',
+  'aztec.err.empty': 'Informa un contenido para generar el Aztec.',
+  'aztec.err.too-long':
+    'Contenido demasiado largo para un Aztec (el máximo es 32 capas).',
+  'aztec.err.bad-chars':
+    'El Aztec acepta solo Latin-1 (sin emoji ni otro UTF-8).',
+  'aztec.err.layers': 'Número de capas inválido para este contenido.',
+  'aztec.err.unknown': 'No se pudo generar el Aztec con estos parámetros.',
 
   'bar.title': 'Código de barras',
   'bar.hint':

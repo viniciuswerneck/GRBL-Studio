@@ -308,6 +308,37 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('gera um Aztec pelo modal 2D (RF-SYM-7)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'qr-code',
+        );
+      });
+      await expect(page.locator('#qrOverlay')).toBeVisible();
+      await expect(page.locator('#qrAztecEccField')).toBeHidden();
+      await page.selectOption('#qrSymbology', 'aztec');
+      // Campos do QR/Data Matrix/PDF417 somem; o do Aztec aparece.
+      await expect(page.locator('#qrEccField')).toBeHidden();
+      await expect(page.locator('#qrVersionField')).toBeHidden();
+      await expect(page.locator('#dmSizeField')).toBeHidden();
+      await expect(page.locator('#qrSizeField')).toBeVisible();
+      await expect(page.locator('#qrPdfEccField')).toBeHidden();
+      await expect(page.locator('#qrAztecEccField')).toBeVisible();
+      await page.fill('#qrContent', 'GRBL-STUDIO-0001');
+      await page.fill('#qrAztecEcc', '40');
+      await page.click('#qrGenerate');
+      await expect(page.locator('#qrStatus')).toContainText('Aztec gerado');
+      await expect(page.locator('#qrStatus')).toContainText('camadas');
+      await expect(page.locator('#qrStatus')).not.toContainText('⚠');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
   test('restaura os últimos ajustes dos símbolos ao reabrir o app', async () => {
     // `Prefs.symbols` (RF-CFG-5): mesmo userData, duas execuções.
     const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-prefs-'));

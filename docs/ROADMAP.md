@@ -179,7 +179,7 @@ diferencial que nenhum concorrente grátis tem.
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
-| — | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0**; resta Aztec | M | Simbologias com testes vetoriais. |
+| ✅ | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0; Aztec na 0.10.0** | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
 
@@ -271,7 +271,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    **startup/RAM ainda estão acima do orçamento** — otimizar performance é
    trabalho aberto. Continuam abertos **P0.3** (Flatpak/winget/brew/AUR),
    **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
-   (Aztec, símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+   (símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 2. **v0.7 (restante)** — DXF/PDF, catálogo 30+ + `.lbdev`, editor de G-code,
    biblioteca de jobs e validação Win/macOS.
 3. **v0.8** — lote/dados variáveis, modo produção, presets de material e

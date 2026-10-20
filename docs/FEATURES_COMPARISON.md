@@ -62,7 +62,7 @@
 | Gerador de **código de barras** (Code 128, EAN-13/8, UPC-A, Code 39) | Não | Sim (v0.6.0) | ✅ |
 | Simbologias 1D extras (ITF-14, Codabar, Code 93 Full ASCII, GS1-128) | Não | Sim (v0.7.0) | ✅ |
 | Texto legível sob o código (HRI) | Não | Sim (fonte de traço único) | ✅ |
-| Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Data Matrix ECC200 (v0.7.0) e PDF417 (v0.8.0); falta Aztec | 🟡 |
+| Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Data Matrix ECC200 (v0.7.0), PDF417 (v0.8.0) e Aztec (v0.10.0) | ✅ |
 | Vários símbolos em grade (RF-SYM-9) | Não | Sim (lista → grade, com espaçamento) | ✅ |
 
 > Comparação: o **LightBurn** tem `Tools → Create Bar Code` (motor **zint**,
@@ -88,4 +88,4 @@
    (importação SVG/DXF/PDF, P1.6/P2.4, já existe).
 3. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
 4. **Câmera + rotativa** (P3.1/P3.2).
-5. **Simbologias restantes** (Aztec; símbolo como objeto).
+5. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
