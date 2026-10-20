@@ -731,7 +731,7 @@ export const en = {
     'Layer speed (mm/min) — empty uses the engraving default',
   'design.layer.passes.hint': 'Layer passes — empty uses the engraving default',
   'design.layer.kerf.hint':
-    'Cut kerf in mm: outer contours grow and holes shrink by half; empty = no compensation',
+    'Cut kerf in mm: outer contours grow and holes shrink by half — the orange dashed line on the canvas shows the real path; empty = no compensation',
   'design.layer.cut': 'Cut: tabs and lead',
   'design.layer.tabs.hint':
     'Retention tabs: how many small bridges hold the piece (0 = full cut)',
@@ -925,6 +925,21 @@ export const en = {
   'design.cost.resultTimeOnly':
     '≈ {time} · enter the machine rate and the material price',
   'design.cost.noTime': 'No time estimate for this size.',
+  'design.tiles': 'Split into tiles…',
+  'design.tiles.title': 'Split into tiles',
+  'design.tiles.w': 'Tile width (mm)',
+  'design.tiles.h': 'Tile height (mm)',
+  'design.tiles.overlap': 'Overlap (mm)',
+  'design.tiles.note':
+    'Each program starts at the lower-left corner of its window: reposition the material and the zero before each tile.',
+  'design.tiles.summary':
+    '{cols} × {rows} = {n} tiles · window {w} × {h} mm · overlap {ov} mm',
+  'design.tiles.fits': 'The artwork fits in one window: 1 tile.',
+  'design.tiles.tooMany':
+    'Too many tiles ({max} max): increase the window or reduce the overlap.',
+  'design.tiles.save': 'Save tiles…',
+  'design.tiles.saved': '{n} tile file(s) saved to {dir}',
+  'design.tiles.empty': 'No tile has any cut.',
   'design.size.invalid': 'Enter width and height greater than zero.',
 
   // ------------------------------------------------- execução e arquivo
@@ -1327,6 +1342,8 @@ export const en = {
   'dlg.openSvg': 'Open SVG',
   'dlg.openDxf': 'Open DXF',
   'dlg.openPdf': 'Open PDF',
+  'dlg.saveTiles': 'Save tiles',
+  'dlg.tooManyFiles': 'Too many files at once (max {max})',
   'dlg.saveGcode': 'Save G-code',
   'dlg.importMacros': 'Import macros',
   'dlg.exportMacros': 'Export macros',

@@ -33,6 +33,7 @@ export const CHANNELS = {
   appInfo: 'app:info',
   openExternal: 'app:open-external',
   fileSave: 'file:save-gcode',
+  filesSaveSet: 'file:save-set',
   fileSaveLog: 'file:save-log',
   fileOpenImage: 'file:open-image',
   fileOpenGcode: 'file:open-gcode',

@@ -2263,6 +2263,7 @@
         </footer>
 
         <footer class="modal-foot design-actions">
+          <button type="button" id="designTiles" data-i18n="design.tiles">Dividir em tiles…</button>
           <button type="button" id="designSave" data-i18n="design.save">Salvar .gcode…</button>
           <button type="button" id="designGenerate" class="primary" data-i18n="design.generate">Gerar e visualizar</button>
         </footer>
@@ -2331,6 +2332,46 @@
           <button type="button" id="designSizeConfirm" class="primary" data-i18n="design.generate">
             Gerar e visualizar
           </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designTilesOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designTilesTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designTilesTitle" data-i18n="design.tiles.title">Dividir em tiles</h3>
+          <button type="button" id="designTilesClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <div class="design-size-fields">
+            <label class="design-field">
+              <span data-i18n="design.tiles.w">Largura do tile (mm)</span>
+              <input type="number" id="designTileW" min="5" max="2000" step="1" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.tiles.h">Altura do tile (mm)</span>
+              <input type="number" id="designTileH" min="5" max="2000" step="1" />
+            </label>
+          </div>
+          <div class="design-size-fields">
+            <label class="design-field">
+              <span data-i18n="design.tiles.overlap">Sobreposição (mm)</span>
+              <input type="number" id="designTileOverlap" min="0" max="50" step="0.5" value="2" />
+            </label>
+          </div>
+          <p class="design-size-note" data-i18n="design.tiles.note">
+            Cada programa sai com a origem no canto inferior esquerdo da janela: reposicione o material e o zero antes de cada tile.
+          </p>
+          <p class="design-cost-result" id="designTilesSummary">—</p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designTilesCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designTilesSave" class="primary" data-i18n="design.tiles.save">Salvar tiles…</button>
         </footer>
       </div>
     </div>
@@ -2944,6 +2985,7 @@
     <script src="./machines.js"></script>
     <script src="./adjust.js"></script>
     <script src="./preview.js"></script>
+    <script src="./tiling.js"></script>
     <script src="./resume.js"></script>
     <script src="./macros.js"></script>
     <script src="./materialTest.js"></script>

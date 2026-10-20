@@ -94,6 +94,15 @@ const api = {
     ipcRenderer.invoke(CHANNELS.openExternal, url),
   saveGcode: (content: string, suggestedName: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
+  /**
+   * Salva vários G-code de uma vez (tiling): pede **uma pasta** e grava todos
+   * os arquivos com os nomes sugeridos (`peca-r1c1.gcode`, …).
+   */
+  saveGcodeTiles: (
+    items: Array<{ name: string; content: string }>,
+    baseName: string,
+  ): Promise<{ dir: string; paths: string[] } | null> =>
+    ipcRenderer.invoke(CHANNELS.filesSaveSet, { items, baseName }),
   openImage: (): Promise<OpenedImageFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenImage),
   openGcode: (): Promise<OpenedTextFile | null> =>

@@ -42,6 +42,7 @@ import {
 } from '../shared/fileFilters';
 import { BATCH_MAX_FILE_BYTES } from '../shared/batch';
 import { DESIGN_DOC_EXT, DESIGN_DOC_MAX_BYTES } from '../shared/designDoc';
+import { TILE_MAX_COUNT } from '../shared/tiling';
 import { parsePdf, pdfToGcode, PdfError } from '../shared/pdf';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
 import { parseSettings } from '../shared/protocol';
@@ -552,6 +553,70 @@ export function registerIpc(
       await writeFile(result.filePath, payload.content, 'utf8');
       rememberDir(result.filePath);
       return result.filePath;
+    },
+  );
+
+  /**
+   * Salva um **conjunto** de G-code (tiling): uma pasta, N arquivos. Os nomes
+   * vêm do renderer (`peca-r1c1.gcode`) e são sanitizados aqui — nada de
+   * caminho absoluto nem `..`.
+   */
+  ipcMain.handle(
+    CHANNELS.filesSaveSet,
+    async (
+      evt,
+      payload: {
+        baseName?: string;
+        items?: Array<{ name?: string; content?: string }>;
+      },
+    ): Promise<{ dir: string; paths: string[] } | null> => {
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      if (!items.length) throw new Error(t('dlg.missingContent'));
+      if (items.length > TILE_MAX_COUNT) {
+        throw new Error(t('dlg.tooManyFiles', { max: TILE_MAX_COUNT }));
+      }
+      let total = 0;
+      for (const item of items) {
+        if (typeof item?.content !== 'string') {
+          throw new Error(t('dlg.missingContent'));
+        }
+        total += item.content.length;
+      }
+      if (total > TEXT_MAX_BYTES) {
+        throw new Error(t('dlg.tooBig', { size: formatMb(total) }));
+      }
+
+      const options = {
+        title: t('dlg.saveTiles'),
+        defaultPath: await defaultDir(),
+        properties: ['openDirectory', 'createDirectory'] as Array<
+          'openDirectory' | 'createDirectory'
+        >,
+      };
+      const owner = BrowserWindow.fromWebContents(evt.sender);
+      const result = owner
+        ? await dialog.showOpenDialog(owner, options)
+        : await dialog.showOpenDialog(options);
+      if (result.canceled || !result.filePaths[0]) return null;
+      const dir = result.filePaths[0];
+
+      const paths: string[] = [];
+      const used = new Set<string>();
+      for (const item of items) {
+        let name = path.basename(String(item.name || 'tile.gcode'));
+        name = name.replace(/[^\w.\- ]+/g, '_').trim() || 'tile.gcode';
+        if (!/\.gcode$/i.test(name)) name += '.gcode';
+        let unique = name;
+        for (let n = 2; used.has(unique.toLowerCase()); n++) {
+          unique = name.replace(/(\.gcode)$/i, `-${n}$1`);
+        }
+        used.add(unique.toLowerCase());
+        const filePath = path.join(dir, unique);
+        await writeFile(filePath, String(item.content), 'utf8');
+        paths.push(filePath);
+      }
+      rememberDir(dir);
+      return { dir, paths };
     },
   );
 

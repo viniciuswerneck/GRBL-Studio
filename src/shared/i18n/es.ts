@@ -750,7 +750,7 @@ export const es = {
   'design.layer.passes.hint':
     'Pasadas de la capa — vacío usa el valor de grabado',
   'design.layer.kerf.hint':
-    'Holgura de corte (kerf) en mm: los contornos externos crecen y los agujeros se reducen a la mitad; vacío = sin compensación',
+    'Holgura de corte (kerf) en mm: los contornos externos crecen y los agujeros se reducen a la mitad — la línea discontinua naranja muestra el recorrido real; vacío = sin compensación',
   'design.layer.cut': 'Corte: pestañas y sobrecorte',
   'design.layer.tabs.hint':
     'Pestañas de retención: cuántas “lengüetas” sujetan la pieza (0 = corte completo)',
@@ -947,6 +947,21 @@ export const es = {
   'design.cost.resultTimeOnly':
     '≈ {time} · indica la tarifa de la máquina y el precio del material',
   'design.cost.noTime': 'Sin tiempo estimado para este tamaño.',
+  'design.tiles': 'Dividir en tiles…',
+  'design.tiles.title': 'Dividir en tiles',
+  'design.tiles.w': 'Ancho del tile (mm)',
+  'design.tiles.h': 'Alto del tile (mm)',
+  'design.tiles.overlap': 'Solape (mm)',
+  'design.tiles.note':
+    'Cada programa empieza en la esquina inferior izquierda de su ventana: recoloca el material y el cero antes de cada tile.',
+  'design.tiles.summary':
+    '{cols} × {rows} = {n} tiles · ventana {w} × {h} mm · solape {ov} mm',
+  'design.tiles.fits': 'La obra cabe en una ventana: 1 tile.',
+  'design.tiles.tooMany':
+    'Demasiados tiles ({max} como máximo): aumenta la ventana o reduce el solape.',
+  'design.tiles.save': 'Guardar tiles…',
+  'design.tiles.saved': '{n} archivo(s) de tile guardados en {dir}',
+  'design.tiles.empty': 'Ningún tile tiene corte.',
   'design.size.invalid': 'Indica ancho y alto mayores que cero.',
 
   // ------------------------------------------------- ejecución y archivo
@@ -1361,6 +1376,8 @@ export const es = {
   'dlg.openSvg': 'Abrir SVG',
   'dlg.openDxf': 'Abrir DXF',
   'dlg.openPdf': 'Abrir PDF',
+  'dlg.saveTiles': 'Guardar tiles',
+  'dlg.tooManyFiles': 'Demasiados archivos a la vez (máximo {max})',
   'dlg.saveGcode': 'Guardar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',

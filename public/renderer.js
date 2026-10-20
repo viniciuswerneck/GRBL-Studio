@@ -2810,6 +2810,8 @@ function dApplyLayerParam(id, key, lo, hi) {
   dSaveLayers();
   dUpdateLayerList();
   dUpdateLayerEditor();
+  // Kerf/abas/sobre-corte mudam o caminho mostrado na prancheta.
+  dRender();
 }
 
 function dApplyLayerName() {
@@ -3017,6 +3019,37 @@ function dPath(ctx, sh) {
   if (sh.closed && pts.length > 2) ctx.closePath();
 }
 
+/** Caminho compensado pela folga (kerf) de cada forma — mesma conta do G-code. */
+function dKerfPaths() {
+  const map = new Map();
+  if (!window.GRBL_DESIGN) return map;
+  const groups = new Map();
+  designState.shapes.forEach((sh, index) => {
+    if (!sh.closed || (sh.width && sh.width > 0) || sh.points.length < 3)
+      return;
+    const layer = sh.layer
+      ? designState.layers.find((l) => l.id === sh.layer)
+      : null;
+    const kerf = layer && layer.kerf > 0 ? layer.kerf : 0;
+    if (!(kerf > 0)) return;
+    let group = groups.get(layer.id);
+    if (!group) {
+      group = { kerf, loops: [], indexes: [] };
+      groups.set(layer.id, group);
+    }
+    group.loops.push(sh.points);
+    group.indexes.push(index);
+  });
+  for (const group of groups.values()) {
+    const out = window.GRBL_DESIGN.compensateKerf(group.loops, group.kerf);
+    group.indexes.forEach((index, i) => {
+      const pts = out[i];
+      if (pts && pts.length >= 3) map.set(index, pts);
+    });
+  }
+  return map;
+}
+
 function dPaint() {
   const c = el.designCanvas;
   if (!c) return;
@@ -3128,6 +3161,24 @@ function dPaint() {
     ctx.lineCap = 'round';
     ctx.stroke();
   }
+  // Caminho **compensado** pela folga de corte: tracejado laranja por cima do
+  // desenho, para o usuário ver exatamente onde o laser vai passar (a peça
+  // externa cresce, os furos encolhem) antes de gerar o G-code.
+  const kerfPaths = dKerfPaths();
+  if (kerfPaths.size) {
+    ctx.strokeStyle = '#ff9f0a';
+    ctx.lineWidth = 1.3 / v.scale;
+    ctx.setLineDash([4 / v.scale, 3 / v.scale]);
+    for (const pts of kerfPaths.values()) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
   if (designState.drawing) {
     dPath(ctx, designState.drawing);
     ctx.strokeStyle = accent;
@@ -4942,6 +4993,19 @@ function dFrameParamsToDesign() {
  * Gera o G-code do desenho. Com `autoStart`, inicia o envio em seguida — usado
  * pelo "▶ Gravar" do modal de posicionamento.
  */
+/** G-code do desenho com os parâmetros atuais (gerar, salvar e tiling). */
+function designGcode() {
+  return window.GRBL_DESIGN.designToGcode(
+    {
+      shapes: designState.shapes,
+      width: designState.page.w,
+      height: designState.page.h,
+      layers: designState.layers,
+    },
+    dReadEngraveOptions(),
+  );
+}
+
 function designGenerate({ autoStart = false } = {}) {
   if (!window.GRBL_DESIGN) {
     appendLine('Módulo de desenho não carregado.', 'error');
@@ -4952,15 +5016,7 @@ function designGenerate({ autoStart = false } = {}) {
     return;
   }
   dStatus(t('design.status.generating'));
-  const gcode = window.GRBL_DESIGN.designToGcode(
-    {
-      shapes: designState.shapes,
-      width: designState.page.w,
-      height: designState.page.h,
-      layers: designState.layers,
-    },
-    dReadEngraveOptions(),
-  );
+  const gcode = designGcode();
   applyJobLines('design.gcode', gcode, 'design');
   dStatus(t('design.status.done'), 'ok');
   if (autoStart && state.connected) {
@@ -4976,20 +5032,133 @@ function designGenerate({ autoStart = false } = {}) {
 
 async function designSave() {
   if (!window.GRBL_DESIGN || !designState.shapes.length) return;
-  const gcode = window.GRBL_DESIGN.designToGcode(
-    {
-      shapes: designState.shapes,
-      width: designState.page.w,
-      height: designState.page.h,
-      layers: designState.layers,
-    },
-    dReadEngraveOptions(),
-  );
+  const gcode = designGcode();
   try {
     const path = await window.grbl.saveGcode(gcode, 'design.gcode');
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
     appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
+// ------------------------------------------------------- tiling (Anexo B)
+//
+// Peça maior que a mesa: o programa é dividido em janelas do tamanho útil da
+// máquina, com sobreposição na emenda. Cada arquivo tem a origem no canto
+// inferior esquerdo da sua janela; o usuário reposiciona material/zero entre
+// eles. O recorte é feito nos movimentos já parseados, então kerf, abas e
+// passadas do G-code original são preservados.
+
+let designTilesPlan = null;
+
+function dTilesBounds() {
+  if (!window.GRBL_PREVIEW) return null;
+  const program = window.GRBL_PREVIEW.parseGcode(designGcode());
+  const b = program?.cutBounds ?? program?.bounds;
+  if (!b) return null;
+  return { minX: b.xMin, minY: b.yMin, maxX: b.xMax, maxY: b.yMax };
+}
+
+/** Abre o diálogo com a janela padrão = área da máquina (ou a página). */
+function dOpenTilesDialog() {
+  if (!designState.shapes.length) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  if (!window.GRBL_TILING) {
+    dStatus(t('design.tiles.empty'), 'error');
+    return;
+  }
+  const wa = previewProgram.workArea;
+  const tw = $('designTileW');
+  if (tw && !(Number(tw.value) > 0)) {
+    tw.value = String(Math.round(wa?.widthMm || designState.page.w));
+  }
+  const th = $('designTileH');
+  if (th && !(Number(th.value) > 0)) {
+    th.value = String(Math.round(wa?.heightMm || designState.page.h));
+  }
+  const ov = $('designTileOverlap');
+  if (ov && ov.value.trim() === '') ov.value = '2';
+  dUpdateTilesSummary();
+  const overlay = $('designTilesOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  if (tw) {
+    tw.focus();
+    tw.select();
+  }
+}
+
+function dCloseTilesDialog() {
+  const overlay = $('designTilesOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+/** Recalcula o plano e o resumo (“2 × 2 = 4 tiles …”). */
+function dUpdateTilesSummary() {
+  const out = $('designTilesSummary');
+  const save = $('designTilesSave');
+  if (!out) return;
+  const T = window.GRBL_TILING;
+  if (!T || !window.GRBL_DESIGN) return;
+  const bounds = dTilesBounds();
+  const plan = bounds
+    ? T.planTiles(
+        bounds,
+        dNum('designTileW', 0),
+        dNum('designTileH', 0),
+        dNum('designTileOverlap', 0),
+      )
+    : null;
+  designTilesPlan = plan;
+  if (!plan) {
+    out.textContent = t('design.tiles.tooMany', { max: T.TILE_MAX_COUNT });
+    if (save) save.disabled = true;
+    return;
+  }
+  if (save) save.disabled = false;
+  if (plan.cols === 1 && plan.rows === 1) {
+    out.textContent = t('design.tiles.fits');
+    return;
+  }
+  out.textContent = t('design.tiles.summary', {
+    cols: plan.cols,
+    rows: plan.rows,
+    n: plan.tiles.length,
+    w: Number(plan.tileW.toFixed(1)),
+    h: Number(plan.tileH.toFixed(1)),
+    ov: plan.overlap,
+  });
+}
+
+/** Gera e salva um arquivo por tile na pasta escolhida. */
+async function dSaveTiles() {
+  const T = window.GRBL_TILING;
+  const plan = designTilesPlan;
+  if (!T || !plan) return;
+  const base =
+    dBaseName(designState.docPath).replace(/\.gstudio$/i, '') || 'peca';
+  const result = T.tileGcode(designGcode(), plan, base);
+  if (!result.tiles.length) {
+    dStatus(t('design.tiles.empty'), 'error');
+    return;
+  }
+  try {
+    const saved = await window.grbl.saveGcodeTiles(
+      result.tiles.map((tile) => ({ name: tile.name, content: tile.text })),
+      base,
+    );
+    if (!saved) return;
+    dStatus(
+      t('design.tiles.saved', {
+        n: saved.paths.length,
+        dir: saved.dir,
+      }),
+      'ok',
+    );
+    dCloseTilesDialog();
+  } catch (err) {
+    dStatus(t('err.prefix', { msg: err.message }), 'error');
   }
 }
 
@@ -5387,6 +5556,24 @@ function dConfirmSize() {
   const layerMode = $('designLayerMode');
   if (layerMode) layerMode.addEventListener('change', dApplyLayerMode);
 
+  const tilesBtn = $('designTiles');
+  if (tilesBtn) tilesBtn.addEventListener('click', dOpenTilesDialog);
+  const tilesSave = $('designTilesSave');
+  if (tilesSave) tilesSave.addEventListener('click', dSaveTiles);
+  const tilesCancel = $('designTilesCancel');
+  if (tilesCancel) tilesCancel.addEventListener('click', dCloseTilesDialog);
+  const tilesClose = $('designTilesClose');
+  if (tilesClose) tilesClose.addEventListener('click', dCloseTilesDialog);
+  for (const id of ['designTileW', 'designTileH', 'designTileOverlap']) {
+    const node = $(id);
+    if (node) node.addEventListener('change', dUpdateTilesSummary);
+  }
+  const tilesOverlay = $('designTilesOverlay');
+  if (tilesOverlay) {
+    tilesOverlay.addEventListener('click', (e) => {
+      if (e.target === tilesOverlay) dCloseTilesDialog();
+    });
+  }
   const genBtn = $('designGenerate');
   if (genBtn) genBtn.addEventListener('click', dOpenSizeDialog);
   const saveBtn = $('designSave');

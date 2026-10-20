@@ -904,6 +904,93 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('tiling: divide a arte maior que a mesa em arquivos com origem local (Anexo B)', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-tiles-'));
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showOpenDialog = (async () => ({
+          canceled: false,
+          filePaths: [target],
+        })) as typeof dialog.showOpenDialog;
+      }, dir);
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 140, box.y + 140);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 280, box.y + 240);
+      await page.mouse.up();
+
+      // Arte de 300 × 110 mm: maior que a janela de 150 × 100.
+      await page.click('#designGenerate');
+      await expect(page.locator('#designSizeOverlay')).toBeVisible();
+      await page.click('#designSizeLock'); // destrava a proporção
+      await page.fill('#designSizeW', '300');
+      await page.fill('#designSizeH', '110');
+      await page.click('#designSizeConfirm');
+      // O fluxo de geração abre o posicionamento; fecha e volta ao desenho.
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+      await page.click('#frameClose');
+      await expect(page.locator('#designOverlay')).toBeVisible();
+
+      await page.click('#designTiles');
+      await expect(page.locator('#designTilesOverlay')).toBeVisible();
+      await page.fill('#designTileW', '150');
+      await page.fill('#designTileH', '100');
+      await page.fill('#designTileOverlap', '0');
+      await page.locator('#designTileOverlap').dispatchEvent('change');
+      await expect(page.locator('#designTilesSummary')).toContainText(
+        '2 × 2 = 4 tiles',
+      );
+      await page.click('#designTilesSave');
+
+      const files = [
+        'peca-r1c1.gcode',
+        'peca-r1c2.gcode',
+        'peca-r2c1.gcode',
+        'peca-r2c2.gcode',
+      ];
+      await expect
+        .poll(() => files.every((f) => existsSync(path.join(dir, f))), {
+          timeout: 10_000,
+        })
+        .toBe(true);
+      for (const [i, file] of files.entries()) {
+        const text = readFileSync(path.join(dir, file), 'utf8');
+        expect(text).toContain(
+          `tile ${i < 2 ? 1 : 2}/2, coluna ${i % 2 === 0 ? 1 : 2}/2`,
+        );
+        const cuts = text
+          .split('\n')
+          .filter((l) => l.startsWith('G1 '))
+          .map((l) => ({
+            x: Number(/X(-?\d+\.\d+)/.exec(l)?.[1]),
+            y: Number(/Y(-?\d+\.\d+)/.exec(l)?.[1]),
+          }));
+        expect(cuts.length).toBeGreaterThan(0);
+        for (const p of cuts) {
+          expect(p.x).toBeGreaterThanOrEqual(0);
+          expect(p.x).toBeLessThanOrEqual(150);
+          expect(p.y).toBeGreaterThanOrEqual(0);
+          expect(p.y).toBeLessThanOrEqual(100);
+        }
+      }
+      // O diálogo fecha e o console registra o resultado.
+      await expect(page.locator('#designTilesOverlay')).toHaveClass(/hidden/);
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('salva e reabre o desenho (.gstudio) (RF-DSN-16)', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'grbl-doc-'));
     const file = path.join(dir, 'peca.gstudio');

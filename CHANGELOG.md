@@ -6,6 +6,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — tiling: peça maior que a mesa (RF-DSN-21)
+
+- Botão **“Dividir em tiles…”** no editor: o programa é fatiado em janelas do
+  tamanho útil da máquina com **sobreposição** na emenda. Saem N arquivos
+  (`peca-r1c2.gcode`) numa pasta escolhida, cada um com a **origem no canto
+  inferior esquerdo da sua janela** — é só reposicionar material/zero e rodar o
+  próximo.
+- O plano mostra **quantos tiles** vão sair (`3 × 2 = 6 tiles`) e recusa plano
+  absurdo (mais de 200) antes de gravar. A janela padrão é a **área da máquina**
+  (`$130/$131`) ou o tamanho da página.
+- O recorte é feito nos **movimentos já parseados**: kerf, abas e passadas do
+  programa original são preservados, `G1` sem potência não vira corte e nenhuma
+  coordenada sai da janela.
+
+### Changed — a prancheta mostra o caminho compensado pelo kerf
+
+- Com folga de corte na camada, o editor desenha o **caminho real** do laser em
+  **tracejado laranja** (externos crescem, furos encolhem). Antes só dava para
+  conferir depois de gerar o G-code.
+
 ## [0.14.0] - 2026-10-20
 
 Marco **oficina**: a peça pequena fica presa por abas, a emenda do corte não

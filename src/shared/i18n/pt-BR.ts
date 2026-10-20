@@ -754,7 +754,7 @@ export const ptBR = {
   'design.layer.passes.hint':
     'Passadas da camada — vazio usa o padrão de gravação',
   'design.layer.kerf.hint':
-    'Folga de corte (kerf) em mm: externos crescem e furos encolhem pela metade; vazio = sem compensação',
+    'Folga de corte (kerf) em mm: externos crescem e furos encolhem pela metade — o tracejado laranja na prancheta mostra o caminho real; vazio = sem compensação',
   'design.layer.cut': 'Corte: abas e sobre-corte',
   'design.layer.tabs.hint':
     'Abas de retenção: quantas “pestanhas” seguram a peça (0 = corte inteiro)',
@@ -950,6 +950,21 @@ export const ptBR = {
   'design.cost.resultTimeOnly':
     '≈ {time} · informe a tarifa da máquina e o preço do material',
   'design.cost.noTime': 'Sem tempo estimado para este tamanho.',
+  'design.tiles': 'Dividir em tiles…',
+  'design.tiles.title': 'Dividir em tiles',
+  'design.tiles.w': 'Largura do tile (mm)',
+  'design.tiles.h': 'Altura do tile (mm)',
+  'design.tiles.overlap': 'Sobreposição (mm)',
+  'design.tiles.note':
+    'Cada programa sai com a origem no canto inferior esquerdo da janela: reposicione o material e o zero antes de cada tile.',
+  'design.tiles.summary':
+    '{cols} × {rows} = {n} tiles · janela {w} × {h} mm · sobreposição {ov} mm',
+  'design.tiles.fits': 'A arte cabe em uma janela: 1 tile.',
+  'design.tiles.tooMany':
+    'Tiles demais ({max} no máximo): aumente a janela ou reduza a sobreposição.',
+  'design.tiles.save': 'Salvar tiles…',
+  'design.tiles.saved': '{n} arquivo(s) de tile salvos em {dir}',
+  'design.tiles.empty': 'Nenhum tile tem corte.',
   'design.size.invalid': 'Informe largura e altura maiores que zero.',
 
   // ------------------------------------------------- execução e arquivo
@@ -1358,6 +1373,8 @@ export const ptBR = {
   'dlg.openSvg': 'Abrir SVG',
   'dlg.openDxf': 'Abrir DXF',
   'dlg.openPdf': 'Abrir PDF',
+  'dlg.saveTiles': 'Salvar tiles',
+  'dlg.tooManyFiles': 'Arquivos demais de uma vez (máximo {max})',
   'dlg.saveGcode': 'Salvar G-code',
   'dlg.importMacros': 'Importar macros',
   'dlg.exportMacros': 'Exportar macros',

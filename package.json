@@ -6,7 +6,7 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:machines && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:focusTest && npm run build:presets && npm run build:svg && npm run build:dxf && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:nesting && npm run build:i18n && npm run build:qrcode && npm run build:barcode && npm run build:batch && npm run build:production && npm run build:machine && npm run build:preflight && npm run build:gcodeEditor",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:machines && npm run build:adjust && npm run build:preview && npm run build:tiling && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:focusTest && npm run build:presets && npm run build:svg && npm run build:dxf && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:nesting && npm run build:i18n && npm run build:qrcode && npm run build:barcode && npm run build:batch && npm run build:production && npm run build:machine && npm run build:preflight && npm run build:gcodeEditor",
     "build:boolean": "esbuild src/shared/boolean.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_BOOLEAN --outfile=public/boolean.js",
     "build:offset": "esbuild src/shared/offset.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_OFFSET --outfile=public/offset.js",
     "build:nesting": "esbuild src/shared/nesting.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_NEST --outfile=public/nesting.js",
@@ -32,6 +32,7 @@
     "probe": "node scripts/probe-machine.mjs",
     "grbl:send": "node scripts/grbl-send.mjs",
     "build:preview": "esbuild src/shared/preview.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_PREVIEW --outfile=public/preview.js",
+    "build:tiling": "esbuild src/shared/tiling.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_TILING --outfile=public/tiling.js",
     "build:resume": "esbuild src/shared/resume.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_RESUME --outfile=public/resume.js",
     "build:macros": "esbuild src/shared/macros.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MACROS --outfile=public/macros.js",
     "dev": "tsc -w",

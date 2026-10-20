@@ -7,6 +7,7 @@ public/macros.js
 public/materials.js
 public/machines.js
 public/preview.js
+public/tiling.js
 public/qrcode.js
 public/barcode.js
 public/batch.js
