@@ -1,6 +1,6 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 20/10/2026 (**v0.17.0**). Status reflete o código atual em `main`.
+> Atualizado em 20/10/2026 (**v0.18.0**). Status reflete o código atual em `main`.
 > Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
 > Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
@@ -91,7 +91,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1 402 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 432 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |

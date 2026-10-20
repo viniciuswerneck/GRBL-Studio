@@ -1950,6 +1950,316 @@ function dConfirmFiducials() {
   dStatus(t('design.fiducial.done', { n: created.length }), 'ok');
 }
 
+// --------------------------------------------------------------- geradores
+//
+// Caixa com encaixe e engrenagem: a geometria vem de `generators.ts` (puro e
+// testado). Aqui só mora o diálogo, a prévia em canvas e a inserção como um
+// grupo (a caixa inteira anda junto; a engrenagem e o furo idem).
+
+function dGenNum(id, fallback) {
+  const el = $(id);
+  if (!el) return fallback;
+  const n = Number.parseFloat(el.value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function dGenMode() {
+  return designState.genMode === 'gear' ? 'gear' : 'box';
+}
+
+function dGenBoxOptions() {
+  return {
+    width: dGenNum('genWidth', 200),
+    depth: dGenNum('genDepth', 140),
+    height: dGenNum('genHeight', 80),
+    thickness: dGenNum('genThickness', 3),
+    finger: dGenNum('genFinger', 10),
+    clearance: dGenNum('genClearance', 0.1),
+    top: $('genTop') ? $('genTop').checked : true,
+  };
+}
+
+function dGenGearOptions() {
+  return {
+    module: dGenNum('genModule', 2),
+    teeth: dGenNum('genTeeth', 20),
+    pressureAngle: dGenNum('genAngle', 20),
+    bore: dGenNum('genBore', 0),
+  };
+}
+
+/** Calcula a geometria do modo atual (a mesma usada na prévia e ao inserir). */
+function dGenData() {
+  const D = window.GRBL_DESIGN;
+  if (!D) return null;
+  if (dGenMode() === 'gear') {
+    const options = D.sanitizeGear(dGenGearOptions());
+    return { mode: 'gear', options, gear: D.gearOutline(options) };
+  }
+  const options = D.sanitizeBox(dGenBoxOptions());
+  const small =
+    options.width - 2 * options.thickness < 10 ||
+    options.depth - 2 * options.thickness < 10;
+  return { mode: 'box', options, box: D.boxPanels(options), small };
+}
+
+function dGenBounds(points) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+/** Desenha a prévia em escala, com o nome de cada peça. */
+function dDrawGenPreview(data) {
+  const canvas = $('genCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  if (!data) return;
+  const paths = [];
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const add = (points) => {
+    const b = dGenBounds(points);
+    if (!Number.isFinite(b.minX)) return;
+    paths.push(points);
+    minX = Math.min(minX, b.minX);
+    minY = Math.min(minY, b.minY);
+    maxX = Math.max(maxX, b.maxX);
+    maxY = Math.max(maxY, b.maxY);
+  };
+  if (data.mode === 'box') {
+    for (const panel of data.box.panels) add(panel.points);
+  } else {
+    add(data.gear.points);
+  }
+  if (!Number.isFinite(minX)) return;
+  const pad = 26;
+  const scale = Math.min(
+    (W - 2 * pad) / Math.max(1, maxX - minX),
+    (H - 2 * pad - 14) / Math.max(1, maxY - minY),
+  );
+  const offX = (W - (maxX - minX) * scale) / 2;
+  const offY = (H - (maxY - minY) * scale) / 2 + 6;
+  const px = (x) => offX + (x - minX) * scale;
+  const py = (y) => offY + (maxY - y) * scale;
+  const accent = (
+    getComputedStyle(document.documentElement).getPropertyValue('--accent') ||
+    '#4a9eff'
+  ).trim();
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = accent;
+  ctx.fillStyle = accent;
+  ctx.lineJoin = 'round';
+  for (const pts of paths) {
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      if (i === 0) ctx.moveTo(px(p.x), py(p.y));
+      else ctx.lineTo(px(p.x), py(p.y));
+    }
+    ctx.closePath();
+    ctx.globalAlpha = 0.1;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.stroke();
+  }
+
+  if (data.mode === 'box') {
+    ctx.fillStyle = 'rgba(205, 214, 228, 0.9)';
+    ctx.font = '600 20px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    for (const panel of data.box.panels) {
+      const b = dGenBounds(panel.points);
+      const label = t(`design.gen.panel.${panel.key}`);
+      ctx.fillText(
+        label,
+        px((b.minX + b.maxX) / 2),
+        Math.min(H - 8, py(b.minY) + 26),
+      );
+    }
+  } else {
+    // Círculo primitivo tracejado e furo central.
+    ctx.setLineDash([9, 7]);
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.arc(
+      px(0),
+      py(0),
+      (data.gear.pitchDiameter / 2) * scale,
+      0,
+      Math.PI * 2,
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    if (data.gear.bore > 0) {
+      ctx.beginPath();
+      ctx.arc(px(0), py(0), (data.gear.bore / 2) * scale, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(px(0) - 8, py(0));
+    ctx.lineTo(px(0) + 8, py(0));
+    ctx.moveTo(px(0), py(0) - 8);
+    ctx.lineTo(px(0), py(0) + 8);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function dUpdateGenPreview() {
+  const data = dGenData();
+  if (!data) return;
+  dDrawGenPreview(data);
+  const hint = $('genHint');
+  if (hint) {
+    hint.textContent = t(
+      data.mode === 'box' ? 'design.gen.boxHint' : 'design.gen.gearHint',
+    );
+  }
+  const note = $('genSummary');
+  if (note) {
+    if (data.mode === 'box') {
+      note.textContent = t('design.gen.boxSummary', {
+        panels: data.box.panels.length,
+        w: data.box.width.toFixed(0),
+        h: data.box.height.toFixed(0),
+      });
+      note.classList.toggle('gen-warn', Boolean(data.small));
+    } else {
+      note.textContent = t('design.gen.gearSummary', {
+        od: data.gear.outerDiameter.toFixed(2),
+        pd: data.gear.pitchDiameter.toFixed(2),
+        teeth: data.options.teeth,
+      });
+      note.classList.remove('gen-warn');
+    }
+  }
+}
+
+function dSetGenMode(mode) {
+  designState.genMode = mode === 'gear' ? 'gear' : 'box';
+  const isBox = designState.genMode === 'box';
+  const box = $('genModeBox');
+  const gear = $('genModeGear');
+  if (box) {
+    box.classList.toggle('active', isBox);
+    box.setAttribute('aria-selected', String(isBox));
+  }
+  if (gear) {
+    gear.classList.toggle('active', !isBox);
+    gear.setAttribute('aria-selected', String(!isBox));
+  }
+  const boxFields = $('genBoxFields');
+  if (boxFields) boxFields.classList.toggle('hidden', !isBox);
+  const gearFields = $('genGearFields');
+  if (gearFields) gearFields.classList.toggle('hidden', isBox);
+  dUpdateGenPreview();
+}
+
+function dOpenGenDialog() {
+  dCloseBoolMenu();
+  const overlay = $('designGenOverlay');
+  if (!overlay) return;
+  dSetGenMode(dGenMode());
+  overlay.classList.remove('hidden');
+}
+
+function dCloseGenDialog() {
+  const overlay = $('designGenOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+/** Nome do grupo: "Caixa 1", "Engrenagem 2" (conta grupos, não formas). */
+function dNextGroupName(label) {
+  const names = new Set();
+  for (const sh of designState.shapes) {
+    if (sh.name) names.add(sh.name);
+  }
+  let n = 1;
+  for (const nm of names) {
+    if (nm.startsWith(label)) n++;
+  }
+  return `${label} ${n}`;
+}
+
+function dInsertGenerated() {
+  const D = window.GRBL_DESIGN;
+  const data = dGenData();
+  if (!D || !data) return;
+  if (data.mode === 'box' && data.small) {
+    dStatus(t('design.gen.small'), 'error');
+    return;
+  }
+  const label = t(
+    data.mode === 'box' ? 'design.gen.boxName' : 'design.gen.gearName',
+  );
+  const name = dNextGroupName(label);
+  const group = `g${designState.seq++}`;
+  const art = dArtBounds();
+  const ox = art ? art.maxX + 10 : 10;
+  const oy = art ? art.minY : 10;
+  const shapes = [];
+  if (data.mode === 'box') {
+    for (const panel of data.box.panels) {
+      shapes.push({
+        kind: 'line',
+        points: panel.points.map((p) => ({ x: p.x + ox, y: p.y + oy })),
+        closed: true,
+        group,
+        name,
+      });
+    }
+  } else {
+    const r = data.gear.outerDiameter / 2 + 2;
+    const cx = ox + r;
+    const cy = oy + r;
+    shapes.push({
+      kind: 'line',
+      points: data.gear.points.map((p) => ({ x: p.x + cx, y: p.y + cy })),
+      closed: true,
+      group,
+      name,
+    });
+    if (data.gear.bore > 0) {
+      shapes.push({
+        kind: 'ellipse',
+        points: D.makeCircle(cx, cy, data.gear.bore / 2),
+        closed: true,
+        group,
+        name,
+      });
+    }
+  }
+  for (const sh of shapes) {
+    if (designState.activeLayer) sh.layer = designState.activeLayer;
+    designState.shapes.push(sh);
+  }
+  dPushHistory();
+  designState.selection = designState.shapes
+    .map((_, i) => i)
+    .filter((i) => designState.shapes[i].group === group);
+  dAfterSelection();
+  dStatus(t('design.gen.done', { name }), 'ok');
+  dCloseGenDialog();
+}
+
 // ------------------------------------------------------ gravar dos dois lados
 //
 // O lado B é o desenho **espelhado na horizontal em torno do centro da arte**
@@ -5909,6 +6219,44 @@ function dConfirmSize() {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
     });
   }
+
+  // diálogo "geradores"
+  const genOpenBtn = $('designGen');
+  if (genOpenBtn) genOpenBtn.addEventListener('click', dOpenGenDialog);
+  const genInsertBtn = $('designGenInsert');
+  if (genInsertBtn) genInsertBtn.addEventListener('click', dInsertGenerated);
+  const genCancelBtn = $('designGenCancel');
+  if (genCancelBtn) genCancelBtn.addEventListener('click', dCloseGenDialog);
+  const genCloseBtn = $('designGenClose');
+  if (genCloseBtn) genCloseBtn.addEventListener('click', dCloseGenDialog);
+  const genOverlayEl = $('designGenOverlay');
+  if (genOverlayEl) {
+    genOverlayEl.addEventListener('click', (e) => {
+      if (e.target === genOverlayEl) dCloseGenDialog();
+    });
+  }
+  const genBoxTab = $('genModeBox');
+  if (genBoxTab) genBoxTab.addEventListener('click', () => dSetGenMode('box'));
+  const genGearTab = $('genModeGear');
+  if (genGearTab)
+    genGearTab.addEventListener('click', () => dSetGenMode('gear'));
+  for (const id of [
+    'genWidth',
+    'genDepth',
+    'genHeight',
+    'genThickness',
+    'genFinger',
+    'genClearance',
+    'genModule',
+    'genTeeth',
+    'genAngle',
+    'genBore',
+  ]) {
+    const input = $(id);
+    if (input) input.addEventListener('input', dUpdateGenPreview);
+  }
+  const genTopInput = $('genTopInput');
+  if (genTopInput) genTopInput.addEventListener('change', dUpdateGenPreview);
 
   // diálogo "gravar dos dois lados"
   const doubleBtn = $('designDouble');

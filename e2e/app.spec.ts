@@ -631,6 +631,48 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('geradores: caixa com encaixe e engrenagem entram como um grupo (Anexo B)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      await page.click('#designGen');
+      await expect(page.locator('#designGenOverlay')).toBeVisible();
+      // Campos da caixa visíveis; os da engrenagem escondidos.
+      await expect(page.locator('#genBoxFields')).toBeVisible();
+      await expect(page.locator('#genGearFields')).toBeHidden();
+      await expect(page.locator('#genSummary')).toContainText('6 peças');
+
+      await page.click('#designGenInsert');
+      await expect(page.locator('#designGenOverlay')).toHaveClass(/hidden/);
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+      await expect(page.locator('#designStatus')).toContainText('Caixa 1');
+
+      // Engrenagem com furo: um grupo só (contorno + furo).
+      await page.click('#designGen');
+      await page.click('#genModeGear');
+      await expect(page.locator('#genGearFields')).toBeVisible();
+      await expect(page.locator('#genBoxFields')).toBeHidden();
+      await page.fill('#genTeeth', '24');
+      await page.fill('#genBore', '6');
+      await expect(page.locator('#genSummary')).toContainText('24 dentes');
+      await page.click('#designGenInsert');
+      await expect(page.locator('#designObjCount')).toHaveText('2');
+      await expect(page.locator('#designStatus')).toContainText('Engrenagem 1');
+
+      // Cada inserção é **um** passo de desfazer (a caixa inteira sai junta).
+      await page.click('#designUndo');
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+    } finally {
+      await close();
+    }
+  });
+
   test('gravar dos dois lados: lado B espelhado com a mesma origem (Anexo B)', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'grbl-sides-'));
     const { app, page, close } = await launchApp();

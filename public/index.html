@@ -196,6 +196,11 @@
           <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
           <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
         </symbol>
+        <symbol id="ic-gear" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 2" />
+          <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </symbol>
         <symbol id="ic-twosided" viewBox="0 0 24 24">
           <rect x="3" y="4.5" width="8" height="15" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5" />
           <rect x="13" y="4.5" width="8" height="15" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.2 1.8" />
@@ -1894,6 +1899,9 @@
             <button type="button" id="designDouble" class="icon-btn" data-i18n-title="design.double" title="Gravar dos dois lados…">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-twosided" /></svg>
             </button>
+            <button type="button" id="designGen" class="icon-btn" data-i18n-title="design.generators" title="Geradores…">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-gear" /></svg>
+            </button>
             <button type="button" id="designMirrorH" class="icon-btn" data-i18n-title="design.mirror.h" title="Espelhar na horizontal">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-mirror-h" /></svg>
             </button>
@@ -2347,6 +2355,101 @@
           <button type="button" id="designSizeCancel" data-i18n="design.cancel">Cancelar</button>
           <button type="button" id="designSizeConfirm" class="primary" data-i18n="design.generate">
             Gerar e visualizar
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designGenOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designGenTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designGenTitle" data-i18n="design.gen.title">Geradores</h3>
+          <button type="button" id="designGenClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <div class="gen-tabs" role="tablist">
+            <button
+              type="button"
+              id="genModeBox"
+              class="gen-tab active"
+              role="tab"
+              aria-selected="true"
+              data-i18n="design.gen.box"
+            >
+              Caixa
+            </button>
+            <button
+              type="button"
+              id="genModeGear"
+              class="gen-tab"
+              role="tab"
+              aria-selected="false"
+              data-i18n="design.gen.gear"
+            >
+              Engrenagem
+            </button>
+          </div>
+          <p class="design-size-hint" id="genHint"></p>
+          <div class="design-size-fields" id="genBoxFields">
+            <label class="design-field">
+              <span data-i18n="design.gen.width">Largura (X, mm)</span>
+              <input type="number" id="genWidth" min="20" max="1200" step="1" value="200" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.depth">Profundidade (Y, mm)</span>
+              <input type="number" id="genDepth" min="20" max="1200" step="1" value="140" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.height">Altura (Z, mm)</span>
+              <input type="number" id="genHeight" min="20" max="1200" step="1" value="80" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.thickness">Espessura do material (mm)</span>
+              <input type="number" id="genThickness" min="0.5" max="30" step="0.5" value="3" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.finger">Largura do dedo (mm)</span>
+              <input type="number" id="genFinger" min="2" max="60" step="1" value="10" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.clearance">Folga da fenda (mm)</span>
+              <input type="number" id="genClearance" min="0" max="1" step="0.05" value="0.1" />
+            </label>
+            <label class="design-check gen-top">
+              <input type="checkbox" id="genTop" checked />
+              <span data-i18n="design.gen.top">Incluir tampa</span>
+            </label>
+          </div>
+          <div class="design-size-fields hidden" id="genGearFields">
+            <label class="design-field">
+              <span data-i18n="design.gen.module">Módulo (mm)</span>
+              <input type="number" id="genModule" min="0.5" max="10" step="0.5" value="2" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.teeth">Dentes</span>
+              <input type="number" id="genTeeth" min="8" max="200" step="1" value="20" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.angle">Ângulo de pressão (°)</span>
+              <input type="number" id="genAngle" min="14.5" max="25" step="0.5" value="20" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.gen.bore">Furo central (mm)</span>
+              <input type="number" id="genBore" min="0" max="200" step="0.5" value="0" />
+            </label>
+          </div>
+          <canvas id="genCanvas" class="gen-canvas" width="920" height="280" aria-hidden="true"></canvas>
+          <p class="design-size-note" id="genSummary"></p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designGenCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designGenInsert" class="primary" data-i18n="design.gen.insert">
+            Inserir no desenho
           </button>
         </footer>
       </div>

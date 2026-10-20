@@ -70,6 +70,26 @@ export {
   sanitizeFiducialOffset,
   sanitizeFiducialSize,
 } from './fiducials';
+export type {
+  BoxOptions,
+  BoxPanelKey,
+  BoxResult,
+  GearOptions,
+  GearResult,
+  GeneratedPanel,
+} from './generators';
+export {
+  BOX_MIN_MM,
+  BOX_PANEL_GAP_MM,
+  boxPanels,
+  fingerIntervals,
+  GEAR_TEETH_MAX,
+  GEAR_TEETH_MIN,
+  gearOutline,
+  sanitizeBox,
+  sanitizeGear,
+  slotIntervals,
+} from './generators';
 export type { CostBreakdown, CostCurrency, CostInputs } from './cost';
 export {
   COST_CURRENCIES,

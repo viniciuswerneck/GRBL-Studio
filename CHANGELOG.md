@@ -6,6 +6,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-20
+
+Peças paramétricas: **caixa com encaixe** e **engrenagem** saem prontas do
+editor — um grupo por peça, com o kerf da camada aplicado como em qualquer
+contorno.
+
+### Added — geradores paramétricos (RF-DSN-24)
+
+- Botão **“Geradores…”** na barra do editor, com duas abas:
+  - **Caixa**: medidas externas L×P×A, espessura do material, largura do dedo,
+    folga da fenda e tampa opcional. Saem 5 ou 6 peças (frente, fundo, laterais,
+    base, tampa) deitadas na chapa **sem sobreposição**: frente/fundo com fendas
+    nas verticais e na base, laterais com dedos que atravessam a espessura,
+    base/tampa com dedos nos quatro lados e **vãos nos cantos** (nada de dedo
+    órfão). A fenda é o dedo **mais a folga**, para montar sem forçar.
+  - **Engrenagem**: módulo, número de dentes, ângulo de pressão e furo central
+    opcional. Perfil **evolvente** (não é um desenho aproximado), com arco de
+    raiz entre os dentes.
+- **Prévia em escala** no próprio diálogo (peças rotuladas, círculo primitivo
+  tracejado na engrenagem e resumo com a chapa/Ø), atualizando enquanto você
+  digita.
+- A inserção é **um grupo** — a caixa inteira anda/escala junto, a engrenagem e
+  o furo também — e **um único passo de desfazer**.
+
+### Fixed
+
+- Os campos do modo “Engrenagem” não apareciam/escondiam no diálogo por causa da
+  especificidade do `display: grid` — agora `.design-size-fields.hidden` vence.
+- Painéis da caixa são posicionados pela **caixa real** (com os dedos), então
+  não invadem o vizinho na chapa mesmo com material grosso.
+
 ## [0.17.0] - 2026-10-20
 
 Frente e verso: o editor passa a gerar os **dois lados** de uma peça com o

@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 20/10/2026 (v0.17.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 20/10/2026 (v0.18.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.17.0)
+## Estado atual (v0.18.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 402 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 432 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -92,7 +92,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **932 testes** (Vitest, 58 arquivos) + E2E Playwright (56) + smoke headless.
+- [x] **946 testes** (Vitest, 59 arquivos) + E2E Playwright (57) + smoke headless.
 
 ---
 
@@ -103,12 +103,12 @@ A lista vinha **crescendo**: o Anexo B propôs **26 itens novos** em cima dos
 voltar a **encolher**, o backlog fica dividido em três — e nada novo entra na
 lista ativa.
 
-**A. Ativos (software puro, fecha aqui).** Restam **8**; cada release marca 1–2
+**A. Ativos (software puro, fecha aqui).** Restam **7**; cada release marca 1–2
 como ✅ e o número só cai:
 
 | # | Item | Esf. | Alvo | Pronto quando |
 | :-- | :-- | :-- | :-- | :-- |
-| 1 | **Geradores paramétricos** (caixa com encaixe + engrenagem) | M | v0.18 | Caixa montável a partir de medidas e engrenagem com módulo/dentes, direto no editor |
+| 1 | ~~Geradores paramétricos (caixa com encaixe + engrenagem)~~ | M | ✅ v0.18 | RF-DSN-24: caixa montável a partir das medidas e engrenagem evolvente, como um grupo |
 | 2 | **Gabarito (jig/molde)** | S | v0.19 | Molde com folga em volta da peça, para repetir no mesmo ponto |
 | 3 | **Texto em curva/arco** | S | v0.19 | Texto ao longo de arco/caminho no editor 2D |
 | 4 | **Biblioteca de símbolos** | S | v0.20 | Catálogo offline de formas arrastáveis |
@@ -360,7 +360,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — ✅ **abas, sobre-corte e custo por peça**
-   (v0.14.0), **tiling** (v0.15.0) e **marcas de registro** (v0.16.0) e **gravar dos dois lados** (v0.17.0); seguem
+   (v0.14.0), **tiling** (v0.15.0) e **marcas de registro** (v0.16.0), **gravar dos dois lados** (v0.17.0) e **geradores** (v0.18.0); seguem
    abertos geradores e o kit de segurança/monitor; versões e esforço
    **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
 

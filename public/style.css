@@ -2420,6 +2420,50 @@ html[data-theme="sand"] .design-canvas-wrap {
   font-variant-numeric: tabular-nums;
 }
 
+.gen-tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.gen-tab {
+  padding: 5px 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.gen-tab.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.design-size-fields.hidden {
+  display: none;
+}
+
+.design-size-note.gen-warn {
+  color: var(--danger);
+}
+
+.gen-top {
+  grid-column: 1 / -1;
+}
+
+.gen-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-input);
+}
+
 .design-double-marks {
   margin: 2px 0 4px;
 }
