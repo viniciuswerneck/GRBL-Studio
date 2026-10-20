@@ -523,6 +523,53 @@ input[type="checkbox"] {
   display: none;
 }
 
+/* Ponto escolhido no preview (P2.14): popover ancorado ao clique. */
+.preview-move {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 196px;
+  max-width: 260px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  font-size: var(--fs-12);
+}
+
+.preview-move.hidden {
+  display: none;
+}
+
+.preview-move-title {
+  font-weight: 600;
+}
+
+.preview-move-coords {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-move-note {
+  color: var(--text-sub);
+}
+
+.preview-move-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.preview-move-actions button {
+  min-height: 26px;
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-12);
+}
+
 .preview-warning {
   position: absolute;
   top: var(--sp-2);

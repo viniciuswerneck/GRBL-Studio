@@ -3,7 +3,12 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { deflateSync } from 'node:zlib';
-import { _electron as electron, expect, test } from '@playwright/test';
+import {
+  _electron as electron,
+  expect,
+  type Page,
+  test,
+} from '@playwright/test';
 
 /** API global exposta pelo bundle `public/i18n.js` (GRBL_I18N). */
 interface I18nApi {
@@ -1385,6 +1390,95 @@ test.describe('GRBL Studio — biblioteca de jobs (P2.9)', () => {
         'Nenhum job ainda',
       );
       await expect(page.locator('#joblibCount')).toContainText('0 de 50');
+    } finally {
+      await close();
+    }
+  });
+});
+
+test.describe('GRBL Studio — mover pelo preview (P2.14)', () => {
+  const PROGRAM =
+    'G21\nG90\nM4 S200\nG1 X40 Y0 F600\nG1 X40 Y40\nG1 X0 Y40\nM5';
+
+  async function loadProgram(page: Page): Promise<void> {
+    await page.evaluate((text) => {
+      const w = window as unknown as {
+        applyJobLines: (name: string, text: string) => void;
+      };
+      w.applyJobLines('quadrado.gcode', text);
+    }, PROGRAM);
+    await page.click('[data-tab="run"]');
+  }
+
+  test('clique no desenho pede confirmação e envia G90 G0', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await loadProgram(page);
+      const canvas = page.locator('#previewCanvas');
+      const box = await canvas.boundingBox();
+      if (!box) throw new Error('preview sem caixa');
+      const pop = page.locator('#previewMove');
+
+      // Clique no meio do desenho: abre o popover com o ponto em mm.
+      await canvas.click({
+        position: { x: box.width / 2, y: box.height / 2 },
+      });
+      await expect(pop).not.toHaveClass(/hidden/);
+      await expect(page.locator('#previewMoveCoords')).toHaveText(
+        /^X -?\d+\.\d{3} · Y -?\d+\.\d{3}$/,
+      );
+
+      // Confirmar manda um único `G90 G0 X.. Y..` (aparece no console).
+      await page.click('#previewMoveGo');
+      await expect(pop).toHaveClass(/hidden/);
+      await expect(page.locator('#consoleOutput')).toContainText(
+        /G90 G0 X-?\d+\.\d{3} Y-?\d+\.\d{3}/,
+      );
+
+      // Esc descarta o ponto escolhido — e não é parada de emergência.
+      await canvas.click({ position: { x: 60, y: 60 } });
+      await expect(pop).not.toHaveClass(/hidden/);
+      await page.keyboard.press('Escape');
+      await expect(pop).toHaveClass(/hidden/);
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      // Cancelar também fecha sem enviar nada.
+      await canvas.click({ position: { x: 80, y: 80 } });
+      await expect(pop).not.toHaveClass(/hidden/);
+      await page.click('#previewMoveCancel');
+      await expect(pop).toHaveClass(/hidden/);
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('sem conexão o clique explica por que não pode mover', async () => {
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await loadProgram(page);
+      const canvas = page.locator('#previewCanvas');
+      const box = await canvas.boundingBox();
+      if (!box) throw new Error('preview sem caixa');
+
+      await canvas.click({
+        position: { x: box.width / 2, y: box.height / 2 },
+      });
+      await expect(page.locator('#previewMove')).toHaveClass(/hidden/);
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Não dá para mover: conecte a máquina.',
+      );
     } finally {
       await close();
     }

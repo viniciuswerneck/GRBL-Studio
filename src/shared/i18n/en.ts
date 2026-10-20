@@ -859,7 +859,17 @@ export const en = {
   'preview.pass': 'Pass {n}/{total}',
   'preview.rapid': 'Travel',
   'preview.workArea': 'Work area', // reference only, not part of the job
-  'preview.tip': 'wheel: zoom · drag: pan · double click: fit',
+  'preview.tip': 'wheel: zoom · drag: pan · click: move · double click: fit',
+  'preview.moveTitle': 'Move here?',
+  'preview.moveCoords': 'X {x} · Y {y}',
+  'preview.moveNote': 'in the active coordinate system',
+  'preview.moveGo': 'Move (G0)',
+  'preview.moveCancel': 'Cancel',
+  'preview.moveBlocked': 'Can’t move: {why}.',
+  'preview.moveWhy.offline': 'connect the machine',
+  'preview.moveWhy.alarm': 'the machine is in alarm or the door is open',
+  'preview.moveWhy.job': 'a job is running',
+
   'preview.simulate': 'Simulate',
   'preview.warning.area':
     '⚠ The path exceeds the configured area ({width}×{height} mm): {problems}.',

@@ -84,7 +84,7 @@ Já entregue (não repetir no planejamento):
 - [x] Preview 2D do caminho · Zero/Set Origin (G92) · Unlock/Soft Reset
 - [x] Homing (`$H`) com feedback · distâncias de JOG (0.01…50)
 - [x] Atalhos (setas = X/Y, Home = homing)
-- [ ] Mover para a posição clicada no preview → **v0.7 (P2.14)**
+- [x] Mover para a posição clicada no preview → **v0.7 (P2.14)** ✅
 
 ### v0.4 — Configurações
 - [x] Janela de configurações · Grbl Settings `$$` (viewer/editor)
@@ -164,7 +164,7 @@ diferencial que nenhum concorrente grátis tem.
 | ✅ P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** — entregue (30 perfis, importação e sugestão na conexão) | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | ✅ P1.10 | **Editor de G-code** (realce + numeração + edição + validar + reenviar trecho) — entregue | M | Editar, validar e reenviar trecho. |
 | ✅ P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) — entregue | S | Últimos 50 jobs persistidos com parâmetros. |
-| P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
+| ✅ P2.14 | **Clicar no preview para mover** (pendência da v0.3) — entregue | S | Clique → `G0` para o ponto (com confirmação). |
 | — | **Validar Windows/macOS** em hardware real + assinatura de código | M | Relato/vídeo por SO; instalador sem aviso de "desenvolvedor desconhecido". |
 | — | **Nesting simples** (encaixe por caixa, reusa matriz/booleanas) | M | Aproveitamento de chapa demonstrado. |
 

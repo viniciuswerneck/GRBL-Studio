@@ -197,6 +197,10 @@ const el = {
   imgSave: $('imgSave'),
   imgStats: $('imgStats'),
   previewCanvas: $('previewCanvas'),
+  previewMove: $('previewMove'),
+  previewMoveCoords: $('previewMoveCoords'),
+  previewMoveGo: $('previewMoveGo'),
+  previewMoveCancel: $('previewMoveCancel'),
   previewHint: $('previewHint'),
   previewWarning: $('previewWarning'),
   previewLegend: $('previewLegend'),
@@ -6187,6 +6191,11 @@ function updateControls() {
   ]) {
     if (b) b.disabled = !conn || alarm;
   }
+  // O ponto escolhido no preview (P2.14) só vale enquanto dá para mover.
+  if (previewMovePoint && previewMoveBlocker()) {
+    resetPreviewMove();
+    renderPreview();
+  }
   el.homeBtn.disabled = !conn || alarm || !machineHoming();
   el.setOriginBtn.disabled = !conn || alarm;
   el.gotoZeroBtn.disabled = !conn || alarm;
@@ -8511,6 +8520,38 @@ function previewContext() {
   return { ctx, rect: { width: rect.width, height: rect.height }, dpr };
 }
 
+/**
+ * Enquadramento do preview de caminho: mm ↔ px (CSS) com o zoom/pan atual.
+ * Devolve `null` sem programa/caixa — o mesmo critério do desenho.
+ */
+function previewMapping(rect) {
+  const prog = previewProgram.program;
+  const b = prog ? (prog.cutBounds ?? prog.bounds) : null;
+  if (!b) return null;
+  const padW = (b.xMax - b.xMin) * 0.05;
+  const padH = (b.yMax - b.yMin) * 0.05;
+  const pad = Math.max(1, padW, padH);
+  const wx0 = b.xMin - pad;
+  const wx1 = b.xMax + pad;
+  const wy0 = b.yMin - pad;
+  const wy1 = b.yMax + pad;
+  const wmm = Math.max(1e-3, wx1 - wx0);
+  const hmm = Math.max(1e-3, wy1 - wy0);
+  const base = Math.min(rect.width / wmm, rect.height / hmm);
+  const scale = base * previewProgram.view.scale;
+  const cx = (wx0 + wx1) / 2;
+  const cy = (wy0 + wy1) / 2;
+  const { tx, ty } = previewProgram.view;
+  return {
+    scale,
+    toX: (mm) => rect.width / 2 + (mm - cx) * scale + tx,
+    toY: (mm) => rect.height / 2 - (mm - cy) * scale + ty,
+    // Inverso: px (CSS, relativo ao canvas) → mm do programa.
+    toMmX: (px) => cx + (px - rect.width / 2 - tx) / scale,
+    toMmY: (py) => cy - (py - rect.height / 2 - ty) / scale,
+  };
+}
+
 /** Caixa contida (letterbox) com margem de 10 %. */
 function fitBox(box, srcW, srcH) {
   const scale = Math.min(box.width / srcW, box.height / srcH) * 0.9;
@@ -8629,6 +8670,8 @@ function cssColor(name, fallback) {
 
 /** Interpreta o G-code e passa o preview para o modo caminho (RF-PRV-2/4). */
 function setGcodePreview(text, label) {
+  // Programa novo: o ponto escolhido antes não vale mais (P2.14).
+  resetPreviewMove();
   const parser = window.GRBL_PREVIEW;
   if (!parser) return;
   previewProgram.program = parser.parseGcode(text);
@@ -8932,24 +8975,10 @@ function drawGcodePreview() {
 
   // Enquadra pela área **queimada**: num desenho longe da origem a área total
   // (com o `G0` até 0,0) deixaria a arte pequena num canto do preview.
-  const b = prog.cutBounds ?? prog.bounds;
-  if (!b) return;
-  const padW = (b.xMax - b.xMin) * 0.05;
-  const padH = (b.yMax - b.yMin) * 0.05;
-  const pad = Math.max(1, padW, padH);
-  const wx0 = b.xMin - pad;
-  const wx1 = b.xMax + pad;
-  const wy0 = b.yMin - pad;
-  const wy1 = b.yMax + pad;
-  const wmm = Math.max(1e-3, wx1 - wx0);
-  const hmm = Math.max(1e-3, wy1 - wy0);
-  const base = Math.min(rect.width / wmm, rect.height / hmm);
-  const scale = base * previewProgram.view.scale;
-  const cx = (wx0 + wx1) / 2;
-  const cy = (wy0 + wy1) / 2;
+  const frame = previewMapping(rect);
+  if (!frame) return;
+  const { toX, toY, scale } = frame;
   const { tx, ty } = previewProgram.view;
-  const toX = (mm) => rect.width / 2 + (mm - cx) * scale + tx;
-  const toY = (mm) => rect.height / 2 - (mm - cy) * scale + ty;
 
   const accent = cssColor('--accent', '#4cc2ff');
   const dim = cssColor('--text-disabled', '#6b6b6b');
@@ -9103,6 +9132,22 @@ function drawGcodePreview() {
     ctx.lineTo(hx, hy + 8);
     ctx.stroke();
   }
+
+  // Ponto escolhido para mover (P2.14): anel + mira, na cor de atenção.
+  if (previewMovePoint) {
+    const mx = toX(previewMovePoint.x);
+    const my = toY(previewMovePoint.y);
+    ctx.strokeStyle = cssColor('--warn', '#fce100');
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(mx, my, 9, 0, Math.PI * 2);
+    ctx.moveTo(mx - 14, my);
+    ctx.lineTo(mx + 14, my);
+    ctx.moveTo(mx, my - 14);
+    ctx.lineTo(mx, my + 14);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
 }
 
 function renderPreview() {
@@ -9159,6 +9204,11 @@ function renderPreview() {
 /* ------------------------- zoom e pan (RF-PRV-4) ------------------------- */
 
 let dragState = null;
+/**
+ * Ponto escolhido no preview de caminho (P2.14): `{ x, y }` em mm do programa.
+ * Enquanto existir, o clique foi "armado" e o popover pede confirmação.
+ */
+let previewMovePoint = null;
 
 /** `true` quando o preview está no modo caminho (G-code). */
 function isPathPreview() {
@@ -9175,6 +9225,7 @@ el.previewCanvas.addEventListener(
       50,
       Math.max(0.2, previewProgram.view.scale * factor),
     );
+    resetPreviewMove();
     renderPreview();
   },
   { passive: false },
@@ -9187,32 +9238,141 @@ el.previewCanvas.addEventListener('pointerdown', (e) => {
     y: e.clientY,
     tx: previewProgram.view.tx,
     ty: previewProgram.view.ty,
+    moved: false,
   };
   el.previewCanvas.setPointerCapture(e.pointerId);
 });
 
 el.previewCanvas.addEventListener('pointermove', (e) => {
   if (!dragState) return;
-  previewProgram.view.tx = dragState.tx + (e.clientX - dragState.x);
-  previewProgram.view.ty = dragState.ty + (e.clientY - dragState.y);
+  const dx = e.clientX - dragState.x;
+  const dy = e.clientY - dragState.y;
+  // Abaixo do limiar ainda é clique: não desloca a vista nem esconde o ponto.
+  if (!dragState.moved && Math.hypot(dx, dy) < 3) return;
+  dragState.moved = true;
+  if (previewMovePoint) resetPreviewMove();
+  previewProgram.view.tx = dragState.tx + dx;
+  previewProgram.view.ty = dragState.ty + dy;
   renderPreview();
 });
 
 el.previewCanvas.addEventListener('pointerup', (e) => {
   if (!dragState) return;
+  const moved = dragState.moved;
   dragState = null;
   try {
     el.previewCanvas.releasePointerCapture(e.pointerId);
   } catch {
     /* já liberado */
   }
+  if (!moved) previewPickPoint(e);
 });
 
 el.previewCanvas.addEventListener('dblclick', () => {
   if (imageState.preview?.kind !== 'gcode') return;
+  resetPreviewMove();
   previewProgram.view = { scale: 1, tx: 0, ty: 0 };
   renderPreview();
 });
+
+/* ------------------- mover até um ponto do preview (P2.14) ------------------ */
+
+/** Esconde popover/ponto sem redesenhar (quem chamou decide quando pintar). */
+function resetPreviewMove() {
+  previewMovePoint = null;
+  el.previewMove.classList.add('hidden');
+}
+
+function closePreviewMove() {
+  if (!previewMovePoint) return;
+  resetPreviewMove();
+  renderPreview();
+}
+
+/** Por que não dá para mover agora (string vazia = pode mexer). */
+function previewMoveBlocker() {
+  if (!state.connected) return t('preview.moveWhy.offline');
+  if (state.grblState === 'Alarm' || state.grblState === 'Door') {
+    return t('preview.moveWhy.alarm');
+  }
+  if (state.jobState === 'running' || state.jobState === 'paused') {
+    return t('preview.moveWhy.job');
+  }
+  return '';
+}
+
+/** Popover junto do clique, sempre inteiro dentro do preview. */
+function positionPreviewMove(px, py) {
+  const box = el.previewCanvas.getBoundingClientRect();
+  const panel = el.previewMove;
+  const w = panel.offsetWidth;
+  const h = panel.offsetHeight;
+  const gap = 12;
+  let left = px + gap;
+  let top = py + gap;
+  if (left + w > box.width - 8) left = px - w - gap;
+  if (top + h > box.height - 8) top = py - h - gap;
+  panel.style.left = `${Math.max(8, left)}px`;
+  panel.style.top = `${Math.max(8, top)}px`;
+}
+
+/** Clique sem arrasto: escolhe o ponto (a confirmação fica no popover). */
+function previewPickPoint(e) {
+  if (!isPathPreview()) return;
+  const why = previewMoveBlocker();
+  if (why) {
+    appendLine(t('preview.moveBlocked', { why }), 'error');
+    closePreviewMove();
+    return;
+  }
+  const box = el.previewCanvas.getBoundingClientRect();
+  const px = e.clientX - box.left;
+  const py = e.clientY - box.top;
+  if (px < 0 || py < 0 || px > box.width || py > box.height) return;
+  const frame = previewMapping({ width: box.width, height: box.height });
+  if (!frame) return;
+
+  let x = frame.toMmX(px);
+  let y = frame.toMmY(py);
+  // Fora da área de trabalho o GRBL recusaria (soft limit): encosta na borda.
+  const wa = previewProgram.workArea;
+  if (wa) {
+    x = Math.min(Math.max(x, 0), wa.widthMm);
+    y = Math.min(Math.max(y, 0), wa.heightMm);
+  }
+
+  previewMovePoint = { x, y };
+  el.previewMoveCoords.textContent = t('preview.moveCoords', {
+    x: x.toFixed(3),
+    y: y.toFixed(3),
+  });
+  el.previewMove.classList.remove('hidden');
+  positionPreviewMove(px, py);
+  renderPreview();
+}
+
+/**
+ * Confirma o movimento: `G90 G0` absoluto no **sistema de coordenadas ativo**
+ * (mesma fila de envio do console, com a janela de caracteres do GRBL). Nada de
+ * `G91`: o modo modal do programa carregado continua intacto.
+ */
+function confirmPreviewMove() {
+  const target = previewMovePoint;
+  if (!target) return;
+  const why = previewMoveBlocker();
+  if (why) {
+    appendLine(t('preview.moveBlocked', { why }), 'error');
+    closePreviewMove();
+    return;
+  }
+  const x = target.x.toFixed(3);
+  const y = target.y.toFixed(3);
+  closePreviewMove();
+  window.grbl.writeLine(`G90 G0 X${x} Y${y}`);
+}
+
+el.previewMoveGo.addEventListener('click', () => confirmPreviewMove());
+el.previewMoveCancel.addEventListener('click', () => closePreviewMove());
 
 let previewResize = null;
 window.addEventListener('resize', () => {
@@ -9613,6 +9773,14 @@ function openOverlays() {
 }
 
 document.addEventListener('keydown', (e) => {
+  // Esc com um ponto escolhido no preview (P2.14) descarta o ponto — não é
+  // parada de emergência (o Ctrl+X continua valendo).
+  if (e.key === 'Escape' && previewMovePoint) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closePreviewMove();
+    return;
+  }
   // Parada de emergência **sempre** disponível: o operador pode estar com o
   // foco no console (ou num campo do modal) quando precisa abortar — Ctrl+X
   // vale em qualquer foco (DESIGN §5). Sem job rodando ele devolve `false` e o

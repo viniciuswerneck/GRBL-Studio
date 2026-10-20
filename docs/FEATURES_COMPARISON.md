@@ -42,6 +42,7 @@
 | Visualização tempo real | Sim | Sim (crosshair + trecho por passada) | ✅ |
 | Cores por passada / intensidade (S) | Parcial | Sim | ✅ |
 | Simulação de job (playback + tempo) | Não | Sim (P2.3/RF-PRV-7: play/pause/seek, 1×–10×, tempo estimado) | ✅ |
+| Mover a cabeça clicando no preview | Não | Sim (P2.14/RF-PRV-8: `G90 G0` com confirmação, limitado à área de trabalho) | ✅ |
 
 ## Importação
 | Feature | LaserGRBL | GRBL Studio | Status |

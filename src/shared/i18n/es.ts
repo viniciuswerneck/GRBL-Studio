@@ -882,7 +882,18 @@ export const es = {
   'preview.pass': 'Pasada {n}/{total}',
   'preview.rapid': 'Desplazamiento',
   'preview.workArea': 'Área de trabajo', // referencia, no forma parte del job
-  'preview.tip': 'rueda: zoom · arrastrar: mover · doble clic: ajustar',
+  'preview.tip':
+    'rueda: zoom · arrastrar: mover · clic: mover · doble clic: ajustar',
+
+  'preview.moveTitle': '¿Mover hasta aquí?',
+  'preview.moveCoords': 'X {x} · Y {y}',
+  'preview.moveNote': 'en el sistema de coordenadas activo',
+  'preview.moveGo': 'Mover (G0)',
+  'preview.moveCancel': 'Cancelar',
+  'preview.moveBlocked': 'No se puede mover: {why}.',
+  'preview.moveWhy.offline': 'conecte la máquina',
+  'preview.moveWhy.alarm': 'la máquina está en alarma o con la puerta abierta',
+  'preview.moveWhy.job': 'hay un job en curso',
   'preview.simulate': 'Simular',
   'preview.warning.area':
     '⚠ El recorrido excede el área configurada ({width}×{height} mm): {problems}.',

@@ -6,6 +6,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — mover a cabeça pelo preview (P2.14)
+
+- **Clique no preview de caminho** escolhe um ponto e abre um popover com as
+  coordenadas em mm (`X 20.000 · Y 20.000`) e as ações **Mover (G0)** /
+  **Cancelar**. Confirmar envia `G90 G0 X.. Y..` pela mesma fila do console (com
+  a janela de caracteres do GRBL), no **sistema de coordenadas ativo** — sem
+  `G91`, então o modo modal do programa carregado não muda.
+- O ponto aparece como **mira** na cor de atenção; fora da área de trabalho
+  (`$130`/`$131`) ele é **encostado na borda** (evita soft limit). Rodar a roda,
+  arrastar, dar duplo clique ou `Esc` descarta o ponto — `Esc` aqui **não** é
+  parada de emergência.
+- Bloqueado com explicação no console quando não dá para mover: sem conexão,
+  em alarme/porta aberta ou com job em andamento. Arrastar (< 3 px) continua
+  sendo clique; acima disso continua sendo pan.
+- 2 E2E: clique → confirmação → `G90 G0` (e `Esc`/Cancelar sem enviar);
+  desconectado, o clique explica o motivo.
+
 ### Added — biblioteca de jobs (P2.9): reexecutar o que já rodou
 
 - **Biblioteca de jobs** em `Arquivo → Biblioteca de jobs…` e no botão

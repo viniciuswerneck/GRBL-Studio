@@ -185,6 +185,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-PRV-5 | Distinguir movimentos de corte (`G1`) de rápidos (`G0`), colorir o trecho já gravado por passada e usar a potência `S` como intensidade (imagem aparece como será gravada). | Could | ✅ |
 | RF-PRV-6 | **Posicionar a gravadora**: desenhar o **contorno** da área (laser bem fraco) e **marcar o centro** da imagem levando a cabeça até ele (laser desligado). | Should | ✅ |
 | RF-PRV-7 | **Simulação de job**: playback 2D do caminho à velocidade real (play/pause/parar, *seek* na linha do tempo e velocidade 1×–10×), com **tempo estimado** (soma `dist/feed`, `G0` a 3000 mm/min) e a cabeça andando no preview; reusa o preview 2D. | Should | ✅ |
+| RF-PRV-8 | **Mover pelo preview**: clique no caminho escolhe um ponto (com confirmação e mira), limitado à área de trabalho; o movimento é `G90 G0` no sistema de coordenadas ativo. | Could | ✅ |
 
 ### M8 — Configuração do GRBL e preferências
 

@@ -886,7 +886,18 @@ export const ptBR = {
   'preview.pass': 'Passada {n}/{total}',
   'preview.rapid': 'Deslocamento',
   'preview.workArea': 'Área de trabalho', // referência, não faz parte do job
-  'preview.tip': 'roda: zoom · arrastar: mover · duplo clique: ajustar',
+  'preview.tip':
+    'roda: zoom · arrastar: mover · clique: mover · duplo clique: ajustar',
+  'preview.moveTitle': 'Mover até aqui?',
+  'preview.moveCoords': 'X {x} · Y {y}',
+  'preview.moveNote': 'no sistema de coordenadas ativo',
+  'preview.moveGo': 'Mover (G0)',
+  'preview.moveCancel': 'Cancelar',
+  'preview.moveBlocked': 'Não dá para mover: {why}.',
+  'preview.moveWhy.offline': 'conecte a máquina',
+  'preview.moveWhy.alarm': 'a máquina está em alarme ou com a porta aberta',
+  'preview.moveWhy.job': 'há um job em andamento',
+
   'preview.simulate': 'Simular',
   'preview.warning.area':
     '⚠ O caminho excede a área configurada ({width}×{height} mm): {problems}.',

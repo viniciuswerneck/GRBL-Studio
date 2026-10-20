@@ -751,7 +751,38 @@
             <span class="lg-swatch hidden" id="lgPassSwatch"></span>
             <span class="hidden" id="lgPass">Passada 1/1</span>
             <button type="button" id="simToggle" class="sim-toggle" data-i18n="preview.simulate">Simular</button>
-            <span class="lg-tip" data-i18n="preview.tip">roda: zoom · arrastar: mover · duplo clique: ajustar</span>
+            <span class="lg-tip" data-i18n="preview.tip">roda: zoom · arrastar: mover · clique: mover a cabeça · duplo clique: ajustar</span>
+          </div>
+          <div
+            id="previewMove"
+            class="preview-move hidden"
+            role="dialog"
+            aria-labelledby="previewMoveCoords"
+          >
+            <span class="preview-move-title" data-i18n="preview.moveTitle">
+              Mover até aqui?
+            </span>
+            <span class="preview-move-coords" id="previewMoveCoords"></span>
+            <span class="preview-move-note" data-i18n="preview.moveNote">
+              no sistema de coordenadas ativo
+            </span>
+            <div class="preview-move-actions">
+              <button
+                type="button"
+                class="primary"
+                id="previewMoveGo"
+                data-i18n="preview.moveGo"
+              >
+                Mover (G0)
+              </button>
+              <button
+                type="button"
+                id="previewMoveCancel"
+                data-i18n="preview.moveCancel"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
           <div class="sim-bar hidden" id="simBar">
             <button type="button" id="simPlay" title="Reproduzir">▶</button>

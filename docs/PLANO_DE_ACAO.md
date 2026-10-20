@@ -61,6 +61,13 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > preâmbulo modal da retomada. Do **v0.7** restam a **biblioteca de jobs
 > (P2.9)** e a validação Windows/macOS.
 
+> **Nota (19/10/2026, mover pelo preview):** o **P2.14** entrou como
+> **RF-PRV-8** — clique no caminho escolhe um ponto (mira + popover com as
+> coordenadas), **Mover (G0)** envia `G90 G0` pela fila do console no sistema
+> de coordenadas ativo, encostando na borda da área de trabalho; `Esc`/roda/
+> arrasto descartam o ponto. Bloqueado sem conexão, em alarme ou com job em
+> andamento (com explicação).
+
 > **Nota (19/10/2026, biblioteca de jobs):** o **P2.9** entrou como
 > **RF-GC-11** — os últimos 50 programas executados ficam em
 > `<userData>/joblib` (índice atômico + programa em gzip), com miniatura do

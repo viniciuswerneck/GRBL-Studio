@@ -124,7 +124,7 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 | ✅ P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** — entregue (30 perfis, importação e sugestão na conexão) | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | ✅ P1.10 | **Editor de G-code** (realce + numeração + edição + validar + reenviar trecho) — entregue | M | Editar, validar e reenviar trecho. |
 | ✅ P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) — entregue | S | Últimos 50 jobs persistidos com parâmetros. |
-| P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
+| ✅ P2.14 | **Clicar no preview para mover** (pendência da v0.3) — entregue | S | Clique → `G0` para o ponto (com confirmação). |
 | — | **Validar Win/macOS** em hardware real (+ assinatura de código) | M | Vídeo/relato por SO; instalador sem aviso de "desenvolvedor desconhecido". |
 
 ### Fase P2b — "Diferenciais que ninguém junta" (3–4 semanas) · o fosso
