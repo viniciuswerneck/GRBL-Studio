@@ -6,6 +6,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-20
+
+Marco **oficina**: a peça pequena fica presa por abas, a emenda do corte não
+queima e o diálogo de tamanho mostra quanto a peça custa. Inclui o sobre-corte
+(lead-in/out) e o custo por peça.
+
 ### Added — abas de retenção e sobre-corte por camada (RF-DSN-18/19)
 
 - **Abas de retenção**: a camada informa quantas “pestanhas” seguram a peça e a
