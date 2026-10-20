@@ -39,6 +39,7 @@ export const CHANNELS = {
   fileOpenSvg: 'file:open-svg',
   fileOpenDxf: 'file:open-dxf',
   fileOpenPdf: 'file:open-pdf',
+  fileOpenLbdev: 'file:open-lbdev',
   macrosOpen: 'file:open-macros',
   macrosSave: 'file:save-macros',
   pickDir: 'app:pick-dir',

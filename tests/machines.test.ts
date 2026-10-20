@@ -6,8 +6,12 @@ import {
   DEFAULT_MACHINE_ID,
   MACHINE_PROFILES,
   findMachineProfile,
+  lbdevToProfile,
   machineProfile,
+  parseLbdev,
   parsePins,
+  suggestMachineProfile,
+  type MachineProfile,
 } from '../src/shared/machines';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -180,3 +184,145 @@ function fixturePn(): string | undefined {
   const match = status.match(/(?:^|\|)Pn:([^|>]*)/);
   return match ? match[1] : undefined;
 }
+
+describe('smart connect — sugestão de perfil (P2.5)', () => {
+  it('sugere o perfil quando o curso bate exatamente', () => {
+    const suggestion = suggestMachineProfile({
+      travel: { x: 150, y: 130 },
+      sMax: 1000,
+      homing: true,
+    });
+    expect(suggestion?.profile.id).toBe('sculpfun-c1');
+    expect(suggestion?.reasons).toContain('area');
+    expect(suggestion?.reasons).toContain('smax');
+    expect(suggestion?.reasons).toContain('homing');
+    expect(suggestion?.score).toBeGreaterThanOrEqual(90);
+  });
+
+  it('não sugere quando o curso é outro (o app gravaria limites errados)', () => {
+    expect(
+      suggestMachineProfile({ travel: { x: 137, y: 121 } }),
+    ).toBeUndefined();
+  });
+
+  it('não sugere sem curso conhecido', () => {
+    expect(suggestMachineProfile({})).toBeUndefined();
+    expect(suggestMachineProfile({ travel: { x: 0, y: 0 } })).toBeUndefined();
+  });
+
+  it('nunca sugere o perfil genérico', () => {
+    for (const profile of MACHINE_PROFILES) {
+      const suggestion = suggestMachineProfile({
+        travel: { x: profile.area[0] || 999, y: profile.area[1] || 999 },
+      });
+      if (suggestion) expect(suggestion.profile.id).not.toBe('generic');
+    }
+  });
+
+  it('desempata perfis de mesmo curso pelo teto de S e pelo homing', () => {
+    const profiles: MachineProfile[] = [
+      {
+        id: 'a',
+        name: 'A',
+        module: '5W',
+        area: [400, 400],
+        homing: true,
+        spot: 0.08,
+        lines: 10,
+        mode: 'M4',
+        sMax: 1000,
+        settings: {},
+      },
+      {
+        id: 'b',
+        name: 'B',
+        module: '5W',
+        area: [400, 400],
+        homing: false,
+        spot: 0.08,
+        lines: 10,
+        mode: 'M4',
+        sMax: 255,
+        settings: {},
+      },
+    ];
+    const suggestion = suggestMachineProfile(
+      { travel: { x: 400, y: 400 }, sMax: 255, homing: false },
+      profiles,
+    );
+    expect(suggestion?.profile.id).toBe('b');
+  });
+});
+
+describe('import `.lbdev` do LightBurn (P2.5)', () => {
+  const lbdev = JSON.stringify({
+    DeviceList: [
+      {
+        DisplayName: 'Meu laser',
+        Name: 'GRBL',
+        Type: 'Serial',
+        Width: 508,
+        Height: 390,
+        HomeOnStartup: true,
+        Settings: { S_Scale: 1000, BaudRate: 115200, CommPort: 'COM3' },
+      },
+    ],
+  });
+
+  it('lê o dispositivo do arquivo', () => {
+    const result = parseLbdev(lbdev);
+    expect(result.error).toBeUndefined();
+    expect(result.devices).toHaveLength(1);
+    expect(result.devices[0].name).toBe('Meu laser');
+    expect(result.devices[0].controller).toBe('GRBL');
+    expect(result.devices[0].area).toEqual([508, 390]);
+    expect(result.devices[0].homing).toBe(true);
+    expect(result.devices[0].sMax).toBe(1000);
+  });
+
+  it('recusa JSON inválido e arquivo sem dispositivos', () => {
+    expect(parseLbdev('isto não é json').error).toBe('invalid-json');
+    expect(parseLbdev('{}').error).toBe('no-device');
+    expect(parseLbdev('{"DeviceList":[]}').error).toBe('no-device');
+  });
+
+  it('converte o dispositivo em perfil local (sem tocar no catálogo)', () => {
+    const device = parseLbdev(lbdev).devices[0];
+    const profile = lbdevToProfile(device, 'imported');
+    expect(profile.id).toBe('imported');
+    expect(profile.name).toBe('Meu laser');
+    expect(profile.area).toEqual([508, 390]);
+    expect(profile.homing).toBe(true);
+    expect(profile.sMax).toBe(1000);
+    // O curso importado vira `$130`/`$131` (o valor que o app escreve).
+    expect(profile.settings[130]).toBe(508);
+    expect(profile.settings[131]).toBe(390);
+    expect(profile.settings[32]).toBe(1);
+  });
+});
+
+describe('catálogo 30+ (P2.5)', () => {
+  it('tem 30+ perfis (com o genérico)', () => {
+    expect(MACHINE_PROFILES.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it('os perfis novos têm o curso publicado pelo fabricante', () => {
+    const expected: Record<string, [number, number]> = {
+      'ortur-aufero1': [180, 180],
+      'ortur-lm2-pro': [400, 400],
+      'xtool-d1-pro': [432, 406],
+      'atomstack-a5-pro-v2': [400, 400],
+      'twotrees-tt55': [300, 300],
+      'neje-master2-plus': [255, 440],
+      'neje-3': [170, 170],
+    };
+    for (const [id, area] of Object.entries(expected)) {
+      const profile = findMachineProfile(id);
+      expect(profile, `perfil ${id}`).toBeDefined();
+      expect(profile?.area, `curso de ${id}`).toEqual(area);
+      // O curso do perfil é o que vira `$130`/`$131` — tem de bater.
+      expect(profile?.settings[130], `$130 de ${id}`).toBe(area[0]);
+      expect(profile?.settings[131], `$131 de ${id}`).toBe(area[1]);
+    }
+  });
+});

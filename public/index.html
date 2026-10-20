@@ -228,6 +228,24 @@
           ></select>
         </label>
 
+        <div class="profile-actions">
+          <button
+            type="button"
+            id="machineProfileImport"
+            class="chip"
+            data-i18n="profile.import"
+            data-i18n-title="profile.importHint"
+          >
+            Importar .lbdev…
+          </button>
+          <button
+            type="button"
+            id="profileSuggestion"
+            class="chip hidden"
+            hidden
+          ></button>
+        </div>
+
         <div class="basic-guide">
           <div class="wizard-card">
             <div class="wizard-head" data-i18n="assistant.guideTitle">Assistente — guia iniciante</div>
@@ -1983,6 +2001,39 @@
             data-i18n="preflight.startAnyway"
           >
             Gravar assim mesmo
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="profileOverlay">
+      <div
+        class="modal preflight-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profileTitle"
+      >
+        <header class="modal-head">
+          <h3 id="profileTitle" data-i18n="profile.applyTitle">
+            Aplicar perfil de máquina
+          </h3>
+          <button type="button" id="profileClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+        <p class="hint" id="profileIntro"></p>
+        <ul class="preflight-list" id="profileList"></ul>
+        <footer class="modal-foot">
+          <button type="button" id="profileCancel" data-i18n="nav.cancel">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="profileApply"
+            class="primary"
+            data-i18n="profile.apply"
+          >
+            Aplicar
           </button>
         </footer>
       </div>

@@ -87,6 +87,12 @@ export const PDF_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
+/** Perfil de máquina do LightBurn (P2.5). */
+export const LBDEV_DIALOG_FILTERS: FileDialogFilter[] = [
+  { name: 'LightBurn (lbdev)', extensions: ['lbdev', 'LBDEV'] },
+  { name: 'Todos os arquivos', extensions: ['*'] },
+];
+
 const IMAGE_SET = new Set(IMAGE_EXTENSIONS.map((e) => e.toLowerCase()));
 const GCODE_SET = new Set(GCODE_EXTENSIONS.map((e) => e.toLowerCase()));
 

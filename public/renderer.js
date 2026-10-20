@@ -90,6 +90,14 @@ const el = {
   baudList: $('baudList'),
   refreshPorts: $('refreshPorts'),
   machineProfile: $('machineProfile'),
+  machineProfileImport: $('machineProfileImport'),
+  profileSuggestion: $('profileSuggestion'),
+  profileOverlay: $('profileOverlay'),
+  profileIntro: $('profileIntro'),
+  profileList: $('profileList'),
+  profileApply: $('profileApply'),
+  profileCancel: $('profileCancel'),
+  profileClose: $('profileClose'),
   connectBtn: $('connectBtn'),
   connDot: $('connDot'),
   connText: $('connText'),
@@ -453,6 +461,10 @@ const state = {
   lastStatus: null,
   /** Preferências persistidas no main (RF-CFG-5). */
   prefs: {},
+  /** Perfil à espera do consentimento do usuário (RF-MAQ-9). */
+  pendingProfile: null,
+  /** Sugestão do smart connect (P2.5), quando a máquina casa com o catálogo. */
+  profileSuggestion: null,
   /** Histórico do console (RF-CON-13). */
   consoleHistory: [],
   consoleHistoryIndex: -1,
@@ -617,6 +629,9 @@ function setConnection(conn) {
   updateWizard();
   updateControls();
   updateFrameConnectButton();
+  // Smart connect (P2.5): ao conectar, sugere o perfil que casa com a
+  // máquina. Não escreve nada — é só uma sugestão (RF-MAQ-9).
+  if (state.connected) void suggestProfileFromMachine();
 }
 
 function setJobState(jobState) {
@@ -5749,6 +5764,23 @@ function applyMachineProfile(profile) {
   const prof =
     MACHINE_PROFILES.find((p) => p.id === profile) || MACHINE_PROFILES[0];
   if (!prof) return;
+  applyMachineProfileFields(prof);
+  if (state.connected) {
+    for (const [code, value] of Object.entries(prof.settings)) {
+      window.grbl
+        .applySetting({ code: Number(code), value: String(value) })
+        .catch(() => {});
+    }
+  }
+  persistPrefs({ machineProfile: profile });
+}
+
+/**
+ * Semeia os campos da interface com o perfil (curso, módulo, ponto, `$30`) —
+ * **sem escrever nada na máquina**.
+ */
+function applyMachineProfileFields(prof) {
+  if (!prof) return;
 
   if (prof.area && prof.area[0] > 0 && prof.area[1] > 0) {
     setWorkArea(prof.area[0], prof.area[1]);
@@ -5779,14 +5811,184 @@ function applyMachineProfile(profile) {
       ? t('jog.home.title')
       : t('jog.home.noHoming', { name: machineName(prof) });
   }
-  if (state.connected) {
-    for (const [code, value] of Object.entries(prof.settings)) {
-      window.grbl
-        .applySetting({ code: Number(code), value: String(value) })
-        .catch(() => {});
-    }
+}
+
+/**
+ * Aplica um perfil de máquina **pedindo consentimento** (RF-MAQ-9): quando a
+ * máquina está conectada, mostra o "antes/depois" de cada `$` que o perfil
+ * vai escrever e só escreve depois do clique em "Aplicar". Sem máquina, o
+ * perfil apenas semeia os campos da interface (nada é gravado).
+ */
+async function requestApplyProfile(profileId) {
+  const prof =
+    MACHINE_PROFILES.find((p) => p.id === profileId) || MACHINE_PROFILES[0];
+  if (!prof) return;
+
+  if (!state.connected) {
+    applyMachineProfileFields(prof);
+    persistPrefs({ machineProfile: prof.id });
+    return;
   }
-  persistPrefs({ machineProfile: profile });
+
+  // Os valores atuais: o "antes" e a lista de `$` que a máquina tem de fato.
+  let current = new Map();
+  try {
+    const data = await readMachine();
+    current = data.settingsMap;
+  } catch {
+    // Sem leitura (firmware que não responde): mostra o perfil sem "antes".
+    current = new Map();
+  }
+
+  const rows = [];
+  for (const [code, value] of Object.entries(prof.settings)) {
+    const c = Number(code);
+    const known = current.has(c);
+    const before = known ? current.get(c).value : undefined;
+    rows.push({ code: c, before, after: value, known });
+  }
+
+  el.profileIntro.textContent = t('profile.applyIntro', {
+    name: machineName(prof),
+  });
+  el.profileList.replaceChildren(
+    ...rows.map((row) => {
+      const li = document.createElement('li');
+      const before = row.known
+        ? t('profile.before', { value: String(row.before) })
+        : t('profile.unknown');
+      li.textContent = t('profile.change', {
+        code: `$${row.code}`,
+        before,
+        after: String(row.after),
+      });
+      if (row.known && row.before === row.after) {
+        li.classList.add('muted');
+      }
+      return li;
+    }),
+  );
+  state.pendingProfile = prof;
+  el.profileOverlay.classList.remove('hidden');
+}
+
+/** Confirma a aplicação do perfil (RF-MAQ-9). */
+async function confirmApplyProfile() {
+  const prof = state.pendingProfile;
+  el.profileOverlay.classList.add('hidden');
+  state.pendingProfile = null;
+  if (!prof) return;
+  // Só escreve os `$` que a máquina **tem** (o firmware pode não ter todos).
+  let known = null;
+  try {
+    const data = await readMachine();
+    known = data.settingsMap;
+  } catch {
+    known = null;
+  }
+  for (const [code, value] of Object.entries(prof.settings)) {
+    if (known && !known.has(Number(code))) continue;
+    window.grbl
+      .applySetting({ code: Number(code), value: String(value) })
+      .catch(() => {});
+  }
+  applyMachineProfileFields(prof);
+  persistPrefs({ machineProfile: prof.id });
+  if (el.machineProfile) el.machineProfile.value = prof.id;
+  appendLine(t('profile.applied', { name: machineName(prof) }), 'ok');
+  hideProfileSuggestion();
+}
+
+/**
+ * **Smart connect** (P2.5): ao conectar, lê os fatos da máquina e sugere o
+ * perfil do catálogo que casa com ela. A sugestão **não** escreve nada — o
+ * usuário confere e aplica (RF-MAQ-9).
+ */
+async function suggestProfileFromMachine() {
+  hideProfileSuggestion();
+  if (!state.connected || !machines?.suggestMachineProfile) return;
+  try {
+    const data = await readMachine();
+    const facts = data.facts ?? {};
+    const suggestion = machines.suggestMachineProfile({
+      travel: facts.travel
+        ? { x: facts.travel.x, y: facts.travel.y }
+        : undefined,
+      sMax: facts.sMax,
+      homing: facts.homing,
+    });
+    if (!suggestion) return;
+    if (suggestion.profile.id === el.machineProfile?.value) return;
+    state.profileSuggestion = suggestion;
+    el.profileSuggestion.textContent = t('profile.suggestion', {
+      name: machineName(suggestion.profile),
+    });
+    el.profileSuggestion.title = suggestion.reasons
+      .map((reason) => t(`profile.reason.${reason}`))
+      .join(' · ');
+    el.profileSuggestion.classList.remove('hidden');
+    el.profileSuggestion.removeAttribute('hidden');
+  } catch {
+    // Sugestão é um extra: falhou a leitura, segue sem sugestão.
+  }
+}
+
+function hideProfileSuggestion() {
+  state.profileSuggestion = null;
+  if (!el.profileSuggestion) return;
+  el.profileSuggestion.classList.add('hidden');
+  el.profileSuggestion.setAttribute('hidden', '');
+}
+
+/**
+ * Importa um perfil de máquina do LightBurn (`.lbdev`, P2.5). O arquivo é
+ * lido, mostrado e só depois aplicado — nada é escrito na máquina sem
+ * consentimento (RF-MAQ-9).
+ */
+async function importMachineProfile() {
+  if (!window.grbl?.openLbdev) return;
+  let file;
+  try {
+    file = await window.grbl.openLbdev();
+  } catch (err) {
+    appendLine(
+      t('profile.importError', { error: String(err?.message ?? err) }),
+      'error',
+    );
+    return;
+  }
+  if (!file) return;
+
+  const result = machines?.parseLbdev
+    ? machines.parseLbdev(file.text)
+    : { devices: [], error: 'invalid-json' };
+  if (result.error || !result.devices.length) {
+    appendLine(
+      t('profile.importError', {
+        error: t(`profile.importError.${result.error ?? 'no-device'}`),
+      }),
+      'error',
+    );
+    return;
+  }
+
+  // Vários dispositivos no arquivo: o primeiro é o sugerido; a UI mostra o
+  // nome para o usuário conferir.
+  const device = result.devices[0];
+  const profile = machines.lbdevToProfile(device, 'imported');
+  const existing = MACHINE_PROFILES.findIndex((p) => p.id === 'imported');
+  if (existing >= 0) MACHINE_PROFILES[existing] = profile;
+  else MACHINE_PROFILES.push(profile);
+  populateMachineProfiles();
+  if (el.machineProfile) el.machineProfile.value = 'imported';
+  appendLine(
+    t('profile.imported', {
+      name: profile.name,
+      area: `${profile.area[0]} × ${profile.area[1]}`,
+    }),
+    'ok',
+  );
+  await requestApplyProfile('imported');
 }
 
 function updateWizard() {
@@ -6066,9 +6268,42 @@ function applyTransportVisibility() {
 }
 
 if (el.machineProfile) {
+  // Trocar de perfil escreve `$` na máquina: passa pelo consentimento
+  // (RF-MAQ-9) — antes/depois antes de aplicar.
   el.machineProfile.addEventListener('change', () =>
-    applyMachineProfile(el.machineProfile.value),
+    requestApplyProfile(el.machineProfile.value),
   );
+}
+
+if (el.machineProfileImport) {
+  el.machineProfileImport.addEventListener('click', () => {
+    void importMachineProfile();
+  });
+}
+
+if (el.profileSuggestion) {
+  el.profileSuggestion.addEventListener('click', () => {
+    const suggestion = state.profileSuggestion;
+    if (!suggestion) return;
+    void requestApplyProfile(suggestion.profile.id);
+  });
+}
+
+if (el.profileApply) {
+  el.profileApply.addEventListener('click', () => {
+    void confirmApplyProfile();
+  });
+}
+for (const [button, action] of [
+  [el.profileCancel, 'cancel'],
+  [el.profileClose, 'close'],
+]) {
+  if (!button) continue;
+  button.addEventListener('click', () => {
+    el.profileOverlay?.classList.add('hidden');
+    state.pendingProfile = null;
+    void action;
+  });
 }
 
 el.transportKind.addEventListener('change', () => {

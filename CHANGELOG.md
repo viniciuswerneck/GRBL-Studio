@@ -53,6 +53,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `scripts/bench.mjs` aceita `GRBL_ELECTRON_FLAGS` para A/B sem recompilar.
 - Números, método e ressalvas em `docs/BENCHMARK.md` §6.5.
 
+### Added — P2.5: catálogo 30+ máquinas, import `.lbdev` e smart connect
+
+O caminho crítico declarado no `PLANO_PREMIUM.md` §8. As três partes do P2.5:
+
+- **Catálogo 30+**: 30 perfis (com o Genérico). Os 7 novos (Ortur Aufero 1,
+  Ortur Laser Master 2 Pro, xTool D1 Pro, AtomStack A5 Pro V2, TwoTrees TT-5.5,
+  NEJE Master 2 Plus e NEJE 3) têm o **curso da especificação pública** do
+  fabricante — é o valor que o app escreve em `$130`/`$131`. Onde não há
+  fonte de homing, ele fica **desligado** (o lado seguro: não habilita
+  `$22=1` numa máquina sem chaves de fim de curso).
+- **Import `.lbdev`** (LightBurn): o arquivo JSON (`DeviceList`) é lido,
+  mostrado (nome, curso, homing, teto de `S`) e só então aplicado. O perfil
+  importado entra no seletor como "importado".
+- **Smart connect**: ao conectar, o app lê os fatos da máquina e **sugere**
+  o perfil do catálogo — só quando o **curso bate exatamente** (≤ 1 mm), para
+  nunca sugerir limites errados; o teto de `S` e o homing desempatam entre
+  perfis de mesmo curso. A sugestão **não** escreve nada.
+
+### Fixed — RF-MAQ-9: perfil de máquina passou a pedir consentimento
+
+Trocar de perfil com a máquina conectada escrevia `$` **sem confirmação**.
+Agora mostra o **antes/depois** de cada valor (o que a máquina tem hoje × o
+que o perfil vai gravar) e só escreve depois do "Aplicar" — e escreve **só os
+`$` que a máquina tem** (o firmware pode não ter todos).
+
+### Fixed — preferências dos símbolos 2D
+
+O sanitizador do main descartava `pdfEcc`/`pdfColumns`/`pdfRowHeightMm`: as
+preferências do **PDF417 nunca foram persistidas**. Agora as 4 simbologias 2D
+são aceitas e os ajustes do PDF417 e do Aztec são guardados (com teste).
+
 ## [0.9.0] - 2026-10-19
 
 ### Docs

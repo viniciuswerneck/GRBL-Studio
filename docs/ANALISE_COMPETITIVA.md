@@ -33,7 +33,7 @@ LightBurn (design 2D, importação de SVG/DXF, grade de teste de material).
 | Auto-update (P1.2) | ✅ `electron-updater` (`checkForUpdatesAndNotify`). |
 | Builds Win/macOS (P1.1) | ✅ Matrix no `release.yml` (AppImage/deb · exe/msi/zip · dmg/zip). |
 | Testes | **731 casos em 42 arquivos** (Vitest) + E2E Playwright + smoke headless. |
-| Catálogo de máquinas (RF-MAQ-10) | ✅ **22 perfis + Genérico GRBL**; falta import `.lbdev`/smart connect (P2.5). |
+| Catálogo de máquinas (RF-MAQ-10) | ✅ **30 perfis** (incl. Genérico) + import `.lbdev` + smart connect (P2.5). |
 | Z no jog (P1.5) | ✅ Botões `Z+/Z−` e `PageUp/PageDown`. |
 
 **Pontos fortes marcantes:** protocolo GRBL robusto e testado (janela por bytes,
@@ -46,7 +46,7 @@ release automática em 3 SOs.
 
 **Maiores lacunas vs. mercado:** **câmera**, **rotativa**, **nesting**,
 **importação AI/EPS/HPGL**, **catálogo de máquinas** (22 perfis + Genérico, mas
-sem import `.lbdev`/smart connect) e **galvo/DSP**.
+sem galvo/DSP.
 
 **Novo cenário competitivo (2026):** o rival gratuito mais direto deixou de ser o
 LaserGRBL e passou a ser o **Rayforge** (MIT, GTK4, multiplataforma, muito
@@ -146,8 +146,9 @@ multiplataforma continua aberta.
 - **Sem editor de G-code** (UGS, gSender, LightBurn e Rayforge têm).
 - **Sem suporte a galvo/DSP** (Ruida, Trocen, EZCad, Epilog) — LightBurn Pro,
   MeerK40t, EZCAD, RDWorks.
-- **Catálogo de máquinas = 22 perfis + Genérico GRBL**. LightBurn traz dezenas de
-  perfis e importa `.lbdev`; Rayforge tem 60+ materiais e perfis.
+- **Catálogo de máquinas = 30 perfis** (com Genérico), **import `.lbdev`** e
+  **smart connect** (P2.5). LightBurn traz dezenas de perfis e importa `.lbdev`;
+  Rayforge tem 60+ materiais e perfis.
 - **Sem CLI/headless**, **sem plugins/addons** (Rayforge e gSender têm) e
   **sem nuvem/AI/marketplace** (xTool Studio, Glowforge).
 - QR/código de barras **implementados** (v0.6.0/v0.7.0/v0.8.0), com **grade a

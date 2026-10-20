@@ -32,6 +32,7 @@ import { detectLocale, setLocale, t } from '../shared/i18n';
 import {
   DXF_DIALOG_FILTERS,
   GCODE_DIALOG_FILTERS,
+  LBDEV_DIALOG_FILTERS,
   IMAGE_DIALOG_FILTERS,
   PDF_DIALOG_FILTERS,
   SVG_DIALOG_FILTERS,
@@ -429,6 +430,11 @@ export function registerIpc(
   // --------------------------------------------------- DXF (importação CAD)
   ipcMain.handle(CHANNELS.fileOpenDxf, (evt) =>
     openTextFile(evt.sender, t('dlg.openDxf'), DXF_DIALOG_FILTERS),
+  );
+
+  // ------------------------------------------- Perfil do LightBurn (P2.5)
+  ipcMain.handle(CHANNELS.fileOpenLbdev, (evt) =>
+    openTextFile(evt.sender, t('dlg.openLbdev'), LBDEV_DIALOG_FILTERS),
   );
 
   // --------------------------------------------------- PDF (vetorial, RF-DSN-15)

@@ -106,6 +106,9 @@ const api = {
     travelFeed?: number;
   }): Promise<PdfImportResponse | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenPdf, options),
+  /** Perfil de máquina do LightBurn (P2.5). */
+  openLbdev: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenLbdev),
   openMacros: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.macrosOpen),
   saveMacros: (content: string): Promise<string | null> =>

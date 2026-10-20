@@ -653,10 +653,30 @@ AlgoLaser (Pixi, Alpha), NEJE (Master 2/2S, A40640), Longer (Ray5, B1),
 Vevor (3018, 4040), OMTech/Monport (40W CO₂).
 
 ### 14.3 Roadmap
-- **Fase 1**: estrutura + 8–10 modelos principais.
-- **Fase 2**: 20+ modelos da tabela.
-- **Fase 3**: material presets filtrados por potência.
-- **Fase 4**: contribuição da comunidade (import/export de perfis).
+- **Fase 1**: estrutura + 8–10 modelos principais. ✅
+- **Fase 2**: 20+ modelos da tabela. ✅ (30 perfis em 19/10/2026)
+- **Fase 3**: material presets filtrados por potência. ✅ (RF-IMG-8)
+- **Fase 4**: contribuição da comunidade (import/export de perfis) — parcial:
+  o **import `.lbdev`** do LightBurn entrou no P2.5; exportar perfis ainda não.
+
+### 14.3.1 Entregue em 19/10/2026 (P2.5)
+
+- **Catálogo 30+**: 30 perfis (com o Genérico). Os 7 novos (Aufero 1, Laser
+  Master 2 Pro, xTool D1 Pro, AtomStack A5 Pro V2, TwoTrees TT-5.5, NEJE
+  Master 2 Plus e NEJE 3) têm o **curso da especificação pública** do
+  fabricante — é o valor que vira `$130`/`$131`. Onde não há fonte de homing,
+  ele fica **desligado** (o lado seguro: não habilita `$22=1` numa máquina sem
+  chaves de fim de curso).
+- **Import `.lbdev`**: o arquivo do LightBurn (JSON com `DeviceList`) é lido,
+  mostrado (nome, curso, homing, teto de `S`) e só então aplicado.
+- **Smart connect**: ao conectar, o app lê os fatos da máquina (`$$`) e
+  **sugere** o perfil do catálogo quando o **curso bate exatamente** (≤ 1 mm) —
+  os demais sinais (teto de `S`, homing) desempatam entre perfis de mesmo
+  curso. A sugestão não escreve nada: o clique abre o consentimento.
+- **Consentimento (RF-MAQ-9)**: trocar de perfil com a máquina conectada
+  passou a mostrar o **antes/depois** de cada `$` e só escreve depois do
+  "Aplicar" — e escreve **só os `$` que a máquina tem** (o firmware pode não
+  ter todos).
 
 ### 14.4 Critérios de aceite
 - Selecionar modelo aplica área, ponto, linhas/mm, modo e settings.

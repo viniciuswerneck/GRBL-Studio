@@ -205,6 +205,15 @@ button.danger {
   cursor: pointer;
 }
 
+/* Ações do perfil de máquina: importar .lbdev e a sugestão do smart connect. */
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: calc(-1 * var(--sp-1));
+}
+
 input[type="range"] {
   width: 100%;
   accent-color: var(--accent);

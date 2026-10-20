@@ -659,6 +659,85 @@ function startGrblTcp(
   });
 }
 
+test.describe('GRBL Studio — smart connect e import .lbdev (P2.5)', () => {
+  test('sugere o perfil que casa com a máquina e pede consentimento', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      // A sugestão aparece sozinha (a máquina tem curso 400×400).
+      const chip = page.locator('#profileSuggestion');
+      await expect(chip).toBeVisible();
+      await expect(chip).toContainText('Sugestão');
+
+      // Clicar na sugestão abre o consentimento (antes/depois) — RF-MAQ-9.
+      await chip.click();
+      await expect(page.locator('#profileOverlay')).toBeVisible();
+      await expect(page.locator('#profileList')).toContainText('$130');
+      await expect(page.locator('#profileList')).toContainText('→');
+
+      // Cancelar não escreve nada.
+      await page.click('#profileCancel');
+      await expect(page.locator('#profileOverlay')).toBeHidden();
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('importa um perfil .lbdev do LightBurn', async () => {
+    const { app, page, close } = await launchApp();
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-lbdev-'));
+    const file = path.join(dir, 'meu-laser.lbdev');
+    writeFileSync(
+      file,
+      JSON.stringify({
+        DeviceList: [
+          {
+            DisplayName: 'Laser do teste',
+            Name: 'GRBL',
+            Type: 'Serial',
+            Width: 508,
+            Height: 390,
+            HomeOnStartup: true,
+            Settings: { S_Scale: 1000, BaudRate: 115200 },
+          },
+        ],
+      }),
+      'utf8',
+    );
+    try {
+      await app.evaluate(({ dialog }, pathToFile) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [pathToFile],
+        });
+      }, file);
+
+      await page.click('#machineProfileImport');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Perfil importado',
+      );
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Laser do teste',
+      );
+      // O perfil importado entra no seletor e passa a ser o atual.
+      await expect(page.locator('#machineProfile')).toHaveValue('imported');
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 test.describe('GRBL Studio — painel "Máquina" (P0.7)', () => {
   test('lê $I/$$/$#/$G/$N e gera o diagnóstico copiável', async () => {
     const emulator = await startGrblTcp();

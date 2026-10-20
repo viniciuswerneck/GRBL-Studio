@@ -121,7 +121,7 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 | ✅ P2.2 | **Camadas / multi-operação** (parâmetros por camada) — entregue na **0.8.0** | M | Gravar + cortar numa execução; reordenar arrastando; G-code com `M5`/troca de potência corretos. |
 | ✅ P2.3 | **Simulação de job** (playback + tempo) — entregue na **0.5.0** | M | Play/pause/seek à velocidade real; reusa o preview. |
 | ✅ P2.4 | **Importação DXF + PDF** — entregue (DXF ASCII e PDF vetorial) | M | Reusa `svg.ts`/pipeline de contornos; testes com arquivos gerados (blocos, object stream, rotação). Texto de PDF fica fora (fontes → curvas). |
-| P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
+| ✅ P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** — entregue (30 perfis, importação e sugestão na conexão) | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | P1.10 | **Editor de G-code** (highlight + numeração + reenvio) | M | Editar, validar e reenviar trecho. |
 | P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) | S | Últimos 50 jobs persistidos com parâmetros. |
 | P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
@@ -225,9 +225,10 @@ v1.0              P4.1 API/CLI ──► P3.3 PLUGINS ──► P4.2 i18n ──
 ```
 
 > **Entregue até 19/10/2026:** P0.2, P0.4, P0.5, P0.6, P0.7, P0.8, P2.2
-> (0.8.0), P2.3 (0.5.0), **P2.4 (DXF + PDF)**, P2.7 e P2.8 (0.6.0) e as
-> simbologias extras S2/S3 (0.7.0). O caminho crítico atual segue em
-> **P2.5 (catálogo + `.lbdev`)**.
+> (0.8.0), P2.3 (0.5.0), **P2.4 (DXF + PDF)**, **P2.5 (catálogo 30+ + `.lbdev`
+> + smart connect)**, P2.7 e P2.8 (0.6.0), as simbologias extras S2/S3
+> (0.7.0) e o **Aztec** (0.10.0). O caminho crítico atual segue em
+> **P1.10 (editor de G-code)** e **P2.9 (biblioteca de jobs)**.
 
 **v0.6 (primeiros 30 dias):** P0.1–P0.8 (provar + distribuir + **conhecer a
 máquina**) **e** P2.7 QR → P2.8 código de barras — o diferencial que nenhum
@@ -235,8 +236,8 @@ concorrente grátis tem, junto com o que falta da Fase 7/8 (polish, cobertura,
 teste em hardware).
 
 **v0.7 (30–75 dias):** P2.2 camadas ✅ (0.8.0), P2.3 simulação ✅, P2.4 DXF/PDF ✅,
-P2.5 catálogo + `.lbdev`, P1.10 editor de G-code, P2.9 biblioteca e validação
-Win/macOS.
+P2.5 catálogo + `.lbdev` + smart connect ✅, P1.10 editor de G-code, P2.9
+biblioteca e validação Win/macOS.
 
 **v0.8:** P2.10 lote/dados variáveis, P2.11 modo produção, P2.12 presets,
 P2.13 teste de foco.
