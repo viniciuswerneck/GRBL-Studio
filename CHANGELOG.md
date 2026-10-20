@@ -4,7 +4,7 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.10.0] - 2026-10-19
 
 ### Added — Aztec (RF-SYM-7): a última simbologia que faltava
 
@@ -83,6 +83,18 @@ que o perfil vai gravar) e só escreve depois do "Aplicar" — e escreve **só o
 O sanitizador do main descartava `pdfEcc`/`pdfColumns`/`pdfRowHeightMm`: as
 preferências do **PDF417 nunca foram persistidas**. Agora as 4 simbologias 2D
 são aceitas e os ajustes do PDF417 e do Aztec são guardados (com teste).
+
+### Fixed — tema sem flash (RF-APP-1 / `DESIGN.md` §8)
+
+O tema era aplicado depois das preferências (que chegam de forma assíncrona):
+a tela pintava no tema padrão e só depois trocava. Agora o
+`public/theme-boot.js` roda **sincronamente** no `<head>` e aplica o tema
+antes do primeiro paint (o E2E prova: com o script do app bloqueado, o tema
+continua aplicado).
+
+O `docs/DESIGN.md` §8 passa a ter a **auditoria honesta** de 19/10/2026: cada
+item marcado como verificado no código (✅), dependente do olho humano (👁) ou
+não atendido (❌ — a RAM: 298,8 MB de PSS contra o orçamento de 200 MB).
 
 ## [0.9.0] - 2026-10-19
 
