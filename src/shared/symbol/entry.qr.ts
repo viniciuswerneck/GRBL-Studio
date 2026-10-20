@@ -7,6 +7,8 @@
  * puro — nenhuma dependência de DOM.
  */
 export type {
+  AztecGcodeParams,
+  AztecGcodeResult,
   DataMatrixGcodeParams,
   DataMatrixGcodeResult,
   MatrixGcodeParams,
@@ -21,11 +23,15 @@ export type {
   SymbolWarningCode,
 } from './gcode';
 export {
+  AZTEC_QUIET_ZONE_MODULES,
   DEFAULT_SPOT_MM,
   MAX_MODULE_MM,
   MIN_MODULE_MM,
   QR_QUIET_ZONE_MODULES,
   applyOverscan,
+  aztecGridToGcode,
+  aztecToCell,
+  aztecToGcode,
   dataMatrixGridToGcode,
   dataMatrixToCell,
   dataMatrixToGcode,
@@ -40,6 +46,19 @@ export {
   symbolToGcode,
   symbolWarnings,
 } from './gcode';
+export type {
+  AztecErrorCode,
+  AztecOptions,
+  AztecResult,
+} from './aztec';
+export {
+  AZTEC_DEFAULT_ECC_PERCENT,
+  AZTEC_MAX_COMPACT_LAYERS,
+  AZTEC_MAX_LAYERS,
+  AZTEC_MIN_ECC_PERCENT,
+  AztecError,
+  encodeAztec,
+} from './aztec';
 export type { Pdf417EccLevel, Pdf417ErrorCode } from './pdf417';
 export {
   PDF417_QUIET_ZONE_MODULES,

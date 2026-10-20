@@ -28,6 +28,7 @@ import {
   scanLinesPerModule,
 } from './mask';
 import { DATA_MATRIX_QUIET_ZONE, encodeDataMatrix } from './datamatrix';
+import { encodeAztec } from './aztec';
 import {
   PDF417_QUIET_ZONE_MODULES,
   type Pdf417EccLevel,
@@ -988,6 +989,122 @@ export function pdf417ToCell(
   };
 }
 
+// --------------------------------------------------------- Aztec → G-code
+
+/** Quiet zone do Aztec: a norma **não exige** nenhuma (0 módulos). */
+export const AZTEC_QUIET_ZONE_MODULES = 0;
+
+/** Parâmetros de geometria do **Aztec** (RF-SYM-7). */
+export interface AztecGcodeParams extends MatrixGcodeParams {
+  /**
+   * Correção de erro em **%** das palavras de dados (mínimo 23 % pela norma
+   * ISO/IEC 24778). Padrão 33 %.
+   */
+  eccPercent?: number;
+  /**
+   * Camadas forçadas: positivo = símbolo **normal**, negativo = **compacto**,
+   * `0` = automático (padrão).
+   */
+  layers?: number;
+}
+
+export interface AztecGcodeResult extends SymbolGcodeResult {
+  aztec: {
+    /** Camadas de dados do símbolo. */
+    layers: number;
+    /** Símbolo compacto (≤ 4 camadas). */
+    compact: boolean;
+    /** Palavras de dados. */
+    codeWords: number;
+    /** Palavras de correção de erro. */
+    eccCodewords: number;
+    /** Bits por palavra de dados. */
+    wordSize: number;
+  };
+  moduleMm: number;
+  moduleYMm: number;
+  quietZoneModules: number;
+  linesPerModule: number;
+  warnings: SymbolWarningCode[];
+}
+
+/**
+ * Texto → G-code do **Aztec** (ISO/IEC 24778), pronto para o preview/Play ou
+ * salvar. Mesmo pipeline do QR/Data Matrix: matriz → bandas → varredura
+ * vertical → G-code. O conteúdo é **byte a byte** (Latin-1).
+ */
+export function aztecToGcode(
+  text: string,
+  params: AztecGcodeParams,
+): AztecGcodeResult {
+  const aztec = encodeAztec(text, {
+    eccPercent: params.eccPercent,
+    layers: params.layers,
+  });
+  const g = matrixToGcode(
+    {
+      matrix: aztec.matrix,
+      size: aztec.size,
+      quietZoneModules: AZTEC_QUIET_ZONE_MODULES,
+      quietZoneMinModules: AZTEC_QUIET_ZONE_MODULES,
+      title: 'Aztec (GRBL Studio)',
+      details: [
+        `${aztec.size}×${aztec.size} módulos · ${aztec.layers} camadas${aztec.compact ? ' compactas' : ''} · ${aztec.codeWords} palavras de dados + ${aztec.eccCodewords} EC`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+
+  return {
+    ...g.result,
+    aztec: {
+      layers: aztec.layers,
+      compact: aztec.compact,
+      codeWords: aztec.codeWords,
+      eccCodewords: aztec.eccCodewords,
+      wordSize: aztec.wordSize,
+    },
+    moduleMm: g.moduleXMm,
+    moduleYMm: g.moduleYMm,
+    quietZoneModules: g.quietZoneModules,
+    linesPerModule: scanLinesPerModule(
+      Math.min(g.moduleXMm, g.moduleYMm),
+      g.linesPerMm,
+    ),
+    warnings: g.warnings,
+  };
+}
+
+/** Aztec → célula de grade (RF-SYM-9). Mesma geometria do símbolo único. */
+export function aztecToCell(
+  text: string,
+  params: AztecGcodeParams,
+): SymbolGridCell {
+  const aztec = encodeAztec(text, {
+    eccPercent: params.eccPercent,
+    layers: params.layers,
+  });
+  const g = matrixGeometry(
+    {
+      matrix: aztec.matrix,
+      size: aztec.size,
+      quietZoneModules: AZTEC_QUIET_ZONE_MODULES,
+      quietZoneMinModules: AZTEC_QUIET_ZONE_MODULES,
+      title: 'Aztec (GRBL Studio)',
+      details: [
+        `${aztec.size}×${aztec.size} módulos · ${aztec.layers} camadas${aztec.compact ? ' compactas' : ''} · ${aztec.codeWords} palavras de dados + ${aztec.eccCodewords} EC`,
+      ],
+    },
+    { ...params, label: params.label ?? text },
+  );
+  return {
+    segments: g.segments,
+    extent: g.extent,
+    label: text,
+    warnings: g.warnings,
+  };
+}
+
 // ------------------------------------------------------------ 1D → G-code
 
 /** Nome curto da simbologia (só para o comentário do G-code). */
@@ -1461,6 +1578,17 @@ export function barcodeGridToGcode(
 ): SymbolGridResult {
   return symbolGridToGcode(
     texts.map((text) => barcodeToCell(text, params)),
+    params,
+  );
+}
+
+/** Vários Aztec → G-code em grade (RF-SYM-9). */
+export function aztecGridToGcode(
+  texts: ReadonlyArray<string>,
+  params: AztecGcodeParams & SymbolGridParams,
+): SymbolGridResult {
+  return symbolGridToGcode(
+    texts.map((text) => aztecToCell(text, params)),
     params,
   );
 }
