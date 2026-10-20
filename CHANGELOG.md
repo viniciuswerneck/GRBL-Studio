@@ -6,6 +6,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-20
+
+Alinhamento físico: **marcas de registro** em volta da arte e **prévia do plano de
+tiles** no diálogo de divisão.
+
 ### Added — marcas de registro/fiduciais (RF-DSN-22)
 
 - Botão **“Marcas de registro…”** na barra do editor: coloca `L`s nos quatro

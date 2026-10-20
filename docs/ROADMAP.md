@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 20/10/2026 (v0.15.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 20/10/2026 (v0.16.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.15.0)
+## Estado atual (v0.16.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
