@@ -6,6 +6,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-20
+
+Marco **peça grande**: o programa é fatiado em janelas do tamanho da mesa com
+sobreposição (um arquivo por tile) e a prancheta mostra o caminho compensado
+pelo kerf antes de gerar.
+
 ### Added — tiling: peça maior que a mesa (RF-DSN-21)
 
 - Botão **“Dividir em tiles…”** no editor: o programa é fatiado em janelas do

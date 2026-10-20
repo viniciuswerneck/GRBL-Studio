@@ -60,11 +60,11 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 ---
 
-## 3. Gap analysis (v0.14.0 → meta)
+## 3. Gap analysis (v0.15.0 → meta)
 
 ✅ = já entregue · ⬜ = a fazer
 
-| Capacidade | Atual (v0.14.0) | Meta | Gap |
+| Capacidade | Atual (v0.15.0) | Meta | Gap |
 | :-- | :-- | :-- | :-- |
 | Sistemas | Linux validado; Win/macOS empacotados | 3 SÓ validados em hardware | Médio |
 | Ferramentas de desenho / texto / booleanas / offset | ✅ | manter e evoluir | Baixo |
