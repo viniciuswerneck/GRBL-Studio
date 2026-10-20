@@ -96,6 +96,49 @@ Já entregue (não repetir no planejamento):
 
 ---
 
+## Backlog — o que conta (e o que não conta)
+
+A lista vinha **crescendo**: o Anexo B propôs **26 itens novos** em cima dos
+**50** do Anexo A, e boa parte depende de hardware que não está nesta mesa. Para
+voltar a **encolher**, o backlog fica dividido em três — e nada novo entra na
+lista ativa.
+
+**A. Ativos (software puro, fecha aqui).** Restam **8**; cada release marca 1–2
+como ✅ e o número só cai:
+
+| # | Item | Esf. | Alvo | Pronto quando |
+| :-- | :-- | :-- | :-- | :-- |
+| 1 | **Geradores paramétricos** (caixa com encaixe + engrenagem) | M | v0.18 | Caixa montável a partir de medidas e engrenagem com módulo/dentes, direto no editor |
+| 2 | **Gabarito (jig/molde)** | S | v0.19 | Molde com folga em volta da peça, para repetir no mesmo ponto |
+| 3 | **Texto em curva/arco** | S | v0.19 | Texto ao longo de arco/caminho no editor 2D |
+| 4 | **Biblioteca de símbolos** | S | v0.20 | Catálogo offline de formas arrastáveis |
+| 5 | **Tira de teste de código** | S | v0.20 | Mesmo símbolo em N tamanhos; anota o menor legível |
+| 6 | **Catálogo de materiais com avisos** | M | v0.21 | Ficha por material (potência/velocidade + segurança) ligada aos presets |
+| 7 | **Agenda / fila de trabalhos** | S | v0.21 | Fila persistida rodando em sequência com emergência acessível |
+| 8 | **Centerline (imagem → linha única)** | M | v0.22 | Esqueletização com teste em logos reais |
+
+**B. Congelado por hardware/OS** — não conta como pendência ativa; sai daqui
+quando houver máquina/assinatura: câmera e "gravar em peça já pronta",
+imprimir-e-cortar, rotativa + compensação cônica + desdobrar em cilindro, mapa
+de altura/LiDAR, foco automático, sensores (chama/fumaça), ventilação, webcam ao
+vivo, testes em hardware real, Flatpak publicado, winget/brew/AUR e validação
+Windows/macOS.
+
+**C. Depois do 1.0** — software, mas grande ou de nicho (só entra se pedido):
+preview WebGL (P3.4), nesting irregular (P3.7), i18n fr/de (P4.2), API/CLI
+(P4.1), plugins (P3.3), Inkscape (P4.4), telemetria opt-in (P3.5), relevo/depth
+map, migração do renderer para TS (P3.6) e manual/site (P4.3).
+
+**Manutenção contínua** (não são itens de roadmap): undo/redo de página/camadas,
+trava de instância única, marcas sob o box de seleção logo após inserir e
+startup ≤ 1,5 s.
+
+> **Proposta a ratificar:** o corte acima (8 ativos, o resto congelado ou
+> pós-1.0). Se aceito, o Anexo B vira histórico: item entregue ganha ✅, item
+> congelado ganha ⏸ e não é mais listado como "próximo passo".
+
+---
+
 ## Histórico por versão (entregue)
 
 ### MVP
@@ -427,10 +470,14 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | 49 | **Versão/máscara do QR** | Quão grande e "denso" o QR fica. | Caber no espaço e ainda ler. | ✅ RF-SYM-1 |
 | 50 | **PDF417** | Código 2D em barras empilhadas (etiquetas, notas). | Muita informação num espaço baixo e largo. | ✅ RF-SYM-7 (0.8.0) |
 
-### Anexo B — candidatos novos (proposta, a ratificar)
+### Anexo B — candidatos novos (histórico da proposta)
 
 > Só os itens marcados **⬜ novo** no Anexo A. Versão e esforço são **sugestões**
-> (S/M/L conforme o topo deste arquivo); a ordem só vale depois de aceita.
+> (S/M/L conforme o topo deste arquivo).
+>
+> **Este anexo não é mais a fila.** O que falta está no §Backlog (8 ativos); os
+> itens que dependem de hardware/OS estão **congelados** e não contam como
+> pendência. Aqui o registro é só do que já foi entregue (✅).
 
 | Item | Versão sugerida | Esf. | Resumo do critério (DoD) |
 | :-- | :-- | :-- | :-- |
