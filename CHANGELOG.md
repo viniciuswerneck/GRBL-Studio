@@ -4,6 +4,29 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Added — símbolo como objeto no editor “Desenhar” (S3)
+
+- **Ferramenta Símbolo** (barra do editor, atalho **Q**): QR Code, Data Matrix,
+  PDF417, Aztec e código de barras entram na prancheta como **um bloco de
+  formas** — mover, escalar, girar, espelhar, alinhar, dar camada e
+  potência/velocidade como qualquer outro objeto, e cair no **mesmo G-code**
+  do desenho (sem gerar programa avulso).
+- Painel com tipo, conteúdo, simbologia 1D, correção (QR), **tamanho/largura
+  em mm** e **linhas de varredura por mm**; os campos aparecem conforme o
+  tipo, com os mesmos avisos de legibilidade dos modais (`qr.warn.*`/`bar.warn.*`).
+- **Duplo clique** no símbolo (no canvas **ou** na lista de objetos) reabre o
+  painel preenchido e substitui o bloco no mesmo lugar (tamanho atual, sem
+  perder potência/velocidade/passadas/espessura/camada).
+- A geometria de cada trecho de varredura é traduzida por um módulo puro
+  (`src/shared/designSymbol.ts`): Y invertido para o editor, origem no canto
+  superior esquerdo e descarte de trechos inválidos (`NaN` no caminho abortaria
+  o job). O `Shape.symbol` guarda a especificação para reeditar.
+- **Testes**: 11 unitários (`tests/design-symbol.test.ts`, incluindo o caminho
+  QR → formas → `designToGcode` e EAN-13 com HRI) e 1 E2E (inserir QR, trocar
+  para 1D, gerar e visualizar).
+
 ## [0.11.0] - 2026-10-20
 
 Marco **v0.8**: lote/dados variáveis, modo produção, presets de material

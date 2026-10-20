@@ -1,10 +1,11 @@
 # GRBL Studio — Plano: geradores de QR Code e de código de barras
 
-> **Status: S1 (QR Code), S2 (código de barras 1D) e S3 parcial (1D extras +
-> Data Matrix + grade + PDF417) implementadas** — S1/S2 publicadas na v0.6.0 e a
-> continuação na v0.7.0 (18/10/2026) e v0.8.0 (19/10/2026). Ver §15 (S1), §16
-> (S2), §17 (S2 restante + S3 parcial), §18 (PDF417) e §20 (lote / dados
-> variáveis) para o que foi entregue, medido e o que ainda falta.
+> **Status: S1 (QR Code), S2 (código de barras 1D) e S3 implementadas** —
+> S1/S2 publicadas na v0.6.0 e a continuação na v0.7.0 (18/10/2026), v0.8.0
+> (19/10/2026) e v0.10.0 (Aztec). Ver §15 (S1), §16 (S2), §17 (S2 restante +
+> S3 parcial), §18 (PDF417), §19 (Aztec), §20 (lote / dados variáveis) e §21
+> (**símbolo como objeto** no editor “Desenhar”) para o que foi entregue,
+> medido e o que ainda falta.
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
 > Requisitos: **RF-SYM-1…RF-SYM-10** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
@@ -51,7 +52,8 @@ ou gravar direto.
 - Fluxo em lote em **grade** (lista → vários símbolos numa página) —
   **entregue** (RF-SYM-9, §17); a **fila de gravação** com dados variáveis
   (RF-SYM-10) também — ver §20.
-- Símbolo como **objeto vetorial** dentro do editor "Desenhar" (fase S3; ver §7.3).
+- ~~Símbolo como **objeto vetorial** dentro do editor "Desenhar"~~ —
+  **entregue** (S3, §21).
 
 ---
 
@@ -302,8 +304,9 @@ Acessibilidade: foco visível, rótulos `data-i18n`, alvos ≥ 32 px, contraste 
    (`src/shared/channels.ts`) + `else if` em `public/renderer.js:7935-7938`.
    ⚠️ `tests/i18n.test.ts` exige que **todo** `MENU_ACTIONS` seja tratado no
    renderer — o teste pega esquecimento.
-6. Sinergia futura (S3): expor "símbolo" como **objeto** do editor "Desenhar",
-   para compor com texto/formas/offset/booleanas.
+6. Sinergia (S3, **entregue** — §21): o símbolo entra no editor "Desenhar" como
+   **objeto** (bloco de linhas com metadados), para compor com
+   texto/formas/offset/booleanas.
 
 ### 7.4 i18n
 
@@ -375,7 +378,7 @@ Módulos puros ⇒ testes Vitest rápidos, sem hardware (RNF-5).
 | :--- | :--- | :--- | :--- |
 | **S1 — Fundação + QR** ✅ | `shared/symbol/{mask,gcode,qr,qr.tables}.ts` + bundle + modal QR + menu + i18n + testes (feito em 18/10/2026 — §15) | M–L (1,5–2 dev-semanas) | QR gerado em ≤ 3 cliques; matriz validada por cross-check e decodificada no teste; preview/Play/Salvar funcionando; avisos de legibilidade; orçamentos RNF-11/12 verificados. |
 | **S2 — 1D + HRI** ✅ | Code 128, EAN-13/8, UPC-A, Code 39 (+ ITF-14, Codabar) + HRI (fonte single-stroke) + modal | M (1–1,5 dev-semanas) | Checksums corretos (testes da norma + cross-check); larguras de barra corretas; HRI opcional legível; E2E básico. **(feito — §16 e §17)** |
-| **S3 — Extras** (quase fechado: 1D extras + Data Matrix + PDF417 + grade + **Aztec** ✅) | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. **Falta:** símbolo como objeto. (A **grade** RF-SYM-9 e o **PDF417** saíram em 19/10/2026; o **Aztec** em 19/10/2026, v0.10.0.) |
+| **S3 — Extras** ✅ | Data Matrix/PDF417/Aztec; lista → grade (lote); símbolo como objeto no editor "Desenhar" | L (2–3 dev-semanas) | 2D decodificado em teste; lote com espaçamento e preview; símbolo editável/movível junto dos demais objetos. A **grade** (RF-SYM-9), o **PDF417** e o **Aztec** saíram em 19/10/2026 (v0.9.0/v0.10.0); o **símbolo como objeto** em 20/10/2026 (§21). |
 
 Sequência sugerida: **S1 → S2** (MVP útil: QR + Code 128/EAN) e só então S3.
 As fases são independentes de P2.1 (design) e P3.x (câmera/rotativa), mas
@@ -592,8 +595,9 @@ de G-code do DM/ITF-14 e E2E dos dois modais e da persistência.
 
 **Fora do escopo (segue aberto).** Data Matrix retangular e os
 modos C40/Text/X12/EDIFACT/Base256/ECI; Code 93 Full ASCII; validação de AIs do
-GS1; e o símbolo como **objeto** no editor "Desenhar" (S3). A **grade** de
-símbolos (RF-SYM-9) e o **PDF417** foram **entregues** em 19/10/2026.
+GS1; e o símbolo como **objeto** no editor "Desenhar" (S3) — **entregue** em
+20/10/2026 (§21). A **grade** de símbolos (RF-SYM-9) e o **PDF417** foram
+**entregues** em 19/10/2026.
 
 ---
 
@@ -665,3 +669,37 @@ delimitador, cabeçalho, limites), modelo (campos, contador, escapes, erros) e
 as preferências de retomada; `tests/prefs-store.test.ts` valida a sanitização;
 5 testes E2E com o emulador exercitam peça → pausa → próxima → conclusão, a
 retomada, a via 1D, o separador forçado e o erro de modelo.
+
+## 21. Estado da implementação — símbolo como objeto no editor (20/10/2026)
+
+**Entregue** (S3, última pendência do plano de símbolos). O símbolo deixa de ser
+só um programa avulso: ele entra na prancheta do editor **Desenhar** como um
+objeto comum — move, escala, gira, espelha, alinha, recebe camada/potência e
+entra no mesmo G-code do desenho.
+
+| Item | Onde | O que foi feito |
+| :--- | :--- | :--- |
+| **Tradução da geometria** | `shared/designSymbol.ts` (puro) | `symbolCellToDesignShapes(cell, origin)` converte os **segmentos de varredura** que os bundles já produzem (`qrToCell`, `dataMatrixToCell`, `pdf417ToCell`, `aztecToCell`, `barcodeToCell`) em linhas abertas do editor: inverte o Y (a célula usa Y para cima, o editor usa Y para baixo), põe o canto superior esquerdo na origem e descarta trechos `NaN`/`Infinity`/de comprimento zero (um `NaN` no caminho abortaria o job com `error:`). |
+| **Especificação no objeto** | `Shape.symbol` | `sanitizeDesignSymbol()` normaliza `{type, text, sizeMm, linesPerMm, ecc, symbology, hri}` — tipo conhecido, conteúdo obrigatório (teto de 2 000 caracteres), lado/largura 5–400 mm, 2–30 linhas/mm, ECC `L/M/Q/H` e simbologia `[a-z0-9-]`. Fica gravada em **cada** forma do bloco (um único objeto compartilhado), o que permite **reeditar** o conteúdo depois. |
+| **Ferramenta** | `#designToolSymbol` (atalho **Q**) + painel flutuante | Clique na prancheta abre o painel: tipo (QR/Data Matrix/PDF417/Aztec/código de barras), conteúdo, simbologia 1D, correção (só QR), tamanho e linhas de varredura por mm. Campos aparecem conforme o tipo; o rótulo do tamanho vira **Largura** no 1D. |
+| **Inserção** | `dCommitSymbol()` | Gera a célula no bundle sob demanda (`qrcode.js`/`barcode.js`), cria **um grupo** (`g<N>`) com todas as linhas, nome “Símbolo N”, camada ativa e avisos de legibilidade traduzidos (`qr.warn.*`/`bar.warn.*`). |
+| **Reedição** | duplo clique no objeto (no canvas **ou** na lista de objetos) | Reabre o painel preenchido e **substitui** o bloco no mesmo lugar, preservando potência/velocidade/passadas/espessura/camada. O tamanho mostrado é o **atual** do bloco (se ele foi escalado depois de inserido). |
+| **Lista de objetos** | `dUpdateObjectList()` | O bloco aparece como **uma** linha (agrupada por `group`) com o ícone de QR. |
+
+**Por que linhas abertas.** O pipeline do desenho já grava forma aberta como
+traço (G0 → liga o laser → G1 → M5), que é exatamente a varredura raster que o
+gerador avulso usa — cada trecho escuro vira uma passada. A densidade padrão é
+**10 linhas/mm** (0,1 mm), a mesma do modal; o painel permite reduzir para
+menos objetos. Mover/escalar é o transform do editor (não há re-encode).
+
+**Validação.** `tests/design-symbol.test.ts` (11 testes) cobre a normalização
+(lixo, limites, metadados inválidos), a inversão de Y e a origem, trechos
+verticais (1D), descarte de degenerados e o caminho completo
+**QR → formas → `designToGcode`** (sem `NaN`, tudo dentro da caixa) e
+**EAN-13 → formas** (HRI abaixo das barras). E2E: ferramenta → painel → QR no
+desenho (1 objeto) → troca para código de barras (campos e rótulo mudam) →
+“Gerar e visualizar” → diálogo de tamanho → posicionar.
+
+**Fora do escopo.** Inverter a polaridade do símbolo dentro do editor (o modal
+avulso tem), overscan, e editar o símbolo por nós (o bloco é uma unidade
+geométrica; para mexer no conteúdo, duplo clique).

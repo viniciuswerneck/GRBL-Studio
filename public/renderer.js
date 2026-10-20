@@ -480,6 +480,20 @@ const el = {
   designTextFont: $('designTextFont'),
   designTextMode: $('designTextMode'),
   designTextAdd: $('designTextAdd'),
+  designToolSymbol: $('designToolSymbol'),
+  designSymbolEditor: $('designSymbolEditor'),
+  designSymbolType: $('designSymbolType'),
+  designSymbolValue: $('designSymbolValue'),
+  designSymbolSymField: $('designSymbolSymField'),
+  designSymbolSymbology: $('designSymbolSymbology'),
+  designSymbolSizeLabel: $('designSymbolSizeLabel'),
+  designSymbolSize: $('designSymbolSize'),
+  designSymbolEccField: $('designSymbolEccField'),
+  designSymbolEcc: $('designSymbolEcc'),
+  designSymbolLines: $('designSymbolLines'),
+  designSymbolHriField: $('designSymbolHriField'),
+  designSymbolHri: $('designSymbolHri'),
+  designSymbolAdd: $('designSymbolAdd'),
   designStatus: $('designStatus'),
   designSave: $('designSave'),
   designGenerate: $('designGenerate'),
@@ -1044,6 +1058,7 @@ const designState = {
   space: false,
   rotApplied: 0,
   textEdit: null,
+  symbolEdit: null,
   clipboard: null,
   seq: 0,
   /** Camadas/operações na ordem de execução (`Shape.layer` → `id`). */
@@ -2164,7 +2179,8 @@ function dUpdateObjectList() {
     const ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     ic.setAttribute('class', 'design-ic');
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttribute('href', `#${dKindIconId(sh.kind)}`);
+    // Símbolo aparece com o ícone de QR (é um bloco de linhas, não um traço).
+    use.setAttribute('href', `#${sh.symbol ? 'ic-qr' : dKindIconId(sh.kind)}`);
     ic.appendChild(use);
 
     const label = document.createElement('span');
@@ -2203,6 +2219,24 @@ function dUpdateObjectList() {
     });
 
     li.addEventListener('click', (e) => dSelectShape(idxs[0], e.shiftKey));
+    // Duplo clique na lista reedita texto/símbolo (mesma via do duplo clique
+    // no canvas): o objeto guarda os metadados do bloco.
+    li.addEventListener('dblclick', () => {
+      const target = designState.shapes[idxs[0]];
+      if (!target?.group) return;
+      if (!target.text && !target.symbol) return;
+      dSelectShape(idxs[0], false);
+      const b = DE ? DE.selectionBounds(designState.shapes, idxs) : null;
+      const world = { x: b ? b.minX : 0, y: b ? b.minY : 0 };
+      const edit = {
+        group: target.group,
+        name: target.name,
+        indices: idxs,
+      };
+      if (target.symbol)
+        dOpenSymbolEditor(world, { ...edit, meta: target.symbol });
+      else dOpenTextEditor(world, { ...edit, meta: target.text });
+    });
     // Marca da camada (mesma cor usada no canvas).
     const layer = dLayerById(sh.layer);
     if (layer) {
@@ -3318,12 +3352,280 @@ async function dCommitText() {
   dStatus(dTextWarn || t('design.status.done'), dTextWarn ? 'error' : 'ok');
 }
 
+// ----------------------------------------------------- ferramenta de símbolo
+
+/** Prefixo i18n dos erros de cada tipo de símbolo do editor. */
+function dSymbolErrPrefix(type) {
+  if (type === 'barcode') return 'bar';
+  if (type === 'datamatrix') return 'dm';
+  if (type === 'pdf417') return 'pdf';
+  if (type === 'aztec') return 'aztec';
+  return 'qr';
+}
+
+/** Mostra só os campos que valem para o tipo escolhido (e traduz o rótulo). */
+function dSyncSymbolTypeUi() {
+  const type = $('designSymbolType') ? $('designSymbolType').value : 'qr';
+  const isBar = type === 'barcode';
+  const symField = $('designSymbolSymField');
+  if (symField) symField.classList.toggle('hidden', !isBar);
+  const eccField = $('designSymbolEccField');
+  if (eccField) eccField.classList.toggle('hidden', type !== 'qr');
+  const hriField = $('designSymbolHriField');
+  if (hriField) hriField.classList.toggle('hidden', !isBar);
+  const label = $('designSymbolSizeLabel');
+  if (label) {
+    label.textContent = t(isBar ? 'design.symbol.width' : 'design.symbol.size');
+  }
+  const add = $('designSymbolAdd');
+  if (add) {
+    add.textContent = t(
+      designState.symbolEdit?.editing
+        ? 'design.symbol.update'
+        : 'design.symbol.add',
+    );
+  }
+}
+
+function dOpenSymbolEditor(world, editing) {
+  const box = $('designSymbolEditor');
+  if (!box) return;
+  designState.symbolEdit = {
+    x: world.x,
+    y: world.y,
+    group: editing?.group ?? null,
+    editing: Boolean(editing),
+    name: editing ? editing.name : null,
+    indices: editing?.indices ?? null,
+  };
+  if (editing?.meta) {
+    const meta = editing.meta;
+    const type = $('designSymbolType');
+    if (type) type.value = meta.type;
+    const val = $('designSymbolValue');
+    if (val) val.value = meta.text;
+    const sym = $('designSymbolSymbology');
+    if (sym && meta.symbology) sym.value = meta.symbology;
+    const size = $('designSymbolSize');
+    if (size) size.value = String(meta.sizeMm);
+    const ecc = $('designSymbolEcc');
+    if (ecc && meta.ecc) ecc.value = meta.ecc;
+    const lines = $('designSymbolLines');
+    if (lines) lines.value = String(meta.linesPerMm ?? 10);
+    const hri = $('designSymbolHri');
+    if (hri) hri.checked = meta.hri !== false;
+    // O bloco pode ter sido escalado depois de inserido: o tamanho mostrado é o
+    // **atual** (lado maior no 2D, largura no 1D), não o da especificação.
+    const b =
+      editing.indices?.length && DE
+        ? DE.selectionBounds(designState.shapes, editing.indices)
+        : null;
+    if (b && size) {
+      const side =
+        meta.type === 'barcode'
+          ? b.maxX - b.minX
+          : Math.max(b.maxX - b.minX, b.maxY - b.minY);
+      if (Number.isFinite(side) && side > 0) {
+        size.value = String(Math.round(side * 10) / 10);
+      }
+    }
+  }
+  dSyncSymbolTypeUi();
+  const p = dW2S(world.x, world.y);
+  const wrap = $('designCanvasWrap');
+  const ww = wrap ? wrap.clientWidth : designState.pxW;
+  const wh = wrap ? wrap.clientHeight : designState.pxH;
+  box.style.left = `${dClamp(p.x + 14, 8, Math.max(8, ww - 260))}px`;
+  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - 420))}px`;
+  box.classList.remove('hidden');
+  const val = $('designSymbolValue');
+  if (val) {
+    val.focus();
+    val.select();
+  }
+}
+
+function dCloseSymbolEditor() {
+  const box = $('designSymbolEditor');
+  if (box) box.classList.add('hidden');
+  designState.symbolEdit = null;
+}
+
+/** Texto de erro do encoder (mensagem traduzida quando há código). */
+function dSymbolErrorText(type, err) {
+  const prefix = dSymbolErrPrefix(type);
+  const code = err?.code;
+  if (code) {
+    const key = `${prefix}.err.${code}`;
+    if (hasKey(key)) return t(key);
+  }
+  return String(err?.message ?? err);
+}
+
+/**
+ * Célula do símbolo (segmentos de varredura em mm) no bundle do tipo.
+ * O bundle é carregado sob demanda — o editor não paga por ele no boot.
+ */
+async function dSymbolCell(spec) {
+  if (spec.type === 'barcode') {
+    await loadBundle('barcode.js');
+    if (!window.GRBL_BARCODE) throw new Error(t('qr.moduleMissing'));
+    return window.GRBL_BARCODE.barcodeToCell(spec.text, {
+      symbology: spec.symbology || 'code128',
+      targetWidthMm: spec.sizeMm,
+      linesPerMm: spec.linesPerMm,
+      hri: spec.hri !== false,
+    });
+  }
+  await loadBundle('qrcode.js');
+  if (!window.GRBL_QR) throw new Error(t('qr.moduleMissing'));
+  const params = {
+    targetWidthMm: spec.sizeMm,
+    linesPerMm: spec.linesPerMm,
+  };
+  if (spec.type === 'datamatrix') {
+    return window.GRBL_QR.dataMatrixToCell(spec.text, params);
+  }
+  if (spec.type === 'pdf417') {
+    return window.GRBL_QR.pdf417ToCell(spec.text, params);
+  }
+  if (spec.type === 'aztec') {
+    return window.GRBL_QR.aztecToCell(spec.text, params);
+  }
+  return window.GRBL_QR.qrToCell(spec.text, {
+    ...params,
+    ecc: spec.ecc || 'M',
+  });
+}
+
+/** Avisos de legibilidade do símbolo, já traduzidos (RF-SYM-6). */
+function dSymbolWarnings(codes, type) {
+  const prefix = dSymbolErrPrefix(type);
+  const out = [];
+  for (const code of codes || []) {
+    const key = `${prefix}.warn.${code}`;
+    if (hasKey(key)) out.push(t(key));
+  }
+  return out;
+}
+
+/**
+ * Insere o símbolo como **um bloco de formas** (RF-SYM-8): cada trecho de
+ * varredura vira uma linha aberta no mesmo grupo, então mover/escalar/girar,
+ * camada e potência funcionam como em qualquer objeto. O `symbol` guardado nas
+ * formas permite reeditar o conteúdo.
+ */
+async function dCommitSymbol() {
+  const value = ($('designSymbolValue')?.value || '').trim();
+  if (!value) {
+    dStatus(t('design.status.symbolEmpty'), 'error');
+    return;
+  }
+  const type = $('designSymbolType') ? $('designSymbolType').value : 'qr';
+  const spec = window.GRBL_DESIGN?.sanitizeDesignSymbol({
+    type,
+    text: value,
+    sizeMm: dNum('designSymbolSize', 30) || 30,
+    linesPerMm: dNum('designSymbolLines', 10) || 10,
+    // Metadados só do tipo escolhido (não polui a especificação).
+    ecc: type === 'qr' ? $('designSymbolEcc')?.value : undefined,
+    symbology:
+      type === 'barcode' ? $('designSymbolSymbology')?.value : undefined,
+    hri:
+      type === 'barcode' ? Boolean($('designSymbolHri')?.checked) : undefined,
+  });
+  if (!spec) {
+    dStatus(t('design.status.symbolEmpty'), 'error');
+    return;
+  }
+  const edit = designState.symbolEdit;
+  const origin = edit ? { x: edit.x, y: edit.y } : { x: 50, y: 50 };
+  dStatus(t('design.status.generating'));
+
+  let cell;
+  try {
+    cell = await dSymbolCell(spec);
+  } catch (err) {
+    dStatus(
+      t('design.status.symbolFail', { msg: dSymbolErrorText(spec.type, err) }),
+      'error',
+    );
+    return;
+  }
+  const placed = window.GRBL_DESIGN?.symbolCellToDesignShapes(cell, origin);
+  if (!placed?.shapes.length) {
+    dStatus(
+      t('design.status.symbolFail', { msg: t('design.status.symbolEmpty') }),
+      'error',
+    );
+    return;
+  }
+
+  const group = edit?.group ?? `g${designState.seq++}`;
+  const name = edit?.name ?? dNextName('symbol');
+
+  // Reeditar não pode jogar fora a gravação do bloco (potência/velocidade).
+  let keep = null;
+  if (edit?.group) {
+    keep = designState.shapes.find((s) => s.group === edit.group) ?? null;
+  } else if (edit?.indices?.length) {
+    keep = designState.shapes[edit.indices[0]] ?? null;
+  }
+  const style = {};
+  if (keep) {
+    for (const k of ['speed', 'power', 'passes', 'width', 'layer']) {
+      if (keep[k] !== undefined) style[k] = keep[k];
+    }
+  }
+
+  if (edit?.group) {
+    designState.shapes = designState.shapes.filter(
+      (s) => s.group !== edit.group,
+    );
+  } else if (edit?.indices?.length) {
+    const set = new Set(edit.indices);
+    designState.shapes = designState.shapes.filter((_, i) => !set.has(i));
+  }
+
+  for (const sh of placed.shapes) {
+    sh.group = group;
+    sh.name = name;
+    // Um único objeto de especificação para todo o bloco (não mutamos).
+    sh.symbol = spec;
+    Object.assign(sh, style);
+    if (!sh.layer && designState.activeLayer) {
+      sh.layer = designState.activeLayer;
+    }
+  }
+  const base = designState.shapes.length;
+  designState.shapes.push(...placed.shapes);
+  dPushHistory();
+  designState.selection = placed.shapes.map((_, i) => base + i);
+  dCloseSymbolEditor();
+  dAfterSelection();
+
+  const warns = dSymbolWarnings(cell.warnings, spec.type);
+  const msg = t(
+    edit?.editing ? 'design.status.symbolUpdate' : 'design.status.symbolAdd',
+    {
+      name,
+      w: placed.widthMm.toFixed(1),
+      h: placed.heightMm.toFixed(1),
+    },
+  );
+  dStatus(
+    warns.length ? `${msg} ⚠ ${warns.join(' · ')}` : msg,
+    warns.length ? 'error' : 'ok',
+  );
+}
+
 // ------------------------------------------------------------------ ferramenta
 
 function dSetTool(tool) {
   designState.tool = tool;
   designState.drawing = null;
   if (tool !== 'text') dCloseTextEditor();
+  if (tool !== 'symbol') dCloseSymbolEditor();
   const map = {
     designToolSelect: 'select',
     designToolRect: 'rect',
@@ -3332,6 +3634,7 @@ function dSetTool(tool) {
     designToolPen: 'pen',
     designToolNode: 'node',
     designToolText: 'text',
+    designToolSymbol: 'symbol',
   };
   for (const [id, name] of Object.entries(map)) {
     const node = $(id);
@@ -3398,6 +3701,11 @@ function dOnPointerDown(e) {
 
   if (designState.tool === 'text') {
     dOpenTextEditor({ x: dSnapV(pt.wx), y: dSnapV(pt.wy) });
+    return;
+  }
+
+  if (designState.tool === 'symbol') {
+    dOpenSymbolEditor({ x: dSnapV(pt.wx), y: dSnapV(pt.wy) });
     return;
   }
 
@@ -3864,14 +4172,27 @@ function dOnDblClick(e) {
   const hit = DE.hitTest(designState.shapes, pt.wx, pt.wy, tol);
   if (hit < 0) return;
   const sh = designState.shapes[hit];
-  if (!sh.text || !sh.group) return;
+  if (!sh.group) return;
+  if (!sh.text && !sh.symbol) return;
   const idxs = DE.expandSelection(designState.shapes, hit);
   const b = DE.selectionBounds(designState.shapes, idxs);
   dSelectShape(hit, false);
-  dOpenTextEditor(
-    { x: b ? b.minX : pt.wx, y: b ? b.minY : pt.wy },
-    { group: sh.group, meta: sh.text, name: sh.name, indices: idxs },
-  );
+  const world = { x: b ? b.minX : pt.wx, y: b ? b.minY : pt.wy };
+  if (sh.symbol) {
+    dOpenSymbolEditor(world, {
+      group: sh.group,
+      meta: sh.symbol,
+      name: sh.name,
+      indices: idxs,
+    });
+    return;
+  }
+  dOpenTextEditor(world, {
+    group: sh.group,
+    meta: sh.text,
+    name: sh.name,
+    indices: idxs,
+  });
 }
 
 function dOnWheel(e) {
@@ -3896,6 +4217,8 @@ function dOnKeyDown(e) {
     dSizeDialogOpen() || dArrayDialogOpen() || dOffsetDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
+  const symEditor = $('designSymbolEditor');
+  const symbolOpen = symEditor && !symEditor.classList.contains('hidden');
 
   if (e.key === 'Escape') {
     if (sizeOpen) {
@@ -3929,8 +4252,9 @@ function dOnKeyDown(e) {
       e.stopImmediatePropagation();
       return;
     }
-    if (editorOpen) {
+    if (editorOpen || symbolOpen) {
       dCloseTextEditor();
+      dCloseSymbolEditor();
       e.preventDefault();
       e.stopImmediatePropagation();
       return;
@@ -4066,6 +4390,7 @@ function dOnKeyDown(e) {
   else if (key === 'p' || key === 'P') dSetTool('pen');
   else if (key === 'n' || key === 'N') dSetTool('node');
   else if (key === 't' || key === 'T') dSetTool('text');
+  else if (key === 'q' || key === 'Q') dSetTool('symbol');
   else if (key === '+' || key === '=')
     dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
   else if (key === '-' || key === '_')
@@ -4480,6 +4805,7 @@ function dConfirmSize() {
     designToolPen: 'pen',
     designToolNode: 'node',
     designToolText: 'text',
+    designToolSymbol: 'symbol',
   };
   for (const [id, tool] of Object.entries(toolTools)) {
     const node = $(id);
@@ -4767,6 +5093,26 @@ function dConfirmSize() {
   const textMode = $('designTextMode');
   if (textMode) textMode.addEventListener('change', dSyncTextModeUi);
   dSyncTextModeUi();
+
+  // editor de símbolo (RF-SYM-8)
+  const symAdd = $('designSymbolAdd');
+  if (symAdd) symAdd.addEventListener('click', dCommitSymbol);
+  const symCancel = $('designSymbolCancel');
+  if (symCancel) symCancel.addEventListener('click', dCloseSymbolEditor);
+  const symClose = $('designSymbolClose');
+  if (symClose) symClose.addEventListener('click', dCloseSymbolEditor);
+  const symValue = $('designSymbolValue');
+  if (symValue) {
+    symValue.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        dCommitSymbol();
+      }
+    });
+  }
+  const symType = $('designSymbolType');
+  if (symType) symType.addEventListener('change', dSyncSymbolTypeUi);
+  dSyncSymbolTypeUi();
   // Lembra parâmetros de gravação/texto entre sessões (abrir → desenhar → gravar).
   if (el.designOverlay) {
     el.designOverlay.addEventListener('change', (e) => {
@@ -11159,6 +11505,7 @@ function refreshTexts() {
     dUpdateObjectList();
     dUpdateLayerList();
     dUpdateLayerEditor();
+    dSyncSymbolTypeUi();
   }
 }
 

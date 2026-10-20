@@ -2179,6 +2179,12 @@ html[data-theme="sand"] .design-canvas-wrap {
   display: none;
 }
 
+/* Campos condicionais do painel do símbolo (simbologia/HRI/ECC): o `.hidden`
+   global perde para o `display: flex` de `.design-field`. */
+#designSymbolEditor .hidden {
+  display: none;
+}
+
 .design-text-head {
   display: flex;
   align-items: center;

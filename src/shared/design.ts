@@ -15,7 +15,25 @@
  * Módulo puro e testável; a interação (canvas, mouse) vive no renderer.
  */
 
+import type { DesignSymbolSpec } from './designSymbol';
 import { STROKE_STEP, strokePaths } from './offset';
+
+export type { DesignSymbolSpec } from './designSymbol';
+export {
+  SYMBOL_DEFAULT_LINES,
+  SYMBOL_MAX_LINES,
+  SYMBOL_MAX_MM,
+  SYMBOL_MIN_LINES,
+  SYMBOL_MIN_MM,
+  sanitizeDesignSymbol,
+  symbolCellToDesignShapes,
+} from './designSymbol';
+export type {
+  DesignSymbolCell,
+  DesignSymbolShape,
+  DesignSymbolShapes,
+  DesignSymbolType,
+} from './designSymbol';
 
 export type ShapeKind =
   | 'rect'
@@ -59,6 +77,12 @@ export interface Shape {
    * Ausente ou desconhecido = usa os parâmetros globais e é emitida por último.
    */
   layer?: string;
+  /**
+   * Metadados do bloco de símbolo (QR/código de barras) — permite reeditá-lo
+   * como bloco inteiro (RF-SYM-8). O desenho em si são as linhas abertas do
+   * grupo, então mover/escalar/rotacionar funciona como qualquer objeto.
+   */
+  symbol?: DesignSymbolSpec;
   /** Metadados do bloco de texto (permite reeditá-lo como bloco inteiro). */
   text?: {
     value: string;

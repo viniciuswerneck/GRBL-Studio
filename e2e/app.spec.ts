@@ -517,6 +517,114 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('símbolo como objeto: QR no desenho vira G-code (RF-SYM-8)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+
+      // A ferramenta abre o painel só depois do clique na prancheta.
+      await page.click('#designToolSymbol');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.mouse.click(box.x + 180, box.y + 150);
+      await expect(page.locator('#designSymbolEditor')).toBeVisible();
+      await expect(page.locator('#designSymbolEccField')).toBeVisible();
+      await expect(page.locator('#designSymbolSymField')).toBeHidden();
+
+      await page.fill('#designSymbolValue', 'https://grbl.studio');
+      await page.fill('#designSymbolSize', '25');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      await expect(page.locator('#designStatus')).toContainText('Símbolo');
+      const rows = page.locator('#designObjectList .design-obj');
+      await expect(rows).toHaveCount(1);
+      await expect(rows.first()).toContainText('Símbolo');
+
+      // Duplo clique no objeto reedita o conteúdo **no lugar** (não duplica).
+      // O ponto do símbolo é calculado pela escala real da vista (lida na
+      // régua de coordenadas), não por pixels fixos.
+      const readWorld = async (sx: number, sy: number) => {
+        await page.mouse.move(sx, sy);
+        const txt = (await page.locator('#designCursor').textContent()) ?? '';
+        const nums = txt.match(/-?\d+(?:\.\d+)?/g) ?? [];
+        return { x: Number(nums[0]), y: Number(nums[1]) };
+      };
+      const w0 = await readWorld(box.x + 180, box.y + 150);
+      const w1 = await readWorld(box.x + 280, box.y + 150);
+      const scale = 100 / (w1.x - w0.x);
+      await page.click('#designToolSelect');
+      await page.mouse.dblclick(
+        box.x + 180 + 12.5 * scale,
+        box.y + 150 + 12.5 * scale,
+      );
+      await expect(page.locator('#designSymbolEditor')).toBeVisible();
+      await expect(page.locator('#designSymbolValue')).toHaveValue(
+        'https://grbl.studio',
+      );
+      await expect(page.locator('#designSymbolAdd')).toContainText('Aplicar');
+      await page.fill('#designSymbolValue', 'https://grbl.studio/v2');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      await expect(rows).toHaveCount(1);
+      await expect(rows.first()).toContainText('Símbolo 1');
+
+      // A lista de objetos também abre a reedição (duplo clique na linha).
+      await rows.first().dblclick();
+      await expect(page.locator('#designSymbolEditor')).toBeVisible();
+      await expect(page.locator('#designSymbolValue')).toHaveValue(
+        'https://grbl.studio/v2',
+      );
+      await page.click('#designSymbolCancel');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+
+      // Código de barras: o painel troca os campos (simbologia/HRI, sem ECC).
+      await page.click('#designToolSymbol');
+      await page.mouse.click(box.x + 360, box.y + 320);
+      await expect(page.locator('#designSymbolEditor')).toBeVisible();
+      await page.selectOption('#designSymbolType', 'barcode');
+      await expect(page.locator('#designSymbolSymField')).toBeVisible();
+      await expect(page.locator('#designSymbolHriField')).toBeVisible();
+      await expect(page.locator('#designSymbolEccField')).toBeHidden();
+      await expect(page.locator('#designSymbolSizeLabel')).toContainText(
+        'Largura',
+      );
+      await page.fill('#designSymbolValue', '590123412345');
+      await page.selectOption('#designSymbolSymbology', 'ean13');
+      await page.fill('#designSymbolSize', '50');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      await expect(rows).toHaveCount(2);
+
+      // Data Matrix (2D quadrado, sem ECC de QR) também entra como objeto.
+      await page.click('#designToolSymbol');
+      await page.mouse.click(box.x + 520, box.y + 200);
+      await expect(page.locator('#designSymbolEditor')).toBeVisible();
+      await page.selectOption('#designSymbolType', 'datamatrix');
+      await expect(page.locator('#designSymbolEccField')).toBeHidden();
+      await expect(page.locator('#designSymbolSymField')).toBeHidden();
+      await page.fill('#designSymbolValue', 'GRBL-STUDIO-DM');
+      await page.fill('#designSymbolSize', '20');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      await expect(rows).toHaveCount(3);
+
+      // O bloco entra no mesmo pipeline: gerar → tamanho da arte → posicionar.
+      await page.click('#designGenerate');
+      await expect(page.locator('#designSizeOverlay')).toBeVisible();
+      await page.click('#designSizeConfirm');
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+    } finally {
+      await close();
+    }
+  });
+
   test('camadas: cria, renomeia, reordena e move objetos (P2.2)', async () => {
     const { app, page, close } = await launchApp();
     try {

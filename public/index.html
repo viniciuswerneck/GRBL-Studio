@@ -32,6 +32,10 @@
         <symbol id="ic-text" viewBox="0 0 24 24">
           <path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </symbol>
+        <symbol id="ic-qr" viewBox="0 0 24 24">
+          <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M14 14h2.5v2.5H14zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2.5v2.5H18z" fill="currentColor" />
+        </symbol>
         <symbol id="ic-pen" viewBox="0 0 24 24">
           <path d="M12 19l7-7 3 3-7 7-3-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M18 13l-1.5-7.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -1944,6 +1948,9 @@
             <button type="button" id="designToolText" class="design-tool" data-i18n-title="design.tool.text" title="Texto (T)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-text" /></svg>
             </button>
+            <button type="button" id="designToolSymbol" class="design-tool" data-i18n-title="design.tool.symbol" title="Símbolo (Q)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-qr" /></svg>
+            </button>
             <span class="design-tool-sep"></span>
             <button type="button" id="designDelete" class="design-tool" data-i18n-title="design.delete" title="Excluir (Del)">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-trash" /></svg>
@@ -2027,6 +2034,71 @@
               <div class="design-text-actions">
                 <button type="button" id="designTextCancel" data-i18n="design.cancel">Cancelar</button>
                 <button type="button" id="designTextAdd" class="primary" data-i18n="design.text.add">Adicionar</button>
+              </div>
+            </div>
+
+            <!-- Editor de símbolo flutuante (ferramenta Símbolo) -->
+            <div class="design-text-editor hidden" id="designSymbolEditor" role="dialog" aria-labelledby="designSymbolTitle">
+              <div class="design-text-head">
+                <span id="designSymbolTitle" data-i18n="design.symbol.title">Símbolo</span>
+                <button type="button" id="designSymbolClose" class="icon-btn" data-i18n-title="nav.close" data-i18n-aria="nav.close" aria-label="Fechar">
+                  <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-close" /></svg>
+                </button>
+              </div>
+              <label class="design-field">
+                <span data-i18n="design.symbol.type">Tipo</span>
+                <select id="designSymbolType">
+                  <option value="qr" selected data-i18n="qr.sym.qr">QR Code</option>
+                  <option value="datamatrix" data-i18n="qr.sym.datamatrix">Data Matrix</option>
+                  <option value="pdf417" data-i18n="qr.sym.pdf417">PDF417</option>
+                  <option value="aztec" data-i18n="qr.sym.aztec">Aztec</option>
+                  <option value="barcode" data-i18n="design.symbol.barcode">Código de barras</option>
+                </select>
+              </label>
+              <label class="design-field">
+                <span data-i18n="design.symbol.content">Conteúdo</span>
+                <input type="text" id="designSymbolValue" data-i18n-placeholder="design.symbol.contentPlaceholder" placeholder="Texto, URL, chave…" spellcheck="false" />
+              </label>
+              <label class="design-field hidden" id="designSymbolSymField">
+                <span data-i18n="design.symbol.symbology">Simbologia</span>
+                <select id="designSymbolSymbology">
+                  <option value="code128" selected data-i18n="bar.sym.code128">Code 128 — texto livre</option>
+                  <option value="ean13" data-i18n="bar.sym.ean13">EAN-13 — 12 dígitos (+ verificador)</option>
+                  <option value="ean8" data-i18n="bar.sym.ean8">EAN-8 — 7 dígitos (+ verificador)</option>
+                  <option value="upca" data-i18n="bar.sym.upca">UPC-A — 11 dígitos (+ verificador)</option>
+                  <option value="code39" data-i18n="bar.sym.code39">Code 39 — A–Z, 0–9 e -.$/+%</option>
+                  <option value="itf14" data-i18n="bar.sym.itf14">ITF-14 — 13 dígitos (+ verificador GS1)</option>
+                  <option value="codabar" data-i18n="bar.sym.codabar">Codabar — A–D, 0–9 e -$:/.+</option>
+                  <option value="code93" data-i18n="bar.sym.code93">Code 93 — A–Z, 0–9 e -.$/+%</option>
+                  <option value="gs1-128" data-i18n="bar.sym.gs1-128">GS1-128 — Code 128 com FNC1 (^ separa campos)</option>
+                </select>
+              </label>
+              <div class="design-text-row">
+                <label class="design-field">
+                  <span id="designSymbolSizeLabel" data-i18n="design.symbol.size">Tamanho (mm)</span>
+                  <input type="number" id="designSymbolSize" min="5" max="400" step="1" value="30" />
+                </label>
+                <label class="design-field hidden" id="designSymbolEccField">
+                  <span data-i18n="design.symbol.ecc">Correção (QR)</span>
+                  <select id="designSymbolEcc">
+                    <option value="L">L</option>
+                    <option value="M" selected>M</option>
+                    <option value="Q">Q</option>
+                    <option value="H">H</option>
+                  </select>
+                </label>
+              </div>
+              <label class="design-field">
+                <span data-i18n="design.symbol.lines">Linhas de varredura por mm</span>
+                <input type="number" id="designSymbolLines" min="2" max="30" step="1" value="10" />
+              </label>
+              <label class="design-check hidden" id="designSymbolHriField">
+                <input type="checkbox" id="designSymbolHri" checked />
+                <span data-i18n="design.symbol.hri">Texto legível (HRI)</span>
+              </label>
+              <div class="design-text-actions">
+                <button type="button" id="designSymbolCancel" data-i18n="design.cancel">Cancelar</button>
+                <button type="button" id="designSymbolAdd" class="primary" data-i18n="design.symbol.add">Adicionar</button>
               </div>
             </div>
           </div>

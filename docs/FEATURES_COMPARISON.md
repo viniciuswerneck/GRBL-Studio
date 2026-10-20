@@ -67,6 +67,7 @@
 | Texto legível sob o código (HRI) | Não | Sim (fonte de traço único) | ✅ |
 | Simbologias 2D (Data Matrix, PDF417, Aztec) | Não | Data Matrix ECC200 (v0.7.0), PDF417 (v0.8.0) e Aztec (v0.10.0) | ✅ |
 | Vários símbolos em grade (RF-SYM-9) | Não | Sim (lista → grade, com espaçamento) | ✅ |
+| Símbolo como **objeto do editor** (S3) | Não | Sim (QR/2D/1D como bloco de linhas: mover, escalar, girar, camada/potência e reeditar por duplo clique) | ✅ |
 | **Lote / dados variáveis** (RF-SYM-10) | Não | Sim (CSV/TSV → fila de gravação, pausa para trocar a peça, contador e retomada) | ✅ |
 | **Modo produção** (RF-GC-12) | Não (só reexecutar manualmente) | Sim (repetir o job N vezes, contador, pausa entre cópias e trava de UI) | ✅ |
 | **Teste de foco** (RF-IMG-13) | Não | Sim (escada de Z relativa com 2 potências por passo, prévia da faixa) | ✅ |

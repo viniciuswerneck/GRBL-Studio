@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 19/10/2026 (v0.9.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 20/10/2026 (v0.11.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -53,6 +53,10 @@ Já entregue (não repetir no planejamento):
       **v0.7.0** com ITF-14, Codabar, Code 93 Full ASCII, GS1-128 e **Data
       Matrix ECC200**; **grade a partir de uma lista** (RF-SYM-9) e **PDF417**
       (RF-SYM-7) em 19/10/2026 (v0.9.0); **Aztec** na v0.10.0.
+- [x] **Símbolo como objeto** no editor “Desenhar” (S3): QR/Data Matrix/PDF417/
+      Aztec/código de barras entram como **um bloco de linhas** agrupado — move,
+      escala, gira, recebe camada e potência como qualquer objeto, com
+      **duplo clique** para reeditar o conteúdo — 20/10/2026.
 - [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
       gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
       peça, contador e retomada — 20/10/2026.
@@ -77,7 +81,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **854 testes** (Vitest, 49 arquivos) + E2E Playwright (47) + smoke headless.
+- [x] **865 testes** (Vitest, 50 arquivos) + E2E Playwright (48) + smoke headless.
 
 ---
 
@@ -196,7 +200,7 @@ diferencial que nenhum concorrente grátis tem.
 | ✅ P2.12 | **Presets de material** (JSON import/export + dose) — entregue (RF-IMG-14, 20/10/2026) | S | Salvar/compartilhar receitas; repositório oficial depois. |
 | ✅ P2.13 | **Teste de foco / spot** (2 linhas de potência) — entregue (RF-IMG-13, 20/10/2026) | S | Determinar o melhor foco por material. |
 | ✅ | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0; Aztec na 0.10.0** | M | Simbologias com testes vetoriais. |
-| — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
+| ✅ | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** — entregue em 20/10/2026 | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
 
 ### v0.9 — Extras + Pro features
@@ -287,11 +291,12 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    (lote/dados variáveis), **P2.11** (modo produção), **P2.13** (teste de foco)
    e o **RNF-11** de RAM (269 MB em X11 / 290 MB em Wayland, medido); na
    **0.11.0**, **P2.12** (presets de material com dose e JSON) e o marco do
-   **v0.8**. **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
-   de mediana no A/B; melhor par 1 337 ms contra ≤ 1 500 ms) — trabalho de
-   performance aberto. Continuam abertos **P0.3** (publicar Flatpak + winget/
-   brew/AUR), **P0.5** (comparativo público) e o símbolo como objeto
-   ([`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md)).
+   **v0.8**; em 20/10/2026, o **símbolo como objeto** no editor “Desenhar”
+   (última pendência de [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md)).
+   **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms de mediana no
+   A/B; melhor par 1 337 ms contra ≤ 1 500 ms) — trabalho de performance aberto.
+   Continuam abertos **P0.3** (publicar Flatpak + winget/brew/AUR) e **P0.5**
+   (comparativo público).
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
    **editor de G-code (P1.10) ✅**, **biblioteca de jobs (P2.9) ✅**; resta a
    validação Win/macOS.
