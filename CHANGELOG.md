@@ -4,6 +4,35 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não publicado]
+
+### Added — editor de G-code (P1.10): corrigir e reenviar um trecho
+
+- **Editor de G-code** em `Arquivo → Editar G-code…` e no botão **Editar…** da
+  aba Execução: lista **virtualizada** (só a janela visível vira DOM — 50 mil
+  linhas custam ~30 nós), numeração, realce por palavra (G/M, eixos, F, S, T,
+  N, comentários) e navegação por teclado (setas, PageUp/Down, Home/End,
+  `Enter` edita, `Esc` fecha).
+- **Edição** linha a linha (duplo clique), **inserir abaixo** e **remover**
+  (linha ou seleção), com **Desfazer** que guarda *operações*, não cópias do
+  arquivo. Com job em andamento a edição e o reenvio ficam bloqueados.
+- **Validar** roda as regras MX-1…MX-15 do pré-voo e resume o resultado na
+  barra de status (abre a lista quando há impedimento), sem iniciar nada —
+  funciona até sem máquina conectada (as regras que dependem de `$$` são
+  omitidas, nunca inventadas).
+- **Enviar daqui** (linha corrente → fim) e **Enviar trecho** (seleção com
+  `Shift`+clique): o trecho vai com o **preâmbulo modal** de `resume.ts`
+  (unidades, distância, offsets, laser) — a mesma segurança da retomada.
+- **Salvar .gcode…** grava o programa editado; o rótulo do arquivo passa a
+  mostrar **editado** e o preview/tempo são recalculados ao fechar (nunca a
+  cada linha, para editar continuar responsivo — RNF-11).
+- Lógica pura em `src/shared/gcodeEditor.ts` (realce, resumo, edições
+  reversíveis, `buildSnippet`) empacotada em `public/gcodeEditor.js`
+  (`GRBL_GCODE_EDITOR`, carregado sob demanda), com 16 testes de unidade e
+  2 E2E (realce/numeração/edição/desfazer/seleção e validação offline).
+- `docs/DEVELOPMENT.md` ganhou os bundles `preflight`/`gcodeEditor`; `ROADMAP`,
+  `PLANO_PREMIUM` e `ANALISE_COMPETITIVA` atualizados.
+
 ## [0.10.0] - 2026-10-19
 
 ### Added — Aztec (RF-SYM-7): a última simbologia que faltava

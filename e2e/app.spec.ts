@@ -1089,3 +1089,116 @@ test.describe('GRBL Studio — importação PDF (P2.4/RF-DSN-15)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — editor de G-code (P1.10)', () => {
+  test('numera, realça, edita com desfazer e seleciona trecho', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          applyJobLines: (name: string, text: string) => void;
+        };
+        w.applyJobLines(
+          'editor.gcode',
+          'G21\nG90\nM4 S500\nG1 X10 Y0 F600\nM5',
+        );
+      });
+
+      // O botão da aba Execução só aparece conectado; o menu (Arquivo →
+      // Editar G-code…) abre o editor mesmo sem máquina — e é o caminho do
+      // teste, que roda desconectado.
+      await expect(page.locator('#gcodeEdit')).toBeEnabled();
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'edit-gcode',
+        );
+      });
+
+      const overlay = page.locator('#gcodeOverlay');
+      await expect(overlay).not.toHaveClass(/hidden/);
+
+      const rows = page.locator('#gcodeWindow .gcode-row');
+      await expect(rows).toHaveCount(5);
+      // Numeração (1-based) e realce por classe de palavra.
+      await expect(rows.first().locator('.gcode-gutter')).toHaveText('1');
+      await expect(rows.nth(3).locator('.gcode-tok-code')).toHaveText('G1');
+      await expect(rows.nth(3).locator('.gcode-tok-axis').first()).toHaveText(
+        'X10',
+      );
+      await expect(rows.nth(2).locator('.gcode-tok-power')).toHaveText('S500');
+
+      // Duplo clique edita a linha; Enter grava e o rótulo avisa "editado".
+      await rows.nth(3).dblclick();
+      const input = page.locator('.gcode-row .gcode-edit');
+      await expect(input).toBeVisible();
+      await input.fill('G1 X20 Y0 F600');
+      await input.press('Enter');
+      await expect(rows.nth(3)).toContainText('X20');
+      await expect(page.locator('#fileInfo')).toContainText('editado');
+
+      // Desfazer devolve o texto original.
+      await page.locator('#gcodeUndo').click();
+      await expect(rows.nth(3)).toContainText('X10');
+
+      // Shift+clique seleciona o intervalo 2–4 (linhas 1-based).
+      await rows.nth(1).click();
+      await rows.nth(3).click({ modifiers: ['Shift'] });
+      await expect(page.locator('#gcodeSelInfo')).toContainText('2–4');
+      // Sem conexão não se envia — nem o trecho nem daqui.
+      await expect(page.locator('#gcodeSendSel')).toBeDisabled();
+      await expect(page.locator('#gcodeSendFrom')).toBeDisabled();
+
+      // O resumo do programa alimenta a barra de status.
+      await expect(page.locator('#gcodeStatus')).toContainText('5 linhas');
+
+      // Fechar aplica as edições (preview/rótulo) e esconde o modal.
+      await page.locator('#gcodeClose').click();
+      await expect(overlay).toHaveClass(/hidden/);
+      await expect(page.locator('#fileInfo')).toContainText('5 linhas');
+    } finally {
+      await close();
+    }
+  });
+
+  test('valida sem máquina e reconstrói depois de remover tudo', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          applyJobLines: (name: string, text: string) => void;
+        };
+        w.applyJobLines('vazio.gcode', 'G21\nG0 X0');
+      });
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'edit-gcode',
+        );
+      });
+
+      const rows = page.locator('#gcodeWindow .gcode-row');
+      await expect(rows).toHaveCount(2);
+
+      // "Validar" roda o pré-voo mesmo desconectado (regras sem fatos `$$`).
+      await page.locator('#gcodeValidate').click();
+      await expect(page.locator('#gcodeStatus')).toContainText('Pré-voo');
+
+      // Remover a seleção inteira deixa o programa vazio — e "Inserir abaixo"
+      // reconstrói sem depender do "Desfazer".
+      await rows.nth(0).click();
+      await rows.nth(1).click({ modifiers: ['Shift'] });
+      await page.locator('#gcodeRemoveLine').click();
+      await expect(rows).toHaveCount(0);
+      await page.locator('#gcodeInsertLine').click();
+      const input = page.locator('.gcode-row .gcode-edit');
+      await input.fill('G0 X1 Y1');
+      await input.press('Enter');
+      await expect(rows).toHaveCount(1);
+      await expect(rows.first()).toContainText('G0 X1 Y1');
+      await expect(page.locator('#gcodeStatus')).toContainText('1 linhas');
+    } finally {
+      await close();
+    }
+  });
+});

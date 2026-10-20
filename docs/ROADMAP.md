@@ -162,7 +162,7 @@ diferencial que nenhum concorrente grátis tem.
 | ✅ P2.3 | **Simulação de job** (playback + tempo) — entregue na **0.5.0** | M | Play/pause/seek na velocidade real; reusa o preview. |
 | P2.4 | **Importação DXF + PDF** | M | Reusa `shared/svg.ts`/contornos; testado com arquivos reais. |
 | ✅ P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** — entregue (30 perfis, importação e sugestão na conexão) | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
-| P1.10 | **Editor de G-code** (syntax highlight + numeração + reenvio) | M | Editar, validar e reenviar trecho. |
+| ✅ P1.10 | **Editor de G-code** (realce + numeração + edição + validar + reenviar trecho) — entregue | M | Editar, validar e reenviar trecho. |
 | P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) | S | Últimos 50 jobs persistidos com parâmetros. |
 | P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
 | — | **Validar Windows/macOS** em hardware real + assinatura de código | M | Relato/vídeo por SO; instalador sem aviso de "desenvolvedor desconhecido". |
@@ -273,7 +273,8 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
    (símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
-   editor de G-code (P1.10), biblioteca de jobs (P2.9) e validação Win/macOS.
+   **editor de G-code (P1.10) ✅**, biblioteca de jobs (P2.9) e validação
+   Win/macOS.
 3. **v0.8** — lote/dados variáveis, modo produção, presets de material e
    simbologias extras.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do

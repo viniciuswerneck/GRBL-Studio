@@ -2652,6 +2652,178 @@ html[data-theme^="hc-"] a:focus-visible {
   overflow: auto;
 }
 
+/* O pré-voo pode ser aberto de dentro do editor de G-code ("Validar"): a
+   lista precisa ficar na frente do modal do editor. */
+#preflightOverlay {
+  z-index: 120;
+}
+
+/* ------------------------------------------- editor de G-code (P1.10) */
+
+/* Lista **virtualizada**: só a janela visível vira DOM (um arquivo de 100 mil
+   linhas não pode custar 100 mil nós — RNF-11/RNF-12). A altura de cada linha
+   é fixa (`--gcode-row-h`) porque a posição é calculada por índice. */
+.gcode-modal {
+  --gcode-row-h: 18px;
+
+  width: min(1000px, 96vw);
+  max-height: 90vh;
+}
+
+.gcode-file {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.gcode-view {
+  flex: 1 1 auto;
+  height: min(58vh, 520px);
+  min-height: 160px;
+  overflow: auto;
+  position: relative;
+  /* Isola layout/paint: rolar o editor não repinta o app inteiro. */
+  contain: layout paint;
+  background: var(--bg-input);
+  border-block: 1px solid var(--stroke);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  line-height: var(--gcode-row-h);
+  outline: none;
+}
+
+.gcode-view:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.gcode-sizer {
+  position: relative;
+  width: 100%;
+}
+
+.gcode-window {
+  position: absolute;
+  inset-inline: 0;
+}
+
+.gcode-row {
+  display: flex;
+  box-sizing: border-box;
+  height: var(--gcode-row-h);
+  align-items: center;
+  padding-right: var(--sp-2);
+  border-left: 2px solid transparent;
+  white-space: pre;
+  cursor: text;
+}
+
+.gcode-row:hover {
+  background: var(--bg-hover);
+}
+
+.gcode-row.in-range {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.gcode-row.is-current {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-left-color: var(--accent);
+}
+
+.gcode-gutter {
+  flex: none;
+  width: 7ch;
+  padding-right: var(--sp-2);
+  text-align: right;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.gcode-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gcode-row input.gcode-edit {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(var(--gcode-row-h) - 2px);
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Cores dos trechos — tokens do tema, nunca valores soltos (DESIGN.md). */
+.gcode-tok-comment {
+  color: var(--text-sub);
+  font-style: italic;
+}
+
+.gcode-tok-code {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.gcode-tok-axis {
+  color: var(--ok);
+}
+
+.gcode-tok-feed {
+  color: var(--warn);
+}
+
+.gcode-tok-power {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.gcode-tok-tool {
+  color: var(--accent-hover);
+}
+
+.gcode-tok-line {
+  color: var(--text-sub);
+}
+
+.gcode-tok-number {
+  color: var(--text);
+}
+
+.gcode-tok-plain {
+  color: var(--text);
+}
+
+.gcode-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+}
+
+/* Primário desabilitado com o accent cheio continua parecendo clicável. */
+.gcode-bar button.primary:disabled {
+  background: var(--bg-card);
+  border-color: var(--stroke);
+  color: var(--text-disabled);
+}
+
+.gcode-status {
+  padding: 0 var(--sp-4) var(--sp-3);
+  min-height: 1.4em;
+}
+
+.gcode-status.attention {
+  color: var(--warn);
+}
+
 .preflight-list {
   list-style: none;
   margin: var(--sp-2) 0;

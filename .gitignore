@@ -11,6 +11,7 @@ public/qrcode.js
 public/barcode.js
 public/machine.js
 public/preflight.js
+public/gcodeEditor.js
 public/resume.js
 public/contour.js
 public/boolean.js

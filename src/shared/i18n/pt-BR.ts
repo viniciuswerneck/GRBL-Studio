@@ -703,6 +703,38 @@ export const ptBR = {
   'file.infoGeneratedTime':
     '{file} — {lines} linhas · {size} · ~{time} (gerado de {image})',
   'file.saved': 'G-code salvo em {path}',
+
+  // ------------------------------------------------ editor de G-code (P1.10)
+  'ged.open': 'Editar…',
+  'ged.openHint': 'Ver, validar e reenviar um trecho do G-code',
+  'ged.title': 'Editor de G-code',
+  'ged.validate': 'Validar',
+  'ged.validating': 'Validando…',
+  'ged.undo': 'Desfazer',
+  'ged.save': 'Salvar .gcode…',
+  'ged.editLine': 'Editar linha',
+  'ged.insertLine': 'Inserir abaixo',
+  'ged.removeLine': 'Remover',
+  'ged.sendFrom': '▶ Enviar daqui',
+  'ged.sendSel': '▶ Enviar trecho',
+  'ged.line': 'Linha {n} de {total}',
+  'ged.selection': 'linhas {from}–{to} ({count} selecionadas)',
+  'ged.summary':
+    '{lines} linhas · {commands} comandos · {moves} movimentos · {comments} comentários',
+  'ged.summaryMaxS':
+    '{lines} linhas · {commands} comandos · {moves} movimentos · {comments} comentários · S máx. {smax}',
+  'ged.locked':
+    'Gravação em andamento: edição e reenvio bloqueados até terminar.',
+  'ged.empty': 'Nenhum G-code carregado para editar.',
+  'ged.edited': 'editado',
+  'ged.saved': 'G-code salvo em {path}',
+  'ged.saveFail': 'Não foi possível salvar: {msg}',
+  'ged.validOk': 'Pré-voo: nenhum achado.',
+  'ged.validIssues':
+    'Pré-voo: {block} bloqueio(s) · {warn} aviso(s) · {info} informação(ões).',
+  'ged.sendFromLog': 'Enviando a partir da linha {line}…',
+  'ged.sendSelLog': 'Enviando as linhas {from}–{to}…',
+  'ged.noConn': 'Conecte a máquina para enviar.',
   'dxf.loaded':
     'DXF importado: {contours} contorno(s), {width} × {height} mm (unidade de origem: {unit})',
   'dxf.hidden': 'DXF: {n} entidade(s) em camadas ocultas ignorada(s).',
@@ -1186,6 +1218,7 @@ export const ptBR = {
   'menu.openSvg': 'Importar SVG…',
   'menu.openDxf': 'Importar DXF…',
   'menu.openPdf': 'Importar PDF…',
+  'menu.editGcode': 'Editar G-code…',
   'menu.quit': 'Sair',
   'menu.view': 'Exibir',
   'menu.tools': 'Ferramentas',

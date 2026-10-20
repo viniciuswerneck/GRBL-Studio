@@ -233,6 +233,24 @@ const el = {
   preflightCancel: $('preflightCancel'),
   preflightGo: $('preflightGo'),
   preflightChip: $('preflightChip'),
+  // ------------------------------------------------- editor de G-code (P1.10)
+  gcodeEdit: $('gcodeEdit'),
+  gcodeOverlay: $('gcodeOverlay'),
+  gcodeClose: $('gcodeClose'),
+  gcodeFileName: $('gcodeFileName'),
+  gcodeView: $('gcodeView'),
+  gcodeSizer: $('gcodeSizer'),
+  gcodeWindow: $('gcodeWindow'),
+  gcodeValidate: $('gcodeValidate'),
+  gcodeUndo: $('gcodeUndo'),
+  gcodeSave: $('gcodeSave'),
+  gcodeEditLine: $('gcodeEditLine'),
+  gcodeInsertLine: $('gcodeInsertLine'),
+  gcodeRemoveLine: $('gcodeRemoveLine'),
+  gcodeSelInfo: $('gcodeSelInfo'),
+  gcodeSendFrom: $('gcodeSendFrom'),
+  gcodeSendSel: $('gcodeSendSel'),
+  gcodeStatus: $('gcodeStatus'),
   frameOverlay: $('frameOverlay'),
   frameClose: $('frameClose'),
   frameYp: $('frameYp'),
@@ -476,6 +494,12 @@ const state = {
   doneFile: 0,
   /** Chave/params do rótulo do arquivo atual (para repor ao trocar de idioma). */
   fileInfoText: null,
+  /**
+   * O G-code carregado foi editado à mão (P1.10). O preview/estatísticas só
+   * são recalculados ao fechar o editor ou antes de enviar — editar linha a
+   * linha não pode custar uma análise completa do arquivo.
+   */
+  gcodeEdited: false,
   /** Estado modal reportado pelo GRBL (`Idle`, `Run`, `Alarm`…) — RF-STA-5. */
   grblState: '',
   /** Tempo estimado (s) do arquivo atual — RF-GC-2/5. */
@@ -6094,6 +6118,12 @@ function updateControls() {
   const alarm = state.grblState === 'Alarm' || state.grblState === 'Door';
 
   el.playBtn.disabled = !conn || !hasFile || !idle || alarm;
+  if (el.gcodeEdit) {
+    // O editor só faz sentido com um programa em mãos (P1.10).
+    el.gcodeEdit.disabled = !hasFile;
+    el.gcodeEdit.title = hasFile ? t('ged.openHint') : t('ged.empty');
+  }
+  if (gedIsOpen()) updateGcodeEditorBar();
   if (el.pauseBtn) el.pauseBtn.disabled = !running;
   if (el.resumeBtn) el.resumeBtn.disabled = !paused;
   if (el.stopBtn) el.stopBtn.disabled = !(running || paused);
@@ -6607,10 +6637,16 @@ el.fileOpen.addEventListener('click', async () => {
 });
 
 function applyJobLines(name, text, source = 'file') {
+  // Um arquivo novo substitui o que o editor tinha em mãos (P1.10).
+  if (gedIsOpen()) {
+    state.gcodeEdited = false; // o novo arquivo descarta as edições
+    closeGcodeEditor();
+  }
   state.lines = String(text)
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0);
   state.fileName = name;
+  state.gcodeEdited = false;
   state.jobSource = source;
   // A área do modal de posicionamento deve ser a do job atual: descarta a da
   // última imagem gerada (ela viria de `window.frameBounds`).
@@ -6718,6 +6754,620 @@ if (el.resumeBtn)
   el.resumeBtn.addEventListener('click', () => window.grbl.resumeJob());
 
 el.stopBtn.addEventListener('click', () => window.grbl.stopJob());
+
+// ---------------------------------------------- editor de G-code (P1.10)
+//
+// Lista **virtualizada**: o DOM só tem a janela visível — um arquivo de 100 mil
+// linhas não pode custar 100 mil nós (RNF-11/RNF-12). A lógica pura (realce,
+// resumo, edições reversíveis e trecho com preâmbulo) vive em
+// `src/shared/gcodeEditor.ts`, publicado como `GRBL_GCODE_EDITOR`.
+
+/** Linhas extras acima/abaixo da janela visível (rolagem sem piscar). */
+const GED_OVERSCAN = 6;
+/** Profundidade do "Desfazer" — guarda **operações**, não cópias do arquivo. */
+const GED_UNDO_MAX = 100;
+
+const ged = {
+  /** Linha corrente (0-based). */
+  current: 0,
+  /** Âncora da seleção (`null` = só a linha corrente). */
+  anchor: null,
+  /** Pilha de operações reversíveis (`applyEdit`/`revertEdit`). */
+  undo: [],
+  /** Altura fixa de linha em px (lida do CSS ao abrir). */
+  rowH: 18,
+  /** Índice da linha com edição inline aberta (`null` = nenhuma). */
+  editing: null,
+  /** Janela já desenhada — evita redesenhar em cada evento de rolagem. */
+  drawn: { first: -1, count: 0 },
+  /** Resumo do programa (recalculado só quando as linhas mudam). */
+  summary: null,
+  /** Último status (`{ key, params, attention }`); `null` = resumo. */
+  status: null,
+  /** "Validar" em andamento. */
+  busy: false,
+};
+
+/** O editor está aberto? */
+function gedIsOpen() {
+  return Boolean(
+    el.gcodeOverlay && !el.gcodeOverlay.classList.contains('hidden'),
+  );
+}
+
+/** Editar/reenviar com job em voo é proibido: o programa já está na máquina. */
+function gedLocked() {
+  return state.jobState === 'running' || state.jobState === 'paused';
+}
+
+/** Bundle do editor (realce/resumo/edições) — `null` se ainda não carregou. */
+function gedModule() {
+  return window.GRBL_GCODE_EDITOR;
+}
+
+/** Altura de linha usada no cálculo da janela (fixa no CSS). */
+function gedRowHeight() {
+  const raw = getComputedStyle(el.gcodeView).getPropertyValue('--gcode-row-h');
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) && value > 0 ? value : 18;
+}
+
+async function openGcodeEditor() {
+  if (!state.lines.length) {
+    appendLine(t('ged.empty'), 'warn');
+    return;
+  }
+  await requireBundle('gcodeEditor.js');
+  if (!gedModule()) return; // a falha já foi reportada no console
+
+  ged.current = 0;
+  ged.anchor = null;
+  ged.undo = [];
+  ged.editing = null;
+  ged.drawn = { first: -1, count: 0 };
+  ged.status = null;
+  ged.busy = false;
+  ged.rowH = gedRowHeight();
+  ged.summary = null;
+
+  el.gcodeFileName.textContent = state.fileName || '';
+  el.gcodeOverlay.classList.remove('hidden');
+  el.gcodeView.scrollTop = 0;
+  recomputeGcodeSummary();
+  renderGcodeWindow(true);
+  updateGcodeEditorBar();
+  el.gcodeView.focus();
+}
+
+function closeGcodeEditor() {
+  if (!gedIsOpen()) return;
+  ged.editing = null; // edição inline pendente é descartada (o texto não mudou)
+  ged.drawn = { first: -1, count: 0 };
+  el.gcodeOverlay.classList.add('hidden');
+  // Preview/tempo/rótulo precisam refletir o programa editado (RF-PRV-1).
+  if (state.gcodeEdited) applyEditedJob();
+}
+
+/**
+ * Regera preview, tempo estimado e rótulo a partir de `state.lines`. É caro
+ * num arquivo grande, então roda só ao fechar o editor (ou antes de enviar),
+ * nunca a cada linha — editar precisa continuar responsivo (RNF-11).
+ */
+function applyEditedJob() {
+  const name = state.fileName || 'edited.gcode';
+  const text = state.lines.join('\n');
+  setGcodePreview(text, name);
+  const parser = window.GRBL_PREVIEW;
+  state.estimatedSec =
+    parser && previewProgram.program
+      ? parser.estimateSeconds(previewProgram.program)
+      : 0;
+  const size = formatBytes(byteLength(text));
+  state.fileInfoText =
+    state.estimatedSec > 0
+      ? {
+          key: 'file.infoTime',
+          params: {
+            name,
+            lines: state.lines.length,
+            size,
+            time: formatTime(state.estimatedSec),
+          },
+        }
+      : {
+          key: 'file.info',
+          params: { name, lines: state.lines.length, size },
+        };
+  renderFileInfo();
+  updateResumeInfo();
+  updateControls();
+}
+
+// ------------------------------------------------------------ resumo/status
+
+function recomputeGcodeSummary() {
+  const E = gedModule();
+  ged.summary = E ? E.summarizeGcode(state.lines) : null;
+}
+
+/** Texto do resumo (linhas · comandos · movimentos · comentários · S máx.). */
+function gcodeSummaryText() {
+  const summary = ged.summary;
+  if (!summary) return '';
+  const params = {
+    lines: summary.lines,
+    commands: summary.commands,
+    moves: summary.moves,
+    comments: summary.comments,
+  };
+  return summary.maxS === null
+    ? t('ged.summary', params)
+    : t('ged.summaryMaxS', {
+        ...params,
+        smax: Math.round(summary.maxS * 1000) / 1000,
+      });
+}
+
+function setGcodeStatus(status) {
+  ged.status = status;
+  renderGcodeStatus();
+}
+
+function renderGcodeStatus() {
+  const locked = gedLocked();
+  const status = ged.status;
+  el.gcodeStatus.textContent = locked
+    ? t('ged.locked')
+    : status
+      ? t(status.key, status.params ?? {})
+      : gcodeSummaryText();
+  el.gcodeStatus.classList.toggle(
+    'attention',
+    locked || Boolean(status?.attention),
+  );
+}
+
+// -------------------------------------------------------- janela virtual
+
+/** Desenha a janela visível (ou força um redesenho completo). */
+function renderGcodeWindow(force = false) {
+  const E = gedModule();
+  if (!E || !gedIsOpen()) return;
+  const total = state.lines.length;
+  const rowH = ged.rowH;
+  el.gcodeSizer.style.height = `${total * rowH}px`;
+
+  const view = el.gcodeView;
+  const visible = Math.ceil(view.clientHeight / rowH) + 1;
+  const first = Math.max(
+    0,
+    Math.min(
+      Math.max(0, total - 1),
+      Math.floor(view.scrollTop / rowH) - GED_OVERSCAN,
+    ),
+  );
+  const count = Math.max(
+    0,
+    Math.min(total - first, visible + GED_OVERSCAN * 2),
+  );
+  if (!force && ged.drawn.first === first && ged.drawn.count === count) return;
+  ged.drawn = { first, count };
+
+  // `transform` (e não `top`) mantém a rolagem fora do layout (DESIGN §7).
+  el.gcodeWindow.style.transform = `translateY(${first * rowH}px)`;
+  const range = gedSelectionRange();
+  const frag = document.createDocumentFragment();
+  for (let i = first; i < first + count; i++) {
+    frag.appendChild(buildGcodeRow(i, E, range));
+  }
+  el.gcodeWindow.replaceChildren(frag);
+}
+
+/** Uma linha: número (gutter) + trechos coloridos — sem interpretar o G-code. */
+function buildGcodeRow(index, E, range) {
+  const row = document.createElement('div');
+  row.className = 'gcode-row';
+  row.dataset.index = String(index);
+  row.setAttribute('role', 'option');
+  row.setAttribute('aria-selected', String(index === ged.current));
+
+  const gutter = document.createElement('span');
+  gutter.className = 'gcode-gutter';
+  gutter.textContent = String(index + 1);
+  gutter.setAttribute('aria-hidden', 'true');
+
+  const text = document.createElement('span');
+  text.className = 'gcode-text';
+  for (const token of E.tokenizeGcodeLine(state.lines[index])) {
+    const span = document.createElement('span');
+    span.className = `gcode-tok-${token.kind}`;
+    span.textContent = token.text;
+    text.appendChild(span);
+  }
+
+  row.append(gutter, text);
+  if (index === ged.current) row.classList.add('is-current');
+  else if (range && index >= range.start && index <= range.end)
+    row.classList.add('in-range');
+  return row;
+}
+
+// ------------------------------------------------- seleção e linha corrente
+
+/** Intervalo selecionado (inclusive) ou `null` quando só há a linha corrente. */
+function gedSelectionRange() {
+  const E = gedModule();
+  if (!E || ged.anchor === null || !state.lines.length) return null;
+  return E.normalizeRange(state.lines, ged.anchor, ged.current);
+}
+
+function gedScrollIntoView(index) {
+  const view = el.gcodeView;
+  const top = index * ged.rowH;
+  const bottom = top + ged.rowH;
+  if (top < view.scrollTop) view.scrollTop = top;
+  else if (bottom > view.scrollTop + view.clientHeight) {
+    view.scrollTop = bottom - view.clientHeight;
+  }
+}
+
+function setGedCurrent(index, extend = false) {
+  const total = state.lines.length;
+  if (!total) return;
+  const next = Math.max(0, Math.min(Math.trunc(index), total - 1));
+  if (extend) {
+    if (ged.anchor === null) ged.anchor = ged.current;
+  } else {
+    ged.anchor = null;
+  }
+  ged.current = next;
+  gedScrollIntoView(next);
+  // Fora da janela desenhada é preciso redesenhar; dentro dela só as classes
+  // mudam — **não** recriar as linhas, senão o duplo clique (que depende de
+  // dois cliques no mesmo nó) nunca chega ao editor inline.
+  const drawnTo = ged.drawn.first + ged.drawn.count - 1;
+  if (next < ged.drawn.first || next > drawnTo) renderGcodeWindow(true);
+  else paintGcodeSelection();
+  updateGcodeEditorBar();
+}
+
+/** Reaplica o realce de corrente/seleção sem recriar as linhas. */
+function paintGcodeSelection() {
+  const range = gedSelectionRange();
+  for (const row of el.gcodeWindow.children) {
+    const index = Number(row.dataset.index);
+    const isCurrent = index === ged.current;
+    row.classList.toggle('is-current', isCurrent);
+    row.classList.toggle(
+      'in-range',
+      !isCurrent &&
+        Boolean(range) &&
+        index >= range.start &&
+        index <= range.end,
+    );
+    row.setAttribute('aria-selected', String(isCurrent));
+  }
+}
+
+/** Botões e textos do editor (chamado também a cada status da máquina). */
+function updateGcodeEditorBar() {
+  if (!gedIsOpen()) return;
+  const total = state.lines.length;
+  const locked = gedLocked();
+  const range = gedSelectionRange();
+  const canSend = Boolean(state.connected) && !locked && total > 0;
+
+  el.gcodeUndo.disabled = locked || ged.undo.length === 0;
+  el.gcodeSave.disabled = total === 0;
+  el.gcodeEditLine.disabled = locked || total === 0;
+  // Inserir continua disponível com o programa vazio: é como o usuário
+  // reconstrói o que apagou sem depender só do "Desfazer".
+  el.gcodeInsertLine.disabled = locked;
+  el.gcodeRemoveLine.disabled = locked || total === 0;
+  el.gcodeSendFrom.disabled = !canSend;
+  el.gcodeSendSel.disabled = !canSend || !range;
+  el.gcodeSendFrom.title = state.connected ? '' : t('ged.noConn');
+  el.gcodeSendSel.title = state.connected ? '' : t('ged.noConn');
+
+  el.gcodeSelInfo.textContent = !total
+    ? ''
+    : range
+      ? t('ged.selection', {
+          from: range.start + 1,
+          to: range.end + 1,
+          count: range.end - range.start + 1,
+        })
+      : t('ged.line', { n: ged.current + 1, total });
+  renderGcodeStatus();
+}
+
+// --------------------------------------------------------------- edições
+
+/** Empilha a operação (para o "Desfazer") e marca o job como editado. */
+function pushGcodeEdit(edit) {
+  ged.undo.push(edit);
+  if (ged.undo.length > GED_UNDO_MAX) ged.undo.shift();
+  state.gcodeEdited = true;
+}
+
+/** Redesenho comum depois de qualquer edição. */
+function afterGcodeEdit() {
+  // O resultado do "Validar" é sobre o texto anterior: não vale mais.
+  ged.status = null;
+  recomputeGcodeSummary();
+  renderGcodeWindow(true);
+  updateGcodeEditorBar();
+  renderFileInfo();
+}
+
+/** Abre o campo inline sobre a linha (Enter grava, Esc descarta). */
+function startGcodeEdit(index, inserted = false) {
+  if (!gedModule() || gedLocked() || !gedIsOpen()) return;
+  if (index < 0 || index >= state.lines.length) return;
+  gedScrollIntoView(index);
+  renderGcodeWindow(true);
+
+  const row = el.gcodeWindow.querySelector(`.gcode-row[data-index="${index}"]`);
+  if (!row) return;
+  const text = row.querySelector('.gcode-text');
+  if (!text) return;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'gcode-edit';
+  input.value = state.lines[index];
+  input.spellcheck = false;
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', t('ged.editLine'));
+
+  ged.editing = index;
+  text.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const finish = (commit) => {
+    if (done) return;
+    done = true;
+    ged.editing = null;
+    if (commit) commitGcodeLine(index, input.value, inserted);
+    // Linha recém-inserida e descartada: some com ela (nada de linha vazia).
+    else if (inserted) undoGcodeEdit();
+    else renderGcodeWindow(true);
+  };
+
+  input.addEventListener('keydown', (ev) => {
+    ev.stopPropagation();
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      finish(true);
+    } else if (ev.key === 'Escape') {
+      ev.preventDefault();
+      finish(false);
+    }
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
+function commitGcodeLine(index, text, inserted = false) {
+  const E = gedModule();
+  if (!E) return;
+  const before = state.lines[index];
+  if (before === text) {
+    // Linha nova deixada em branco: não fica no programa (é ruído).
+    if (inserted && text.trim() === '') undoGcodeEdit();
+    else renderGcodeWindow(true);
+    return;
+  }
+  const edit = { kind: 'set', index, before, after: text };
+  pushGcodeEdit(edit);
+  state.lines = E.applyEdit(state.lines, edit);
+  afterGcodeEdit();
+}
+
+function undoGcodeEdit() {
+  const E = gedModule();
+  if (!E || !ged.undo.length || gedLocked()) return;
+  const edit = ged.undo.pop();
+  state.lines = E.revertEdit(state.lines, edit);
+  ged.current = Math.max(0, Math.min(edit.index, state.lines.length - 1));
+  ged.anchor = null;
+  state.gcodeEdited = true;
+  afterGcodeEdit();
+}
+
+function insertGcodeLine() {
+  const E = gedModule();
+  if (!E || gedLocked()) return;
+  const index = Math.min(ged.current + 1, state.lines.length);
+  const edit = { kind: 'insert', index, after: '' };
+  pushGcodeEdit(edit);
+  state.lines = E.applyEdit(state.lines, edit);
+  ged.current = index;
+  ged.anchor = null;
+  afterGcodeEdit();
+  startGcodeEdit(index, true);
+}
+
+function removeGcodeLines() {
+  const E = gedModule();
+  if (!E || gedLocked() || !state.lines.length) return;
+  const range = gedSelectionRange() ?? { start: ged.current, end: ged.current };
+  // De trás para a frente: os índices anteriores não mudam. O "Desfazer"
+  // devolve uma linha por vez — a pilha guarda operações, não fotos do arquivo.
+  for (let i = range.end; i >= range.start; i--) {
+    const edit = { kind: 'remove', index: i, before: state.lines[i] };
+    pushGcodeEdit(edit);
+    state.lines = E.applyEdit(state.lines, edit);
+  }
+  ged.current = Math.max(0, Math.min(range.start, state.lines.length - 1));
+  ged.anchor = null;
+  afterGcodeEdit();
+}
+
+// ------------------------------------------------- validar / salvar / enviar
+
+async function validateEditedGcode() {
+  if (ged.busy) return;
+  ged.busy = true;
+  el.gcodeValidate.disabled = true;
+  setGcodeStatus({ key: 'ged.validating' });
+  try {
+    const issues = await preflightIssues(state.lines);
+    const count = { block: 0, warn: 0, info: 0 };
+    for (const issue of issues) count[issue.severity]++;
+    if (!issues.length) {
+      setGcodeStatus({ key: 'ged.validOk' });
+    } else {
+      setGcodeStatus({
+        key: 'ged.validIssues',
+        params: count,
+        attention: true,
+      });
+      // Impedimento precisa da lista; avisos ficam no chip da execução.
+      if (count.block > 0) {
+        renderPreflight(issues, { confirm: false });
+        el.preflightOverlay.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    setGcodeStatus({
+      key: 'err.prefix',
+      params: { msg: err.message },
+      attention: true,
+    });
+  } finally {
+    ged.busy = false;
+    el.gcodeValidate.disabled = false;
+  }
+}
+
+async function saveEditedGcode() {
+  if (!state.lines.length) return;
+  try {
+    const path = await window.grbl.saveGcode(
+      state.lines.join('\n'),
+      state.fileName || 'edited.gcode',
+    );
+    if (!path) return;
+    appendLine(t('ged.saved', { path }), 'ok');
+    setGcodeStatus({ key: 'ged.saved', params: { path } });
+  } catch (err) {
+    setGcodeStatus({
+      key: 'ged.saveFail',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+}
+
+/** "Enviar daqui": do começo da linha corrente até o fim do arquivo. */
+async function sendGcodeFromCurrent() {
+  if (gedLocked() || !state.lines.length) return;
+  if (!state.connected) {
+    appendLine(t('ged.noConn'), 'warn');
+    return;
+  }
+  const line = ged.current;
+  closeGcodeEditor();
+  appendLine(t('ged.sendFromLog', { line: line + 1 }), 'ok');
+  await beginJob(line);
+}
+
+/** "Enviar trecho": seleção + preâmbulo que reafirma o estado modal (RF-GC-7). */
+async function sendGcodeSelection() {
+  const E = gedModule();
+  const range = gedSelectionRange();
+  if (!E || !range || gedLocked()) return;
+  if (!state.connected) {
+    appendLine(t('ged.noConn'), 'warn');
+    return;
+  }
+  const { start, end } = range;
+  closeGcodeEditor();
+  const snippet = E.buildSnippet(state.lines, start, end);
+  if (!(await confirmPreflight(snippet))) return;
+
+  state.jobStart = start;
+  state.jobPreamble = snippet.length - (end - start + 1);
+  state.doneFile = start;
+  appendLine(t('ged.sendSelLog', { from: start + 1, to: end + 1 }), 'ok');
+  window.grbl.startJob(
+    snippet,
+    `${state.fileName || 'gcode'} [${start + 1}–${end + 1}]`,
+  );
+}
+
+// --------------------------------------------------------------- eventos
+
+el.gcodeEdit.addEventListener('click', () => openGcodeEditor());
+el.gcodeClose.addEventListener('click', () => closeGcodeEditor());
+el.gcodeValidate.addEventListener('click', () => validateEditedGcode());
+el.gcodeUndo.addEventListener('click', () => undoGcodeEdit());
+el.gcodeSave.addEventListener('click', () => saveEditedGcode());
+el.gcodeEditLine.addEventListener('click', () => startGcodeEdit(ged.current));
+el.gcodeInsertLine.addEventListener('click', () => insertGcodeLine());
+el.gcodeRemoveLine.addEventListener('click', () => removeGcodeLines());
+el.gcodeSendFrom.addEventListener('click', () => sendGcodeFromCurrent());
+el.gcodeSendSel.addEventListener('click', () => sendGcodeSelection());
+
+el.gcodeView.addEventListener('scroll', () => renderGcodeWindow());
+
+el.gcodeView.addEventListener('click', (ev) => {
+  const row = ev.target.closest('.gcode-row');
+  if (!row || ged.editing !== null) return;
+  setGedCurrent(Number(row.dataset.index), ev.shiftKey);
+  // O navegador estende a seleção de **texto** no Shift+clique; aqui a seleção
+  // é a do editor (linhas), então a nativa é descartada no mesmo quadro.
+  if (ev.shiftKey) window.getSelection()?.removeAllRanges();
+});
+
+el.gcodeView.addEventListener('dblclick', (ev) => {
+  const row = ev.target.closest('.gcode-row');
+  if (!row) return;
+  startGcodeEdit(Number(row.dataset.index));
+});
+
+el.gcodeView.addEventListener('keydown', (ev) => {
+  if (ged.editing !== null) return;
+  // O Esc global pararia o job: o editor consome o dele antes (DESIGN §5).
+  if (ev.key === 'Escape') {
+    ev.preventDefault();
+    ev.stopPropagation();
+    closeGcodeEditor();
+    return;
+  }
+  const total = state.lines.length;
+  if (!total) return;
+  const page = Math.max(
+    1,
+    Math.floor(el.gcodeView.clientHeight / ged.rowH) - 1,
+  );
+  let next = null;
+  if (ev.key === 'ArrowDown') next = ged.current + 1;
+  else if (ev.key === 'ArrowUp') next = ged.current - 1;
+  else if (ev.key === 'PageDown') next = ged.current + page;
+  else if (ev.key === 'PageUp') next = ged.current - page;
+  else if (ev.key === 'Home') next = 0;
+  else if (ev.key === 'End') next = total - 1;
+  else if (ev.key === 'Enter') {
+    ev.preventDefault();
+    startGcodeEdit(ged.current);
+    return;
+  }
+  if (next === null) return;
+  ev.preventDefault();
+  setGedCurrent(next, ev.shiftKey);
+});
+
+// Clicar no fundo fecha; as edições são aplicadas ao fechar (nada se perde).
+el.gcodeOverlay.addEventListener('click', (ev) => {
+  if (ev.target === el.gcodeOverlay) closeGcodeEditor();
+});
+
+window.addEventListener('resize', () => {
+  if (gedIsOpen()) renderGcodeWindow(true);
+});
 
 // ------------------------------------------------- preparação (imagem -> G-code)
 
@@ -8316,9 +8966,13 @@ function changeLang(lang) {
 /** (Re)desenha o rótulo do arquivo atual (abertura/geração/troca de idioma). */
 function renderFileInfo() {
   if (!el.fileInfo) return;
-  el.fileInfo.textContent = state.fileInfoText
+  const text = state.fileInfoText
     ? t(state.fileInfoText.key, state.fileInfoText.params)
     : t('file.none');
+  // O G-code em mãos não é mais o do arquivo: o rótulo avisa (P1.10).
+  el.fileInfo.textContent = state.gcodeEdited
+    ? `${text} · ${t('ged.edited')}`
+    : text;
 }
 
 /** (Re)desenha o rótulo da imagem atual (erro/limpeza/troca de idioma). */
@@ -8356,6 +9010,10 @@ function refreshTexts() {
   updateSpeedHint();
   updateResumeInfo();
   renderFileInfo();
+  if (gedIsOpen()) {
+    el.gcodeFileName.textContent = state.fileName || '';
+    updateGcodeEditorBar();
+  }
   renderImageInfo();
   renderImageStats();
   populateMachineProfiles();
@@ -8529,6 +9187,7 @@ function openOverlays() {
     el.matTestOverlay,
     el.qrOverlay,
     el.barcodeOverlay,
+    el.gcodeOverlay,
     el.tourOverlay,
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
@@ -8561,6 +9220,7 @@ document.addEventListener('keydown', (e) => {
       // booleanas e editor de texto); esconder na mão deixaria estado preso.
       if (overlay === el.designOverlay) closeDesignModal();
       else if (overlay === el.tourOverlay) closeTour();
+      else if (overlay === el.gcodeOverlay) closeGcodeEditor();
       else overlay.classList.add('hidden');
     }
     return;
@@ -8583,6 +9243,7 @@ if (window.grbl.onLang) window.grbl.onLang((lang) => changeLang(lang));
 if (window.grbl.onAction)
   window.grbl.onAction((name) => {
     if (name === 'open-gcode') el.fileOpen.click();
+    else if (name === 'edit-gcode') openGcodeEditor();
     else if (name === 'open-image') el.imageOpen.click();
     else if (name === 'appearance') openAppearance();
     else if (name === 'open-logs')
@@ -9038,7 +9699,12 @@ function preflightContext(data) {
 }
 
 /** Monta a lista do overlay (i18n no renderer — o contrato não tem texto). */
-function renderPreflight(issues) {
+/**
+ * Lista os achados. `confirm = false` é o modo do editor de G-code
+ * ("Validar"): mostra o que impede a gravação, mas não oferece "Gravar assim
+ * mesmo" — ali não há job para começar.
+ */
+function renderPreflight(issues, { confirm = true } = {}) {
   const list = el.preflightList;
   list.replaceChildren();
   for (const issue of issues) {
@@ -9079,7 +9745,7 @@ function renderPreflight(issues) {
   el.preflightIntro.textContent = blocks
     ? t('preflight.blocked', { n: blocks })
     : t('preflight.intro');
-  el.preflightGo.classList.toggle('hidden', blocks === 0);
+  el.preflightGo.classList.toggle('hidden', !confirm || blocks === 0);
   el.preflightCancel.textContent = blocks ? t('nav.cancel') : t('nav.close');
 }
 
@@ -9097,6 +9763,31 @@ function updatePreflightChip(issues) {
     : '';
 }
 
+/**
+ * Achados do pré-voo para estas linhas. **Sem bloquear nada**: quem decide é
+ * `confirmPreflight` (antes de gravar) ou o editor de G-code ("Validar").
+ */
+async function preflightIssues(lines) {
+  await loadBundle('preflight.js');
+  const P = window.GRBL_PREFLIGHT;
+  if (!P) throw new Error('bundle preflight.js indisponível');
+  // Sem máquina conectada o pré-voo **ainda vale** para as regras que não
+  // dependem dos fatos `$$` (o contrato simplesmente não emite as demais) —
+  // é o que permite validar um arquivo no editor antes de conectar.
+  const data = await ensureMachineFacts().catch(() => null);
+  const issues = P.runPreflight(
+    {
+      lines,
+      facts: data?.facts,
+      status: preflightStatus(),
+      useWorkCoords: true,
+    },
+    preflightContext(data),
+  );
+  updatePreflightChip(issues);
+  return issues;
+}
+
 function closePreflight(result) {
   el.preflightOverlay.classList.add('hidden');
   const resolve = preflightResolve;
@@ -9107,20 +9798,7 @@ function closePreflight(result) {
 /** Roda as regras e, se houver impedimento, pede confirmação antes de gravar. */
 async function confirmPreflight(lines) {
   try {
-    await loadBundle('preflight.js');
-    const P = window.GRBL_PREFLIGHT;
-    if (!P) throw new Error('bundle preflight.js indisponível');
-    const data = await ensureMachineFacts();
-    const issues = P.runPreflight(
-      {
-        lines,
-        facts: data?.facts,
-        status: preflightStatus(),
-        useWorkCoords: true,
-      },
-      preflightContext(data),
-    );
-    updatePreflightChip(issues);
+    const issues = await preflightIssues(lines);
     if (!issues.some((i) => i.severity === 'block')) return true;
 
     renderPreflight(issues);

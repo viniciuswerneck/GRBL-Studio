@@ -682,6 +682,38 @@ export const en = {
   'file.infoGeneratedTime':
     '{file} — {lines} lines · {size} · ~{time} (generated from {image})',
   'file.saved': 'G-code saved to {path}',
+
+  // ------------------------------------------------ G-code editor (P1.10)
+  'ged.open': 'Edit…',
+  'ged.openHint': 'View, validate and resend a G-code range',
+  'ged.title': 'G-code editor',
+  'ged.validate': 'Validate',
+  'ged.validating': 'Validating…',
+  'ged.undo': 'Undo',
+  'ged.save': 'Save .gcode…',
+  'ged.editLine': 'Edit line',
+  'ged.insertLine': 'Insert below',
+  'ged.removeLine': 'Remove',
+  'ged.sendFrom': '▶ Send from here',
+  'ged.sendSel': '▶ Send range',
+  'ged.line': 'Line {n} of {total}',
+  'ged.selection': 'lines {from}–{to} ({count} selected)',
+  'ged.summary':
+    '{lines} lines · {commands} commands · {moves} moves · {comments} comments',
+  'ged.summaryMaxS':
+    '{lines} lines · {commands} commands · {moves} moves · {comments} comments · max S {smax}',
+  'ged.locked':
+    'Engraving in progress: editing and resending are blocked until it finishes.',
+  'ged.empty': 'No G-code loaded to edit.',
+  'ged.edited': 'edited',
+  'ged.saved': 'G-code saved to {path}',
+  'ged.saveFail': 'Could not save: {msg}',
+  'ged.validOk': 'Pre-flight: no findings.',
+  'ged.validIssues':
+    'Pre-flight: {block} blocking · {warn} warning(s) · {info} note(s).',
+  'ged.sendFromLog': 'Sending from line {line}…',
+  'ged.sendSelLog': 'Sending lines {from}–{to}…',
+  'ged.noConn': 'Connect the machine to send.',
   'dxf.loaded':
     'DXF imported: {contours} contour(s), {width} × {height} mm (source unit: {unit})',
   'dxf.hidden': 'DXF: {n} entit(ies) on hidden layers ignored.',
@@ -1155,6 +1187,7 @@ export const en = {
   'menu.openSvg': 'Import SVG…',
   'menu.openDxf': 'Import DXF…',
   'menu.openPdf': 'Import PDF…',
+  'menu.editGcode': 'Edit G-code…',
   'menu.quit': 'Quit',
   'menu.view': 'View',
   'menu.tools': 'Tools',

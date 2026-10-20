@@ -64,6 +64,11 @@ export function rebuildMenu(): void {
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.openPdf),
         },
         { type: 'separator' },
+        {
+          label: t('menu.editGcode'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.editGcode),
+        },
+        { type: 'separator' },
         { label: t('menu.quit'), click: () => app.quit() },
       ],
     },

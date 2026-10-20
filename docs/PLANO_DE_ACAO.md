@@ -55,6 +55,12 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > em GF(929), validação por decodificação real com `@zxing/library`, no modal 2D
 > (símbolo, nível de EC 0–8, colunas e altura de linha).
 
+> **Nota (19/10/2026, editor de G-code):** o **P1.10** entrou como **RF-GC-10**
+> — lista virtualizada com numeração e realce, edição de linha (com desfazer),
+> inserir/remover, "Validar" pelas regras do pré-voo e reenvio de trecho com o
+> preâmbulo modal da retomada. Do **v0.7** restam a **biblioteca de jobs
+> (P2.9)** e a validação Windows/macOS.
+
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
 | 0 — Fundação e docs | ✅ | Aprovação formal do `PRODUCT_SPEC`/ADRs e decisão da ADR-11 (você) |

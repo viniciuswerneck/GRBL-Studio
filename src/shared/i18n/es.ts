@@ -699,6 +699,38 @@ export const es = {
   'file.infoGeneratedTime':
     '{file} — {lines} líneas · {size} · ~{time} (generado de {image})',
   'file.saved': 'G-code guardado en {path}',
+
+  // ------------------------------------------------ editor de G-code (P1.10)
+  'ged.open': 'Editar…',
+  'ged.openHint': 'Ver, validar y reenviar un tramo del G-code',
+  'ged.title': 'Editor de G-code',
+  'ged.validate': 'Validar',
+  'ged.validating': 'Validando…',
+  'ged.undo': 'Deshacer',
+  'ged.save': 'Guardar .gcode…',
+  'ged.editLine': 'Editar línea',
+  'ged.insertLine': 'Insertar debajo',
+  'ged.removeLine': 'Quitar',
+  'ged.sendFrom': '▶ Enviar desde aquí',
+  'ged.sendSel': '▶ Enviar tramo',
+  'ged.line': 'Línea {n} de {total}',
+  'ged.selection': 'líneas {from}–{to} ({count} seleccionadas)',
+  'ged.summary':
+    '{lines} líneas · {commands} comandos · {moves} movimientos · {comments} comentarios',
+  'ged.summaryMaxS':
+    '{lines} líneas · {commands} comandos · {moves} movimientos · {comments} comentarios · S máx. {smax}',
+  'ged.locked':
+    'Grabación en curso: edición y reenvío bloqueados hasta terminar.',
+  'ged.empty': 'Ningún G-code cargado para editar.',
+  'ged.edited': 'editado',
+  'ged.saved': 'G-code guardado en {path}',
+  'ged.saveFail': 'No se pudo guardar: {msg}',
+  'ged.validOk': 'Pre-vuelo: sin hallazgos.',
+  'ged.validIssues':
+    'Pre-vuelo: {block} bloqueo(s) · {warn} aviso(s) · {info} información(es).',
+  'ged.sendFromLog': 'Enviando desde la línea {line}…',
+  'ged.sendSelLog': 'Enviando las líneas {from}–{to}…',
+  'ged.noConn': 'Conecte la máquina para enviar.',
   'dxf.loaded':
     'DXF importado: {contours} contorno(s), {width} × {height} mm (unidad de origen: {unit})',
   'dxf.hidden': 'DXF: {n} entidad(es) en capas ocultas ignorada(s).',
@@ -1188,6 +1220,7 @@ export const es = {
   'menu.openSvg': 'Importar SVG…',
   'menu.openDxf': 'Importar DXF…',
   'menu.openPdf': 'Importar PDF…',
+  'menu.editGcode': 'Editar G-code…',
   'menu.quit': 'Salir',
   'menu.view': 'Ver',
   'menu.tools': 'Herramientas',

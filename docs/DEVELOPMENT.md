@@ -35,6 +35,8 @@ consumido pelo renderer em runtime** (JS puro que não importa TS):
 | `build:adjust` | `public/adjust.js` | `GRBL_ADJUST` | `shared/image/adjust.ts` (ajustes de imagem) |
 | `build:preview` | `public/preview.js` | `GRBL_PREVIEW` | `shared/preview.ts` (parser do preview) |
 | `build:resume` | `public/resume.js` | `GRBL_RESUME` | `shared/resume.ts` (retomada de job) |
+| `build:preflight` | `public/preflight.js` | `GRBL_PREFLIGHT` | `shared/preflight.ts` (regras MX-1…MX-15) |
+| `build:gcodeEditor` | `public/gcodeEditor.js` | `GRBL_GCODE_EDITOR` | `shared/gcodeEditor.ts` (editor de G-code: realce/edições/trecho) |
 | `build:macros` | `public/macros.js` | `GRBL_MACROS` | `shared/macros.ts` (macros/botões) |
 | `build:i18n` | `public/i18n.js` | `GRBL_I18N` | `shared/i18n/entry.ts` (catálogos pt-BR/en/es + `applyDom`) |
 

@@ -609,7 +609,18 @@
         <div class="tab-panel" data-panel="run">
         <details class="card" open id="cardExecution">
           <summary data-i18n="run.title">Execução</summary>
-          <button type="button" id="fileOpen" data-i18n="file.open">Abrir G-code…</button>
+          <div class="row">
+            <button type="button" id="fileOpen" data-i18n="file.open">Abrir G-code…</button>
+            <button
+              type="button"
+              id="gcodeEdit"
+              disabled
+              data-i18n="ged.open"
+              data-i18n-title="ged.openHint"
+            >
+              Editar…
+            </button>
+          </div>
           <div id="fileInfo" class="file-name" data-i18n="file.none">Nenhum arquivo carregado</div>
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
@@ -2038,6 +2049,72 @@
             Aplicar
           </button>
         </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="gcodeOverlay">
+      <div
+        class="modal gcode-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gcodeTitle"
+      >
+        <header class="modal-head">
+          <h3 id="gcodeTitle" data-i18n="ged.title">Editor de G-code</h3>
+          <span class="hint gcode-file" id="gcodeFileName"></span>
+          <button type="button" id="gcodeClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+        <div class="modal-toolbar">
+          <button type="button" id="gcodeValidate" data-i18n="ged.validate">
+            Validar
+          </button>
+          <button type="button" id="gcodeUndo" disabled data-i18n="ged.undo">
+            Desfazer
+          </button>
+          <button type="button" id="gcodeSave" data-i18n="ged.save">
+            Salvar .gcode…
+          </button>
+          <span class="spacer"></span>
+          <button type="button" id="gcodeEditLine" data-i18n="ged.editLine">
+            Editar linha
+          </button>
+          <button type="button" id="gcodeInsertLine" data-i18n="ged.insertLine">
+            Inserir abaixo
+          </button>
+          <button type="button" id="gcodeRemoveLine" data-i18n="ged.removeLine">
+            Remover
+          </button>
+        </div>
+        <div
+          class="gcode-view"
+          id="gcodeView"
+          role="listbox"
+          tabindex="0"
+          aria-multiselectable="true"
+          data-i18n-aria="ged.title"
+        >
+          <div class="gcode-sizer" id="gcodeSizer">
+            <div class="gcode-window" id="gcodeWindow"></div>
+          </div>
+        </div>
+        <div class="gcode-bar">
+          <span class="hint" id="gcodeSelInfo" aria-live="polite"></span>
+          <span class="spacer"></span>
+          <button type="button" id="gcodeSendFrom" data-i18n="ged.sendFrom">
+            ▶ Enviar daqui
+          </button>
+          <button
+            type="button"
+            id="gcodeSendSel"
+            class="primary"
+            data-i18n="ged.sendSel"
+          >
+            ▶ Enviar trecho
+          </button>
+        </div>
+        <p class="hint gcode-status" id="gcodeStatus" aria-live="polite"></p>
       </div>
     </div>
 

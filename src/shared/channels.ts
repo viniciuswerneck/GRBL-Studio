@@ -69,6 +69,7 @@ export type Channel = (typeof CHANNELS)[keyof typeof CHANNELS];
  */
 export const MENU_ACTIONS = {
   openGcode: 'open-gcode',
+  editGcode: 'edit-gcode',
   openImage: 'open-image',
   appearance: 'appearance',
   openLogs: 'open-logs',
