@@ -1484,3 +1484,186 @@ test.describe('GRBL Studio — mover pelo preview (P2.14)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — lote / dados variáveis (P2.10/RF-SYM-10)', () => {
+  test('grava uma peça por linha e espera a troca antes da próxima', async () => {
+    const emulator = await startGrblTcp();
+    const { app, page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      // O lote abre pelo menu (Ferramentas → Lote de dados variáveis…).
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'batch',
+        );
+      });
+      await expect(page.locator('#batchOverlay')).toBeVisible();
+
+      await page.fill('#batchCsv', 'nome,cargo\nAna,Dev\nBia,QA');
+      await page.fill('#batchTemplate', '{nome}-{i:02}');
+      await expect(page.locator('#batchTableInfo')).toContainText('2 peças');
+      // A prévia mostra o conteúdo final de cada peça (dados variáveis).
+      await expect(page.locator('#batchPreview')).toContainText('Ana-01');
+      await expect(page.locator('#batchPreview')).toContainText('Bia-02');
+      await expect(page.locator('#batchFields')).toContainText('{nome}');
+
+      await page.click('#batchStart');
+      await expect(page.locator('#batchOverlay')).toBeHidden();
+      // Peça 1 no forno, com o nome do arquivo do lote.
+      await expect(page.locator('#fileInfo')).toContainText('lote-1-de-2');
+
+      // Ao terminar, a fila **para** para a troca da peça (nada de emendar).
+      await expect(page.locator('#jobBarBatch')).toContainText(
+        'Peça 1 de 2 pronta',
+        { timeout: 20_000 },
+      );
+      await expect(page.locator('#batchNextBtn')).toBeEnabled();
+
+      await page.click('#batchNextBtn');
+      await expect(page.locator('#fileInfo')).toContainText('lote-2-de-2');
+      // Última peça: o lote fecha e não há mais o que retomar.
+      await expect(page.locator('#batchHint')).toContainText('Lote concluído', {
+        timeout: 20_000,
+      });
+      await expect(page.locator('#batchStopBtn')).toHaveClass(/hidden/);
+      await expect(page.locator('#batchResumeBtn')).toHaveClass(/hidden/);
+      // Peça de lote não entra na biblioteca de jobs (não empurra os jobs reais).
+      const jobs = await page.evaluate(() =>
+        (
+          window as unknown as {
+            grbl: { jobLibrary: { list: () => Promise<unknown[]> } };
+          }
+        ).grbl.jobLibrary.list(),
+      );
+      expect(jobs).toHaveLength(0);
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('lote guardado abre com "Retomar lote" na próxima peça', async () => {
+    const { page, close } = await launchApp({
+      prefs: {
+        autoConnect: false,
+        batch: {
+          kind: '2d',
+          csv: 'nome\nAna\nBia\nCaio',
+          template: '{nome}-{i:02}',
+          hasHeader: true,
+          delimiter: ',',
+          next: 2,
+          total: 3,
+        },
+      },
+    });
+    try {
+      // A retomada fica visível na Execução sem abrir o modal (o usuário
+      // precisa saber que existe um lote em andamento).
+      await page.click('[data-tab="run"]');
+      await expect(page.locator('#batchHint')).toBeVisible();
+      await expect(page.locator('#batchHint')).toContainText(
+        'próxima peça 2 de 3',
+      );
+      await page.click('#batchResumeBtn');
+      await expect(page.locator('#batchOverlay')).toBeVisible();
+      await expect(page.locator('#batchCsv')).toHaveValue(/Caio/);
+      await expect(page.locator('#batchTemplate')).toHaveValue('{nome}-{i:02}');
+      await expect(page.locator('#batchFrom')).toHaveValue('2');
+      // A prévia começa na peça 2 (sem repetir a 1).
+      await expect(page.locator('#batchPreview')).toContainText('Bia-02');
+      await expect(page.locator('#batchPreview')).not.toContainText('Ana-01');
+    } finally {
+      await close();
+    }
+  });
+
+  test('com código de barras 1D usa os ajustes do modal de barras', async () => {
+    const emulator = await startGrblTcp();
+    const { app, page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'batch',
+        );
+      });
+      await expect(page.locator('#batchOverlay')).toBeVisible();
+      await page.selectOption('#batchKind', '1d');
+      await page.fill('#batchCsv', 'serie\nA100\nA200');
+      await page.fill('#batchTemplate', '{1}');
+      await page.click('#batchStart');
+
+      // Cada peça vira um programa do **código de barras** (não do QR).
+      await expect(page.locator('#fileInfo')).toContainText(
+        'lote-barcode-1-de-2',
+      );
+      await expect(page.locator('#jobBarBatch')).toContainText(
+        'Peça 1 de 2 pronta',
+        { timeout: 20_000 },
+      );
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('o seletor de separador sobrepõe a detecção automática', async () => {
+    const { page, close } = await launchApp();
+    try {
+      await page.evaluate(() => {
+        document.getElementById('batchOpenBtn')?.click();
+      });
+      await expect(page.locator('#batchOverlay')).toBeVisible();
+      await page.fill('#batchCsv', 'nome,cargo\nAna,Dev\nBia,QA');
+      await page.fill('#batchTemplate', '{2}');
+      // Vírgula detectada sozinha: 2 colunas, conteúdo certo.
+      await expect(page.locator('#batchTableInfo')).toContainText('2 peças');
+      await expect(page.locator('#batchTableInfo')).toContainText('2 colunas');
+      await expect(page.locator('#batchPreview')).toContainText('Dev');
+
+      // Forçado como `;`, a mesma planilha vira 1 coluna — e o `{2}` deixa de
+      // existir (o modelo é validado de novo contra a tabela).
+      await page.selectOption('#batchDelimiter', ';');
+      await expect(page.locator('#batchTableInfo')).toContainText('1 coluna');
+      await expect(page.locator('#batchStatus')).toContainText('não existe');
+      await expect(page.locator('#batchStart')).toBeDisabled();
+    } finally {
+      await close();
+    }
+  });
+
+  test('o modelo é validado contra o cabeçalho da planilha', async () => {
+    const { page, close } = await launchApp();
+    try {
+      await page.evaluate(() => {
+        document.getElementById('batchOpenBtn')?.click();
+      });
+      await expect(page.locator('#batchOverlay')).toBeVisible();
+      await page.fill('#batchCsv', 'nome\nAna');
+      await page.fill('#batchTemplate', '{sobrenome}');
+      await expect(page.locator('#batchStatus')).toContainText(
+        'não está no cabeçalho',
+      );
+      await expect(page.locator('#batchStart')).toBeDisabled();
+    } finally {
+      await close();
+    }
+  });
+});

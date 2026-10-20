@@ -87,6 +87,15 @@ export const PDF_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'Todos os arquivos', extensions: ['*'] },
 ];
 
+/** Planilha de dados variáveis do lote (RF-SYM-10). */
+export const CSV_DIALOG_FILTERS: FileDialogFilter[] = [
+  {
+    name: 'Planilha (csv, tsv, txt)',
+    extensions: ['csv', 'CSV', 'tsv', 'TSV', 'txt', 'TXT'],
+  },
+  { name: 'Todos os arquivos', extensions: ['*'] },
+];
+
 /** Perfil de máquina do LightBurn (P2.5). */
 export const LBDEV_DIALOG_FILTERS: FileDialogFilter[] = [
   { name: 'LightBurn (lbdev)', extensions: ['lbdev', 'LBDEV'] },

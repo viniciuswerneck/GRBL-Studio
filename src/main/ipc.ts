@@ -30,6 +30,7 @@ import {
 } from '../shared/appInfo';
 import { detectLocale, setLocale, t } from '../shared/i18n';
 import {
+  CSV_DIALOG_FILTERS,
   DXF_DIALOG_FILTERS,
   GCODE_DIALOG_FILTERS,
   LBDEV_DIALOG_FILTERS,
@@ -39,6 +40,7 @@ import {
   type FileDialogFilter,
   imageMimeType,
 } from '../shared/fileFilters';
+import { BATCH_MAX_FILE_BYTES } from '../shared/batch';
 import { parsePdf, pdfToGcode, PdfError } from '../shared/pdf';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
 import { parseSettings } from '../shared/protocol';
@@ -141,13 +143,14 @@ export function registerIpc(
   };
 
   /**
-   * Diálogo de arquivo de texto (G-code/SVG/DXF): valida o tamanho no main e
-   * devolve o texto pronto — o renderer nunca recebe caminhos.
+   * Diálogo de arquivo de texto (G-code/SVG/DXF/CSV): valida o tamanho no main
+   * e devolve o texto pronto — o renderer nunca recebe caminhos.
    */
   const openTextFile = async (
     sender: WebContents,
     title: string,
     filters: FileDialogFilter[],
+    maxBytes = TEXT_MAX_BYTES,
   ): Promise<OpenedTextFile | null> => {
     const filePath = await pickFile(sender, {
       title,
@@ -161,11 +164,11 @@ export function registerIpc(
 
     const info = await stat(filePath);
     if (!info.isFile()) throw new Error(t('dlg.notFile'));
-    if (info.size > TEXT_MAX_BYTES) {
+    if (info.size > maxBytes) {
       throw new Error(
         t('dlg.fileTooBig', {
           size: formatMb(info.size),
-          limit: formatMb(TEXT_MAX_BYTES),
+          limit: formatMb(maxBytes),
         }),
       );
     }
@@ -441,6 +444,18 @@ export function registerIpc(
   // ------------------------------------------- Perfil do LightBurn (P2.5)
   ipcMain.handle(CHANNELS.fileOpenLbdev, (evt) =>
     openTextFile(evt.sender, t('dlg.openLbdev'), LBDEV_DIALOG_FILTERS),
+  );
+
+  // ------------------------------------------- Planilha do lote (RF-SYM-10)
+  // O CSV fica na memória do renderer (e nas preferências, para retomar):
+  // limite bem menor que o dos arquivos de G-code.
+  ipcMain.handle(CHANNELS.fileOpenCsv, (evt) =>
+    openTextFile(
+      evt.sender,
+      t('dlg.openCsv'),
+      CSV_DIALOG_FILTERS,
+      BATCH_MAX_FILE_BYTES,
+    ),
   );
 
   // --------------------------------------------------- PDF (vetorial, RF-DSN-15)

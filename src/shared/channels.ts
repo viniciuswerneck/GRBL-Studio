@@ -40,6 +40,8 @@ export const CHANNELS = {
   fileOpenDxf: 'file:open-dxf',
   fileOpenPdf: 'file:open-pdf',
   fileOpenLbdev: 'file:open-lbdev',
+  /** Planilha (CSV/TSV) do lote de dados variáveis (RF-SYM-10). */
+  fileOpenCsv: 'file:open-csv',
   macrosOpen: 'file:open-macros',
   macrosSave: 'file:save-macros',
   pickDir: 'app:pick-dir',
@@ -88,6 +90,7 @@ export const MENU_ACTIONS = {
   jobLibrary: 'job-library',
   qrCode: 'qr-code',
   barCode: 'bar-code',
+  batch: 'batch',
   tour: 'tour',
 } as const;
 

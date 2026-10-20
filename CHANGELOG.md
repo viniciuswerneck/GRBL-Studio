@@ -6,6 +6,40 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — lote / dados variáveis: planilha → fila de gravação (P2.10 / RF-SYM-10)
+
+- **Lote de dados variáveis** (Ferramentas → **Lote de dados variáveis…**):
+  cole ou abra uma planilha **CSV/TSV** e cada linha vira **uma peça** — o app
+  grava a peça, **pausa para a troca** na mesa e só envia a próxima quando você
+  confirma em **Próxima peça**. A peça pode ser um **código 2D** (QR, Data
+  Matrix, PDF417, Aztec) ou **código de barras 1D**, com a geometria dos ajustes
+  do modal do símbolo.
+- **Modelo de cada peça** com campos posicionais (`{1}`, `{2}`), por cabeçalho
+  (`{nome}`), contador (`{i}`, `{i:03}`) e `{total}` — dá para imprimir número de
+  série, nome, lote e o que mais estiver na planilha. `{{`/`}}` escrevem chave
+  literal. Erros de modelo (coluna inexistente, chave aberta, contador inválido)
+  aparecem com o motivo, e **Iniciar lote** fica bloqueado até corrigir.
+- **CSV tolerante**: separador `,`/`;`/tab/`|` detectado sozinho (e corrigível
+  no seletor **Separador**),
+  aspas com quebra de linha, BOM/CRLF, cabeçalho detectado (e corrigível),
+  limite de **2 000 peças / 64 colunas** e células cortadas em 200 caracteres —
+  com aviso do que ficou de fora.
+- **Contador e retomada**: a barra de gravação mostra `Peça 3 de 50 · 2
+  concluídas`; interromper a máquina **para a fila naquela peça** (não pula
+  sozinho) e o lote fica guardado nas preferências — ao reabrir o app,
+  **Retomar lote** continua na peça certa. Planilhas acima de 200 KB não são
+  persistidas (aviso no console) para não inchar o `prefs.json`.
+- O G-code de cada peça é gerado **na hora** (não guarda N programas na RAM) e
+  o lote abre o gerador do símbolo sob demanda — bundle próprio (`batch.js`),
+  carregado preguiçosamente como o QR/código de barras (RNF-11). Peças de lote
+  **não** entram na biblioteca de jobs (senão 50 peças empurrariam para fora os
+  jobs de verdade); o cartão **Execução** fica visível com um lote guardado,
+  mesmo sem G-code carregado, para o "Retomar lote" não ficar escondido.
+- Lógica pura e testável em `src/shared/batch.ts` (CSV → tabela → modelo →
+  peças), com 30 testes; fluxo completo coberto por **5 testes E2E** com o
+  emulador GRBL (peça → pausa → próxima → conclusão, retomada, via 1D,
+  separador forçado e erro de modelo).
+
 ### Changed — performance: serviço de rede dentro do processo browser (RNF-11)
 
 - O Chromium subia um processo `utility` só para o **serviço de rede**

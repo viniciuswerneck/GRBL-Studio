@@ -38,6 +38,9 @@ consumido pelo renderer em runtime** (JS puro que não importa TS):
 | `build:preflight` | `public/preflight.js` | `GRBL_PREFLIGHT` | `shared/preflight.ts` (regras MX-1…MX-15) |
 | `build:gcodeEditor` | `public/gcodeEditor.js` | `GRBL_GCODE_EDITOR` | `shared/gcodeEditor.ts` (editor de G-code: realce/edições/trecho) |
 | `build:macros` | `public/macros.js` | `GRBL_MACROS` | `shared/macros.ts` (macros/botões) |
+| `build:qrcode` | `public/qrcode.js` | `GRBL_QR` | `shared/symbol/entry.qr.ts` (QR/Data Matrix/PDF417/Aztec → G-code) |
+| `build:barcode` | `public/barcode.js` | `GRBL_BARCODE` | `shared/symbol/entry.barcode.ts` (1D + HRI → G-code) |
+| `build:batch` | `public/batch.js` | `GRBL_BATCH` | `shared/entry.batch.ts` (lote: CSV → peças; RF-SYM-10) |
 | `build:i18n` | `public/i18n.js` | `GRBL_I18N` | `shared/i18n/entry.ts` (catálogos pt-BR/en/es + `applyDom`) |
 
 Os bundles em `public/*.js` listados acima são de build (estão no `.gitignore`):

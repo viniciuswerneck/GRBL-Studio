@@ -237,7 +237,9 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 ### M12 — Geradores de símbolos (QR Code e código de barras)
 
 > Disponíveis em **Ferramentas**; o G-code gerado entra no pipeline normal
-> (preview/Play/Salvar). Plano completo: [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+> (preview/Play/Salvar). O **lote** (RF-SYM-10) usa os mesmos ajustes de símbolo
+> como molde e gera uma peça por linha da planilha. Plano completo:
+> [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 
 | ID | Requisito | Prioridade | Status |
 | :--- | :--- | :--- | :--- |
@@ -250,6 +252,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-SYM-7 | Simbologias adicionais: 1D (ITF-14, Codabar, Code 93, GS1-128) e 2D (Data Matrix, PDF417, Aztec). **Entregue:** 1D extras + Data Matrix ECC200 (v0.7.0), PDF417 (v0.8.0) e **Aztec** (v0.10.0). | Could | ✅ |
 | RF-SYM-8 | **Salvar `.gcode`** ou enviar direto para a área de execução (preview + Play), sem IPC novo. | Should | ✅ |
 | RF-SYM-9 | Gerar **vários símbolos em grade** a partir de uma lista (1 por linha), com espaçamento configurável. | Could | ✅ |
+| RF-SYM-10 | **Lote / dados variáveis**: planilha (CSV/TSV colada ou aberta) → **fila de gravação**, uma peça por linha, com modelo de campos (`{1}`, `{nome}`, `{i:03}`, `{total}`), **pausa para trocar a peça**, contador e **retomada** depois de fechar o app. | Could | ✅ |
 | RF-ONB-1 | **Onboarding** de primeira execução: tour de 5 passos (conectar → perfil da máquina → abrir → preview → gravar), reabrível pela Ajuda e dispensável (“não mostrar”). | Should | ✅ |
 
 ### M13 — Editor vetorial ("Desenhar")

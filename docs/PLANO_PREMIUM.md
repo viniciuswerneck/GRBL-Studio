@@ -129,13 +129,13 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
 ### Fase P2b — "Diferenciais que ninguém junta" (3–4 semanas) · o fosso
 > QR (P2.7) e código de barras (P2.8) entram já na **v0.6** (junto com a Fase P0);
-> lote/dados variáveis (P2.10) e o resto fecham na **v0.8**.
+> lote/dados variáveis (**P2.10 ✅**) e o resto fecham na **v0.8**.
 
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |
 | ✅ P2.7 | **Gerador de QR Code** (ISO/IEC 18004) — entregue na **0.6.0** | M | Conteúdo → matriz → G-code; ECC, mm, quiet zone, preview (**S1**). |
 | ✅ P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI — entregue na **0.6.0** (extras na **0.7.0**) | M | Checksum + quiet zone + texto legível (**S2**). |
-| P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** | M | Cada linha = 1 peça (QR/barcode/texto variável), pausa para trocar a peça, contador. ⇢ *nenhum concorrente grátis faz isso completo*. |
+| ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos), pausa para trocar a peça, contador e retomada. ⇢ *nenhum concorrente grátis faz isso completo*. |
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis; efeito de rede. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |

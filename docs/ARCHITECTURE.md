@@ -140,6 +140,7 @@ primeira tela usa**:
 | `shared/symbol/barcode/*` | Encoders 1D: Code 128 (inclui **GS1-128**), EAN-13/8, UPC-A, Code 39, **ITF-14**, **Codabar** e **Code 93** → barras + HRI + avisos. Tabelas geradas por script. | ✅ |
 | `shared/symbol/mask.ts` | Matriz/barras → segmentos de varredura (usa `zigzagHatch`); overscan/polaridade. | ✅ |
 | `shared/symbol/gcode.ts` | Símbolo + parâmetros → G-code GRBL (M3/M4, `M5` antes de `G0`, 3 decimais, passes). Pipeline 2D comum (`matrixToGcode`) para QR e Data Matrix. | ✅ |
+| `shared/batch.ts` | **Lote / dados variáveis** (puro): CSV/TSV com aspas/BOM/CRLF e detecção de separador e cabeçalho, modelo de campos (`{1}`, `{nome}`, `{i:03}`, `{total}`, `{{`/`}}`) com validação por código de erro, geração das peças e sanitização do que é persistido. | ✅ |
 
 > Dois bundles esbuild (`public/qrcode.js` → `GRBL_QR`, `public/barcode.js` →
 > `GRBL_BARCODE`) e dois overlays no renderer (o 2D escolhe **QR × Data Matrix ×
@@ -147,6 +148,12 @@ primeira tela usa**:
 > `Prefs.symbols` (sanitizados no main; o conteúdo nunca é persistido). Plano
 > completo em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md); **Aztec** e o
 > símbolo como objeto seguem abertos.
+>
+> O **lote** (RF-SYM-10) usa os mesmos ajustes de símbolo: `public/batch.js` →
+> `GRBL_BATCH` resolve só a planilha/modelo/peças (puro) e o renderer encadeia
+> com o gerador (que ele carrega sob demanda) e com a fila de envio. Cada peça é
+> gerada na hora — nada de N programas na memória — e o progresso fica em
+> `Prefs.batch` (sem persistir planilhas acima de 200 KB).
 
 ### Imagem → G-code (Fase 5)
 

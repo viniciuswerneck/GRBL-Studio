@@ -3,10 +3,10 @@
 > **Status: S1 (QR Code), S2 (código de barras 1D) e S3 parcial (1D extras +
 > Data Matrix + grade + PDF417) implementadas** — S1/S2 publicadas na v0.6.0 e a
 > continuação na v0.7.0 (18/10/2026) e v0.8.0 (19/10/2026). Ver §15 (S1), §16
-> (S2), §17 (S2 restante + S3 parcial) e §18 (PDF417) para o que foi entregue,
-> medido e o que ainda falta.
+> (S2), §17 (S2 restante + S3 parcial), §18 (PDF417) e §20 (lote / dados
+> variáveis) para o que foi entregue, medido e o que ainda falta.
 > Complementa `PLANO_DE_ACAO.md` (fases 0–8) e `PLANO_PREMIUM.md` (P1–P4).
-> Requisitos propostos: **RF-SYM-1…RF-SYM-9** (`PRODUCT_SPEC.md` §6, módulo **M12**).
+> Requisitos: **RF-SYM-1…RF-SYM-10** (`PRODUCT_SPEC.md` §6, módulo **M12**).
 > Orçamentos aplicáveis: **RNF-11** (performance) e **RNF-12** (precisão).
 > Criado em 18/10/2026.
 
@@ -48,7 +48,9 @@ ou gravar direto.
 - Ler/decodificar símbolos a partir de imagem (não é o objetivo do app).
 - QR Micro / rMQR; **Aztec** (fase S3, §10). Os demais 2D (Data Matrix e
   PDF417) já foram entregues.
-- Fluxo em lote (lista → grade de símbolos) — **entregue** (RF-SYM-9, §17).
+- Fluxo em lote em **grade** (lista → vários símbolos numa página) —
+  **entregue** (RF-SYM-9, §17); a **fila de gravação** com dados variáveis
+  (RF-SYM-10) também — ver §20.
 - Símbolo como **objeto vetorial** dentro do editor "Desenhar" (fase S3; ver §7.3).
 
 ---
@@ -644,3 +646,22 @@ camadas forçadas), além de determinismo e dos erros tipados (`empty`,
 **Fora do escopo (Aztec).** ECI explícito (fora do Latin-1), modo *full* com
 correção de erro maior que 90 % e symbology identifier (OID) gravado no
 símbolo.
+
+## 20. Estado da implementação — lote / dados variáveis (v0.8, 20/10/2026)
+
+**Entregue** (RF-SYM-10, P2.10). Sai do escopo "símbolo" e entra no de
+**produção em série**: a mesma geometria dos modais, aplicada a uma fila.
+
+| Item | Onde | O que foi feito |
+| :--- | :--- | :--- |
+| **Planilha → tabela** | `shared/batch.ts` | CSV/TSV com aspas e quebra de linha dentro da célula, BOM, CRLF; separador (`,` `;` tab `|`) e cabeçalho detectados sozinhos e corrigíveis na UI; limites de 2 000 peças / 64 colunas / 200 caracteres por célula (com contagem do que ficou de fora). |
+| **Modelo de cada peça** | `shared/batch.ts` | `{1}`, `{2}`… por posição; `{nome}` pelo cabeçalho; `{i}` / `{i:03}` contador; `{total}`; `{{` e `}}` para chave literal. Validação com códigos (`empty`, `unclosed`, `bad-column`, `unknown-field`, `bad-counter`) e mensagem com o token ofensor. |
+| **Fila de gravação** | `renderer.js` + `batch.js` | Uma peça por linha, **gerada na hora** com os ajustes do modal do símbolo (2D ou 1D), pré-voo **uma vez por lote**, envio pela fila normal do GRBL. Ao concluir, a fila **para** para a troca da peça ("Próxima peça"); erro/alarme para a fila **naquela peça**. |
+| **Contador e retomada** | `Prefs.batch` | `Peça 3 de 50 · 2 concluídas` na barra de gravação; o progresso (CSV, modelo, próxima peça) vai para as preferências e **Retomar lote** continua na peça certa depois de reabrir o app. Planilhas > 200 KB não são persistidas (aviso). |
+| **UI** | modal **Lote — dados variáveis** | Tipo de peça (2D × 1D), abrir CSV, colar a planilha, cabeçalho, modelo, campos disponíveis, "começar na peça", prévia das peças e status. Rota também pelo menu Ferramentas e pela Execução. |
+
+**Validação.** `tests/batch.test.ts` (30 testes) cobre CSV (aspas, BOM, CRLF,
+delimitador, cabeçalho, limites), modelo (campos, contador, escapes, erros) e
+as preferências de retomada; `tests/prefs-store.test.ts` valida a sanitização;
+5 testes E2E com o emulador exercitam peça → pausa → próxima → conclusão, a
+retomada, a via 1D, o separador forçado e o erro de modelo.

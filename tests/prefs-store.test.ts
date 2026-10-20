@@ -165,6 +165,31 @@ describe('PrefsStore — sanitização das novas chaves', () => {
     expect((await store.read()).symbols).toBeUndefined();
   });
 
+  it('guarda o lote em andamento e retoma a próxima peça (RF-SYM-10)', async () => {
+    const batch = {
+      kind: '2d',
+      csv: 'nome\nAna\nBia',
+      template: '{nome} {i:03}',
+      hasHeader: true,
+      delimiter: ',',
+      next: 2,
+      total: 2,
+    };
+    const store = await storeWith({ batch });
+    expect((await store.read()).batch).toEqual(batch);
+
+    // `null` limpa o lote (encerrado ou descartado pelo usuário).
+    await store.updateInPlace({ batch: null });
+    expect((await store.read()).batch).toBeUndefined();
+  });
+
+  it('descarta lote corrompido sem quebrar (RF-SYM-10)', async () => {
+    const bad = await storeWith({
+      batch: { kind: '2d', csv: '', delimiter: ',' },
+    });
+    expect(await bad.read()).toEqual({});
+  });
+
   it('ignora tipos inválidos sem quebrar', async () => {
     const store = await storeWith({
       fileDir: 42,

@@ -27,7 +27,7 @@ LightBurn (design 2D, importação de SVG/DXF, grade de teste de material).
 | Importação SVG (P1.6) | ✅ `shared/svg.ts` → contorno G-code. |
 | Importação DXF/PDF (P2.4) | ✅ `shared/dxf.ts` (DXF ASCII) e `shared/pdf.ts` (PDF vetorial) → contornos → G-code; texto de PDF não vira curvas. |
 | Grade de teste de material (P1.7) | ✅ Modal + gerador + testes. |
-| Símbolos QR/barcode (P2.7/P2.8) | ✅ QR (ISO/IEC 18004) + 1D (Code 128/39, EAN-13/8, UPC-A, ITF-14, Codabar, Code 93, GS1-128) com HRI; Data Matrix ECC200 e **PDF417**; **grade a partir de uma lista** (RF-SYM-9). Falta Aztec. |
+| Símbolos QR/barcode (P2.7/P2.8) | ✅ QR (ISO/IEC 18004) + 1D (Code 128/39, EAN-13/8, UPC-A, ITF-14, Codabar, Code 93, GS1-128) com HRI; Data Matrix ECC200, **PDF417** e **Aztec**; **grade a partir de uma lista** (RF-SYM-9) e **lote/dados variáveis** (RF-SYM-10: CSV → fila de gravação, com troca de peça e retomada). |
 | Simulação de job (P2.3) | ✅ Playback 2D com play/pause/seek e tempo estimado (RF-PRV-7). |
 | Painel "Máquina" + pré-voo (P0.7/P0.8) | ✅ `$I/$$/$#/$G/$N` → cartões, pré-voo MX-1…MX-15, diagnóstico copiável e chip de pinos `Pn` (RF-MAQ-7). |
 | Auto-update (P1.2) | ✅ `electron-updater` (`checkForUpdatesAndNotify`). |
@@ -159,7 +159,8 @@ multiplataforma continua aberta.
 - **Sem CLI/headless**, **sem plugins/addons** (Rayforge e gSender têm) e
   **sem nuvem/AI/marketplace** (xTool Studio, Glowforge).
 - QR/código de barras **implementados** (v0.6.0/v0.7.0/v0.8.0), com **grade a
-  partir de uma lista** (RF-SYM-9) e **PDF417** (RF-SYM-7); falta **Aztec**.
+  partir de uma lista** (RF-SYM-9), **PDF417** (RF-SYM-7), **Aztec** (v0.10.0) e
+  **lote/dados variáveis** (RF-SYM-10); falta o símbolo como objeto no editor.
 
 ### 4.2 Plataforma e distribuição
 - Ordem de maturidade: **Linux validado** > Windows/macOS **empacotados, mas não

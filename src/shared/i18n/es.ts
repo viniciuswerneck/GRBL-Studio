@@ -462,6 +462,89 @@ export const es = {
   'bar.warn.uppercased':
     'El Code 39 solo graba mayúsculas — el contenido se convirtió, y el lector lo devolverá en mayúsculas.',
 
+  // -------------------------- lote / datos variables (v0.8, RF-SYM-10)
+  'menu.batch': 'Lote de datos variables…',
+  'batch.title': 'Lote — datos variables',
+  'batch.hint':
+    'Cada fila de la hoja es una pieza. La app graba una, pausa para que cambies la pieza y sigue con la siguiente. La geometría usa los ajustes del símbolo (Herramientas → Código 2D / código de barras).',
+  'batch.kind': 'Tipo de pieza',
+  'batch.kind2d': 'Código 2D (QR, Data Matrix, PDF417, Aztec)',
+  'batch.kind1d': 'Código de barras (1D)',
+  'batch.file': 'Hoja',
+  'batch.openFile': 'Abrir CSV…',
+  'batch.csv': 'Pega la hoja (CSV/TSV)',
+  'batch.csvPlaceholder': 'nombre,puesto\nAna,Dev',
+  'batch.hasHeader': 'La primera fila es el encabezado',
+  'batch.delimiter': 'Separador',
+  'batch.delimiterAuto': 'Automático',
+  'batch.delimiterComma': 'Coma (,)',
+  'batch.delimiterSemicolon': 'Punto y coma (;)',
+  'batch.delimiterTab': 'Tabulación',
+  'batch.delimiterPipe': 'Barra vertical (|)',
+  'batch.template': 'Plantilla de cada pieza',
+  'batch.from': 'Empezar en la pieza',
+  'batch.fields': 'Campos disponibles',
+  'batch.templateHint':
+    '{1}, {2}… usan la columna por posición; { nombre } por el encabezado; {i} es el contador de piezas (con ceros a la izquierda: {i:03}); {total} es el tamaño del lote. {{ y }} escriben una llave.',
+  'batch.refresh': 'Actualizar vista previa',
+  'batch.forget': 'Olvidar lote',
+  'batch.start': 'Iniciar lote',
+  'batch.startFrom': 'Iniciar en la pieza {index}',
+  'batch.open': 'Lote (CSV)…',
+  'batch.openHint':
+    'Graba una pieza por fila de una hoja (QR/código de barras con datos variables).',
+  'batch.resume': '▶ Retomar lote',
+  'batch.stop': 'Terminar lote',
+  'batch.next': '▶ Siguiente pieza',
+  'batch.nextHint':
+    'Después de cambiar la pieza en la mesa, envía la siguiente del lote.',
+  'batch.colPiece': 'Pieza',
+  'batch.colContent': 'Contenido',
+  'batch.info': '{pieces} piezas · {columns} columnas',
+  'batch.infoHeader': 'con encabezado',
+  'batch.warnDropped':
+    '{count} filas quedaron fuera (límite de 2 000 piezas por lote).',
+  'batch.warnTruncated': '{count} celdas se cortaron en 200 caracteres.',
+  'batch.previewEmpty':
+    'Pega o abre una hoja para ver la vista previa de las piezas.',
+  'batch.err.empty':
+    'La plantilla está vacía: indica qué debe contener cada pieza.',
+  'batch.err.unclosed': 'Falta cerrar la llave en «{token}».',
+  'batch.err.badColumn': 'La columna de «{token}» no existe en esta hoja.',
+  'batch.err.unknownField':
+    'El campo «{token}» no está en el encabezado de la hoja.',
+  'batch.err.badCounter':
+    'Contador inválido en «{token}»: usa {i} o {i:03} (1 a 12 dígitos).',
+  'batch.err.connect': 'Conecta la máquina para iniciar el lote.',
+  'batch.err.noPieces':
+    'La hoja no tiene ninguna pieza (solo el encabezado o filas vacías).',
+  'batch.err.moduleMissing': 'Módulo del lote no cargado.',
+  'batch.loaded': 'Hoja «{name}» cargada: {pieces} piezas.',
+  'batch.warnTooBigToSave':
+    'Hoja demasiado grande para guardar: el lote no se retomará después de cerrar la app (abre el CSV de nuevo).',
+  'batch.state.running': 'Grabando la pieza {index} de {total}.',
+  'batch.state.waiting':
+    'Pieza {index} de {total} lista. Cambia la pieza y envía la siguiente.',
+  'batch.state.failed':
+    'Pieza {index} de {total} interrumpida: {reason}. Cambia o reposiciona y usa «Empezar en la pieza».',
+  'batch.state.done': 'Lote terminado: {total} piezas.',
+  'batch.bar.running': 'Pieza {index} de {total} · {done} terminadas',
+  'batch.bar.waiting': 'Pieza {index} de {total} lista — cambia la pieza',
+  'batch.bar.failed': 'Pieza {index} de {total} interrumpida',
+  'batch.hintRunning': 'Lote: pieza {index} de {total} en grabación.',
+  'batch.hintWaiting':
+    'Lote: pieza {index} de {total} lista. Cambia la pieza y pulsa «Siguiente pieza».',
+  'batch.hintStored': 'Lote guardado: siguiente pieza {index} de {total}.',
+  'batch.pieceStart': 'Lote: enviando la pieza {index} de {total}.',
+  'batch.pieceDone': 'Lote: pieza {index} de {total} terminada.',
+  'batch.pieceFailed': 'Lote detenido en la pieza {index} de {total}: {reason}',
+  'batch.pieceAborted':
+    'Lote detenido en la pieza {index}: {reason}. Cambia o reposiciona y usa «Empezar en la pieza».',
+  'batch.done': 'Lote terminado: {total} piezas grabadas.',
+  'batch.stopped':
+    'Lote terminado en la pieza {index} de {total}. Usa «Retomar lote» para continuar.',
+  'batch.resuming': 'Retomando el lote en la pieza {index} de {total}.',
+
   // -------------------------------------------- bienvenida / onboarding
   'tour.title': 'Bienvenido a GRBL Studio',
   'tour.step': 'Paso {n} de {total}',
@@ -1095,6 +1178,7 @@ export const es = {
   'dlg.openImage': 'Abrir imagen',
   'dlg.openGcode': 'Abrir G-code',
   'dlg.openLbdev': 'Abrir perfil de LightBurn (.lbdev)',
+  'dlg.openCsv': 'Abrir hoja del lote (CSV/TSV)',
   'dlg.openSvg': 'Abrir SVG',
   'dlg.openDxf': 'Abrir DXF',
   'dlg.openPdf': 'Abrir PDF',

@@ -449,6 +449,86 @@ export const en = {
   'bar.warn.uppercased':
     'Code 39 is uppercase-only — the content was converted, and a scanner will return it in uppercase.',
 
+  // --------------------------- batch / variable data (v0.8, RF-SYM-10)
+  'menu.batch': 'Variable-data batch…',
+  'batch.title': 'Batch — variable data',
+  'batch.hint':
+    'Each row of the sheet is one piece. The app engraves one, pauses so you can swap the piece, then moves on. The geometry uses the symbol settings (Tools → 2D code / barcode).',
+  'batch.kind': 'Piece type',
+  'batch.kind2d': '2D code (QR, Data Matrix, PDF417, Aztec)',
+  'batch.kind1d': 'Barcode (1D)',
+  'batch.file': 'Sheet',
+  'batch.openFile': 'Open CSV…',
+  'batch.csv': 'Paste the sheet (CSV/TSV)',
+  'batch.csvPlaceholder': 'name,role\nAna,Dev',
+  'batch.hasHeader': 'The first row is the header',
+  'batch.delimiter': 'Separator',
+  'batch.delimiterAuto': 'Automatic',
+  'batch.delimiterComma': 'Comma (,)',
+  'batch.delimiterSemicolon': 'Semicolon (;)',
+  'batch.delimiterTab': 'Tab',
+  'batch.delimiterPipe': 'Pipe (|)',
+  'batch.template': 'Template for each piece',
+  'batch.from': 'Start at piece',
+  'batch.fields': 'Available fields',
+  'batch.templateHint':
+    '{1}, {2}… pick the column by position; { name } by header; {i} is the piece counter (zero-padded: {i:03}); {total} is the batch size. {{ and }} write a literal brace.',
+  'batch.refresh': 'Refresh preview',
+  'batch.forget': 'Forget batch',
+  'batch.start': 'Start batch',
+  'batch.startFrom': 'Start at piece {index}',
+  'batch.open': 'Batch (CSV)…',
+  'batch.openHint':
+    'Engraves one piece per row of a sheet (QR/barcode with variable data).',
+  'batch.resume': '▶ Resume batch',
+  'batch.stop': 'End batch',
+  'batch.next': '▶ Next piece',
+  'batch.nextHint': 'After swapping the piece on the bed, send the next one.',
+  'batch.colPiece': 'Piece',
+  'batch.colContent': 'Content',
+  'batch.info': '{pieces} pieces · {columns} columns',
+  'batch.infoHeader': 'with header',
+  'batch.warnDropped':
+    '{count} rows were left out (limit of 2 000 pieces per batch).',
+  'batch.warnTruncated': '{count} cells were cut at 200 characters.',
+  'batch.previewEmpty': 'Paste or open a sheet to preview the pieces.',
+  'batch.err.empty': 'The template is empty: say what each piece contains.',
+  'batch.err.unclosed': 'Missing closing brace in “{token}”.',
+  'batch.err.badColumn':
+    'The column in “{token}” does not exist in this sheet.',
+  'batch.err.unknownField': 'The field “{token}” is not in the sheet header.',
+  'batch.err.badCounter':
+    'Invalid counter in “{token}”: use {i} or {i:03} (1 to 12 digits).',
+  'batch.err.connect': 'Connect the machine to start the batch.',
+  'batch.err.noPieces':
+    'The sheet has no pieces (only the header or empty rows).',
+  'batch.err.moduleMissing': 'Batch module not loaded.',
+  'batch.loaded': 'Sheet “{name}” loaded: {pieces} pieces.',
+  'batch.warnTooBigToSave':
+    'Sheet too large to save: the batch will not resume after closing the app (open the CSV again).',
+  'batch.state.running': 'Engraving piece {index} of {total}.',
+  'batch.state.waiting':
+    'Piece {index} of {total} done. Swap the piece and send the next one.',
+  'batch.state.failed':
+    'Piece {index} of {total} interrupted: {reason}. Swap or reposition and use “Start at piece”.',
+  'batch.state.done': 'Batch complete: {total} pieces.',
+  'batch.bar.running': 'Piece {index} of {total} · {done} done',
+  'batch.bar.waiting': 'Piece {index} of {total} done — swap the piece',
+  'batch.bar.failed': 'Piece {index} of {total} interrupted',
+  'batch.hintRunning': 'Batch: piece {index} of {total} engraving.',
+  'batch.hintWaiting':
+    'Batch: piece {index} of {total} done. Swap the piece and click “Next piece”.',
+  'batch.hintStored': 'Saved batch: next piece {index} of {total}.',
+  'batch.pieceStart': 'Batch: sending piece {index} of {total}.',
+  'batch.pieceDone': 'Batch: piece {index} of {total} done.',
+  'batch.pieceFailed': 'Batch stopped at piece {index} of {total}: {reason}',
+  'batch.pieceAborted':
+    'Batch stopped at piece {index}: {reason}. Swap or reposition and use “Start at piece”.',
+  'batch.done': 'Batch complete: {total} pieces engraved.',
+  'batch.stopped':
+    'Batch ended at piece {index} of {total}. Use “Resume batch” to continue.',
+  'batch.resuming': 'Resuming the batch at piece {index} of {total}.',
+
   // ------------------------------------------------ welcome / onboarding
   'tour.title': 'Welcome to GRBL Studio',
   'tour.step': 'Step {n} of {total}',
@@ -1066,6 +1146,7 @@ export const en = {
   'dlg.openImage': 'Open image',
   'dlg.openGcode': 'Open G-code',
   'dlg.openLbdev': 'Open LightBurn profile (.lbdev)',
+  'dlg.openCsv': 'Open batch sheet (CSV/TSV)',
   'dlg.openSvg': 'Open SVG',
   'dlg.openDxf': 'Open DXF',
   'dlg.openPdf': 'Open PDF',

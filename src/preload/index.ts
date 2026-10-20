@@ -111,6 +111,9 @@ const api = {
   /** Perfil de máquina do LightBurn (P2.5). */
   openLbdev: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenLbdev),
+  /** Planilha (CSV/TSV) do lote de dados variáveis (RF-SYM-10). */
+  openCsv: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.fileOpenCsv),
   openMacros: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.macrosOpen),
   saveMacros: (content: string): Promise<string | null> =>

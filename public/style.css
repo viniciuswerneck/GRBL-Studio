@@ -1023,6 +1023,14 @@ input[type="checkbox"] {
   display: none;
 }
 
+/* Lote (RF-SYM-10): o cartão "Execução" é o único lugar com "Lote (CSV)…" e
+   "Retomar lote" na barra lateral, e o lote gera as próprias peças — não pode
+   depender de haver G-code carregado. */
+body.batch-active .sidebar #cardExecution,
+body.batch-stored .sidebar #cardExecution {
+  display: block;
+}
+
 /* Ajustes da imagem só aparecem depois de carregar uma imagem. */
 #cardImage:not(.has-image) .group,
 #cardImage:not(.has-image) #imgGenerate,
@@ -3046,4 +3054,92 @@ html[data-theme^="hc-"] a:focus-visible {
 .preflight-item p {
   margin: var(--sp-1) 0 0;
   color: var(--text-sub);
+}
+
+/* ------------------------------------ lote / dados variáveis (RF-SYM-10) */
+/* Fila de gravação: o contador vive na barra de gravação (sempre à mão) e a
+   prévia fica numa lista com tabela simples — sem framework (RNF-11). */
+
+.job-bar-batch {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Durante o lote a barra continua visível fora do job: é por ela que o
+   usuário conclui a troca da peça (o job em si já terminou). */
+body.batch-active .job-bar {
+  display: flex;
+  opacity: 1;
+}
+
+.batch-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.batch-field {
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+}
+
+.batch-preview {
+  margin-top: var(--sp-2);
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+}
+
+.batch-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-12);
+}
+
+.batch-preview th,
+.batch-preview td {
+  padding: var(--sp-1) var(--sp-2);
+  text-align: left;
+  border-bottom: 1px solid var(--stroke);
+  white-space: nowrap;
+}
+
+.batch-preview th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.batch-preview td.batch-num {
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.batch-preview td.batch-content {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.batch-preview-empty {
+  margin: 0;
+  padding: var(--sp-3);
+  color: var(--text-sub);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.batch-active .job-bar {
+    transition: none;
+  }
 }

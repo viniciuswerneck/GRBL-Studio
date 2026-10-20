@@ -3,6 +3,7 @@
  * Fonte da verdade dos contratos de dados do GRBL Studio.
  */
 
+import type { BatchPrefs } from './batch';
 import type { Lang } from './i18n';
 import type { Macro } from './macros';
 
@@ -376,6 +377,12 @@ export interface Prefs {
    * reabre com o que o usuário usou por último. O **conteúdo** não é salvo.
    */
   symbols?: SymbolPrefs;
+  /**
+   * Lote de dados variáveis em andamento (RF-SYM-10): guarda a planilha, o
+   * modelo e a próxima peça para **retomar** depois de fechar o app.
+   * `null` limpa o lote (encerrou/descartou).
+   */
+  batch?: BatchPrefs | null;
 }
 
 /** Símbolos 2D disponíveis no modal "Código 2D". */

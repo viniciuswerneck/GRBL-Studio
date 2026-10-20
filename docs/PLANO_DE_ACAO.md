@@ -68,6 +68,15 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > arrasto descartam o ponto. Bloqueado sem conexão, em alarme ou com job em
 > andamento (com explicação).
 
+> **Nota (20/10/2026, lote / dados variáveis):** o **P2.10** entrou como
+> **RF-SYM-10** — uma planilha **CSV/TSV** (colada ou aberta) vira uma **fila de
+> gravação**: uma peça por linha, modelo com `{1}`/`{nome}`/`{i:03}`/`{total}`,
+> pausa para trocar a peça ("Próxima peça"), contador e **retomada** nas
+> preferências. Cada peça é gerada na hora com os ajustes do modal do símbolo
+> (2D ou 1D); falha na peça **para** a fila nela, sem pular sozinho. A lógica é
+> pura (`src/shared/batch.ts`, bundle `batch.js` sob demanda) — nada de protocolo
+> no renderer.
+
 > **Nota (19/10/2026, biblioteca de jobs):** o **P2.9** entrou como
 > **RF-GC-11** — os últimos 50 programas executados ficam em
 > `<userData>/joblib` (índice atômico + programa em gzip), com miniatura do
@@ -95,6 +104,7 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 | RF-APP-4 | 🟡 | Flatpak (AppImage/deb já empacotados) |
 | RF-SYM-7 | ✅ | Simbologias extras: 1D (ITF-14, Codabar, Code 93, GS1-128) e Data Matrix **entregues na 0.7.0**; **PDF417 na 0.8.0**; **Aztec na 0.10.0** |
 | RF-SYM-9 | ✅ | Vários símbolos em grade a partir de uma lista (colunas/espaçamento configuráveis) |
+| RF-SYM-10 | ✅ | Lote / dados variáveis: planilha → fila de gravação, pausa para a troca, contador e retomada |
 
 > **Nota (17/10/2026):** RF-CON-5/14/15, RF-JOG-2/6, RF-GC-2/5, RF-STA-2/4/5/7,
 > RF-CFG-4/5 e RNF-9 foram **implementados** nesta data: log de sessão

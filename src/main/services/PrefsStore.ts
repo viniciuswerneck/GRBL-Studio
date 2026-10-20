@@ -8,6 +8,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
+import { sanitizeBatchPrefs } from '../../shared/batch';
 import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
 import { isThemeId } from '../../shared/themes';
@@ -233,6 +234,8 @@ function sanitize(input: unknown): Prefs {
   if (history) prefs.alarmHistory = history;
   const symbols = sanitizeSymbols(raw.symbols);
   if (symbols) prefs.symbols = symbols;
+  const batch = sanitizeBatchPrefs(raw.batch);
+  if (batch) prefs.batch = batch;
   return prefs;
 }
 

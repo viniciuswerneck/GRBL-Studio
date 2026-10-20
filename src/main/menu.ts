@@ -124,6 +124,10 @@ export function rebuildMenu(): void {
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.barCode),
         },
         {
+          label: t('menu.batch'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.batch),
+        },
+        {
           label: t('menu.design'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.design),
         },

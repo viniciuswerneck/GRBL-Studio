@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.9.0)
+## Estado atual (v0.10.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -45,14 +45,20 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1137 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1211 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
       Code 39) com **HRI** e avisos de legibilidade — v0.6.0. Continuados na
       **v0.7.0** com ITF-14, Codabar, Code 93 Full ASCII, GS1-128 e **Data
       Matrix ECC200**; **grade a partir de uma lista** (RF-SYM-9) e **PDF417**
-      (RF-SYM-7) em 19/10/2026 (v0.9.0).
+      (RF-SYM-7) em 19/10/2026 (v0.9.0); **Aztec** na v0.10.0.
+- [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
+      gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
+      peça, contador e retomada — 20/10/2026.
+- [x] **RAM dentro do orçamento** (RNF-11): 269,0 MB em X11 e 290,4 MB em Wayland
+      (PSS, app sozinho, 10 min); medição reprodutível em `scripts/bench.mjs`
+      (`docs/BENCHMARK.md` §6.6).
 - [x] **Simulação de job** (P2.3/RF-PRV-7): playback 2D com play/pause/seek,
       velocidade 1×–10× e tempo estimado — v0.5.0.
 - [x] **Painel "Máquina"** (P0.7/RF-MAQ-1…4/7/8), **área de trabalho do preview**
@@ -61,7 +67,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **731 testes** (Vitest, 42 arquivos) + E2E Playwright + smoke headless.
+- [x] **808 testes** (Vitest, 46 arquivos) + E2E Playwright (39) + smoke headless.
 
 ---
 
@@ -175,7 +181,7 @@ diferencial que nenhum concorrente grátis tem.
 
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
-| P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** | M | Cada linha = 1 peça (QR/código de barras/texto variável), pausa para trocar a peça, contador e retomada. |
+| ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10, 20/10/2026) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos `{1}`/`{nome}`/`{i:03}`), pausa para trocar a peça, contador e retomada. |
 | P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
@@ -313,8 +319,8 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 
 | # | Item | O que é | Onde usa | Onde entra |
 | :-- | :-- | :-- | :-- | :-- |
-| 6 | **Número de série / contador** | Número diferente em cada peça (001, 002…). | Peça numerada, controle de lote. | `P2.10` |
-| 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | `P2.10` |
+| 6 | **Número de série / contador** | Número diferente em cada peça (001, 002…). | Peça numerada, controle de lote. | ✅ `P2.10` |
+| 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | ✅ `P2.10` |
 | 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | Nesting simples (v0.7) · `P3.7` |
 | 9 | **Abas de retenção** | "Pestanhas" que seguram a peça pra ela não cair/voar. | Peça pequena que se solta no meio do corte. | ⬜ novo |
 | 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ⬜ novo |

@@ -368,6 +368,31 @@ const el = {
   barGridGapField: $('barGridGapField'),
   barGridGap: $('barGridGap'),
   barStatus: $('barStatus'),
+  // Lote / dados variáveis (RF-SYM-10)
+  batchOverlay: $('batchOverlay'),
+  batchClose: $('batchClose'),
+  batchKind: $('batchKind'),
+  batchOpen: $('batchOpen'),
+  batchCsv: $('batchCsv'),
+  batchTableInfo: $('batchTableInfo'),
+  batchHasHeader: $('batchHasHeader'),
+  batchDelimiter: $('batchDelimiter'),
+  batchTemplate: $('batchTemplate'),
+  batchFields: $('batchFields'),
+  batchPreview: $('batchPreview'),
+  batchFrom: $('batchFrom'),
+  batchStatus: $('batchStatus'),
+  batchStart: $('batchStart'),
+  batchForget: $('batchForget'),
+  batchPreviewBtn: $('batchPreviewBtn'),
+  batchOpenBtn: $('batchOpenBtn'),
+  batchResumeBtn: $('batchResumeBtn'),
+  batchStopBtn: $('batchStopBtn'),
+  batchHint: $('batchHint'),
+  jobBarBatch: $('jobBarBatch'),
+  batchNextBtn: $('batchNextBtn'),
+  qrBatch: $('qrBatch'),
+  barBatch: $('barBatch'),
   tourOverlay: $('tourOverlay'),
   tourClose: $('tourClose'),
   tourSlides: $('tourSlides'),
@@ -5183,8 +5208,13 @@ function symbolFileName(opts, kind) {
   return opts.grid ? 'barcode-grid.gcode' : 'barcode.gcode';
 }
 
-/** Gera o G-code do símbolo 2D escolhido (QR, Data Matrix, PDF417 ou Aztec). */
-function generate2dGcode(opts) {
+/**
+ * Gera o G-code do símbolo 2D escolhido (QR, Data Matrix, PDF417 ou Aztec).
+ *
+ * `content` é o conteúdo do símbolo; sem ele, o do modal (o lote — RF-SYM-10 —
+ * passa o conteúdo de cada peça).
+ */
+function generate2dGcode(opts, content = el.qrContent?.value ?? '') {
   const common = {
     ...opts,
     sMax: machineSMax(),
@@ -5205,12 +5235,9 @@ function generate2dGcode(opts) {
     delete pdf.size;
     delete pdf.targetHeightMm;
     if (opts.grid) {
-      return window.GRBL_QR.pdf417GridToGcode(
-        gridItems(el.qrContent?.value),
-        pdf,
-      );
+      return window.GRBL_QR.pdf417GridToGcode(gridItems(content), pdf);
     }
-    return window.GRBL_QR.pdf417ToGcode(el.qrContent.value.trim(), pdf);
+    return window.GRBL_QR.pdf417ToGcode(content.trim(), pdf);
   }
   if (opts.symbology === 'aztec') {
     const aztec = {
@@ -5222,15 +5249,12 @@ function generate2dGcode(opts) {
     delete aztec.size;
     delete aztec.targetHeightMm;
     if (opts.grid) {
-      return window.GRBL_QR.aztecGridToGcode(
-        gridItems(el.qrContent?.value),
-        aztec,
-      );
+      return window.GRBL_QR.aztecGridToGcode(gridItems(content), aztec);
     }
-    return window.GRBL_QR.aztecToGcode(el.qrContent.value.trim(), aztec);
+    return window.GRBL_QR.aztecToGcode(content.trim(), aztec);
   }
   if (opts.grid) {
-    const items = gridItems(el.qrContent?.value);
+    const items = gridItems(content);
     if (opts.symbology === 'datamatrix') {
       delete common.ecc;
       delete common.version;
@@ -5240,10 +5264,10 @@ function generate2dGcode(opts) {
     return window.GRBL_QR.qrGridToGcode(items, common);
   }
   if (opts.symbology === 'datamatrix') {
-    return window.GRBL_QR.dataMatrixToGcode(el.qrContent.value.trim(), common);
+    return window.GRBL_QR.dataMatrixToGcode(content.trim(), common);
   }
   delete common.size;
-  return window.GRBL_QR.qrToGcode(el.qrContent.value.trim(), common);
+  return window.GRBL_QR.qrToGcode(content.trim(), common);
 }
 
 async function saveQr() {
@@ -5613,21 +5637,21 @@ function barErrorText(err, opts) {
   });
 }
 
-/** Gera o G-code do código de barras, sozinho ou em grade (RF-SYM-9). */
-function generateBarGcode(opts) {
+/**
+ * Gera o G-code do código de barras, sozinho ou em grade (RF-SYM-9).
+ * `content` permite gerar um conteúdo avulso (peça do lote — RF-SYM-10).
+ */
+function generateBarGcode(opts, content = el.barContent?.value ?? '') {
   const common = { ...opts, sMax: machineSMax(), travelFeed: 3000 };
   if (opts.grid) {
-    return window.GRBL_BARCODE.barcodeGridToGcode(
-      gridItems(el.barContent?.value),
-      {
-        ...common,
-        columns: opts.gridColumns,
-        gapXMm: opts.gridGapMm,
-        gapYMm: opts.gridGapMm,
-      },
-    );
+    return window.GRBL_BARCODE.barcodeGridToGcode(gridItems(content), {
+      ...common,
+      columns: opts.gridColumns,
+      gapXMm: opts.gridGapMm,
+      gapYMm: opts.gridGapMm,
+    });
   }
-  return window.GRBL_BARCODE.barcodeToGcode(el.barContent.value.trim(), common);
+  return window.GRBL_BARCODE.barcodeToGcode(content.trim(), common);
 }
 
 async function generateBar() {
@@ -5683,6 +5707,614 @@ async function saveBar() {
     if (el.barStatus) el.barStatus.textContent = barErrorText(err, opts);
     appendLine(err?.message ? err.message : String(err), 'error');
   }
+}
+
+// ----------------------------------------------- lote / dados variáveis (P2.10)
+//
+// Uma planilha (CSV/TSV) vira uma **fila de peças**: cada linha é uma peça e o
+// conteúdo sai do modelo com campos (`{1}`, `{nome}`, `{i:03}`). O parsing, a
+// validação e a montagem do conteúdo vivem no módulo **puro**
+// `src/shared/batch.ts` (bundle `GRBL_BATCH`, carregado sob demanda); aqui só
+// há estado de tela e o encadeamento com o envio — nada de protocolo na UI
+// (AGENTS.md). O G-code de cada peça é gerado **na hora** (o lote não guarda
+// milhares de programas em memória — RNF-11).
+
+/** Estado do lote em tela. */
+const batch = {
+  /** Gerador de cada peça (`2d` = QR/Data Matrix/PDF417/Aztec). */
+  kind: '2d',
+  csv: '',
+  template: '{1}',
+  hasHeader: true,
+  /** Planilha normalizada (módulo puro) — `null` antes do primeiro parse. */
+  table: null,
+  /** `idle` | `ready` | `running` | `waiting` | `done`. */
+  status: 'idle',
+  /** Peça em execução (1-based). */
+  current: 0,
+  /** Próxima peça a enviar (1-based). */
+  next: 1,
+  /** Última peça concluída (1-based). */
+  done: 0,
+  /** Erro do modelo (vazio = modelo válido) — mostrado no modal. */
+  templateError: '',
+  /** Motivo da última peça interrompida (vazio = sem erro). */
+  lastError: '',
+  /** Pré-voo já confirmado neste lote (roda uma vez, na 1ª peça). */
+  preflightDone: false,
+  /** Lote guardado nas preferências (retomada depois de fechar o app). */
+  stored: null,
+};
+
+/** Módulo puro do lote (bundle sob demanda). */
+function batchModule() {
+  return window.GRBL_BATCH;
+}
+
+/** `true` enquanto o lote está em execução ou esperando a troca da peça. */
+function batchActive() {
+  return batch.status === 'running' || batch.status === 'waiting';
+}
+
+/** Total de peças do lote em tela (0 quando não há planilha). */
+function batchTotalPieces() {
+  const M = batchModule();
+  return M && batch.table ? M.batchTotal(batch.table) : 0;
+}
+
+/** Mapeia o código de erro do modelo (módulo puro) para a chave do catálogo. */
+const BATCH_ERROR_KEYS = {
+  empty: 'batch.err.empty',
+  unclosed: 'batch.err.unclosed',
+  'bad-column': 'batch.err.badColumn',
+  'unknown-field': 'batch.err.unknownField',
+  'bad-counter': 'batch.err.badCounter',
+};
+
+/** Mensagem traduzida de um erro de modelo do lote. */
+function batchTemplateErrorText(error) {
+  const key = BATCH_ERROR_KEYS[error.code];
+  return key ? t(key, { token: error.token }) : error.token;
+}
+
+/** Texto do estado do lote (modal e barra de gravação). */
+function batchStatusText() {
+  const total = batchTotalPieces();
+  if (batch.status === 'running') {
+    return {
+      modal: t('batch.state.running', { index: batch.current, total }),
+      bar: t('batch.bar.running', {
+        index: batch.current,
+        total,
+        done: Math.max(0, batch.current - 1),
+      }),
+    };
+  }
+  if (batch.status === 'waiting') {
+    if (batch.lastError) {
+      return {
+        modal: t('batch.state.failed', {
+          index: batch.current,
+          total,
+          reason: batch.lastError,
+        }),
+        bar: t('batch.bar.failed', { index: batch.current, total }),
+      };
+    }
+    return {
+      modal: t('batch.state.waiting', { index: batch.current, total }),
+      bar: t('batch.bar.waiting', { index: batch.current, total }),
+    };
+  }
+  if (batch.status === 'done') {
+    return { modal: t('batch.state.done', { total }), bar: '' };
+  }
+  return { modal: '', bar: '' };
+}
+
+/** Contador da barra de gravação + botões do lote + dica da barra lateral. */
+function updateBatchUi() {
+  const active = batchActive();
+  const total = batchTotalPieces();
+  const next = Math.min(Math.max(1, batch.next ?? 1), Math.max(1, total));
+  document.body.classList.toggle('batch-active', active);
+  // Lote guardado: o cartão "Execução" precisa aparecer mesmo sem G-code (é o
+  // único lugar com "Retomar lote" na barra lateral).
+  document.body.classList.toggle(
+    'batch-stored',
+    Boolean(batch.stored) && !active,
+  );
+
+  const status = batchStatusText();
+  if (el.jobBarBatch) {
+    el.jobBarBatch.textContent = status.bar;
+    el.jobBarBatch.classList.toggle('hidden', !active);
+  }
+  if (el.batchNextBtn) {
+    // "Próxima peça" só existe quando a peça anterior terminou (troca manual).
+    el.batchNextBtn.classList.toggle('hidden', batch.status !== 'waiting');
+    el.batchNextBtn.disabled = batch.status !== 'waiting' || !state.connected;
+  }
+  if (el.batchOpenBtn) el.batchOpenBtn.disabled = active;
+  if (el.batchHint) {
+    let hint = '';
+    if (active && total > 0) {
+      hint =
+        batch.status === 'running'
+          ? t('batch.hintRunning', { index: batch.current, total })
+          : t('batch.hintWaiting', { index: batch.current, total });
+    } else if (batch.stored) {
+      // Lote guardado (parado ou ainda não iniciado): dá para retomar.
+      hint = t('batch.hintStored', {
+        index: batch.stored.next,
+        total: batch.stored.total,
+      });
+    } else if (batch.status === 'done') {
+      hint = t('batch.state.done', { total });
+    }
+    el.batchHint.textContent = hint;
+    el.batchHint.classList.toggle('hidden', hint.length === 0);
+  }
+  if (el.batchResumeBtn) {
+    el.batchResumeBtn.classList.toggle('hidden', !batch.stored || active);
+  }
+  if (el.batchStopBtn) {
+    // Encerrar só faz sentido com o lote em andamento (fica na barra lateral,
+    // visível mesmo com o modal fechado).
+    el.batchStopBtn.classList.toggle('hidden', !active);
+  }
+  const from = el.batchFrom ? Number(el.batchFrom.value) : next;
+  if (
+    el.batchStart &&
+    el.batchOverlay &&
+    !el.batchOverlay.classList.contains('hidden')
+  ) {
+    el.batchStart.textContent =
+      Number.isFinite(from) && from > 1
+        ? t('batch.startFrom', { index: from })
+        : t('batch.start');
+  }
+  if (
+    el.batchStatus &&
+    el.batchOverlay &&
+    !el.batchOverlay.classList.contains('hidden')
+  ) {
+    // O erro do modelo (validado em `refreshBatch`) manda mais que o estado.
+    el.batchStatus.textContent = batch.templateError || status.modal;
+  }
+}
+
+/** Prévia da planilha e do modelo (contador + tabela das próximas peças). */
+function renderBatchPreview() {
+  const M = batchModule();
+  const host = el.batchPreview;
+  if (!host) return;
+  host.replaceChildren();
+  const table = batch.table;
+  if (!M || !table || table.rows.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'batch-preview-empty';
+    empty.textContent = t('batch.previewEmpty');
+    host.appendChild(empty);
+    return;
+  }
+
+  const check = M.validateBatchTemplate(batch.template, table);
+  if (!check.ok) {
+    const invalid = document.createElement('p');
+    invalid.className = 'batch-preview-empty';
+    invalid.textContent = check.errors
+      .map((error) => batchTemplateErrorText(error))
+      .join(' · ');
+    host.appendChild(invalid);
+    return;
+  }
+
+  const total = M.batchTotal(table);
+  const start = Math.min(Math.max(1, batch.next ?? 1), total);
+  const pieces = M.batchPieces(table, batch.template, { start, count: 6 });
+  const node = document.createElement('table');
+  const thead = node.createTHead();
+  const headRow = thead.insertRow();
+  for (const key of ['batch.colPiece', 'batch.colContent']) {
+    const th = document.createElement('th');
+    th.textContent = t(key);
+    headRow.appendChild(th);
+  }
+  const tbody = node.createTBody();
+  for (const piece of pieces) {
+    const tr = tbody.insertRow();
+    const num = tr.insertCell();
+    num.className = 'batch-num';
+    num.textContent = `#${piece.index}`;
+    const content = tr.insertCell();
+    content.className = 'batch-content';
+    // `textContent`: o conteúdo vem da planilha do usuário — nunca HTML.
+    content.textContent = piece.content;
+    tr.title = piece.label;
+  }
+  host.appendChild(node);
+}
+
+/** Separador forçado no select (`undefined` = detecção automática). */
+function readBatchDelimiter() {
+  const value = el.batchDelimiter ? el.batchDelimiter.value : '';
+  return value === ',' || value === ';' || value === '\t' || value === '|'
+    ? value
+    : undefined;
+}
+
+/** Lê a planilha e o modelo do modal e atualiza prévia/erros/botões. */
+function refreshBatch() {
+  const M = batchModule();
+  if (!M) return;
+  batch.csv = el.batchCsv ? el.batchCsv.value : '';
+  batch.template = el.batchTemplate ? el.batchTemplate.value : '';
+  batch.hasHeader = el.batchHasHeader ? el.batchHasHeader.checked : true;
+  batch.table = M.parseBatchTable(batch.csv, {
+    hasHeader: batch.hasHeader,
+    delimiter: readBatchDelimiter(),
+  });
+
+  const table = batch.table;
+  const total = M.batchTotal(table);
+  if (el.batchTableInfo) {
+    const parts = [t('batch.info', { pieces: total, columns: table.width })];
+    if (table.hasHeader) parts.push(t('batch.infoHeader'));
+    if (table.droppedRows > 0) {
+      parts.push(t('batch.warnDropped', { count: table.droppedRows }));
+    }
+    if (table.truncatedCells > 0) {
+      parts.push(t('batch.warnTruncated', { count: table.truncatedCells }));
+    }
+    el.batchTableInfo.textContent = parts.join(' · ');
+  }
+  if (el.batchFields) {
+    el.batchFields.replaceChildren();
+    for (const field of M.batchFields(table)) {
+      const chip = document.createElement('span');
+      chip.className = 'batch-field';
+      chip.textContent = `{${field}}`;
+      el.batchFields.appendChild(chip);
+    }
+  }
+
+  const check = M.validateBatchTemplate(batch.template, table);
+  batch.templateError = check.ok
+    ? ''
+    : check.errors.map((error) => batchTemplateErrorText(error)).join(' · ');
+  if (el.batchStart) {
+    el.batchStart.disabled =
+      !check.ok || total === 0 || batchActive() || !state.connected;
+  }
+  if (el.batchFrom) {
+    el.batchFrom.max = String(Math.max(1, total));
+    if (batch.stored && total === 0) {
+      el.batchFrom.value = String(batch.stored.next);
+    }
+  }
+  renderBatchPreview();
+  updateBatchUi();
+}
+
+/** Atualiza a prévia sem recalcular a cada tecla (planilhas grandes). */
+let batchRefreshTimer = null;
+function scheduleBatchRefresh() {
+  if (batchRefreshTimer) clearTimeout(batchRefreshTimer);
+  batchRefreshTimer = setTimeout(() => {
+    batchRefreshTimer = null;
+    refreshBatch();
+  }, 150);
+}
+
+/** Abre o modal do lote (opcionalmente já com o gerador escolhido). */
+async function openBatchModal(kind = batch.kind) {
+  if (!el.batchOverlay) return;
+  await requireBundle('batch.js');
+  const M = batchModule();
+  if (!M) {
+    appendLine(t('batch.err.moduleMissing'), 'error');
+    return;
+  }
+  batch.kind = kind === '1d' ? '1d' : '2d';
+  if (el.batchKind) el.batchKind.value = batch.kind;
+  if (el.batchCsv) el.batchCsv.value = batch.csv;
+  if (el.batchTemplate) el.batchTemplate.value = batch.template;
+  if (el.batchHasHeader) el.batchHasHeader.checked = batch.hasHeader;
+  if (el.batchFrom) {
+    const stored = batch.stored;
+    const from = batch.next > 1 ? batch.next : (stored?.next ?? 1);
+    el.batchFrom.value = String(from);
+  }
+  el.batchOverlay.classList.remove('hidden');
+  refreshBatch();
+  if (el.batchCsv) el.batchCsv.focus();
+}
+
+function closeBatchModal() {
+  if (el.batchOverlay) el.batchOverlay.classList.add('hidden');
+}
+
+/** Abre um CSV/TSV do disco (o main devolve o texto — sem caminhos na UI). */
+async function openBatchCsv() {
+  let opened;
+  try {
+    opened = await window.grbl.openCsv();
+  } catch (err) {
+    appendLine(t('err.openFile', { msg: err.message }), 'error');
+    return;
+  }
+  if (!opened) return;
+  if (el.batchCsv) el.batchCsv.value = opened.text;
+  // Arquivo novo: deixa a detecção de cabeçalho decidir (o usuário ainda pode
+  // corrigir na caixa) — planilha de dados pura não deve perder a 1ª linha.
+  const M = batchModule();
+  if (M && el.batchHasHeader) {
+    el.batchHasHeader.checked = M.parseBatchTable(opened.text, {
+      delimiter: readBatchDelimiter(),
+    }).hasHeader;
+  }
+  refreshBatch();
+  appendLine(
+    t('batch.loaded', { name: opened.name, pieces: batchTotalPieces() }),
+    'ok',
+  );
+}
+
+/**
+ * Colou a planilha: na **primeira** colagem, ajusta a caixa "cabeçalho" pela
+ * detecção; nas seguintes, respeita o que o usuário marcou.
+ */
+function onBatchCsvInput() {
+  const M = batchModule();
+  const wasEmpty = batch.csv.trim().length === 0;
+  batch.csv = el.batchCsv ? el.batchCsv.value : '';
+  if (M && wasEmpty && batch.csv.trim() && el.batchHasHeader) {
+    el.batchHasHeader.checked = M.parseBatchTable(batch.csv, {
+      delimiter: readBatchDelimiter(),
+    }).hasHeader;
+  }
+  scheduleBatchRefresh();
+}
+
+/** Guarda o lote nas preferências para **retomar** (RF-SYM-10). */
+async function persistBatch() {
+  const M = batchModule();
+  const table = batch.table;
+  if (!M || !table || table.rows.length === 0) return;
+  if (batch.csv.length > M.BATCH_MAX_PREF_CHARS) {
+    // Planilha gigante não vai para as preferências (o usuário reabre o CSV).
+    appendLine(t('batch.warnTooBigToSave'), 'message');
+    return;
+  }
+  const prefs = {
+    kind: batch.kind,
+    csv: batch.csv,
+    template: batch.template,
+    hasHeader: batch.hasHeader,
+    delimiter: table.delimiter,
+    next: Math.max(1, Math.min(batch.next, table.rows.length)),
+    total: table.rows.length,
+  };
+  batch.stored = prefs;
+  await persistPrefs({ batch: prefs });
+}
+
+/** Ajustes do símbolo para a peça (do modal; o lote não usa grade). */
+function batchPieceOptions() {
+  return batch.kind === '1d'
+    ? { ...readBarOptions(), grid: false }
+    : { ...readQrOptions(), grid: false };
+}
+
+/** G-code de uma peça do lote (ajustes do modal do símbolo, sem grade). */
+function batchPieceGcode(content, opts = batchPieceOptions()) {
+  return batch.kind === '1d'
+    ? generateBarGcode(opts, content).gcode
+    : generate2dGcode(opts, content).gcode;
+}
+
+/** Gera e envia a peça `batch.next` (a fila avança só com `ok` da máquina). */
+async function batchSendPiece() {
+  const M = batchModule();
+  const table = batch.table;
+  if (!M || !table) return;
+  const total = M.batchTotal(table);
+  const index = batch.next;
+  if (index > total) {
+    finishBatch();
+    return;
+  }
+
+  const row = table.rows[index - 1] ?? [];
+  const content = M.renderBatchContent(batch.template, row, {
+    index,
+    total,
+    header: table.header,
+  });
+
+  // O gerador do símbolo é um bundle sob demanda: o lote pode ser o primeiro
+  // a usá-lo depois de abrir o app (sem passar pelo modal do símbolo).
+  await requireBundle(batch.kind === '1d' ? 'barcode.js' : 'qrcode.js');
+
+  const opts = batchPieceOptions();
+  let gcode;
+  try {
+    gcode = batchPieceGcode(content, opts);
+  } catch (err) {
+    // Linha que o encoder recusou (conteúdo grande demais, caractere fora da
+    // simbologia…): pausa a fila **nesta peça** e explica — não pula sozinho,
+    // para o usuário ver o problema e corrigir a planilha.
+    const reason =
+      batch.kind === '1d'
+        ? barErrorText(err, opts)
+        : t(
+            `${symbolErrPrefix(opts.symbology)}.err.${err?.code ?? 'unknown'}`,
+            opts,
+          );
+    batch.status = 'waiting';
+    batch.current = index;
+    batch.lastError = reason;
+    updateBatchUi();
+    appendLine(t('batch.pieceFailed', { index, total, reason }), 'error');
+    return;
+  }
+
+  applyJobLines(M.batchPieceFileName(batch.kind, index, total), gcode, 'batch');
+  if (!batch.preflightDone) {
+    if (!(await confirmPreflight(state.lines))) {
+      // O pré-voo bloqueou: a fila volta para "pronta" e nada foi enviado.
+      batch.status = 'ready';
+      batch.current = 0;
+      updateBatchUi();
+      return;
+    }
+    batch.preflightDone = true;
+  }
+
+  batch.status = 'running';
+  batch.current = index;
+  batch.next = index;
+  batch.lastError = '';
+  updateBatchUi();
+  appendLine(t('batch.pieceStart', { index, total }), 'message');
+  beginJob(0, { skipPreflight: true });
+}
+
+/** Inicia (ou retoma) o lote a partir da peça indicada. */
+async function startBatch() {
+  const M = batchModule();
+  if (!M) return;
+  if (!state.connected) {
+    appendLine(t('batch.err.connect'), 'error');
+    return;
+  }
+  refreshBatch();
+  const total = batchTotalPieces();
+  const check = M.validateBatchTemplate(batch.template, batch.table);
+  if (total === 0 || !check.ok) {
+    batch.templateError =
+      total === 0
+        ? t('batch.err.noPieces')
+        : check.errors.map((e) => batchTemplateErrorText(e)).join(' · ');
+    updateBatchUi();
+    return;
+  }
+  const from = Number(el.batchFrom ? el.batchFrom.value : 1);
+  batch.next = Number.isFinite(from)
+    ? Math.max(1, Math.min(Math.trunc(from), total))
+    : 1;
+  batch.kind = el.batchKind?.value === '1d' ? '1d' : '2d';
+  batch.preflightDone = false;
+  batch.lastError = '';
+  batch.status = 'ready';
+  closeBatchModal();
+  await persistBatch();
+  await batchSendPiece();
+}
+
+/** Peça concluída: pausa para trocar a peça ou encerra o lote. */
+function batchPieceFinished() {
+  const total = batchTotalPieces();
+  batch.done = batch.current;
+  batch.next = batch.current + 1;
+  if (batch.next > total) {
+    finishBatch();
+    return;
+  }
+  batch.status = 'waiting';
+  updateBatchUi();
+  void persistBatch();
+  appendLine(t('batch.pieceDone', { index: batch.done, total }), 'ok');
+}
+
+/** Peça abortada por erro/alarme: para a fila e explica o motivo. */
+function batchPieceFailed(reason) {
+  batch.status = 'waiting';
+  batch.next = batch.current + 1;
+  batch.lastError = reason ?? '';
+  updateBatchUi();
+  void persistBatch();
+  appendLine(
+    t('batch.pieceAborted', { index: batch.current, reason: reason ?? '—' }),
+    'error',
+  );
+}
+
+/** Lote concluído: não há mais o que retomar. */
+function finishBatch() {
+  const total = batchTotalPieces();
+  batch.status = 'done';
+  batch.done = total;
+  batch.current = 0;
+  batch.next = 1;
+  batch.preflightDone = false;
+  batch.stored = null;
+  document.body.classList.remove('batch-active');
+  updateBatchUi();
+  void persistPrefs({ batch: null });
+  appendLine(t('batch.done', { total }), 'ok');
+}
+
+/** Encerra o lote (parando a peça, se estiver gravando) e guarda o ponto. */
+function stopBatch() {
+  if (batch.status === 'running') window.grbl.stopJob();
+  const total = batchTotalPieces();
+  batch.status = total > 0 ? 'ready' : 'idle';
+  batch.current = 0;
+  batch.preflightDone = false;
+  updateBatchUi();
+  void persistBatch();
+  appendLine(t('batch.stopped', { index: batch.next, total }), 'message');
+}
+
+/** "Próxima peça" (barra de gravação): troca confirmada, manda a seguinte. */
+function batchNextPiece() {
+  if (batch.status !== 'waiting') return;
+  if (!state.connected) {
+    appendLine(t('batch.err.connect'), 'error');
+    return;
+  }
+  void batchSendPiece();
+}
+
+/** Esquece o lote (memória + preferências). */
+function forgetBatch() {
+  batch.csv = '';
+  batch.template = '{1}';
+  batch.table = null;
+  batch.status = 'idle';
+  batch.current = 0;
+  batch.done = 0;
+  batch.next = 1;
+  batch.stored = null;
+  if (el.batchCsv) el.batchCsv.value = '';
+  if (el.batchTemplate) el.batchTemplate.value = '{1}';
+  if (el.batchFrom) el.batchFrom.value = '1';
+  void persistPrefs({ batch: null });
+  refreshBatch();
+}
+
+/** Hidrata o lote guardado (retomada depois de fechar o app). */
+function hydrateStoredBatch() {
+  batch.stored = state.prefs.batch ?? null;
+  updateBatchUi();
+}
+
+/** Retoma: traz o lote guardado para a tela e abre o modal para conferir. */
+function resumeBatch() {
+  const stored = batch.stored;
+  if (!stored) return;
+  batch.kind = stored.kind;
+  batch.csv = stored.csv;
+  batch.template = stored.template;
+  batch.hasHeader = stored.hasHeader;
+  batch.next = stored.next;
+  appendLine(
+    t('batch.resuming', { index: stored.next, total: stored.total }),
+    'message',
+  );
+  void openBatchModal(stored.kind);
 }
 
 function frameJog(axis, sign) {
@@ -6211,6 +6843,9 @@ function updateControls() {
     button.disabled = !conn || alarm;
   }
   el.macroHint.classList.toggle('hidden', conn);
+
+  // Lote (RF-SYM-10): "Próxima peça" e "Iniciar lote" dependem da conexão.
+  updateBatchUi();
 }
 
 /** Perfil da máquina selecionada (nunca `undefined`). */
@@ -6707,10 +7342,13 @@ function applyJobLines(name, text, source = 'file') {
 /**
  * Inicia o envio a partir de `startIndex` no arquivo. Em retomada (> 0),
  * injeta o preâmbulo que reafirma o estado modal (RF-GC-7, `shared/resume.ts`).
+ *
+ * `skipPreflight` é usado pelo **lote** (RF-SYM-10): o pré-voo roda uma vez, na
+ * primeira peça, e repetir a checagem a cada peça travaria a fila no meio.
  */
-async function beginJob(startIndex = 0) {
+async function beginJob(startIndex = 0, { skipPreflight = false } = {}) {
   if (!state.connected || !state.lines.length) return;
-  if (!(await confirmPreflight(state.lines))) return;
+  if (!skipPreflight && !(await confirmPreflight(state.lines))) return;
   const total = state.lines.length;
   const start = Math.max(0, Math.min(Math.trunc(startIndex), total));
   const resume = window.GRBL_RESUME;
@@ -7659,6 +8297,9 @@ function capturePreviewThumbnail() {
 /** Registra o job concluído — nunca interrompe nem falha o fluxo de gravação. */
 async function recordJobInLibrary() {
   if (!state.lines.length) return;
+  // Peça de lote **não** entra na biblioteca: 50 peças empurrariam para fora os
+  // jobs de verdade e o lote já é retomável pela própria planilha (RF-SYM-10).
+  if (state.jobSource === 'batch') return;
   try {
     await window.grbl.jobLibrary.add({
       name: state.fileName || 'job.gcode',
@@ -9842,6 +10483,7 @@ if (window.grbl.onAction)
     else if (name === 'material-test') openMatTestModal();
     else if (name === 'qr-code') openQrModal();
     else if (name === 'bar-code') openBarModal();
+    else if (name === 'batch') openBatchModal(batch.kind);
     else if (name === 'machine') openMachineModal();
     else if (name === 'open-svg') openSvgImport();
     else if (name === 'open-dxf') openDxfImport();
@@ -11149,11 +11791,21 @@ window.grbl.onJob((job) => {
     void recordJobInLibrary();
     // Volta o laser para a origem XY (caso precise repetir a gravação).
     if (state.connected) window.grbl.gotoZero();
-    // Reabre o modal de posicionamento para repetir se necessário.
-    openFrameModal();
+    if (batchActive()) {
+      // Lote (RF-SYM-10): a fila espera a troca da peça em vez de reabrir o
+      // posicionamento — o próximo envio sai pelo botão "Próxima peça".
+      batchPieceFinished();
+    } else {
+      // Reabre o modal de posicionamento para repetir se necessário.
+      openFrameModal();
+    }
   }
-  if (job.state === 'aborted' && job.error)
-    appendLine(t('job.aborted', { reason: job.error }), 'error');
+  if (job.state === 'aborted') {
+    if (job.error) appendLine(t('job.aborted', { reason: job.error }), 'error');
+    // Peça abortada no meio da fila: para o lote e deixa a decisão (repetir a
+    // peça pelo "Começar na peça", pular ou encerrar) para o usuário.
+    if (batchActive()) batchPieceFailed(job.error);
+  }
 });
 
 window.grbl.onProgress((p) => {
@@ -11254,6 +11906,35 @@ if (el.barGrid)
   el.barGrid.addEventListener('change', () =>
     syncGridField(el.barGrid, el.barGridColsField, el.barGridGapField),
   );
+
+// Lote / dados variáveis (RF-SYM-10): o modal usa os ajustes do símbolo.
+if (el.batchOpenBtn)
+  el.batchOpenBtn.addEventListener('click', () => openBatchModal(batch.kind));
+if (el.batchResumeBtn) el.batchResumeBtn.addEventListener('click', resumeBatch);
+if (el.batchStopBtn) el.batchStopBtn.addEventListener('click', stopBatch);
+if (el.qrBatch)
+  el.qrBatch.addEventListener('click', () => openBatchModal('2d'));
+if (el.barBatch)
+  el.barBatch.addEventListener('click', () => openBatchModal('1d'));
+if (el.batchClose) el.batchClose.addEventListener('click', closeBatchModal);
+if (el.batchOverlay)
+  el.batchOverlay.addEventListener('click', (e) => {
+    if (e.target === el.batchOverlay) closeBatchModal();
+  });
+if (el.batchOpen) el.batchOpen.addEventListener('click', openBatchCsv);
+if (el.batchCsv) el.batchCsv.addEventListener('input', onBatchCsvInput);
+if (el.batchTemplate)
+  el.batchTemplate.addEventListener('input', scheduleBatchRefresh);
+if (el.batchHasHeader)
+  el.batchHasHeader.addEventListener('change', scheduleBatchRefresh);
+if (el.batchDelimiter)
+  el.batchDelimiter.addEventListener('change', scheduleBatchRefresh);
+if (el.batchFrom) el.batchFrom.addEventListener('input', updateBatchUi);
+if (el.batchPreviewBtn)
+  el.batchPreviewBtn.addEventListener('click', refreshBatch);
+if (el.batchForget) el.batchForget.addEventListener('click', forgetBatch);
+if (el.batchStart) el.batchStart.addEventListener('click', startBatch);
+if (el.batchNextBtn) el.batchNextBtn.addEventListener('click', batchNextPiece);
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
 if (el.frameXp) el.frameXp.addEventListener('click', () => frameJog('x', 1));
@@ -11584,6 +12265,8 @@ async function init() {
   setConnection('disconnected');
   await refreshPorts();
   applyPortPrefs();
+  // Lote guardado (RF-SYM-10): mostra "Retomar lote" na barra lateral.
+  hydrateStoredBatch();
   maybeAutoConnect();
 }
 
@@ -11594,6 +12277,7 @@ init();
 function prefetchBundles() {
   void requireBundle('qrcode.js');
   void requireBundle('barcode.js');
+  void requireBundle('batch.js');
 }
 setTimeout(() => {
   if ('requestIdleCallback' in window) {
