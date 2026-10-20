@@ -39,6 +39,10 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 - **Testes na máquina**: grade de material (potência × velocidade) e **teste de
   foco (spot)** — escada de Z relativa com duas potências por passo; a linha
   mais fina indica a melhor altura de foco.
+- **Presets de material**: salve a receita que deu certo (potência, velocidade,
+  passadas) com nome e notas, aplique depois, veja a **dose (J/mm)** e
+  **exporte/importe JSON** para compartilhar; **Ajustar à máquina** leva a
+  receita para outro módulo (3 W/5 W/10 W) preservando a dose.
 - **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
   laser e teto de `S`) como dado, não chumbado no código.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado

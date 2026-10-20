@@ -12,6 +12,7 @@ public/barcode.js
 public/batch.js
 public/production.js
 public/focusTest.js
+public/presets.js
 public/machine.js
 public/preflight.js
 public/gcodeEditor.js

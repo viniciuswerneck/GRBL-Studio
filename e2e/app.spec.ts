@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -1890,6 +1890,200 @@ test.describe('GRBL Studio — teste de foco (P2.13/RF-IMG-13)', () => {
       );
       await page.click('#focusGenerate');
       await expect(page.locator('#focusStatus')).toContainText('31 passos');
+    } finally {
+      await close();
+    }
+  });
+});
+
+test.describe('GRBL Studio — presets de material (P2.12/RF-IMG-8)', () => {
+  /** Abre o modal de presets pelo menu nativo. */
+  async function openPresets(
+    app: Awaited<ReturnType<typeof launchApp>>['app'],
+  ) {
+    await app.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'grbl:ev:action',
+        'presets',
+      );
+    });
+  }
+
+  /** PNG 1×1: o cartão de imagem só mostra os ajustes com imagem carregada. */
+  const PNG_1X1 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+  /** Carrega uma imagem pelo diálogo real, com o `showOpenDialog` trocado. */
+  async function loadImage(
+    app: Awaited<ReturnType<typeof launchApp>>['app'],
+    page: Awaited<ReturnType<typeof launchApp>>['page'],
+  ) {
+    const file = path.join(
+      mkdtempSync(path.join(tmpdir(), 'grbl-img-')),
+      'pixel.png',
+    );
+    writeFileSync(file, Buffer.from(PNG_1X1, 'base64'));
+    await app.evaluate(({ dialog }, filePath) => {
+      const d = dialog as unknown as Record<string, unknown>;
+      d.showOpenDialog = async () => ({
+        canceled: false,
+        filePaths: [filePath],
+      });
+    }, file);
+    await app.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'grbl:ev:action',
+        'open-image',
+      );
+    });
+    await expect(page.locator('#cardImage')).toHaveClass(/has-image/);
+  }
+
+  test('salva os ajustes atuais, aplica depois de mudar os campos e exclui', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await loadImage(app, page);
+      await page.click('button[data-tab="image"]');
+      await page.fill('#imgSpeed', '700');
+      await page.fill('#imgPasses', '2');
+      await page.selectOption('#imgMode', 'M3');
+      await page.fill('#imgSmax', '600');
+
+      await openPresets(app);
+      await expect(page.locator('#presetOverlay')).toBeVisible();
+      // Nome sugerido e a linha "Fonte" refletem os ajustes atuais (60 %).
+      await expect(page.locator('#presetName')).toHaveValue('Receita 1');
+      await expect(page.locator('#presetSource')).toContainText('60%');
+
+      await page.fill('#presetName', 'MDF 600');
+      await page.fill('#presetNotes', 'testado no C1');
+      await page.click('#presetCreate');
+      const item = page.locator('#presetList .preset-item');
+      await expect(item).toHaveCount(1);
+      await expect(item).toContainText('MDF 600');
+      await expect(item).toContainText('60%');
+      await expect(item).toContainText('700 mm/min');
+      await expect(item).toContainText('Dose');
+      await expect(page.locator('#presetStatus')).toContainText(
+        'Preset “MDF 600” salvo',
+      );
+
+      // Fecha, mexe nos ajustes e reaplica pela lista.
+      await page.click('#presetClose');
+      await expect(page.locator('#presetOverlay')).toBeHidden();
+      await page.fill('#imgSpeed', '1200');
+      await page.fill('#imgSmax', '900');
+      await page.fill('#imgPasses', '1');
+      await page.selectOption('#imgMode', 'M4');
+
+      await openPresets(app);
+      await page
+        .locator('#presetList .preset-item')
+        .getByRole('button', { name: 'Aplicar' })
+        .click();
+      await expect(page.locator('#imgSpeed')).toHaveValue('700');
+      await expect(page.locator('#imgSmax')).toHaveValue('600');
+      await expect(page.locator('#imgPasses')).toHaveValue('2');
+      await expect(page.locator('#imgMode')).toHaveValue('M3');
+      await expect(page.locator('#presetStatus')).toContainText('aplicado');
+      // O hint do perfil passa a mostrar a receita (não os números do manual).
+      await expect(page.locator('#profileHint')).toContainText(
+        'Preset “MDF 600”',
+      );
+
+      await page
+        .locator('#presetList .preset-item')
+        .getByRole('button', { name: 'Excluir' })
+        .click();
+      await expect(page.locator('#presetList .preset-item')).toHaveCount(0);
+      await expect(page.locator('#presetList')).toContainText('Nenhum preset');
+    } finally {
+      await close();
+    }
+  });
+
+  test('exporta e importa o JSON das receitas (compartilhar entre máquinas)', async () => {
+    const { app, page, close } = await launchApp();
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-presets-'));
+    const exported = path.join(dir, 'grbl-presets.json');
+    try {
+      await openPresets(app);
+      await expect(page.locator('#presetOverlay')).toBeVisible();
+      await page.fill('#presetName', 'Receita exportada');
+      await page.click('#presetCreate');
+      await expect(page.locator('#presetList .preset-item')).toHaveCount(1);
+
+      // Exportar: o diálogo nativo é trocado por um caminho fixo.
+      await app.evaluate(({ dialog }, filePath) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showSaveDialog = async () => ({ canceled: false, filePath });
+      }, exported);
+      await page.click('#presetExport');
+      await expect(page.locator('#presetStatus')).toContainText('exportados');
+
+      const json = JSON.parse(readFileSync(exported, 'utf8'));
+      expect(json.version).toBe(1);
+      expect(json.presets).toHaveLength(1);
+      expect(json.presets[0].name).toBe('Receita exportada');
+
+      // Excluir e importar de volta (o JSON é a fonte da receita).
+      await page
+        .locator('#presetList .preset-item')
+        .getByRole('button', { name: 'Excluir' })
+        .click();
+      await expect(page.locator('#presetList .preset-item')).toHaveCount(0);
+
+      await app.evaluate(({ dialog }, filePath) => {
+        const d = dialog as unknown as Record<string, unknown>;
+        d.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [filePath],
+        });
+      }, exported);
+      await page.click('#presetImport');
+      await expect(page.locator('#presetList .preset-item')).toHaveCount(1);
+      await expect(page.locator('#presetList .preset-item')).toContainText(
+        'Receita exportada',
+      );
+      await expect(page.locator('#presetStatus')).toContainText('importado');
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('ajusta a receita ao módulo da máquina preservando a dose (RF-IMG-10)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await loadImage(app, page);
+      await page.click('button[data-tab="image"]');
+      // O "Perfil de material" mora num <details> fechado por padrão.
+      await page.click('#cardImage summary:has-text("Perfil de material")');
+      // Receita de 5 W a 50 % / 400 mm/min.
+      await page.selectOption('#profileModule', '5W');
+      await page.selectOption('#profileAction', 'cut');
+      await page.fill('#imgSmax', '500');
+      await page.fill('#imgSpeed', '400');
+
+      await openPresets(app);
+      await page.fill('#presetName', 'Acrílico 5W');
+      await page.click('#presetCreate');
+      await expect(page.locator('#presetList .preset-item')).toContainText(
+        '5W',
+      );
+
+      // A máquina é a C1 (3 W): a mesma dose pede 83,3 % (S 833).
+      await page
+        .locator('#presetList .preset-item')
+        .getByRole('button', { name: 'Ajustar à máquina' })
+        .click();
+      await expect(page.locator('#presetStatus')).toContainText(
+        'Dose preservada',
+      );
+      await expect(page.locator('#presetStatus')).toContainText('83.3%');
+      await expect(page.locator('#imgSmax')).toHaveValue('833');
+      await expect(page.locator('#imgSpeed')).toHaveValue('400');
+      await expect(page.locator('#profileModule')).toHaveValue('3W');
     } finally {
       await close();
     }

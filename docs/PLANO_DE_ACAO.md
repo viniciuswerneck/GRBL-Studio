@@ -89,6 +89,19 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > Máquina de estados pura em `src/shared/production.ts` (bundle `production.js`
 > sob demanda); o envio continua na fila normal do GRBL.
 
+> **Nota (20/10/2026, presets de material):** o **P2.12** entrou como
+> **RF-IMG-14** — Ferramentas → **Presets de material…** (e o botão no grupo
+> “Perfil de material”) salva os ajustes atuais como **receita** (nome, notas,
+> módulo, ação, potência, velocidade, passadas e modo), aplica, exclui e
+> **exporta/importa JSON**. Cada receita mostra a **dose** (J/mm, RF-IMG-10) e o
+> botão **Ajustar à máquina** converte a potência para o módulo atual preservando
+> a dose (`dose = watts × potência × 60 / velocidade`) — é o caminho para levar
+> uma receita de 5 W para 3 W/10 W. A lista vive em `prefs.materialPresets`
+> (sanitizada pelo main) e a lógica pura em `src/shared/materialPresets.ts`.
+> Junto, o percentual de potência passou a usar o `$30` **do perfil da máquina**
+> como referência (antes o próprio campo `S-max` era a referência e o valor
+> “derivava” ao aplicar perfis em sequência).
+
 > **Nota (20/10/2026, teste de foco):** o **P2.13** entrou como **RF-IMG-13** —
 > Ferramentas → **Teste de foco (spot)…** grava uma **escada de Z** com **duas
 > potências** por passo (baixa para a marcação, alta para o corte): a linha mais

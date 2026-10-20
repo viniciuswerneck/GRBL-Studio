@@ -6,7 +6,7 @@
   "license": "MIT",
   "description": "GRBL Studio - Modern LaserGRBL alternative for Linux",
   "scripts": {
-    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:machines && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:focusTest && npm run build:svg && npm run build:dxf && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n && npm run build:qrcode && npm run build:barcode && npm run build:batch && npm run build:production && npm run build:machine && npm run build:preflight && npm run build:gcodeEditor",
+    "build": "tsc && npm run build:preload && npm run build:worker && npm run build:materials && npm run build:machines && npm run build:adjust && npm run build:preview && npm run build:resume && npm run build:macros && npm run build:materialTest && npm run build:focusTest && npm run build:presets && npm run build:svg && npm run build:dxf && npm run build:design && npm run build:designEditor && npm run build:fonts && npm run build:hatch && npm run build:contour && npm run build:boolean && npm run build:offset && npm run build:i18n && npm run build:qrcode && npm run build:barcode && npm run build:batch && npm run build:production && npm run build:machine && npm run build:preflight && npm run build:gcodeEditor",
     "build:boolean": "esbuild src/shared/boolean.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_BOOLEAN --outfile=public/boolean.js",
     "build:offset": "esbuild src/shared/offset.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_OFFSET --outfile=public/offset.js",
     "build:contour": "esbuild src/shared/image/contour.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_CONTOUR --outfile=public/contour.js",
@@ -16,6 +16,7 @@
     "build:design": "esbuild src/shared/design.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_DESIGN --outfile=public/design.js",
     "build:materialTest": "esbuild src/shared/materialTest.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_MATERIAL_TEST --outfile=public/materialTest.js",
     "build:focusTest": "esbuild src/shared/entry.focusTest.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_FOCUS_TEST --outfile=public/focusTest.js",
+    "build:presets": "esbuild src/shared/entry.materialPresets.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_PRESETS --outfile=public/presets.js",
     "build:svg": "esbuild src/shared/svg.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_SVG --outfile=public/svg.js",
     "build:dxf": "esbuild src/shared/dxf.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_DXF --outfile=public/dxf.js",
     "build:i18n": "esbuild src/shared/i18n/entry.ts --bundle --format=iife --platform=browser --target=es2022 --global-name=GRBL_I18N --outfile=public/i18n.js",

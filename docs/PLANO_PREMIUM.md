@@ -85,7 +85,7 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
 | Flatpak (P1.3) · onboarding (P1.4) | manifesto pronto (**não publicado**) / ✅ | publicados | Baixo |
 | Orçamentos RNF-11/12 (P1.8) | ✅ Linux (RNF-11: 269 MB X11 / 290 MB Wayland) | 3 SOs | Baixo |
-| E2E de job/protocolo (Fase 8) | 44 casos (job, pausa, alarme, lote, produção, foco…) | fluxo completo de job | Médio |
+| E2E de job/protocolo (Fase 8) | 47 casos (job, pausa, alarme, lote, produção, foco, presets…) | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
 | Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
 
@@ -140,7 +140,7 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 | ✅ P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI — entregue na **0.6.0** (extras na **0.7.0**) | M | Checksum + quiet zone + texto legível (**S2**). |
 | ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos), pausa para trocar a peça, contador e retomada. ⇢ *nenhum concorrente grátis faz isso completo*. |
 | ✅ P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI — entregue (RF-GC-12, 20/10/2026) | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
-| P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis; efeito de rede. |
+| ✅ P2.12 | **Presets de material** — entregue (RF-IMG-14, 20/10/2026) | S | Salvar/aplicar/excluir receitas, dose (J/mm) e **JSON** para compartilhar; o repositório oficial fica para depois (sem rede por enquanto). |
 | ✅ P2.13 | **Teste de foco / spot** (2 linhas de potência) — entregue (RF-IMG-13, 20/10/2026) | S | Determinar o melhor foco por material. |
 
 ### Fase P3 — "Pro features" (8–12 semanas) · paridade com LightBurn/Rayforge · **v0.9**
@@ -244,7 +244,7 @@ P2.5 catálogo + `.lbdev` + smart connect ✅, P1.10 editor de G-code ✅, P2.9
 biblioteca de jobs ✅ e validação Win/macOS.
 
 **v0.8:** P2.10 lote/dados variáveis ✅, P2.11 modo produção ✅, P2.13 teste de
-foco ✅ e P2.12 presets (restante).
+foco ✅ e P2.12 presets ✅.
 
 **v0.9 / v1.0 (90+ dias):** P3.1 câmera, P3.2 rotativa, P3.7 nesting, P3.4 WebGL,
 P3.5 telemetria, P3.6 migração TS, P4.1 API/CLI, P3.3 plugins, P4.2 i18n,

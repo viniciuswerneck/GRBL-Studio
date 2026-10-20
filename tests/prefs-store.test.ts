@@ -165,6 +165,40 @@ describe('PrefsStore — sanitização das novas chaves', () => {
     expect((await store.read()).symbols).toBeUndefined();
   });
 
+  it('guarda presets de material válidos e descarta o resto (P2.12)', async () => {
+    const store = await storeWith({
+      materialPresets: [
+        {
+          id: 'abc-1',
+          name: 'MDF 3 mm',
+          material: 'MDF',
+          module: '5W',
+          action: 'cut',
+          powerPercent: 80,
+          speedMmMin: 600,
+          passes: 3,
+          mode: 'M4',
+          notes: 'testado',
+          createdAt: 1,
+        },
+        { id: 'sem-nome' },
+        'lixo',
+      ],
+    });
+    const prefs = await store.read();
+    expect(prefs.materialPresets).toHaveLength(1);
+    expect(prefs.materialPresets?.[0]).toMatchObject({
+      name: 'MDF 3 mm',
+      powerPercent: 80,
+      passes: 3,
+    });
+  });
+
+  it('mantém a lista vazia de presets (usuário apagou todas)', async () => {
+    const store = await storeWith({ materialPresets: [] });
+    expect(await store.read()).toEqual({ materialPresets: [] });
+  });
+
   it('guarda o lote em andamento e retoma a próxima peça (RF-SYM-10)', async () => {
     const batch = {
       kind: '2d',

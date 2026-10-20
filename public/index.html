@@ -549,6 +549,14 @@
             <div id="profileHint" class="hint" data-i18n="profile.material.choose">
               Escolha um material para ver a recomendação do manual.
             </div>
+            <div class="row">
+              <button type="button" id="presetSave" data-i18n="preset.saveCurrent">
+                Salvar como preset…
+              </button>
+              <button type="button" id="presetManage" data-i18n="preset.manage">
+                Meus presets…
+              </button>
+            </div>
           </details>
 
           <details class="group" open>
@@ -2408,6 +2416,79 @@
           </button>
         </div>
         <p class="hint gcode-status" id="gcodeStatus" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="presetOverlay">
+      <div
+        class="modal preset-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="presetTitle"
+      >
+        <header class="modal-head">
+          <h3 id="presetTitle" data-i18n="preset.title">Presets de material</h3>
+          <span class="hint" id="presetCount"></span>
+          <button type="button" id="presetClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+        <div class="modal-toolbar">
+          <button type="button" id="presetImport" data-i18n="preset.import">
+            Importar…
+          </button>
+          <button type="button" id="presetExport" data-i18n="preset.export">
+            Exportar…
+          </button>
+          <span class="spacer"></span>
+        </div>
+        <div class="modal-body preset-new">
+          <p class="hint" data-i18n="preset.hint">
+            Receitas que deram certo: potência, velocidade, passadas e notas.
+            Exporte para compartilhar; importe para repetir sem refazer a grade
+            de testes.
+          </p>
+          <details class="group" id="presetNewGroup" open>
+            <summary data-i18n="preset.new">Novo preset</summary>
+            <div class="grid2">
+              <label class="field"
+                ><span data-i18n="preset.name">Nome</span>
+                <input
+                  type="text"
+                  id="presetName"
+                  maxlength="60"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field"
+                ><span data-i18n="preset.notes">Notas (opcional)</span>
+                <input
+                  type="text"
+                  id="presetNotes"
+                  maxlength="240"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+            <p class="hint" id="presetSource"></p>
+            <div class="preset-create">
+              <button
+                type="button"
+                id="presetCreate"
+                class="primary"
+                data-i18n="preset.create"
+              >
+                Salvar ajustes atuais
+              </button>
+            </div>
+          </details>
+        </div>
+        <ul class="preset-list" id="presetList"></ul>
+        <p class="hint preset-status" id="presetStatus" role="status" aria-live="polite"></p>
+        <p class="hint preset-dose-hint" data-i18n="preset.doseHint">
+          Dose = energia por milímetro (aproximada, sem o ponto do laser): serve
+          para comparar receitas e transferir entre módulos.
+        </p>
       </div>
     </div>
 

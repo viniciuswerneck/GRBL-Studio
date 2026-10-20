@@ -6,6 +6,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — presets de material, dose e JSON (P2.12 / RF-IMG-14)
+
+- **Ferramentas → Presets de material…** (e o botão no grupo “Perfil de
+  material”): salva os ajustes atuais como **receita** — nome, notas, módulo,
+  ação (gravar/cortar), potência %, velocidade, passadas e modo — e permite
+  **aplicar**, **excluir** e **exportar/importar JSON** para compartilhar.
+- **Dose (J/mm)** em cada receita (`watts × potência × 60 / velocidade`, com
+  passadas na dose total) e o botão **Ajustar à máquina**, que converte a
+  potência para o módulo atual (3 W/5 W/10 W) preservando a dose — e avisa
+  quando o módulo não alcança.
+- A lista vive em `prefs.materialPresets` (sanitizada no main: faixas, ids,
+  teto de 100 e descarte de lixo), com lógica pura em
+  `src/shared/materialPresets.ts` (22 testes) e bundle próprio
+  (`presets.js`, `GRBL_PRESETS`) carregado sob demanda (RNF-11).
+- **Correção**: o percentual de potência passa a usar o `$30` do **perfil da
+  máquina** como referência (antes o próprio campo `S-max` era a referência, o
+  que fazia o percentual “derivar” ao aplicar perfis em sequência e mostrava
+  sempre 100 % no controle da moldura).
+- **3 testes E2E**: salvar/aplicar/excluir, ajuste pela dose e round-trip
+  exportar → importar JSON.
+
+### Fixed — sugestão de perfil ao conectar (RF-MAQ-9)
+
+- A **sugestão de perfil** (smart connect) podia não aparecer logo após
+  conectar: o snapshot da máquina chegava vazio enquanto a leitura inicial de
+  `$$` ainda estava em voo (ou a consulta colidia com ela). Agora o app relê a
+  máquina — no máximo duas tentativas — antes de desistir.
+
 ### Added — teste de foco / spot (P2.13 / RF-IMG-13)
 
 - **Ferramentas → Teste de foco (spot)…**: grava uma **escada de Z** com

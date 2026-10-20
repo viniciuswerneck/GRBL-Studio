@@ -43,6 +43,7 @@ consumido pelo renderer em runtime** (JS puro que não importa TS):
 | `build:batch` | `public/batch.js` | `GRBL_BATCH` | `shared/entry.batch.ts` (lote: CSV → peças; RF-SYM-10) |
 | `build:production` | `public/production.js` | `GRBL_PRODUCTION` | `shared/entry.production.ts` (modo produção: cópias; RF-GC-12) |
 | `build:focusTest` | `public/focusTest.js` | `GRBL_FOCUS_TEST` | `shared/entry.focusTest.ts` (teste de foco: escada de Z; RF-IMG-13) |
+| `build:presets` | `public/presets.js` | `GRBL_PRESETS` | `shared/entry.materialPresets.ts` (presets: dose + JSON; RF-IMG-14) |
 | `build:i18n` | `public/i18n.js` | `GRBL_I18N` | `shared/i18n/entry.ts` (catálogos pt-BR/en/es + `applyDom`) |
 
 Os bundles em `public/*.js` listados acima são de build (estão no `.gitignore`):

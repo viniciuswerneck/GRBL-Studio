@@ -287,6 +287,47 @@ export const ptBR = {
   'focus.status.done':
     'Teste de foco gerado ({steps} passos). Confira no preview e envie ou salve.',
   'focus.err.moduleMissing': 'Módulo do teste de foco não carregado.',
+  // ------------------------------------ presets de material (P2.12/RF-IMG-8)
+  'preset.title': 'Presets de material',
+  'preset.hint':
+    'Receitas que deram certo: potência, velocidade, passadas e notas. Exporte para compartilhar; importe para repetir sem refazer a grade de testes.',
+  'preset.new': 'Novo preset',
+  'preset.name': 'Nome',
+  'preset.notes': 'Notas (opcional)',
+  'preset.fromCurrent':
+    'Fonte: {module} · {action} · {power}% · {speed} mm/min · {passes} passada(s).',
+  'preset.defaultName': 'Receita {n}',
+  'preset.create': 'Salvar ajustes atuais',
+  'preset.saveCurrent': 'Salvar como preset…',
+  'preset.manage': 'Meus presets…',
+  'preset.empty':
+    'Nenhum preset ainda. Ajuste a potência e a velocidade, dê um nome e salve os ajustes atuais.',
+  'preset.apply': 'Aplicar',
+  'preset.convert': 'Ajustar à máquina',
+  'preset.remove': 'Excluir',
+  'preset.meta': '{module} · {action} · {power}% · {speed} mm/min · {passes}×',
+  'preset.dose': 'Dose {dose} J/mm',
+  'preset.doseHint':
+    'Dose = energia por milímetro (aproximada, sem o ponto do laser): serve para comparar receitas e transferir entre módulos.',
+  'preset.hint.applied':
+    'Preset “{name}”: {power}% · {speed} mm/min · {passes} passada(s).',
+  'preset.import': 'Importar…',
+  'preset.export': 'Exportar…',
+  'preset.status.created': 'Preset “{name}” salvo.',
+  'preset.status.applied':
+    'Preset “{name}” aplicado: {power}% · {speed} mm/min · {passes} passada(s).',
+  'preset.status.converted':
+    'Dose preservada: {from}% ({fromModule}) → {to}% ({toModule}).',
+  'preset.status.convertLimited':
+    'O módulo {toModule} da máquina não alcança a dose da receita ({fromModule}) — ficou em 100%. Reduza a velocidade para manter a dose.',
+  'preset.status.removed': 'Preset removido.',
+  'preset.status.imported': '{n} preset(s) importado(s).',
+  'preset.status.importedSkipped': ' {n} inválido(s) ignorado(s).',
+  'preset.status.exported': 'Presets exportados para {path}.',
+  'preset.err.name': 'Dê um nome ao preset.',
+  'preset.err.moduleMissing': 'Módulo de presets não carregado.',
+  'preset.err.import': 'Não foi possível ler o arquivo: {msg}',
+  'preset.err.empty': 'O arquivo não tem presets válidos.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
@@ -1254,6 +1295,9 @@ export const ptBR = {
   'dlg.tooBig': 'Arquivo grande demais ({size}).',
   'dlg.missingContent': 'Conteúdo de G-code ausente.',
   'dlg.missingMacros': 'Conteúdo de macros ausente.',
+  'dlg.importPresets': 'Importar presets de material',
+  'dlg.exportPresets': 'Exportar presets de material',
+  'dlg.missingPresets': 'Conteúdo dos presets ausente.',
 
   // ----------------------------------------- alarmes do GRBL 1.1 (ALARM:n)
   'alarm.1':
@@ -1413,6 +1457,7 @@ export const ptBR = {
   'menu.tools': 'Ferramentas',
   'menu.materialTest': 'Grade de teste de material…',
   'menu.focusTest': 'Teste de foco (spot)…',
+  'menu.presets': 'Presets de material…',
   'menu.design': 'Desenhar…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
@@ -1431,6 +1476,7 @@ export const ptBR = {
   'console.saveFail': 'Falha ao salvar o log: {msg}',
   'dlg.saveLog': 'Salvar log do console',
   'filter.log': 'Log (texto)',
+  'filter.presets': 'Presets (JSON)',
 
   // ------------------------------------------------ status (RF-STA-2/4/7)
   'status.dtg': 'Para ir',

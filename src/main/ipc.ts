@@ -605,6 +605,57 @@ export function registerIpc(
     },
   );
 
+  // ------------------------------------- presets de material (P2.12)
+
+  ipcMain.handle(
+    CHANNELS.presetImport,
+    async (evt): Promise<OpenedTextFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: t('dlg.importPresets'),
+        buttonLabel: t('dlg.import'),
+        properties: ['openFile'],
+        filters: [
+          { name: t('filter.presets'), extensions: ['json', 'JSON'] },
+          { name: t('filter.all'), extensions: ['*'] },
+        ],
+        defaultPath: await defaultDir(),
+      });
+      if (!filePath) return null;
+      rememberDir(filePath);
+
+      const info = await stat(filePath);
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
+      if (info.size > TEXT_MAX_BYTES) {
+        throw new Error(t('dlg.tooBig', { size: formatMb(info.size) }));
+      }
+      const text = await readFile(filePath, 'utf8');
+      return { path: filePath, name: path.basename(filePath), text };
+    },
+  );
+
+  ipcMain.handle(
+    CHANNELS.presetExport,
+    async (evt, content: unknown): Promise<string | null> => {
+      if (typeof content !== 'string') throw new Error(t('dlg.missingPresets'));
+      const options = {
+        title: t('dlg.exportPresets'),
+        defaultPath: 'grbl-presets.json',
+        filters: [
+          { name: t('filter.presets'), extensions: ['json'] },
+          { name: t('filter.all'), extensions: ['*'] },
+        ],
+      };
+      const owner = BrowserWindow.fromWebContents(evt.sender);
+      const result = owner
+        ? await dialog.showSaveDialog(owner, options)
+        : await dialog.showSaveDialog(options);
+      if (result.canceled || !result.filePath) return null;
+      await writeFile(result.filePath, content, 'utf8');
+      rememberDir(result.filePath);
+      return result.filePath;
+    },
+  );
+
   // ---------------------------------------------------- log do console (RF-CON-15)
 
   ipcMain.handle(

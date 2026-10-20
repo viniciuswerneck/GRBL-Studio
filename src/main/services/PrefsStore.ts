@@ -11,6 +11,7 @@ import * as path from 'node:path';
 import { sanitizeBatchPrefs } from '../../shared/batch';
 import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
+import { sanitizePresets } from '../../shared/materialPresets';
 import { isThemeId } from '../../shared/themes';
 import type {
   AlarmEntry,
@@ -236,6 +237,8 @@ function sanitize(input: unknown): Prefs {
   if (symbols) prefs.symbols = symbols;
   const batch = sanitizeBatchPrefs(raw.batch);
   if (batch) prefs.batch = batch;
+  if (Array.isArray(raw.materialPresets))
+    prefs.materialPresets = sanitizePresets(raw.materialPresets);
   return prefs;
 }
 

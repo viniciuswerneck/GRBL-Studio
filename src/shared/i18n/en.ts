@@ -273,6 +273,47 @@ export const en = {
   'focus.status.done':
     'Focus test generated ({steps} steps). Check the preview, then send or save it.',
   'focus.err.moduleMissing': 'Focus test module not loaded.',
+  // ------------------------------- material presets (P2.12/RF-IMG-8)
+  'preset.title': 'Material presets',
+  'preset.hint':
+    'Recipes that worked: power, speed, passes and notes. Export to share; import to repeat without redoing the test grid.',
+  'preset.new': 'New preset',
+  'preset.name': 'Name',
+  'preset.notes': 'Notes (optional)',
+  'preset.fromCurrent':
+    'Source: {module} · {action} · {power}% · {speed} mm/min · {passes} pass(es).',
+  'preset.defaultName': 'Recipe {n}',
+  'preset.create': 'Save current settings',
+  'preset.saveCurrent': 'Save as preset…',
+  'preset.manage': 'My presets…',
+  'preset.empty':
+    'No presets yet. Set the power and the speed, give it a name and save the current settings.',
+  'preset.apply': 'Apply',
+  'preset.convert': 'Adapt to machine',
+  'preset.remove': 'Delete',
+  'preset.meta': '{module} · {action} · {power}% · {speed} mm/min · {passes}×',
+  'preset.dose': 'Dose {dose} J/mm',
+  'preset.doseHint':
+    'Dose = energy per millimetre (approximate, ignoring beam spot): use it to compare recipes and transfer them between modules.',
+  'preset.hint.applied':
+    'Preset “{name}”: {power}% · {speed} mm/min · {passes} pass(es).',
+  'preset.import': 'Import…',
+  'preset.export': 'Export…',
+  'preset.status.created': 'Preset “{name}” saved.',
+  'preset.status.applied':
+    'Preset “{name}” applied: {power}% · {speed} mm/min · {passes} pass(es).',
+  'preset.status.converted':
+    'Dose preserved: {from}% ({fromModule}) → {to}% ({toModule}).',
+  'preset.status.convertLimited':
+    "The machine's {toModule} module cannot reach the recipe dose ({fromModule}) — capped at 100%. Lower the speed to keep the dose.",
+  'preset.status.removed': 'Preset deleted.',
+  'preset.status.imported': '{n} preset(s) imported.',
+  'preset.status.importedSkipped': ' {n} invalid one(s) ignored.',
+  'preset.status.exported': 'Presets exported to {path}.',
+  'preset.err.name': 'Give the preset a name.',
+  'preset.err.moduleMissing': 'Presets module not loaded.',
+  'preset.err.import': 'Could not read the file: {msg}',
+  'preset.err.empty': 'The file has no valid presets.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': '2D code (QR / Data Matrix)…',
@@ -1223,6 +1264,9 @@ export const en = {
   'dlg.tooBig': 'File too large ({size}).',
   'dlg.missingContent': 'G-code content missing.',
   'dlg.missingMacros': 'Macro content missing.',
+  'dlg.importPresets': 'Import material presets',
+  'dlg.exportPresets': 'Export material presets',
+  'dlg.missingPresets': 'Preset content missing.',
 
   // ----------------------------------------- alarmes do GRBL 1.1 (ALARM:n)
   'alarm.1':
@@ -1378,6 +1422,7 @@ export const en = {
   'menu.tools': 'Tools',
   'menu.materialTest': 'Material test grid…',
   'menu.focusTest': 'Focus test (spot)…',
+  'menu.presets': 'Material presets…',
   'menu.design': 'Design…',
   'menu.theme': 'Theme',
   'menu.language': 'Language',
@@ -1396,6 +1441,7 @@ export const en = {
   'console.saveFail': 'Failed to save log: {msg}',
   'dlg.saveLog': 'Save console log',
   'filter.log': 'Log (text)',
+  'filter.presets': 'Presets (JSON)',
 
   // ------------------------------------------------ status (RF-STA-2/4/7)
   'status.dtg': 'To go',

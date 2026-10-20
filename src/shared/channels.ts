@@ -44,6 +44,9 @@ export const CHANNELS = {
   fileOpenCsv: 'file:open-csv',
   macrosOpen: 'file:open-macros',
   macrosSave: 'file:save-macros',
+  /** Presets de material (P2.12): importar/exportar JSON. */
+  presetImport: 'file:open-presets',
+  presetExport: 'file:save-presets',
   pickDir: 'app:pick-dir',
   openLogs: 'app:open-logs',
   fontsList: 'app:fonts:list',
@@ -83,6 +86,7 @@ export const MENU_ACTIONS = {
   openLogs: 'open-logs',
   materialTest: 'material-test',
   focusTest: 'focus-test',
+  presets: 'presets',
   machine: 'machine',
   openSvg: 'open-svg',
   openDxf: 'open-dxf',

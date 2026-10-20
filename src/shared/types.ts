@@ -6,6 +6,7 @@
 import type { BatchPrefs } from './batch';
 import type { Lang } from './i18n';
 import type { Macro } from './macros';
+import type { MaterialPreset } from './materialPresets';
 
 export type { Lang };
 
@@ -383,6 +384,12 @@ export interface Prefs {
    * `null` limpa o lote (encerrou/descartou).
    */
   batch?: BatchPrefs | null;
+  /**
+   * **Presets de material** salvos pelo usuário (P2.12/RF-IMG-8): receitas de
+   * potência/velocidade/passadas que deram certo. Lista vazia = o usuário
+   * apagou todas (não ressuscitar as de fábrica).
+   */
+  materialPresets?: MaterialPreset[];
 }
 
 /** Símbolos 2D disponíveis no modal "Código 2D". */

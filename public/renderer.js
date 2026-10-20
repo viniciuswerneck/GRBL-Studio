@@ -300,6 +300,20 @@ const el = {
   matTestStatus: $('matTestStatus'),
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
+  presetOverlay: $('presetOverlay'),
+  presetClose: $('presetClose'),
+  presetCount: $('presetCount'),
+  presetList: $('presetList'),
+  presetStatus: $('presetStatus'),
+  presetSource: $('presetSource'),
+  presetName: $('presetName'),
+  presetNotes: $('presetNotes'),
+  presetCreate: $('presetCreate'),
+  presetImport: $('presetImport'),
+  presetExport: $('presetExport'),
+  presetSave: $('presetSave'),
+  presetManage: $('presetManage'),
+  presetNewGroup: $('presetNewGroup'),
   focusOverlay: $('focusOverlay'),
   focusClose: $('focusClose'),
   focusPreview: $('focusPreview'),
@@ -537,6 +551,8 @@ const state = {
   lastStatus: null,
   /** Preferências persistidas no main (RF-CFG-5). */
   prefs: {},
+  /** Presets de material salvos (P2.12) — espelho de `prefs.materialPresets`. */
+  presets: [],
   /** Perfil à espera do consentimento do usuário (RF-MAQ-9). */
   pendingProfile: null,
   /** Sugestão do smart connect (P2.5), quando a máquina casa com o catálogo. */
@@ -773,7 +789,7 @@ function openFrameModal() {
     if (el.frameSpeed && el.imgSpeed) el.frameSpeed.value = el.imgSpeed.value;
     if (el.framePower && el.imgSmax) {
       const pct = Math.round(
-        ((Number(el.imgSmax.value) || 0) / machineSMax()) * 100,
+        ((Number(el.imgSmax.value) || 0) / powerRefS()) * 100,
       );
       el.framePower.value = String(Math.max(0, Math.min(100, pct)));
     }
@@ -7004,9 +7020,18 @@ async function confirmApplyProfile() {
  * perfil do catálogo que casa com ela. A sugestão **não** escreve nada — o
  * usuário confere e aplica (RF-MAQ-9).
  */
-async function suggestProfileFromMachine() {
+async function suggestProfileFromMachine(attempt = 0) {
   hideProfileSuggestion();
   if (!state.connected || !machines?.suggestMachineProfile) return;
+  // Logo após conectar, o snapshot pode chegar vazio (a leitura inicial de
+  // `$$` ainda está em voo) ou a consulta colidir com ela. Uma releitura
+  // resolve — com teto, para não virar laço em máquina que não casa.
+  const retry = () => {
+    if (attempt >= 2 || !state.connected) return;
+    setTimeout(() => {
+      if (state.connected) void suggestProfileFromMachine(attempt + 1);
+    }, 1200);
+  };
   try {
     const data = await readMachine();
     const facts = data.facts ?? {};
@@ -7017,7 +7042,10 @@ async function suggestProfileFromMachine() {
       sMax: facts.sMax,
       homing: facts.homing,
     });
-    if (!suggestion) return;
+    if (!suggestion) {
+      retry();
+      return;
+    }
     if (suggestion.profile.id === el.machineProfile?.value) return;
     state.profileSuggestion = suggestion;
     el.profileSuggestion.textContent = t('profile.suggestion', {
@@ -7029,7 +7057,8 @@ async function suggestProfileFromMachine() {
     el.profileSuggestion.classList.remove('hidden');
     el.profileSuggestion.removeAttribute('hidden');
   } catch {
-    // Sugestão é um extra: falhou a leitura, segue sem sugestão.
+    // Sugestão é um extra: falhou a leitura, tenta de novo uma vez.
+    retry();
   }
 }
 
@@ -7304,6 +7333,20 @@ function machineHoming() {
 function machineSMax() {
   const fromField = Number(el.imgSmax?.value);
   if (Number.isFinite(fromField) && fromField > 0) return fromField;
+  const fromProfile = Number(currentMachineProfile()?.sMax);
+  if (Number.isFinite(fromProfile) && fromProfile > 0) return fromProfile;
+  return window.GRBL_MATERIALS?.PROFILE_MAX_S ?? 1000;
+}
+
+/**
+ * Referência de **100 % de potência**: o `S-max` (`$30`) do perfil da máquina.
+ *
+ * Não use o campo `#imgSmax` como referência: ele é a potência da **imagem** e
+ * muda ao aplicar uma receita. Usá-lo fazia o percentual "derivar" — aplicar
+ * um perfil de 80 % e depois um de 100 % dava 80 % de novo, e o controle de
+ * potência da moldura mostrava sempre 100 %.
+ */
+function powerRefS() {
   const fromProfile = Number(currentMachineProfile()?.sMax);
   if (Number.isFinite(fromProfile) && fromProfile > 0) return fromProfile;
   return window.GRBL_MATERIALS?.PROFILE_MAX_S ?? 1000;
@@ -9453,7 +9496,7 @@ function applyProfile() {
   );
   if (!profile) return;
 
-  const sMax = materials.powerPercentToS(profile.powerPercent, machineSMax());
+  const sMax = materials.powerPercentToS(profile.powerPercent, powerRefS());
   el.imgSpeed.value = String(profile.speedMmMin);
   el.imgSmax.value = String(sMax);
   if (el.frameSpeed) el.frameSpeed.value = String(profile.speedMmMin);
@@ -9484,7 +9527,7 @@ function renderProfileHint() {
   if (!profile) return;
   el.profileHint.textContent = t('profile.material.applied', {
     power: profile.powerPercent,
-    smax: materials.powerPercentToS(profile.powerPercent),
+    smax: materials.powerPercentToS(profile.powerPercent, powerRefS()),
     speed: profile.speedMmMin,
     notes: materialNotes(profile.notes),
   });
@@ -9499,6 +9542,413 @@ if (materials) {
   // Sem `public/materials.js` (build ausente): não deixa o campo parecer útil.
   el.profileMaterial.disabled = true;
   el.profileHint.textContent = t('profile.material.unavailable');
+}
+
+// ---------------------------------- presets de material (P2.12, RF-IMG-8/RF-IMG-10)
+//
+// A "receita que deu certo" fica em `prefs.materialPresets` (sobrevive a
+// reinícios). A normalização, a dose e o JSON vivem no módulo **puro**
+// `src/shared/materialPresets.ts` (bundle `GRBL_PRESETS`, sob demanda); aqui
+// só há tela e persistência. A **dose** (J/mm) permite comparar receitas e
+// levá-las de um módulo (3 W/5 W/10 W) para outro.
+
+/** Módulo puro dos presets (bundle sob demanda). */
+function presetModule() {
+  return window.GRBL_PRESETS;
+}
+
+let presetBundleLoad = null;
+function ensurePresetBundle() {
+  if (!presetBundleLoad) presetBundleLoad = requireBundle('presets.js');
+  return presetBundleLoad;
+}
+
+/** Id curto e único para a receita (o módulo puro só valida o formato). */
+function presetId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Rótulo traduzido da ação (`engrave`/`cut`). */
+function presetActionLabel(action) {
+  return t(action === 'cut' ? 'action.cut' : 'action.engrave');
+}
+
+/** Preenche `#presetStatus` (aviso em amarelo quando é limitação/erro). */
+function setPresetStatus(text, attention = false) {
+  if (!el.presetStatus) return;
+  el.presetStatus.textContent = text;
+  el.presetStatus.classList.toggle('attention', Boolean(attention));
+}
+
+/** Ajustes **atuais** da imagem → campos de um preset (sem id/nome). */
+function currentPresetParams() {
+  const ref = powerRefS();
+  const sValue = Number(el.imgSmax?.value);
+  const powerPercent =
+    Number.isFinite(sValue) && sValue > 0
+      ? Math.round(Math.min(100, (sValue / ref) * 100) * 10) / 10
+      : 0;
+  return {
+    module: el.profileModule?.value || '5W',
+    action: el.profileAction?.value === 'cut' ? 'cut' : 'engrave',
+    material: el.profileMaterial?.value || '',
+    powerPercent,
+    speedMmMin: Math.max(1, Math.round(Number(el.imgSpeed?.value) || 1000)),
+    passes: Math.max(1, Math.round(Number(el.imgPasses?.value) || 1)),
+    mode: el.imgMode?.value === 'M3' ? 'M3' : 'M4',
+  };
+}
+
+/** Mostra o que será salvo e sugere um nome (só quando o campo está vazio). */
+function updatePresetSource() {
+  if (!el.presetSource) return;
+  const params = currentPresetParams();
+  const action = presetActionLabel(params.action);
+  el.presetSource.textContent = t('preset.fromCurrent', {
+    module: params.module,
+    action,
+    power: params.powerPercent,
+    speed: params.speedMmMin,
+    passes: params.passes,
+  });
+  if (el.presetName && !el.presetName.value.trim()) {
+    const material = params.material ? materialName(params.material) : '';
+    el.presetName.value = material
+      ? `${material} — ${action}`
+      : t('preset.defaultName', { n: state.presets.length + 1 });
+  }
+}
+
+/** Grava a lista nas preferências (falha não derruba a UI). */
+async function persistPresets() {
+  await persistPrefs({ materialPresets: state.presets });
+  // O main normaliza ao gravar: mantém a UI igual ao que ficou no disco.
+  if (Array.isArray(state.prefs.materialPresets)) {
+    state.presets = state.prefs.materialPresets;
+  }
+}
+
+async function openPresetModal(options = {}) {
+  if (!el.presetOverlay) return;
+  await ensurePresetBundle();
+  el.presetOverlay.classList.remove('hidden');
+  setPresetStatus('');
+  updatePresetSource();
+  renderPresetList();
+  if (options.new) {
+    if (el.presetNewGroup) el.presetNewGroup.open = true;
+    el.presetName?.focus();
+    el.presetName?.select();
+  }
+}
+
+function closePresetModal() {
+  if (el.presetOverlay) el.presetOverlay.classList.add('hidden');
+}
+
+/** Botão pequeno da linha do preset. */
+function presetButton(label, onClick, className) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  if (className) button.className = className;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+/** Lista de presets (DOM puro: nome/notas do usuário nunca viram HTML). */
+function renderPresetList() {
+  if (!el.presetList) return;
+  el.presetList.replaceChildren();
+  const M = presetModule();
+  const list = state.presets;
+  if (el.presetCount)
+    el.presetCount.textContent = list.length ? String(list.length) : '';
+  if (el.presetExport) el.presetExport.disabled = list.length === 0;
+  if (!M) return;
+
+  if (list.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'joblib-empty';
+    empty.textContent = t('preset.empty');
+    el.presetList.appendChild(empty);
+    return;
+  }
+
+  for (const preset of list) {
+    const item = document.createElement('li');
+    item.className = 'preset-item';
+
+    const info = document.createElement('div');
+    info.className = 'preset-info';
+    const name = document.createElement('div');
+    name.className = 'preset-name';
+    name.textContent = preset.name;
+    const meta = document.createElement('div');
+    meta.className = 'preset-meta';
+    meta.textContent = t('preset.meta', {
+      module: preset.module,
+      action: presetActionLabel(preset.action),
+      power: preset.powerPercent,
+      speed: preset.speedMmMin,
+      passes: preset.passes,
+    });
+    const dose = document.createElement('div');
+    dose.className = 'preset-dose';
+    dose.textContent = t('preset.dose', {
+      dose: M.totalDoseJPerMm(preset).toFixed(2),
+    });
+    info.appendChild(name);
+    info.appendChild(meta);
+    info.appendChild(dose);
+    if (preset.notes) {
+      const notes = document.createElement('div');
+      notes.className = 'preset-notes';
+      notes.textContent = preset.notes;
+      notes.title = preset.notes;
+      info.appendChild(notes);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'preset-actions';
+    actions.appendChild(
+      presetButton(t('preset.apply'), () => applyPreset(preset)),
+    );
+    actions.appendChild(
+      presetButton(t('preset.convert'), () => convertAndApplyPreset(preset)),
+    );
+    actions.appendChild(
+      presetButton(
+        t('preset.remove'),
+        () => void removePresetById(preset),
+        'danger',
+      ),
+    );
+
+    item.appendChild(info);
+    item.appendChild(actions);
+    el.presetList.appendChild(item);
+  }
+}
+
+/** Salva os ajustes atuais com o nome digitado. */
+async function createPresetFromCurrent() {
+  await ensurePresetBundle();
+  const M = presetModule();
+  if (!M) {
+    setPresetStatus(t('preset.err.moduleMissing'), true);
+    return;
+  }
+  const name = (el.presetName?.value || '').trim();
+  if (!name) {
+    setPresetStatus(t('preset.err.name'), true);
+    el.presetName?.focus();
+    return;
+  }
+  const preset = M.sanitizePreset({
+    ...currentPresetParams(),
+    id: presetId(),
+    name,
+    notes: el.presetNotes?.value || '',
+    createdAt: Date.now(),
+  });
+  if (!preset) {
+    setPresetStatus(t('preset.err.name'), true);
+    return;
+  }
+  state.presets = M.upsertPreset(state.presets, preset);
+  await persistPresets();
+  if (el.presetNotes) el.presetNotes.value = '';
+  if (el.presetName) el.presetName.value = '';
+  updatePresetSource();
+  renderPresetList();
+  setPresetStatus(t('preset.status.created', { name: preset.name }));
+}
+
+/** Aplica a receita nos campos da imagem (e na moldura, se existir). */
+function applyPreset(preset) {
+  if (!preset) return;
+  if (el.profileModule) el.profileModule.value = preset.module;
+  if (el.profileAction) el.profileAction.value = preset.action;
+  populateMaterials();
+  if (preset.material) {
+    const known = [...el.profileMaterial.options].some(
+      (option) => option.value === preset.material,
+    );
+    if (known) el.profileMaterial.value = preset.material;
+  }
+  const s = materials
+    ? materials.powerPercentToS(preset.powerPercent, powerRefS())
+    : Math.round((preset.powerPercent / 100) * powerRefS());
+  if (el.imgSmax) el.imgSmax.value = String(s);
+  if (el.imgSpeed) el.imgSpeed.value = String(preset.speedMmMin);
+  if (el.imgPasses) el.imgPasses.value = String(preset.passes);
+  if (el.imgMode) el.imgMode.value = preset.mode;
+  // Moldura (posicionamento): mantém os dois caminhos coerentes.
+  if (el.frameSpeed) el.frameSpeed.value = String(preset.speedMmMin);
+  if (el.framePower)
+    el.framePower.value = String(Math.round(preset.powerPercent));
+  if (el.frameSpeedValue)
+    el.frameSpeedValue.textContent = `${preset.speedMmMin} mm/min`;
+  if (el.framePowerValue)
+    el.framePowerValue.textContent = `${Math.round(preset.powerPercent)} %`;
+  // O hint do grupo é do **manual**; depois de aplicar uma receita ele diria
+  // outra potência. Mostra a receita (escolher outro material volta ao manual).
+  if (el.profileHint) {
+    el.profileHint.textContent = t('preset.hint.applied', {
+      name: preset.name,
+      power: preset.powerPercent,
+      speed: preset.speedMmMin,
+      passes: preset.passes,
+    });
+  }
+  setPresetStatus(
+    t('preset.status.applied', {
+      name: preset.name,
+      power: preset.powerPercent,
+      speed: preset.speedMmMin,
+      passes: preset.passes,
+    }),
+  );
+}
+
+/**
+ * "Ajustar à máquina": mantém a **dose** e converte a potência para o módulo
+ * da máquina atual (RF-IMG-10). Se o módulo não alcançar, avisa.
+ */
+function convertAndApplyPreset(preset) {
+  const M = presetModule();
+  if (!M || !preset) return;
+  const target =
+    currentMachineProfile()?.module || el.profileModule?.value || '5W';
+  const conversion = M.convertPresetTo(preset, { module: target });
+  applyPreset({
+    ...preset,
+    module: target,
+    powerPercent: conversion.powerPercent,
+    speedMmMin: conversion.speedMmMin,
+  });
+  let text = t('preset.status.converted', {
+    from: preset.powerPercent,
+    fromModule: preset.module,
+    to: conversion.powerPercent,
+    toModule: target,
+  });
+  if (conversion.limited) {
+    text += ` ${t('preset.status.convertLimited', {
+      fromModule: preset.module,
+      toModule: target,
+    })}`;
+  }
+  setPresetStatus(text, conversion.limited);
+}
+
+async function removePresetById(preset) {
+  await ensurePresetBundle();
+  const M = presetModule();
+  if (!M) return;
+  state.presets = M.removePreset(state.presets, preset.id);
+  await persistPresets();
+  renderPresetList();
+  updatePresetSource();
+  setPresetStatus(t('preset.status.removed'));
+}
+
+async function importPresetsFromFile() {
+  await ensurePresetBundle();
+  const M = presetModule();
+  if (!M) return;
+  try {
+    const file = await window.grbl.importPresets();
+    if (!file) return;
+    const result = M.presetsFromJson(file.text);
+    if (result.error) {
+      setPresetStatus(t('preset.err.import', { msg: file.name }), true);
+      return;
+    }
+    if (result.presets.length === 0) {
+      setPresetStatus(t('preset.err.empty'), true);
+      return;
+    }
+    let next = state.presets;
+    for (const preset of result.presets) next = M.upsertPreset(next, preset);
+    state.presets = next;
+    await persistPresets();
+    renderPresetList();
+    updatePresetSource();
+    let text = t('preset.status.imported', { n: result.presets.length });
+    if (result.skipped > 0) {
+      text += t('preset.status.importedSkipped', { n: result.skipped });
+    }
+    setPresetStatus(text);
+  } catch (err) {
+    setPresetStatus(t('preset.err.import', { msg: err.message }), true);
+  }
+}
+
+async function exportPresetsToFile() {
+  await ensurePresetBundle();
+  const M = presetModule();
+  if (!M) return;
+  if (state.presets.length === 0) {
+    setPresetStatus(t('preset.err.empty'), true);
+    return;
+  }
+  try {
+    const filePath = await window.grbl.exportPresets(
+      M.presetsToJson(state.presets),
+    );
+    if (filePath)
+      setPresetStatus(t('preset.status.exported', { path: filePath }));
+  } catch (err) {
+    setPresetStatus(t('preset.err.import', { msg: err.message }), true);
+  }
+}
+
+if (el.presetSave)
+  el.presetSave.addEventListener(
+    'click',
+    () => void openPresetModal({ new: true }),
+  );
+if (el.presetManage)
+  el.presetManage.addEventListener('click', () => void openPresetModal());
+if (el.presetClose) el.presetClose.addEventListener('click', closePresetModal);
+if (el.presetOverlay)
+  el.presetOverlay.addEventListener('click', (ev) => {
+    if (ev.target === el.presetOverlay) closePresetModal();
+  });
+if (el.presetCreate)
+  el.presetCreate.addEventListener(
+    'click',
+    () => void createPresetFromCurrent(),
+  );
+if (el.presetName)
+  el.presetName.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      void createPresetFromCurrent();
+    }
+  });
+if (el.presetImport)
+  el.presetImport.addEventListener('click', () => void importPresetsFromFile());
+if (el.presetExport)
+  el.presetExport.addEventListener('click', () => void exportPresetsToFile());
+// Manter a linha "Fonte: …" atualizada enquanto o modal está aberto.
+for (const field of [
+  el.imgSpeed,
+  el.imgPasses,
+  el.imgMode,
+  el.imgSmax,
+  el.profileModule,
+  el.profileAction,
+  el.profileMaterial,
+]) {
+  if (!field) continue;
+  field.addEventListener('change', () => {
+    if (el.presetOverlay && !el.presetOverlay.classList.contains('hidden'))
+      updatePresetSource();
+  });
 }
 
 function generateGcode(commit = true) {
@@ -10696,6 +11146,11 @@ function refreshTexts() {
     // A prévia é montada com `t()`: refaz no novo idioma.
     updateFocusPreview();
   }
+  if (el.presetOverlay && !el.presetOverlay.classList.contains('hidden')) {
+    // Lista e linha "Fonte" são montadas com `t()`.
+    renderPresetList();
+    if (el.presetSource) updatePresetSource();
+  }
   renderPreview();
   updatePinChip(state.lastStatus);
   // O editor de desenho monta as listas com `t()`; ao trocar de idioma,
@@ -10821,6 +11276,7 @@ for (const overlay of [
   el.frameOverlay,
   el.matTestOverlay,
   el.focusOverlay,
+  el.presetOverlay,
   el.qrOverlay,
   el.designOverlay,
 ]) {
@@ -10848,6 +11304,7 @@ function openOverlays() {
     el.frameOverlay,
     el.matTestOverlay,
     el.focusOverlay,
+    el.presetOverlay,
     el.qrOverlay,
     el.barcodeOverlay,
     el.gcodeOverlay,
@@ -10926,6 +11383,7 @@ if (window.grbl.onAction)
       });
     else if (name === 'material-test') openMatTestModal();
     else if (name === 'focus-test') openFocusModal();
+    else if (name === 'presets') openPresetModal();
     else if (name === 'qr-code') openQrModal();
     else if (name === 'bar-code') openBarModal();
     else if (name === 'batch') openBatchModal(batch.kind);
@@ -10997,6 +11455,11 @@ async function loadPrefs() {
     console.warn(t('err.prefix', { msg: err.message }), err);
     state.prefs = {};
   }
+
+  // Presets de material (P2.12): o main já normalizou a lista ao ler o disco.
+  state.presets = Array.isArray(state.prefs.materialPresets)
+    ? state.prefs.materialPresets
+    : [];
 
   if (state.prefs.lang && I18N) {
     I18N.setLocale(state.prefs.lang);
@@ -12482,7 +12945,7 @@ if (el.frameStart)
           0,
           Math.min(100, Number(el.framePower.value) || 0),
         );
-        el.imgSmax.value = String(Math.round((pct / 100) * machineSMax()));
+        el.imgSmax.value = String(Math.round((pct / 100) * powerRefS()));
       }
       if (el.frameSpeed && el.imgSpeed) {
         el.imgSpeed.value = String(el.frameSpeed.value);
@@ -12672,7 +13135,7 @@ if (el.guideMaterial) {
       el.guideMaterial.value,
     );
     if (!profile) return;
-    const sMax = materials.powerPercentToS(profile.powerPercent, machineSMax());
+    const sMax = materials.powerPercentToS(profile.powerPercent, powerRefS());
     if (el.imgSpeed) el.imgSpeed.value = String(profile.speedMmMin);
     if (el.imgSmax) el.imgSmax.value = String(sMax);
     if (el.imgPasses) el.imgPasses.value = '1';
@@ -12762,6 +13225,7 @@ function prefetchBundles() {
   void requireBundle('batch.js');
   void requireBundle('production.js');
   void requireBundle('focusTest.js');
+  void requireBundle('presets.js');
 }
 setTimeout(() => {
   if ('requestIdleCallback' in window) {
