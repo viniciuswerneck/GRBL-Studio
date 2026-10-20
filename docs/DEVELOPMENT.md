@@ -293,12 +293,16 @@ Notas:
 
 - `serialport` passa pelo `@electron/rebuild` usado pelo `electron-builder`; não
   é necessário comando manual.
-- O ícone do app vem de `docs/icone.png` → `build/icon.png` (512×512). O
-  `electron-builder` o usa para o AppImage/.deb (atalho do desktop vinculado à
-  janela por `desktopName`/`syncDesktopName`) e a janela principal o define em
-  `BrowserWindow.icon`. O splash de abertura é `public/splash.png` exibido por
-  `public/splash.html` (janela frameless de 738×401, fechada em
-  `ready-to-show`; desligado com `GRBL_SMOKE_TEST=1`/`GRBL_E2E=1`).
+- O ícone do app vem de `docs/icone.png` → `build/icon.png` (512×512) e o
+  splash de `docs/splash.png` → `public/splash.png` (984×437). **As fontes
+  são os arquivos em `docs/`**; os do app são derivados e se geram com
+  `python3 scripts/gen-assets.py` (precisa de Pillow). O
+  `electron-builder` usa o ícone para o AppImage/.deb (atalho do desktop
+  vinculado à janela por `desktopName`/`syncDesktopName`) e a janela principal
+  o define em `BrowserWindow.icon`. O splash de abertura é `public/splash.png`
+  exibido por `public/splash.html` (janela frameless de 738×328 — a proporção
+  da imagem —, fechada em `ready-to-show`; desligado com
+  `GRBL_SMOKE_TEST=1`/`GRBL_E2E=1`).
 - Flatpak (RF-APP-4, “Could”): esqueleto pronto em `build/flatpak/` — o manifesto
   `com.grblstudio.app.yml` reempacota o AppImage gerado por `electron-builder`.
   Construa com `npm run package:flatpak` (requer `flatpak-builder` e os runtimes;
