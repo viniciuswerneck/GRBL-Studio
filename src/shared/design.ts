@@ -57,6 +57,19 @@ export {
   TAB_MAX_COUNT,
   TAB_MAX_WIDTH_MM,
 } from './tabs';
+export type {
+  FiducialBounds,
+  FiducialKind,
+  FiducialOptions,
+} from './fiducials';
+export {
+  FIDUCIAL_OFFSET_MAX_MM,
+  FIDUCIAL_SIZE_MAX_MM,
+  FIDUCIAL_SIZE_MIN_MM,
+  fiducialMarks,
+  sanitizeFiducialOffset,
+  sanitizeFiducialSize,
+} from './fiducials';
 export type { CostBreakdown, CostCurrency, CostInputs } from './cost';
 export {
   COST_CURRENCIES,

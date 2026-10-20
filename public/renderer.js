@@ -1882,6 +1882,96 @@ function dConfirmArray() {
   dStatus(t('design.array.done', { n: clones.length }), 'ok');
 }
 
+// -------------------------------------------------------- marcas de registro
+//
+// Fiduciais em volta da arte para alinhar a peça na mesa (jogar o laser até a
+// marca e zerar o eixo) e conferir o alinhamento entre passadas/tiles. São
+// linhas abertas na camada ativa: gravam, não entram no kerf e não fecham a
+// peça. A geometria vem de `fiducialMarks` (módulo puro, testado).
+
+function dFiducialDialogOpen() {
+  const o = $('designFiducialOverlay');
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+function dArtBounds() {
+  if (!designState.shapes.length) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const sh of designState.shapes) {
+    for (const p of sh.points) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+  }
+  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
+}
+
+function dOpenFiducialDialog() {
+  if (!designState.shapes.length) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  dCloseBoolMenu();
+  const kind = $('designFiducialKind');
+  if (kind) kind.value = 'corners';
+  const off = $('designFiducialOffset');
+  if (off && off.value.trim() === '') off.value = '5';
+  const size = $('designFiducialSize');
+  if (size && size.value.trim() === '') size.value = '10';
+  const overlay = $('designFiducialOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  if (off) {
+    off.focus();
+    off.select();
+  }
+}
+
+function dCloseFiducialDialog() {
+  const overlay = $('designFiducialOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function dConfirmFiducials() {
+  const D = window.GRBL_DESIGN;
+  if (!D || typeof D.fiducialMarks !== 'function') return;
+  const kindNode = $('designFiducialKind');
+  const kind = kindNode?.value === 'crosses' ? 'crosses' : 'corners';
+  const offset = D.sanitizeFiducialOffset(dNum('designFiducialOffset', 5));
+  const size = D.sanitizeFiducialSize(dNum('designFiducialSize', 10));
+  // Referência: a seleção, se houver; senão, a arte inteira.
+  const bounds = designState.selection.length
+    ? dSelectionBounds()
+    : dArtBounds();
+  if (!bounds) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  const lines = D.fiducialMarks(bounds, { kind, offset, size });
+  if (!lines.length) {
+    dStatus(t('design.fiducial.none'), 'error');
+    return;
+  }
+  const group = `g${designState.seq++}`;
+  const name = dNextName('marks');
+  const base = designState.shapes.length;
+  const created = lines.map((points) => {
+    const shape = { kind: 'line', points, closed: false, group, name };
+    if (designState.activeLayer) shape.layer = designState.activeLayer;
+    return shape;
+  });
+  designState.shapes.push(...created);
+  dPushHistory();
+  designState.selection = created.map((_, i) => base + i);
+  dCloseFiducialDialog();
+  dAfterSelection();
+  dStatus(t('design.fiducial.done', { n: created.length }), 'ok');
+}
+
 // ------------------------------------------------------------ encaixe na chapa
 
 function dNestDialogOpen() {
@@ -5080,12 +5170,105 @@ function dOpenTilesDialog() {
   }
   const ov = $('designTileOverlap');
   if (ov && ov.value.trim() === '') ov.value = '2';
-  dUpdateTilesSummary();
   const overlay = $('designTilesOverlay');
   if (overlay) overlay.classList.remove('hidden');
+  // Depois de visível: o canvas precisa da largura real para desenhar.
+  dUpdateTilesSummary();
   if (tw) {
     tw.focus();
     tw.select();
+  }
+}
+
+/**
+ * Prévia do plano no diálogo: arte e janelas em escala, rotuladas como os
+ * arquivos (`r1c1` = canto inferior esquerdo). O canvas é desenhado em css px
+ * com DPR, como a prancheta.
+ */
+function dDrawTilesPreview(plan, bounds) {
+  const canvas = $('designTilesCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const cssW = canvas.clientWidth || 520;
+  const cssH = canvas.clientHeight || 170;
+  const w = Math.round(cssW * dpr);
+  const h = Math.round(cssH * dpr);
+  if (canvas.width !== w) canvas.width = w;
+  if (canvas.height !== h) canvas.height = h;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const dark =
+    getComputedStyle(document.documentElement).colorScheme !== 'light';
+  ctx.fillStyle = dark ? '#1c1c1c' : '#f4f4f6';
+  ctx.fillRect(0, 0, cssW, cssH);
+  if (!plan || !bounds) return;
+
+  // Extensão visível: arte + janelas (a última pode sobrar além da arte).
+  let minX = bounds.minX;
+  let maxX = bounds.maxX;
+  let minY = bounds.minY;
+  let maxY = bounds.maxY;
+  for (const tile of plan.tiles) {
+    minX = Math.min(minX, tile.x0);
+    maxX = Math.max(maxX, tile.x1);
+    minY = Math.min(minY, tile.y0);
+    maxY = Math.max(maxY, tile.y1);
+  }
+  const pad = 8;
+  const spanX = Math.max(1e-6, maxX - minX);
+  const spanY = Math.max(1e-6, maxY - minY);
+  const scale = Math.min((cssW - pad * 2) / spanX, (cssH - pad * 2) / spanY);
+  const offX = (cssW - spanX * scale) / 2 - minX * scale;
+  const offY = (cssH - spanY * scale) / 2;
+  const X = (x) => offX + x * scale;
+  const Y = (y) => cssH - offY - y * scale;
+  const accent = dark ? '#4cc2ff' : '#0a6cff';
+
+  // arte
+  ctx.fillStyle = dark ? 'rgba(76,194,255,0.14)' : 'rgba(10,108,255,0.10)';
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.2;
+  ctx.fillRect(
+    X(bounds.minX),
+    Y(bounds.maxY),
+    (bounds.maxX - bounds.minX) * scale,
+    (bounds.maxY - bounds.minY) * scale,
+  );
+  ctx.strokeRect(
+    X(bounds.minX) + 0.5,
+    Y(bounds.maxY) + 0.5,
+    (bounds.maxX - bounds.minX) * scale - 1,
+    (bounds.maxY - bounds.minY) * scale - 1,
+  );
+
+  // janelas
+  ctx.setLineDash([5, 3]);
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+  ctx.lineWidth = 1;
+  for (const tile of plan.tiles) {
+    ctx.strokeRect(
+      X(tile.x0) + 0.5,
+      Y(tile.y1) + 0.5,
+      (tile.x1 - tile.x0) * scale - 1,
+      (tile.y1 - tile.y0) * scale - 1,
+    );
+  }
+  ctx.setLineDash([]);
+
+  // rótulos = nome do arquivo (r1c1, r1c2, …)
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.78)' : 'rgba(0,0,0,0.62)';
+  ctx.font = '600 10px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const tile of plan.tiles) {
+    const label = `r${tile.row + 1}c${tile.col + 1}`;
+    const cx = X((tile.x0 + tile.x1) / 2);
+    const cy = Y((tile.y0 + tile.y1) / 2);
+    if ((tile.x1 - tile.x0) * scale < 30 || (tile.y1 - tile.y0) * scale < 14) {
+      continue;
+    }
+    ctx.fillText(label, cx, cy);
   }
 }
 
@@ -5101,21 +5284,24 @@ function dUpdateTilesSummary() {
   if (!out) return;
   const T = window.GRBL_TILING;
   if (!T || !window.GRBL_DESIGN) return;
-  const bounds = dTilesBounds();
-  const plan = bounds
+  const boundsForTiles = dTilesBounds();
+  const plan = boundsForTiles
     ? T.planTiles(
-        bounds,
+        boundsForTiles,
         dNum('designTileW', 0),
         dNum('designTileH', 0),
         dNum('designTileOverlap', 0),
       )
     : null;
   designTilesPlan = plan;
+  const bounds = boundsForTiles;
   if (!plan) {
+    dDrawTilesPreview(null, bounds);
     out.textContent = t('design.tiles.tooMany', { max: T.TILE_MAX_COUNT });
     if (save) save.disabled = true;
     return;
   }
+  dDrawTilesPreview(plan, bounds);
   if (save) save.disabled = false;
   if (plan.cols === 1 && plan.rows === 1) {
     out.textContent = t('design.tiles.fits');
@@ -5652,6 +5838,33 @@ function dConfirmSize() {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
     });
+  }
+
+  // diálogo "marcas de registro"
+  const fidBtn = $('designFiducial');
+  if (fidBtn) fidBtn.addEventListener('click', dOpenFiducialDialog);
+  const fidConfirm = $('designFiducialConfirm');
+  if (fidConfirm) fidConfirm.addEventListener('click', dConfirmFiducials);
+  const fidCancel = $('designFiducialCancel');
+  if (fidCancel) fidCancel.addEventListener('click', dCloseFiducialDialog);
+  const fidClose = $('designFiducialClose');
+  if (fidClose) fidClose.addEventListener('click', dCloseFiducialDialog);
+  const fidOverlay = $('designFiducialOverlay');
+  if (fidOverlay) {
+    fidOverlay.addEventListener('click', (e) => {
+      if (e.target === fidOverlay) dCloseFiducialDialog();
+    });
+  }
+  for (const id of ['designFiducialOffset', 'designFiducialSize']) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          dConfirmFiducials();
+        }
+      });
+    }
   }
 
   // documento do desenho (salvar/abrir)

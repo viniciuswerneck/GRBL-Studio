@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 379 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 393 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -92,7 +92,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **922 testes** (Vitest, 56 arquivos) + E2E Playwright (54) + smoke headless.
+- [x] **927 testes** (Vitest, 57 arquivos) + E2E Playwright (55) + smoke headless.
 
 ---
 
@@ -317,9 +317,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — ✅ **abas, sobre-corte e custo por peça**
-   (v0.14.0) e **tiling** (v0.15.0); seguem abertos registro/fiduciais,
-   geradores e o kit de segurança/monitor; versões e esforço **propostos** na
-   tabela do Anexo, a ratificar antes de virar compromisso.
+   (v0.14.0), **tiling** (v0.15.0) e **marcas de registro** (v0.16.0); seguem
+   abertos geradores e o kit de segurança/monitor; versões e esforço
+   **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
 > persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
@@ -442,7 +442,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | Geradores paramétricos | v0.8 | M | Caixa com encaixe + engrenagem (paramétrico, sem rede). |
 | Catálogo de materiais com avisos | v0.8 | M | Material com notas de segurança e presets ligados. |
 | Agenda / fila de trabalhos | v1.0 | S | Fila persistida rodando em sequência com emergência acessível. |
-| Marcas de registro | v0.9 | S | Fiduciais desenhados + alinhamento no preview. |
+| Marcas de registro | v0.9 | S | ✅ RF-DSN-22 (0.16.0): L/cruzes em volta da arte + prévia do plano de tiles. |
 | Tiling (maior que a mesa) | v0.9 | M | ✅ RF-DSN-21 (0.15.0): janelas com sobreposição, origem local e um arquivo por tile. |
 | Gravar dos dois lados | v0.9 | M | Espelhamento + registro para o 2º lado. |
 | Gravar em peça já pronta | v0.9 | S | Alinhar desenho ao alvo existente (fiducial/visão simples). |

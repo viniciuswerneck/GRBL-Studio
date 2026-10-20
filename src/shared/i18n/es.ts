@@ -947,6 +947,22 @@ export const es = {
   'design.cost.resultTimeOnly':
     '≈ {time} · indica la tarifa de la máquina y el precio del material',
   'design.cost.noTime': 'Sin tiempo estimado para este tamaño.',
+  'design.fiducial': 'Marcas de registro…',
+  'design.fiducial.title': 'Marcas de registro',
+  'design.fiducial.hint':
+    'Marca las esquinas o el centro de los lados de la obra para alinear la pieza en la mesa (lleva el láser hasta la marca y pon el eje a cero). Usa la selección como referencia o toda la obra.',
+  'design.fiducial.kind': 'Tipo de marca',
+  'design.fiducial.corners': 'Esquinas (L)',
+  'design.fiducial.crosses': 'Cruces',
+  'design.fiducial.offset': 'Distancia de la obra (mm)',
+  'design.fiducial.size': 'Tamaño de la marca (mm)',
+  'design.fiducial.note':
+    'Las marcas son líneas abiertas (grabado) y quedan fuera de la obra: no entran en la compensación de kerf ni cierran la pieza.',
+  'design.fiducial.create': 'Insertar marcas',
+  'design.fiducial.done': '{n} marcas de registro insertadas',
+  'design.fiducial.none': 'No hay espacio para las marcas con ese tamaño.',
+  'design.kind.marks': 'Marcas',
+  'design.tiles.preview': 'Vista previa de los tiles',
   'design.tiles': 'Dividir en tiles…',
   'design.tiles.title': 'Dividir en tiles',
   'design.tiles.w': 'Ancho del tile (mm)',

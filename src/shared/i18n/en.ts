@@ -925,6 +925,22 @@ export const en = {
   'design.cost.resultTimeOnly':
     '≈ {time} · enter the machine rate and the material price',
   'design.cost.noTime': 'No time estimate for this size.',
+  'design.fiducial': 'Registration marks…',
+  'design.fiducial.title': 'Registration marks',
+  'design.fiducial.hint':
+    'Marks the corners or the middle of the artwork sides to align the piece on the bed (jog the laser to the mark and zero the axis). Uses the selection as reference or the whole artwork.',
+  'design.fiducial.kind': 'Mark type',
+  'design.fiducial.corners': 'Corners (L)',
+  'design.fiducial.crosses': 'Crosses',
+  'design.fiducial.offset': 'Distance from artwork (mm)',
+  'design.fiducial.size': 'Mark size (mm)',
+  'design.fiducial.note':
+    'Marks are open polylines (engraving) placed outside the artwork — they are not kerf-compensated and do not close the piece.',
+  'design.fiducial.create': 'Insert marks',
+  'design.fiducial.done': '{n} registration marks inserted',
+  'design.fiducial.none': 'There is no room for marks with that size.',
+  'design.kind.marks': 'Marks',
+  'design.tiles.preview': 'Tile preview',
   'design.tiles': 'Split into tiles…',
   'design.tiles.title': 'Split into tiles',
   'design.tiles.w': 'Tile width (mm)',

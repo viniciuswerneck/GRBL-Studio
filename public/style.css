@@ -2420,6 +2420,16 @@ html[data-theme="sand"] .design-canvas-wrap {
   font-variant-numeric: tabular-nums;
 }
 
+.design-tiles-canvas {
+  display: block;
+  width: 100%;
+  height: 170px;
+  margin-top: 10px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-input);
+}
+
 .design-size-note {
   margin: 0;
   font-size: 11px;

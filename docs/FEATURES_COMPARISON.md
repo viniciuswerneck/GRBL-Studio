@@ -38,6 +38,7 @@
 | Abas de retenção e sobre-corte (lead) | Parcial (abas manuais no G-code) | Sim (N abas por camada + sobre-corte na emenda) | ✅ |
 | Custo por peça | Não | Sim (tempo × tarifa/h + material × preço/m², R$/US$/€) | ✅ |
 | Tiling (peça maior que a mesa) | Sim (manual, por camadas) | Sim (janelas com sobreposição, um arquivo por tile) | ✅ |
+| Marcas de registro (fiduciais) | Parcial (marcas manuais) | Sim (L/cruzes em volta da arte, na camada ativa) | ✅ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -90,7 +91,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1 379 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 393 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |

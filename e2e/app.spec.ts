@@ -631,6 +631,50 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('marcas de registro: insere os fiduciais em volta da arte (Anexo B)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 140, box.y + 140);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y + 260);
+      await page.mouse.up();
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+
+      await page.click('#designFiducial');
+      await expect(page.locator('#designFiducialOverlay')).toBeVisible();
+      await page.selectOption('#designFiducialKind', 'corners');
+      await page.fill('#designFiducialOffset', '6');
+      await page.fill('#designFiducialSize', '10');
+      await page.click('#designFiducialConfirm');
+      await expect(page.locator('#designFiducialOverlay')).toHaveClass(
+        /hidden/,
+      );
+      // As 4 marcas entram como **um** grupo (uma entidade na lista).
+      await expect(page.locator('#designObjCount')).toHaveText('2');
+      await expect(page.locator('#designStatus')).toContainText(
+        'marcas de registro',
+      );
+
+      // As cruzes também entram (8 traços, mesmo grupo).
+      await page.click('#designFiducial');
+      await page.selectOption('#designFiducialKind', 'crosses');
+      await page.click('#designFiducialConfirm');
+      await expect(page.locator('#designObjCount')).toHaveText('3');
+    } finally {
+      await close();
+    }
+  });
+
   test('encaixe na chapa: distribui as peças na margem (P3.7)', async () => {
     const { app, page, close } = await launchApp();
     try {
@@ -950,6 +994,16 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await expect(page.locator('#designTilesSummary')).toContainText(
         '2 × 2 = 4 tiles',
       );
+      // A prévia do plano é desenhada no canvas do diálogo.
+      const painted = await page.evaluate(() => {
+        const canvas = document.querySelector('#designTilesCanvas');
+        const ctx = canvas.getContext('2d');
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let n = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i] > 0) n++;
+        return n;
+      });
+      expect(painted).toBeGreaterThan(1000);
       await page.click('#designTilesSave');
 
       const files = [

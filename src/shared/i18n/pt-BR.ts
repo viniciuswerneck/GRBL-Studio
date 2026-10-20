@@ -950,6 +950,22 @@ export const ptBR = {
   'design.cost.resultTimeOnly':
     '≈ {time} · informe a tarifa da máquina e o preço do material',
   'design.cost.noTime': 'Sem tempo estimado para este tamanho.',
+  'design.fiducial': 'Marcas de registro…',
+  'design.fiducial.title': 'Marcas de registro',
+  'design.fiducial.hint':
+    'Marca os cantos ou o meio dos lados da arte para alinhar a peça na mesa (jogue o laser até a marca e zere o eixo). Use a seleção como referência ou a arte inteira.',
+  'design.fiducial.kind': 'Tipo de marca',
+  'design.fiducial.corners': 'Cantos (L)',
+  'design.fiducial.crosses': 'Cruzes',
+  'design.fiducial.offset': 'Distância da arte (mm)',
+  'design.fiducial.size': 'Tamanho da marca (mm)',
+  'design.fiducial.note':
+    'As marcas são linhas abertas (gravação) e ficam fora da arte — não entram na compensação de kerf nem fecham a peça.',
+  'design.fiducial.create': 'Inserir marcas',
+  'design.fiducial.done': '{n} marcas de registro inseridas',
+  'design.fiducial.none': 'Não há espaço para as marcas com esse tamanho.',
+  'design.kind.marks': 'Marcas',
+  'design.tiles.preview': 'Prévia dos tiles',
   'design.tiles': 'Dividir em tiles…',
   'design.tiles.title': 'Dividir em tiles',
   'design.tiles.w': 'Largura do tile (mm)',

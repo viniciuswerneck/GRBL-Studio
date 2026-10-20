@@ -6,6 +6,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — marcas de registro/fiduciais (RF-DSN-22)
+
+- Botão **“Marcas de registro…”** na barra do editor: coloca `L`s nos quatro
+  cantos ou **cruzes** no meio dos lados, **fora da arte** (distância e tamanho
+  ajustáveis). Servem para alinhar a peça na mesa (jogar o laser até a marca e
+  zerar o eixo), conferir frente/verso e remontar peças.
+- As marcas entram como **um grupo** na camada ativa, com nome próprio
+  (“Marcas 1”), e são **linhas abertas**: gravam sem compensação de kerf e sem
+  fechar a peça. Usam a seleção como referência, se houver; senão, a arte
+  inteira.
+
+### Changed — prévia do plano de tiling
+
+- O diálogo “Dividir em tiles…” agora desenha a **prévia do plano** no próprio
+  diálogo: arte e janelas em escala, rotuladas como os arquivos (`r1c1`,
+  `r1c2`…), atualizando enquanto você muda tamanho/sobreposição.
+
 ## [0.15.0] - 2026-10-20
 
 Marco **peça grande**: o programa é fatiado em janelas do tamanho da mesa com
