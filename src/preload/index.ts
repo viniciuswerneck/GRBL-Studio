@@ -92,7 +92,7 @@ const api = {
   /** Abre uma URL https de host liberado no navegador do sistema. */
   openExternal: (url: string): Promise<boolean> =>
     ipcRenderer.invoke(CHANNELS.openExternal, url),
-  saveGcode: (suggestedName: string, content: string): Promise<string | null> =>
+  saveGcode: (content: string, suggestedName: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSave, { suggestedName, content }),
   openImage: (): Promise<OpenedImageFile | null> =>
     ipcRenderer.invoke(CHANNELS.fileOpenImage),

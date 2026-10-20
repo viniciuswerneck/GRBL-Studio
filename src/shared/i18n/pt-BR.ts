@@ -753,6 +753,8 @@ export const ptBR = {
     'Velocidade da camada (mm/min) — vazio usa o padrão de gravação',
   'design.layer.passes.hint':
     'Passadas da camada — vazio usa o padrão de gravação',
+  'design.layer.kerf.hint':
+    'Folga de corte (kerf) em mm: externos crescem e furos encolhem pela metade; vazio = sem compensação',
   'design.layer.assign': 'Mover seleção',
   'design.layer.assigned': '{n} objeto(s) movido(s) para {name}.',
   'design.layer.needSelection': 'Selecione ao menos um objeto para mover.',
@@ -783,6 +785,7 @@ export const ptBR = {
   'design.obj.speed.hint':
     'Velocidade do objeto (mm/min) — vazio usa o padrão de gravação',
   'design.obj.passes': 'N',
+  'design.obj.kerf': 'K',
   'design.obj.passes.hint':
     'Passadas do objeto — vazio usa o padrão de gravação',
   'design.obj.width': 'E',

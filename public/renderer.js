@@ -2661,6 +2661,8 @@ function dUpdateLayerList() {
       meta.push(`${Math.round(layer.speed)}`);
     if (typeof layer.passes === 'number' && Number.isFinite(layer.passes))
       meta.push(`×${Math.round(layer.passes)}`);
+    if (typeof layer.kerf === 'number' && layer.kerf > 0)
+      meta.push(`K ${Number(layer.kerf.toFixed(2))}`);
 
     li.append(grip, dot, label);
     if (meta.length) {
@@ -2837,6 +2839,7 @@ function dUpdateLayerEditor() {
     'designLayerPower',
     'designLayerSpeed',
     'designLayerPasses',
+    'designLayerKerf',
     'designLayerMode',
   ]) {
     const node = $(id);
@@ -2861,6 +2864,12 @@ function dUpdateLayerEditor() {
   setNum('designLayerPower', 'power', 'designPower');
   setNum('designLayerSpeed', 'speed', 'designSpeed');
   setNum('designLayerPasses', 'passes', 'designPasses');
+  const kerf = $('designLayerKerf');
+  if (kerf) {
+    const v = layer && typeof layer.kerf === 'number' ? layer.kerf : 0;
+    kerf.value = v > 0 ? String(Number(v.toFixed(2))) : '';
+    kerf.placeholder = '0';
+  }
 
   const mode = $('designLayerMode');
   if (mode) {
@@ -5223,6 +5232,7 @@ function dConfirmSize() {
     ['designLayerPower', 'power', 0, 100],
     ['designLayerSpeed', 'speed', 100, 20000],
     ['designLayerPasses', 'passes', 1, 99],
+    ['designLayerKerf', 'kerf', 0, 10],
   ]) {
     const node = $(id);
     if (node) {
@@ -10711,8 +10721,8 @@ el.imgSave.addEventListener('click', async () => {
   if (!state.lines.length || !imageState.loaded) return;
   try {
     const path = await window.grbl.saveGcode(
-      `${baseName(imageState.loaded.name)}.gcode`,
       `${state.lines.join('\n')}\n`,
+      `${baseName(imageState.loaded.name)}.gcode`,
     );
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {

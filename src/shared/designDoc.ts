@@ -24,6 +24,7 @@
 
 import type { DesignLayer, Point, Shape, ShapeKind } from './design';
 import { sanitizeDesignSymbol } from './designSymbol';
+import { sanitizeKerf } from './kerf';
 
 /** Marca do arquivo — evita abrir qualquer JSON por engano. */
 export const DESIGN_DOC_KIND = 'grbl-studio/design';
@@ -183,6 +184,8 @@ function layer(raw: unknown): DesignLayer | null {
   const passes = finite(src.passes);
   if (passes !== undefined) out.passes = Math.round(clamp(passes, 1, 1000));
   if (src.mode === 'M3' || src.mode === 'M4') out.mode = src.mode;
+  const kerf = sanitizeKerf(src.kerf);
+  if (kerf > 0) out.kerf = kerf;
   return out;
 }
 

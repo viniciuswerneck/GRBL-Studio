@@ -2134,10 +2134,16 @@
               </header>
               <ul id="designLayerList" class="design-layer-list"></ul>
               <div class="design-layer-editor">
-                <label class="design-field">
-                  <span data-i18n="design.layer.name">Nome da camada</span>
-                  <input type="text" id="designLayerName" spellcheck="false" />
-                </label>
+                <div class="design-dock-row">
+                  <label class="design-field">
+                    <span data-i18n="design.layer.name">Nome da camada</span>
+                    <input type="text" id="designLayerName" spellcheck="false" />
+                  </label>
+                  <label class="design-mini design-layer-kerf" data-i18n-title="design.layer.kerf.hint" title="Folga de corte (kerf) em mm: externos crescem e furos encolhem pela metade; vazio = sem compensação">
+                    <span data-i18n="design.obj.kerf">K</span>
+                    <input type="number" id="designLayerKerf" min="0" max="10" step="0.05" placeholder="0" />
+                  </label>
+                </div>
                 <div class="design-dock-row">
                   <label class="design-mini" data-i18n-title="design.layer.power.hint" title="Potência da camada (%); vazio herda o padrão">
                     <span data-i18n="design.obj.power">P</span>

@@ -16,6 +16,7 @@
  */
 
 import type { DesignSymbolSpec } from './designSymbol';
+import { compensateKerf, sanitizeKerf } from './kerf';
 import { STROKE_STEP, strokePaths } from './offset';
 
 export type { DesignSymbolSpec } from './designSymbol';
@@ -36,6 +37,9 @@ export type {
 } from './designSymbol';
 
 // Documento do editor (`.gstudio`): salvar/abrir o desenho inteiro.
+export type { KerfOptions } from './kerf';
+export { compensateKerf, KERF_MAX_MM, sanitizeKerf } from './kerf';
+
 export type {
   DesignDoc,
   DesignDocError,
@@ -130,6 +134,13 @@ export interface DesignLayer {
   passes?: number;
   /** Modo do laser; ausente = modo global. */
   mode?: 'M3' | 'M4';
+  /**
+   * **Folga de corte (kerf)** em mm: o feixe remove uma faixa com essa largura,
+   * centrada no caminho. Com o valor, contornos externos crescem `kerf/2` e
+   * furos encolhem `kerf/2`, para a peça sair no tamanho do desenho.
+   * Ausente/0 = o caminho é o desenho (comportamento histórico).
+   */
+  kerf?: number;
 }
 
 export interface DesignDocument {
@@ -279,28 +290,6 @@ export function designToGcode(
     }
   }
 
-  // A arte é gravada **ancorada na origem de trabalho**: o canto inferior
-  // esquerdo do desenho vira X0 Y0. Como o usuário posiciona o laser onde o
-  // material deve ser gravado e **define a origem ali** (`G10 L20`/`G92`), o
-  // job começa a queimar exatamente sob o cabeçote — sem deslocamento — em vez
-  // de usar coordenadas absolutas da prancheta e sair andando até o desenho.
-  // O editor usa y-down (topo = 0) e o GRBL usa y-up:
-  //   machineX = pageX - minX   ·   machineY = maxY - pageY
-  const anchorX = Number.isFinite(minX) ? minX : 0;
-  const anchorY = Number.isFinite(maxY) ? maxY : 0;
-  const toMachine = (p: Point): Point => ({
-    x: p.x - anchorX,
-    y: anchorY - p.y,
-  });
-
-  const lines: string[] = [];
-  lines.push('; GRBL Studio — desenho vetorial');
-  lines.push(`; ${doc.shapes.length} forma(s)`);
-  if (hasShapes) {
-    lines.push(
-      `; área ${(maxX - minX).toFixed(2)} x ${(maxY - minY).toFixed(2)} mm`,
-    );
-  }
   // Agrupa as formas por camada preservando a ordem de execução declarada.
   // Sem camadas (ou com id desconhecido), a forma cai no grupo “solta”, que
   // usa os parâmetros globais e é emitido por último.
@@ -324,6 +313,80 @@ export function designToGcode(
     }));
   if (loose.length) operations.push({ layer: null, shapes: loose });
 
+  // **Kerf da camada**: compensa os contornos fechados da operação (externos
+  // crescem `kerf/2`, furos encolhem `kerf/2`). Traço grosso (`width`) é
+  // gravação e linhas abertas não têm lado de material — ficam de fora.
+  interface PreparedShape {
+    shape: Shape;
+    /** Pontos saneados da forma (como vieram). */
+    src: Point[];
+    /** Contorno compensado; `null` = colapsou com a folga (não emitir). */
+    kerf?: Point[] | null;
+  }
+  const prepared = operations.map((op) => {
+    const kerf = sanitizeKerf(op.layer?.kerf);
+    const shapes: PreparedShape[] = op.shapes.map((shape) => ({
+      shape,
+      src: finitePoints(shape.points),
+    }));
+    if (kerf > 0) {
+      const loops: Point[][] = [];
+      const indexes: number[] = [];
+      shapes.forEach((ps, index) => {
+        const sh = ps.shape;
+        if (!sh.closed || (sh.width && sh.width > 0)) return;
+        if (ps.src.length < 3) return;
+        loops.push(ps.src);
+        indexes.push(index);
+      });
+      const compensated = compensateKerf(loops, kerf);
+      indexes.forEach((index, i) => {
+        shapes[index].kerf = compensated[i];
+      });
+    }
+    return { layer: op.layer, shapes, kerf };
+  });
+
+  // A arte é gravada **ancorada na origem de trabalho**: o canto inferior
+  // esquerdo do desenho vira X0 Y0. Como o usuário posiciona o laser onde o
+  // material deve ser gravado e **define a origem ali** (`G10 L20`/`G92`), o
+  // job começa a queimar exatamente sob o cabeçote — sem deslocamento — em vez
+  // de usar coordenadas absolutas da prancheta e sair andando até o desenho.
+  // O editor usa y-down (topo = 0) e o GRBL usa y-up:
+  //   machineX = pageX - minX   ·   machineY = maxY - pageY
+  // O kerf pode crescer o contorno para fora do desenho: a âncora usa a área
+  // **realmente percorrida**, senão o job começaria em coordenada negativa.
+  let cutMinX = minX;
+  let cutMaxY = maxY;
+  for (const op of prepared) {
+    for (const ps of op.shapes) {
+      if (ps.kerf === null) continue;
+      const grow =
+        ps.kerf === undefined && ps.shape.width && ps.shape.width > STROKE_STEP
+          ? ps.shape.width / 2
+          : 0;
+      for (const p of ps.kerf ?? ps.src) {
+        cutMinX = Math.min(cutMinX, p.x - grow);
+        cutMaxY = Math.max(cutMaxY, p.y + grow);
+      }
+    }
+  }
+  const anchorX = Number.isFinite(cutMinX) ? cutMinX : 0;
+  const anchorY = Number.isFinite(cutMaxY) ? cutMaxY : 0;
+  const toMachine = (p: Point): Point => ({
+    x: p.x - anchorX,
+    y: anchorY - p.y,
+  });
+
+  const lines: string[] = [];
+  lines.push('; GRBL Studio — desenho vetorial');
+  lines.push(`; ${doc.shapes.length} forma(s)`);
+  if (hasShapes) {
+    lines.push(
+      `; área ${(maxX - minX).toFixed(2)} x ${(maxY - minY).toFixed(2)} mm`,
+    );
+  }
+
   lines.push('G21');
   lines.push('G90');
   lines.push('G94');
@@ -338,6 +401,7 @@ export function designToGcode(
         typeof l.power === 'number' ? `P ${l.power}%` : '',
         typeof l.speed === 'number' ? `F ${l.speed}` : '',
         typeof l.passes === 'number' ? `N ${l.passes}` : '',
+        typeof l.kerf === 'number' && l.kerf > 0 ? `K ${l.kerf} mm` : '',
         l.mode ? l.mode : '',
       ].filter(Boolean);
       if (meta.length) parts.push(` (${meta.join(', ')})`);
@@ -395,8 +459,8 @@ export function designToGcode(
     return best === 0 ? [...pts] : [...pts.slice(best), ...pts.slice(0, best)];
   };
 
-  for (let oi = 0; oi < operations.length; oi++) {
-    const op = operations[oi];
+  for (let oi = 0; oi < prepared.length; oi++) {
+    const op = prepared[oi];
     if (!op.shapes.length) continue;
     const layer = op.layer;
     // Parâmetros efetivos da operação: a camada sobrescreve o global e cada
@@ -416,13 +480,25 @@ export function designToGcode(
       const name = layer.name ? `: ${commentText(layer.name)}` : '';
       lines.push(`; camada ${oi + 1}${name}`);
     }
+    if (op.kerf > 0) {
+      const omitted = op.shapes.filter((ps) => ps.kerf === null).length;
+      lines.push(
+        `; kerf ${op.kerf} mm — externos +${op.kerf / 2} mm, furos -${op.kerf / 2} mm`,
+      );
+      if (omitted) {
+        lines.push(
+          `; kerf: ${omitted} contorno(s) menor(es) que a folga — omitido(s)`,
+        );
+      }
+    }
     for (let pass = 0; pass < layerPasses; pass++) {
       if (layerPasses > 1) {
         const suffix = layer?.name ? ` — ${commentText(layer.name)}` : '';
         lines.push(`; pass ${pass + 1}/${layerPasses}${suffix}`);
       }
-      for (const sh of op.shapes) {
-        const src = finitePoints(sh.points);
+      for (const ps of op.shapes) {
+        const sh = ps.shape;
+        const src = ps.src;
         if (src.length < 2) continue;
         // Um contorno "fechado" com 2 pontos tem área zero: é uma linha. Tratá-lo
         // como fechado o faria desaparecer ao ganhar espessura (`strokePaths`
@@ -435,9 +511,14 @@ export function designToGcode(
             ? clamp(sh.power, 0, 100)
             : layerPowerPct;
         const power = Math.round((pct / 100) * sMax);
+        if (ps.kerf === null) continue;
         // Traço grosso: cobre a faixa de `width` mm centrada no caminho.
-        const paths =
-          sh.width && sh.width > 0 ? strokePaths(src, closed, sh.width) : [src];
+        // Com kerf, o caminho compensado substitui a geometria original.
+        const paths = ps.kerf
+          ? [ps.kerf]
+          : sh.width && sh.width > 0
+            ? strokePaths(src, closed, sh.width)
+            : [src];
         // Passadas do próprio objeto, além das da camada (`layerPasses`).
         const shapePasses =
           typeof sh.passes === 'number' && Number.isFinite(sh.passes)

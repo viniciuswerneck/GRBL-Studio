@@ -749,6 +749,8 @@ export const es = {
     'Velocidad de la capa (mm/min) — vacío usa el valor de grabado',
   'design.layer.passes.hint':
     'Pasadas de la capa — vacío usa el valor de grabado',
+  'design.layer.kerf.hint':
+    'Holgura de corte (kerf) en mm: los contornos externos crecen y los agujeros se reducen a la mitad; vacío = sin compensación',
   'design.layer.assign': 'Mover selección',
   'design.layer.assigned': '{n} objeto(s) movido(s) a {name}.',
   'design.layer.needSelection': 'Selecciona al menos un objeto para mover.',
@@ -779,6 +781,7 @@ export const es = {
   'design.obj.speed.hint':
     'Velocidad del objeto (mm/min) — vacío usa el valor de grabado',
   'design.obj.passes': 'N',
+  'design.obj.kerf': 'K',
   'design.obj.passes.hint':
     'Pasadas del objeto — vacío usa el valor de grabado',
   'design.obj.width': 'E',

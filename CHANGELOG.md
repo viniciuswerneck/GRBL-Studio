@@ -6,6 +6,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — folga de corte (kerf) por camada (RF-DSN-17)
+
+- **Campo “K”** no editor de camada: informa a largura que o laser remove (mm).
+  O G-code passa a compensar a geometria — contornos **externos crescem
+  `kerf/2`**, **furos encolhem `kerf/2`** e **ilhas dentro de furos** voltam a
+  crescer (profundidade par/ímpar por contenção). É o que faz uma peça de
+  encaixe sair no tamanho desenhado em vez de “folgada”.
+- Só contornos fechados e **sem traço grosso** entram na compensação: linha
+  aberta e preenchimento por traço (`width`) são gravação. Furo menor que a
+  folga é **omitido** e o motivo fica registrado no G-code.
+- A **âncora X0 Y0** passa a usar a área **realmente percorrida** (com o kerf),
+  para o job não começar em coordenada negativa; o cabeçalho mostra o kerf da
+  camada (`K 0.2 mm`) e a lista de camadas mostra `K 0.2`.
+- O kerf é salvo no documento `.gstudio` (limitado a 10 mm na leitura).
+
+### Fixed — “Salvar .gcode” gravava o nome do arquivo em vez do programa
+
+- A ordem dos argumentos de `saveGcode` no preload estava trocada em relação a
+  **nove dos dez** pontos de uso (SVG, DXF, PDF, desenho, teste de material,
+  teste de foco, símbolos e editor de G-code): o arquivo salvo recebia o texto
+  `design.gcode` (o nome sugerido) e o programa era descartado. A API passou a
+  ser `(conteúdo, nome sugerido)` e o E2E do kerf confere o G-code salvo.
+
 ### Added — salvar/abrir o desenho (`.gstudio`, RF-DSN-16)
 
 - **Documento do editor “Desenhar”**: botões no painel **Documento** e atalhos

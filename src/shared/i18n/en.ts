@@ -730,6 +730,8 @@ export const en = {
   'design.layer.speed.hint':
     'Layer speed (mm/min) — empty uses the engraving default',
   'design.layer.passes.hint': 'Layer passes — empty uses the engraving default',
+  'design.layer.kerf.hint':
+    'Cut kerf in mm: outer contours grow and holes shrink by half; empty = no compensation',
   'design.layer.assign': 'Move selection',
   'design.layer.assigned': '{n} object(s) moved to {name}.',
   'design.layer.needSelection': 'Select at least one object to move.',
@@ -760,6 +762,7 @@ export const en = {
   'design.obj.speed.hint':
     'Object feed (mm/min) — empty uses the engraving default',
   'design.obj.passes': 'N',
+  'design.obj.kerf': 'K',
   'design.obj.passes.hint': 'Object passes — empty uses the engraving default',
   'design.obj.width': 'W',
   'design.obj.width.hint':

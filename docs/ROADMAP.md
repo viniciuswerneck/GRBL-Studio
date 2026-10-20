@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 349 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 351 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -65,6 +65,9 @@ Já entregue (não repetir no planejamento):
       com página, formas, camadas, texto e símbolo; **Ctrl+S**/**Ctrl+O**,
       confirmação antes de descartar alterações e leitura tolerante a arquivos
       inválidos — 20/10/2026.
+- [x] **Folga de corte / kerf por camada** (RF-DSN-17): externos crescem e
+      furos encolhem `kerf/2` (ilhas voltam a crescer), furo que colapsa é
+      omitido com aviso no G-code e a âncora usa a área compensada — 20/10/2026.
 - [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
       gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
       peça, contador e retomada — 20/10/2026.
@@ -89,7 +92,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **887 testes** (Vitest, 52 arquivos) + E2E Playwright (50) + smoke headless.
+- [x] **897 testes** (Vitest, 53 arquivos) + E2E Playwright (51) + smoke headless.
 
 ---
 
@@ -313,7 +316,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    teste de foco (P2.13).
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
-5. **Candidatos novos do Anexo** — as regras de oficina (kerf, abas), tiling e
+5. **Candidatos novos do Anexo** — as regras de oficina (abas), tiling e
    registro, geradores e o kit de segurança/monitor; versões e esforço
    **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
 
@@ -351,7 +354,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | ✅ `P2.10` |
 | 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | ✅ `P3.7` (encaixe por caixa) |
 | 9 | **Abas de retenção** | "Pestanhas" que seguram a peça pra ela não cair/voar. | Peça pequena que se solta no meio do corte. | ⬜ novo |
-| 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ⬜ novo |
+| 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ✅ `RF-DSN-17` |
 | 11 | **Entrada/saída do corte** | Ajustar onde o corte entra/sai e refazer o canto. | Canto limpo, sem "bico" queimado. | ⬜ novo |
 | 12 | **Custo e tempo por peça** | Quanto tempo leva e quanto custou (luz, material). | Dar orçamento pro cliente. | tempo ✅ · custo ⬜ novo |
 | 13 | **Fila / agenda de trabalhos** | Vários trabalhos enfileirados, rodando em sequência. | Programar a noite inteira de gravação. | `P2.9`/`P2.11` · agenda ⬜ novo |
@@ -431,7 +434,6 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | Item | Versão sugerida | Esf. | Resumo do critério (DoD) |
 | :-- | :-- | :-- | :-- |
 | Abas de retenção | v0.7 | S | Peça pequena presa por N abas configuráveis; testado. |
-| Kerf / folga de corte | v0.7 | S | Offset de kerf por camada; encaixe demonstrado. |
 | Entrada/saída do corte | v0.7 | S | Lead-in/lead-out e canto sem "bico" no corte. |
 | Biblioteca de símbolos | v0.7 | S | Catálogo de ícones/formas arrastáveis, sem rede. |
 | Custo por peça | v0.8 | S | Custo estimado (tempo × tarifa + material) exibido. |

@@ -82,11 +82,12 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 | Câmera (P3.1) / Rotativa (P3.2) | ⬜ | paridade LightBurn | Alto |
 | Nesting | ✅ encaixe por caixa, MaxRects (20/10/2026) | encaixe irregular (peças fora de caixa) | Médio |
 | Salvar/abrir o desenho (`.gstudio`) | ✅ (20/10/2026) | — | Baixo |
+| Folga de corte (kerf) por camada | ✅ (20/10/2026) | compensação por contenção (externos/furos/ilhas) | Baixo |
 | Editor de G-code (P1.10) | ✅ | highlight + numeração + reenvio de trecho | Baixo |
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
 | Flatpak (P1.3) · onboarding (P1.4) | manifesto pronto (**não publicado**) / ✅ | publicados | Baixo |
 | Orçamentos RNF-11/12 (P1.8) | ✅ Linux (RNF-11: 269 MB X11 / 290 MB Wayland) | 3 SOs | Baixo |
-| E2E de job/protocolo (Fase 8) | 50 casos (job, pausa, alarme, lote, produção, foco, presets, nesting…) | fluxo completo de job | Médio |
+| E2E de job/protocolo (Fase 8) | 51 casos (job, pausa, alarme, lote, produção, foco, presets, nesting…) | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
 | Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
 

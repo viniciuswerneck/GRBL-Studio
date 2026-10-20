@@ -1916,7 +1916,7 @@ html[data-theme="sand"] .design-canvas-wrap {
 }
 
 .design-doc-badge.dirty::after {
-  content: ' •';
+  content: " •";
   color: var(--accent);
 }
 
@@ -2128,6 +2128,16 @@ html[data-theme="sand"] .design-canvas-wrap {
 .design-layer-editor .design-dock-row {
   align-items: flex-end;
   gap: 4px;
+}
+
+/* Folga de corte ao lado do nome: o campo inteiro não cabe na linha P/V/N */
+.design-layer-kerf {
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.design-modal .design-layer-kerf input {
+  width: 3.2rem;
 }
 
 .design-layer-editor button {

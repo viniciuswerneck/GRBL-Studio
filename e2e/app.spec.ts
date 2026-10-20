@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -691,6 +697,92 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await expect(rows).toHaveCount(2);
     } finally {
       await close();
+    }
+  });
+
+  test('folga de corte (kerf) por camada compensa o contorno', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-kerf-'));
+    const plain = path.join(dir, 'sem-kerf.gcode');
+    const kerfed = path.join(dir, 'com-kerf.gcode');
+    const { app, page, close } = await launchApp();
+    // Faixa percorrida (máx − mín) do G-code salvo: o kerf cresce o contorno.
+    const extents = (text: string): { w: number; h: number } => {
+      const xs: number[] = [];
+      const ys: number[] = [];
+      for (const line of text.split('\n')) {
+        if (!line.startsWith('G1 ')) continue;
+        const x = /X(-?\d+\.\d+)/.exec(line);
+        const y = /Y(-?\d+\.\d+)/.exec(line);
+        if (x) xs.push(Number(x[1]));
+        if (y) ys.push(Number(y[1]));
+      }
+      return {
+        w: Math.max(...xs) - Math.min(...xs),
+        h: Math.max(...ys) - Math.min(...ys),
+      };
+    };
+    const waitFile = async (file: string): Promise<string> => {
+      await expect.poll(() => existsSync(file), { timeout: 10_000 }).toBe(true);
+      return readFileSync(file, 'utf8');
+    };
+    try {
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: target,
+        })) as typeof dialog.showSaveDialog;
+      }, plain);
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 140, box.y + 140);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y + 260);
+      await page.mouse.up();
+      await expect(page.locator('#designObjectList .design-obj')).toHaveCount(
+        1,
+      );
+
+      // Referência: sem folga de corte.
+      await page.click('#designSave');
+      const before = extents(await waitFile(plain));
+      expect(before.w).toBeGreaterThan(5);
+
+      // Folga de 0,2 mm: o contorno externo cresce 0,1 mm de cada lado.
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: target,
+        })) as typeof dialog.showSaveDialog;
+      }, kerfed);
+      await page.fill('#designLayerKerf', '0.2');
+      await page.locator('#designLayerKerf').dispatchEvent('change');
+      await expect(page.locator('#designLayerList')).toContainText('K 0.2');
+      await page.click('#designSave');
+      const text = await waitFile(kerfed);
+      expect(text).toContain('; kerf 0.2 mm');
+      // Sem coordenada negativa (a âncora usa a área compensada).
+      expect(
+        text
+          .split('\n')
+          .filter((l) => l.startsWith('G1 '))
+          .join('\n'),
+      ).not.toMatch(/[XY]-/);
+      const after = extents(text);
+      expect(after.w - before.w).toBeGreaterThan(0.15);
+      expect(after.w - before.w).toBeLessThan(0.25);
+      expect(after.h - before.h).toBeGreaterThan(0.15);
+      expect(after.h - before.h).toBeLessThan(0.25);
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 
