@@ -427,6 +427,8 @@ function spawnApp(options, userData) {
     APP_ROOT,
     `--user-data-dir=${userData}`,
     ...(options.sandbox ? [] : ['--no-sandbox']),
+    // Flags extras do Electron para experimentos de performance (A/B).
+    ...(process.env.GRBL_ELECTRON_FLAGS ?? '').split(/\s+/).filter(Boolean),
   ];
 
   const startedAt = performance.now();

@@ -327,6 +327,54 @@ não há evidência suficiente para afirmar, então fica como medição não
 reproduzida, não como "erro". O instrumento novo (linha do tempo + quebra por
 processo) existe justamente para que a próxima ocorrência seja diagnosticável.
 
+## 6.5 `in-process-gpu` — A/B e recusa da flag (19/10/2026)
+
+Hipótese testada: com o GPU dentro do processo **main** (`--in-process-gpu`),
+a árvore perde um processo e o consumo real de memória cai. O preview é 2D
+canvas puro (sem WebGL), então não há perda de capacidade; `disable-gpu` foi
+descartado antes (o *software rendering* deixa a UI inaceitavelmente lenta) e
+`no-zygote` não funciona via `appendSwitch` neste Electron (o zygote é criado
+antes do main ler as switches).
+
+**A/B intercalado, 4 pares**, mesmo build, X11 (`env -u WAYLAND_DISPLAY`),
+`--dwell=30000`, carga da máquina 4,3–5,1 durante toda a série (números de
+startup/CPU inflados; RAM e contagem de processos, não):
+
+| Métrica (mediana de 4) | Padrão (GPU separado) | `in-process-gpu` | Δ |
+| :--- | ---: | ---: | ---: |
+| Startup (spawn → janela pronta) | 1 790 ms | 1 910 ms | **+120 ms** |
+| RSS total da árvore | 649,3 MB | 585,2 MB | −64,1 MB |
+| **PSS total da árvore** | **265,7 MB** | **263,0 MB** | −2,7 MB (ruído) |
+| Processos | 6 | **5** | −1 |
+| RSS do processo main | 180,4 MB | 271,8 MB | +91,4 MB |
+| RSS do processo GPU | 155,7 MB | — (dentro do main) | — |
+| RSS do renderer | 117,7 MB | 119,0 MB | +1,3 MB |
+| CPU ociosa (média de 5 s) | 0,8 % | 0,4 % | — |
+
+**Conclusão: a flag foi recusada** (`src/main/index.ts` fica sem ela).
+
+1. **Não economiza memória real.** O PSS — a métrica que divide as páginas
+   compartilhadas entre os processos — fica igual (265,7 → 263,0 MB, dentro do
+   ruído da máquina). A queda de 64 MB no RSS *somado* é artefato do próprio
+   RSS: o processo GPU deixa de existir e as suas páginas passam a ser
+   contadas uma vez só. O orçamento de RAM continua o mesmo.
+2. **Piora o startup** em ~120 ms (mediana dos 4 pares) — o mesmo build,
+   então a diferença é da flag, não do código.
+3. **Move o risco para o main.** Com o GPU no processo principal, uma falha
+   do driver derruba o app inteiro; separado, eladerruba só o processo GPU.
+4. O ganho real (um processo a menos) não muda nenhum veredito: o orçamento
+   automático do `bench.mjs` compara o RSS total (649,3 → 585,2 MB), que
+   continua **muito acima** de 200 MB nos dois braços.
+
+O que fica **aberto** para o RNF-11: a RAM (PSS 265,7 MB nesta máquina, contra
+≤ 200 MB). A alavanca não é o processo GPU — é o que o renderer e o main
+mantêm vivos (RSS do renderer 117,7 MB; main 180,4 MB). Medir isso exige
+perfilar aheap do renderer e o que o main segura (sessão, log, snapshot da
+máquina), não trocar de flag.
+
+Instrumento: `scripts/bench.mjs` aceitou `GRBL_ELECTRON_FLAGS` (flags extras
+do Electron na linha de comando) para permitir A/B sem recompilar.
+
 ## 7. Procedimento manual — FPS durante job (≥ 55 fps)
 
 

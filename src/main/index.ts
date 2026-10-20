@@ -15,8 +15,11 @@ let splashTimer: ReturnType<typeof setTimeout> | null = null;
 let dispose: (() => Promise<void>) | null = null;
 let splashShown = false;
 
-/** Arte de splash (public/splash.png, 984×535) exibida a 75 % em 738×401. */
-const SPLASH = { width: 738, height: 401 };
+/**
+ * Arte de splash (public/splash.png, 984×437) exibida a 75 % em 738×328.
+ * A janela tem **a proporção da imagem** (`scripts/gen-assets.py`).
+ */
+const SPLASH = { width: 738, height: 328 };
 /** Só mostra o splash se a janela principal ainda não estiver pronta. */
 const SPLASH_DELAY_MS = 400;
 /** Ícone do app/janela (electron-builder também lê `build/icon.png`). */
