@@ -237,13 +237,40 @@ preview), nunca para deslocar o job. A caixa tracejada da área de trabalho e o
 
 ## 8. Checklist de aceite visual
 
-- [ ] Parece um app do Windows 11 ao lado de um (cantos, sombras, acento, tipografia).
-- [ ] Os 11 temas trocam sem flash (aplicados antes do primeiro paint) e persistem.
-- [ ] Temas de alto contraste (`hc-black`/`hc-white`) mantêm foco visível e contraste AAA.
-- [ ] Rodapé (nome · versão · WerneckLab) e modal **Sobre** exibem a versão real do app.
-- [ ] Nenhuma animação cai abaixo de 55 fps com um job rodando.
-- [ ] DRO estável em 0,001 mm sem "piscar".
-- [ ] Escala 125 %/150 % sem texto/ícone borrado.
-- [ ] RAM ≤ 200 MB após 10 min; CPU ociosa ~0 %.
-- [ ] `prefers-reduced-motion` desliga animações não essenciais.
-- [ ] Todos os componentes possuem estados Normal/Hover/Pressed/Focused/Disabled.
+Auditoria de **19/10/2026**. Legenda: ✅ verificado no código (com teste ou
+medição) · 👁 precisa do olho humano (procedimento manual) · ❌ não atende.
+
+- [ ] 👁 Parece um app do Windows 11 ao lado de um (cantos, sombras, acento, tipografia).
+- [x] ✅ Os 11 temas trocam sem flash (aplicados antes do primeiro paint) e persistem.
+      O tema é aplicado pelo `public/theme-boot.js` — carregado **sincronamente**
+      no `<head>`, antes do primeiro paint (o `localStorage` é a cópia que o app
+      deixa). Prova no E2E: com o script do app **bloqueado**, o tema continua
+      aplicado (quem aplicou foi o boot, não o app — que é assíncrono).
+- [ ] 👁 Temas de alto contraste (`hc-black`/`hc-white`) mantêm foco visível e contraste AAA.
+      O foco visível está garantido no código (outline de 3 px com `--accent`
+      nos temas `hc-*`); o **contraste AAA** é medição visual.
+- [x] ✅ Rodapé (nome · versão · WerneckLab) e modal **Sobre** exibem a versão real do app.
+      A versão vem de `app.getVersion()` (processo main) — não é digitada no código.
+- [ ] 👁 Nenhuma animação cai abaixo de 55 fps com um job rodando.
+      Procedimento em `docs/BENCHMARK.md` §7 (com o emulador GRBL).
+- [ ] 👁 DRO estável em 0,001 mm sem "piscar".
+      O código garante `font-variant-numeric: tabular-nums` (dígitos não mudam de
+      largura) e o preview usa `devicePixelRatio`; a estabilidade visual é
+      leitura de tela.
+- [ ] 👁 Escala 125 %/150 % sem texto/ícone borrado.
+      Procedimento em `docs/BENCHMARK.md` §9.
+- [ ] ❌ RAM ≤ 200 MB após 10 min; CPU ociosa ~ 0 %.
+      **CPU ociosa: ✅** (0,00 % de 1 core aos 10 min — `BENCHMARK.md` §6.4).
+      **RAM: ❌** (PSS 298,8 MB nesta máquina; o orçamento é 200 MB —
+      `BENCHMARK.md` §1 e §6.4). A alavanca aberta é o que o renderer e o main
+      mantêm vivos, não o processo GPU (ver §6.5).
+- [x] ✅ `prefers-reduced-motion` desliga animações não essenciais.
+      Em `public/tokens.css` (media query global) e no splash.
+- [x] ✅ Todos os componentes possuem estados Normal/Hover/Pressed/Focused/Disabled.
+      Os componentes base (`button`, `input`, `select`, `.chip`, abas) têm os
+      cinco estados no `public/style.css`; os alvos de clique têm no mínimo
+      32 px (`button { min-height: 32px }`).
+
+> O que falta para fechar este checklist é **humano**: os itens com 👁 dependem
+> de olhar a tela (incluindo um monitor com escala 125 %/150 %). Os itens com
+> ✅ estão cobertos por código ou teste automatizado.

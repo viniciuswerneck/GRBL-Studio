@@ -659,6 +659,25 @@ function startGrblTcp(
   });
 }
 
+test.describe('GRBL Studio — tema sem flash (RF-APP-1/DESIGN §8)', () => {
+  test('o tema salvo é aplicado antes do primeiro paint', async () => {
+    const { page, close } = await launchApp();
+    try {
+      // O `theme-boot.js` roda **antes** de qualquer script do app. A prova
+      // é direta: bloqueando o script do app, o tema continua aplicado — logo
+      // quem aplicou foi o boot (e não o app, que é assíncrono e causaria o
+      // flash).
+      await page.evaluate(() => localStorage.setItem('grbl-theme', 'light'));
+      await page.route('**/renderer.js', (route) => route.abort());
+      await page.reload();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      await page.unroute('**/renderer.js');
+    } finally {
+      await close();
+    }
+  });
+});
+
 test.describe('GRBL Studio — smart connect e import .lbdev (P2.5)', () => {
   test('sugere o perfil que casa com a máquina e pede consentimento', async () => {
     const emulator = await startGrblTcp();
