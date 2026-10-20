@@ -249,6 +249,30 @@ export const en = {
   'matTest.status.generating': 'Generating the test grid…',
   'matTest.status.done':
     'Grid generated. Check the preview, then send or save.',
+  // ------------------------------------------- focus test (RF-IMG-13)
+  'focus.title': 'Focus test (spot)',
+  'focus.hint':
+    'Engraves a ladder of lines with Z changing at each pair: the thinnest line shows the best focus. Z is relative to the current Z — the program steps down, up and back to the start. Leave clearance and keep Cancel at hand.',
+  'focus.steps': 'Z steps',
+  'focus.zStep': 'Z step (mm)',
+  'focus.zSign': 'Z direction',
+  'focus.zSignUp': 'Z+ moves away from the material',
+  'focus.zSignDown': 'Z+ moves toward the material',
+  'focus.length': 'Line length (mm)',
+  'focus.spacing': 'Spacing between lines (mm)',
+  'focus.feed': 'Feed rate (mm/min)',
+  'focus.powerLow': 'Low power (%)',
+  'focus.powerHigh': 'High power (%)',
+  'focus.mode': 'Laser mode',
+  'focus.generate': 'Generate and preview',
+  'focus.save': 'Save .gcode…',
+  'focus.preview':
+    '{lines} lines in {steps} Z steps: {zMin} to {zMax} mm (from the current Z).',
+  'focus.warn.samePower':
+    'Both powers are the same — use different values to compare focus on marking and on cutting.',
+  'focus.status.done':
+    'Focus test generated ({steps} steps). Check the preview, then send or save it.',
+  'focus.err.moduleMissing': 'Focus test module not loaded.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': '2D code (QR / Data Matrix)…',
@@ -1353,6 +1377,7 @@ export const en = {
   'menu.view': 'View',
   'menu.tools': 'Tools',
   'menu.materialTest': 'Material test grid…',
+  'menu.focusTest': 'Focus test (spot)…',
   'menu.design': 'Design…',
   'menu.theme': 'Theme',
   'menu.language': 'Language',

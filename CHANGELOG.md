@@ -6,6 +6,23 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — teste de foco / spot (P2.13 / RF-IMG-13)
+
+- **Ferramentas → Teste de foco (spot)…**: grava uma **escada de Z** com
+  **duas potências por passo** (baixa, para a marcação; alta, para o corte). A
+  linha mais fina e uniforme indica a **melhor altura de foco** daquele
+  material — sem precisar de auto-foco.
+- O Z é **relativo ao Z atual** (`G91`/`G90`, com `M5` antes de cada movimento):
+  o programa desce até o primeiro passo, sobe a escada e **volta ao Z de
+  partida**. Nada de coordenada Z absoluta (o app não sabe onde fica o zero de
+  Z da máquina) e nada de mover o Z com o laser ligado.
+- Campos: passos (3…31), passo de Z, **sentido** (Z+ afasta/aproxima),
+  comprimento e espaço das linhas, avanço, potências e modo M3/M4. A prévia
+  mostra a faixa (`-0.5 a 0.5 mm`) e avisa quando as duas potências são iguais.
+- Lógica pura em `src/shared/focusTest.ts` (10 testes) com bundle próprio
+  (`focusTest.js`, `GRBL_FOCUS_TEST`) carregado sob demanda (RNF-11) e
+  **2 testes E2E** (menu → modal → gerar; normalização + aviso).
+
 ### Added — modo produção: repetir o job N vezes (P2.11 / RF-GC-12)
 
 - **Modo produção** (cartão **Execução** → *Modo produção*): escolha **Cópias**

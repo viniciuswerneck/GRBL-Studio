@@ -89,6 +89,16 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > Máquina de estados pura em `src/shared/production.ts` (bundle `production.js`
 > sob demanda); o envio continua na fila normal do GRBL.
 
+> **Nota (20/10/2026, teste de foco):** o **P2.13** entrou como **RF-IMG-13** —
+> Ferramentas → **Teste de foco (spot)…** grava uma **escada de Z** com **duas
+> potências** por passo (baixa para a marcação, alta para o corte): a linha mais
+> fina indica a melhor altura de foco. O Z é **sempre relativo ao Z atual**
+> (`G91`/`G90`, com `M5` antes de cada movimento) — o programa desce até o
+> primeiro passo, sobe a escada e **volta ao Z de partida**, sem depender do
+> zero de Z da máquina. A prévia mostra a faixa (`-0.5 a 0.5 mm`) e avisa
+> quando as potências são iguais. Lógica pura em `src/shared/focusTest.ts`
+> (bundle `focusTest.js` sob demanda).
+
 > **Nota (19/10/2026, biblioteca de jobs):** o **P2.9** entrou como
 > **RF-GC-11** — os últimos 50 programas executados ficam em
 > `<userData>/joblib` (índice atômico + programa em gzip), com miniatura do

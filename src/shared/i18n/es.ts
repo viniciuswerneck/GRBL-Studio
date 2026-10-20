@@ -254,6 +254,30 @@ export const es = {
   'matTest.status.generating': 'Generando la cuadrícula de prueba…',
   'matTest.status.done':
     'Cuadrícula generada. Revisa la vista previa y envía o guarda.',
+  // ------------------------------------------- prueba de foco (RF-IMG-13)
+  'focus.title': 'Prueba de foco (spot)',
+  'focus.hint':
+    'Graba una escalera de líneas con el Z cambiando en cada par: la línea más fina indica el mejor foco. El Z es relativo al Z actual — el programa baja, sube y vuelve al inicio. Deja holgura y el Cancelar a mano.',
+  'focus.steps': 'Pasos de Z',
+  'focus.zStep': 'Paso de Z (mm)',
+  'focus.zSign': 'Sentido del Z',
+  'focus.zSignUp': 'Z+ aleja del material',
+  'focus.zSignDown': 'Z+ acerca al material',
+  'focus.length': 'Largo de la línea (mm)',
+  'focus.spacing': 'Espacio entre líneas (mm)',
+  'focus.feed': 'Avance (mm/min)',
+  'focus.powerLow': 'Potencia baja (%)',
+  'focus.powerHigh': 'Potencia alta (%)',
+  'focus.mode': 'Modo del láser',
+  'focus.generate': 'Generar y visualizar',
+  'focus.save': 'Guardar .gcode…',
+  'focus.preview':
+    '{lines} líneas en {steps} pasos de Z: {zMin} a {zMax} mm (desde el Z actual).',
+  'focus.warn.samePower':
+    'Las dos potencias son iguales — usa valores distintos para comparar el foco en la marca y en el corte.',
+  'focus.status.done':
+    'Prueba de foco generada ({steps} pasos). Revisa la vista previa y envía o guarda.',
+  'focus.err.moduleMissing': 'Módulo de la prueba de foco no cargado.',
 
   // ------------------------------------------------ Código QR (v0.6, RF-SYM-1)
   'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
@@ -1393,6 +1417,7 @@ export const es = {
   'menu.view': 'Ver',
   'menu.tools': 'Herramientas',
   'menu.materialTest': 'Cuadrícula de prueba de material…',
+  'menu.focusTest': 'Prueba de foco (spot)…',
   'menu.design': 'Dibujar…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',

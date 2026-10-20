@@ -300,6 +300,21 @@ const el = {
   matTestStatus: $('matTestStatus'),
   matTestSave: $('matTestSave'),
   matTestGenerate: $('matTestGenerate'),
+  focusOverlay: $('focusOverlay'),
+  focusClose: $('focusClose'),
+  focusPreview: $('focusPreview'),
+  focusStatus: $('focusStatus'),
+  focusSave: $('focusSave'),
+  focusGenerate: $('focusGenerate'),
+  ftSteps: $('ftSteps'),
+  ftZStep: $('ftZStep'),
+  ftZSign: $('ftZSign'),
+  ftLength: $('ftLength'),
+  ftSpacing: $('ftSpacing'),
+  ftFeed: $('ftFeed'),
+  ftPowerLow: $('ftPowerLow'),
+  ftPowerHigh: $('ftPowerHigh'),
+  ftMode: $('ftMode'),
   qrOverlay: $('qrOverlay'),
   qrTitle: $('qrTitle'),
   qrClose: $('qrClose'),
@@ -4878,6 +4893,123 @@ async function saveMatTest() {
       result.gcode,
       'material-test.gcode',
     );
+    if (path) appendLine(t('file.saved', { path }), 'ok');
+  } catch (err) {
+    appendLine(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
+// --------------------------------------- teste de foco (P2.13, RF-IMG-13)
+//
+// Escada de Z com **duas potências** por passo: a linha mais fina indica a
+// melhor altura de foco. O G-code sai do módulo **puro**
+// `src/shared/focusTest.ts` (bundle `GRBL_FOCUS_TEST`, carregado sob demanda) —
+// aqui só há estado de tela. O Z é **relativo ao Z atual** (G91/G90): o
+// programa desce até o primeiro passo, sobe a escada e volta ao início, sem
+// depender do zero de Z da máquina.
+
+/** Módulo puro do teste de foco (bundle sob demanda). */
+function focusModule() {
+  return window.GRBL_FOCUS_TEST;
+}
+
+/** Carrega o bundle uma vez (a prévia já usa o clamp do módulo). */
+let focusBundleLoad = null;
+function ensureFocusBundle() {
+  if (!focusBundleLoad) focusBundleLoad = requireBundle('focusTest.js');
+  return focusBundleLoad;
+}
+
+/** Valor numérico de um campo (com padrão quando vazio/inválido). */
+function focusNumber(input, fallback) {
+  const value = Number(input ? input.value : Number.NaN);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+async function openFocusModal() {
+  if (!el.focusOverlay) return;
+  await ensureFocusBundle();
+  el.focusOverlay.classList.remove('hidden');
+  if (el.focusStatus) el.focusStatus.textContent = '';
+  updateFocusPreview();
+}
+
+function closeFocusModal() {
+  if (el.focusOverlay) el.focusOverlay.classList.add('hidden');
+}
+
+function readFocusOptions() {
+  const zStep = Math.max(0.01, Math.abs(focusNumber(el.ftZStep, 0.1)));
+  const sign = el.ftZSign && el.ftZSign.value === 'down' ? -1 : 1;
+  return {
+    steps: focusNumber(el.ftSteps, 11),
+    zStep: sign * zStep,
+    lineLength: focusNumber(el.ftLength, 20),
+    spacing: focusNumber(el.ftSpacing, 2),
+    feed: focusNumber(el.ftFeed, 800),
+    powerLow: focusNumber(el.ftPowerLow, 10),
+    powerHigh: focusNumber(el.ftPowerHigh, 40),
+    mode: el.ftMode && el.ftMode.value === 'M3' ? 'M3' : 'M4',
+    sMax: Number(el.imgSmax ? el.imgSmax.value : 1000) || 1000,
+  };
+}
+
+/** Milímetros com 3 decimais, sem zeros à direita (ex.: -0.5, 0.1). */
+function focusMm(value) {
+  return String(Number(value.toFixed(3)));
+}
+
+/** Faixa de Z e aviso das potências iguais (atualiza a cada ajuste). */
+function updateFocusPreview() {
+  if (!el.focusPreview) return;
+  const M = focusModule();
+  if (!M) {
+    el.focusPreview.textContent = '';
+    return;
+  }
+  // O próprio módulo normaliza os valores: a prévia mostra o que será gravado.
+  const result = M.generateFocusTest(readFocusOptions());
+  const steps = result.lines.length / 2;
+  let text = t('focus.preview', {
+    steps,
+    lines: result.lines.length,
+    zMin: focusMm(result.zMin),
+    zMax: focusMm(result.zMax),
+  });
+  if (result.lines.length > 0) {
+    const low = result.lines[0].powerPercent;
+    const high = result.lines[1].powerPercent;
+    if (low === high) text += ` ${t('focus.warn.samePower')}`;
+  }
+  el.focusPreview.textContent = text;
+}
+
+async function generateFocusProgram() {
+  await ensureFocusBundle();
+  const M = focusModule();
+  if (!M) {
+    appendLine(t('focus.err.moduleMissing'), 'error');
+    return;
+  }
+  const result = M.generateFocusTest(readFocusOptions());
+  // Carrega o teste como arquivo virtual (habilita Play e preview).
+  applyJobLines('focus-test.gcode', result.gcode);
+  if (el.focusStatus) {
+    el.focusStatus.textContent = t('focus.status.done', {
+      steps: result.lines.length / 2,
+    });
+  }
+  // Abre o modal de posicionamento para alinhar e gravar.
+  openFrameModal();
+}
+
+async function saveFocusTest() {
+  await ensureFocusBundle();
+  const M = focusModule();
+  if (!M) return;
+  const result = M.generateFocusTest(readFocusOptions());
+  try {
+    const path = await window.grbl.saveGcode(result.gcode, 'focus-test.gcode');
     if (path) appendLine(t('file.saved', { path }), 'ok');
   } catch (err) {
     appendLine(t('err.prefix', { msg: err.message }), 'error');
@@ -10560,6 +10692,10 @@ function refreshTexts() {
   if (el.matTestOverlay && !el.matTestOverlay.classList.contains('hidden')) {
     // Re-traduz o modal (os valores dos inputs não mudam).
   }
+  if (el.focusOverlay && !el.focusOverlay.classList.contains('hidden')) {
+    // A prévia é montada com `t()`: refaz no novo idioma.
+    updateFocusPreview();
+  }
   renderPreview();
   updatePinChip(state.lastStatus);
   // O editor de desenho monta as listas com `t()`; ao trocar de idioma,
@@ -10684,6 +10820,7 @@ for (const overlay of [
   el.preflightOverlay,
   el.frameOverlay,
   el.matTestOverlay,
+  el.focusOverlay,
   el.qrOverlay,
   el.designOverlay,
 ]) {
@@ -10710,6 +10847,7 @@ function openOverlays() {
     el.preflightOverlay,
     el.frameOverlay,
     el.matTestOverlay,
+    el.focusOverlay,
     el.qrOverlay,
     el.barcodeOverlay,
     el.gcodeOverlay,
@@ -10787,6 +10925,7 @@ if (window.grbl.onAction)
         appendLine(t('err.prefix', { msg: err.message }), 'error');
       });
     else if (name === 'material-test') openMatTestModal();
+    else if (name === 'focus-test') openFocusModal();
     else if (name === 'qr-code') openQrModal();
     else if (name === 'bar-code') openBarModal();
     else if (name === 'batch') openBatchModal(batch.kind);
@@ -12167,6 +12306,28 @@ if (el.matTestOverlay)
 if (el.matTestGenerate)
   el.matTestGenerate.addEventListener('click', generateMatTest);
 if (el.matTestSave) el.matTestSave.addEventListener('click', saveMatTest);
+if (el.focusClose) el.focusClose.addEventListener('click', closeFocusModal);
+if (el.focusOverlay)
+  el.focusOverlay.addEventListener('click', (e) => {
+    if (e.target === el.focusOverlay) closeFocusModal();
+  });
+if (el.focusGenerate)
+  el.focusGenerate.addEventListener('click', () => void generateFocusProgram());
+if (el.focusSave)
+  el.focusSave.addEventListener('click', () => void saveFocusTest());
+for (const input of [
+  el.ftSteps,
+  el.ftZStep,
+  el.ftLength,
+  el.ftSpacing,
+  el.ftFeed,
+  el.ftPowerLow,
+  el.ftPowerHigh,
+]) {
+  if (input) input.addEventListener('input', updateFocusPreview);
+}
+if (el.ftZSign) el.ftZSign.addEventListener('change', updateFocusPreview);
+if (el.ftMode) el.ftMode.addEventListener('change', updateFocusPreview);
 if (el.qrClose) el.qrClose.addEventListener('click', closeQrModal);
 if (el.qrOverlay)
   el.qrOverlay.addEventListener('click', (e) => {
@@ -12600,6 +12761,7 @@ function prefetchBundles() {
   void requireBundle('barcode.js');
   void requireBundle('batch.js');
   void requireBundle('production.js');
+  void requireBundle('focusTest.js');
 }
 setTimeout(() => {
   if ('requestIdleCallback' in window) {

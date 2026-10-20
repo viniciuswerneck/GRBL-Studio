@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1242 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1262 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -60,6 +60,9 @@ Já entregue (não repetir no planejamento):
       (1…999) com contador, pausa para a troca da peça, repetição da peça
       interrompida, pré-voo uma vez por série e **trava de UI** (o programa não
       muda no meio) — 20/10/2026.
+- [x] **Teste de foco (spot)** (P2.13/RF-IMG-13): escada de **Z relativa** com
+      duas potências por passo (a linha mais fina indica o foco), prévia da
+      faixa e volta ao Z de partida — 20/10/2026.
 - [x] **RAM dentro do orçamento** (RNF-11): 269,0 MB em X11 e 290,4 MB em Wayland
       (PSS, app sozinho, 10 min); medição reprodutível em `scripts/bench.mjs`
       (`docs/BENCHMARK.md` §6.6).
@@ -71,7 +74,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **820 testes** (Vitest, 47 arquivos) + E2E Playwright (42) + smoke headless.
+- [x] **830 testes** (Vitest, 48 arquivos) + E2E Playwright (44) + smoke headless.
 
 ---
 
@@ -188,7 +191,7 @@ diferencial que nenhum concorrente grátis tem.
 | ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10, 20/10/2026) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos `{1}`/`{nome}`/`{i:03}`), pausa para trocar a peça, contador e retomada. |
 | ✅ P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI — entregue (RF-GC-12, 20/10/2026) | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
-| P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
+| ✅ P2.13 | **Teste de foco / spot** (2 linhas de potência) — entregue (RF-IMG-13, 20/10/2026) | S | Determinar o melhor foco por material. |
 | ✅ | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0; Aztec na 0.10.0** | M | Simbologias com testes vetoriais. |
 | — | **S3 opcional**: símbolo como **objeto no editor "Desenhar"** | M | Gerar QR/barcode dentro do editor, com estilo e camada. |
 | — | **Grade/lote de símbolos** (lista → grade com espaçamento) | S | N símbolos numa página, com réguas. | ✅ entregue (RF-SYM-9, 19/10/2026) |
@@ -278,8 +281,8 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    (camadas/multi-operação)**; na **0.9.0**, **RF-SYM-9** (grade de símbolos) e
    **PDF417**; na **0.10.0**, **Aztec**. Em 19–20/10/2026 entraram ainda **P2.9**
    (biblioteca de jobs), **P2.14** (mover pelo preview), **P2.10**
-   (lote/dados variáveis), **P2.11** (modo produção) e o **RNF-11** de RAM
-   (269 MB em X11 / 290 MB em Wayland, medido). **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
+   (lote/dados variáveis), **P2.11** (modo produção), **P2.13** (teste de foco)
+   e o **RNF-11** de RAM (269 MB em X11 / 290 MB em Wayland, medido). **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
    de mediana no A/B; melhor par 1 337 ms contra ≤ 1 500 ms) — trabalho de
    performance aberto. Continuam abertos **P0.3** (publicar Flatpak + winget/
    brew/AUR), **P0.5** (comparativo público) e o símbolo como objeto
@@ -287,8 +290,8 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
    **editor de G-code (P1.10) ✅**, **biblioteca de jobs (P2.9) ✅**; resta a
    validação Win/macOS.
-3. **v0.8 (restante)** — **presets de material (P2.12)** e **teste de foco
-   (P2.13)**; o lote/dados variáveis (P2.10) e o modo produção (P2.11) já saíram.
+3. **v0.8 (restante)** — **presets de material (P2.12)**; o lote/dados
+   variáveis (P2.10), o modo produção (P2.11) e o teste de foco (P2.13) já saíram.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — as regras de oficina (kerf, abas), tiling e
@@ -319,7 +322,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | 2 | **Dose (energia por área)** | Quanto "calor" o laser entrega por pedacinho — como temperatura × tempo de forno. | Levar uma receita de uma máquina para outra. | RF-IMG-10 · `P2.12` |
 | 3 | **Grade de teste de material** | Tabela gravada com vários quadradinhos de potência/velocidade. | Material novo, sem receita → escolher o melhor quadradinho. | ✅ entregue (P1.7) |
 | 4 | **Tira de teste de código** | O mesmo código de barras/QR em tamanhos diferentes. | Descobrir o menor código que o leitor lê naquele material. | ⬜ novo |
-| 5 | **Kit de foco / rampa** | Teste para achar a altura do foco. | Laser sem auto-foco, ajustar na mão. | `P2.13` (parcial) |
+| 5 | **Kit de foco / rampa** | Teste para achar a altura do foco. | Laser sem auto-foco, ajustar na mão. | ✅ `P2.13` (escada de Z) |
 
 **B. Produção em série (quem vende)**
 

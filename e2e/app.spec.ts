@@ -1823,3 +1823,75 @@ test.describe('GRBL Studio — modo produção (P2.11/RF-GC-12)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — teste de foco (P2.13/RF-IMG-13)', () => {
+  /** Abre o modal pelo menu nativo (Ferramentas → Teste de foco…). */
+  async function openFocus(app: Awaited<ReturnType<typeof launchApp>>['app']) {
+    await app.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'grbl:ev:action',
+        'focus-test',
+      );
+    });
+  }
+
+  test('gera a escada de Z e carrega como programa', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await openFocus(app);
+      await expect(page.locator('#focusOverlay')).toBeVisible();
+      // A prévia mostra a faixa de Z relativa ao Z atual (11 passos de 0,1 mm).
+      await expect(page.locator('#focusPreview')).toContainText(
+        '22 linhas em 11 passos de Z',
+      );
+      await expect(page.locator('#focusPreview')).toContainText(
+        '-0.5 a 0.5 mm',
+      );
+
+      await page.click('#focusGenerate');
+      await expect(page.locator('#focusStatus')).toContainText('11 passos');
+      // Vira o programa atual (arquivo virtual), pronto para o pré-voo/Play.
+      await expect(page.locator('#fileInfo')).toContainText('focus-test.gcode');
+      // O modal de posicionamento abre para alinhar antes de gravar.
+      await expect(page.locator('#frameOverlay')).toBeVisible();
+      await page.click('#frameCancel');
+      await expect(page.locator('#frameOverlay')).toBeHidden();
+    } finally {
+      await close();
+    }
+  });
+
+  test('normaliza os campos e avisa quando as potências são iguais', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await openFocus(app);
+      await expect(page.locator('#focusOverlay')).toBeVisible();
+
+      await page.fill('#ftSteps', '5');
+      await page.fill('#ftZStep', '0.2');
+      await expect(page.locator('#focusPreview')).toContainText(
+        '10 linhas em 5 passos de Z',
+      );
+      await expect(page.locator('#focusPreview')).toContainText(
+        '-0.4 a 0.4 mm',
+      );
+
+      // Potências iguais: a comparação perde o sentido e o app explica.
+      await page.fill('#ftPowerLow', '30');
+      await page.fill('#ftPowerHigh', '30');
+      await expect(page.locator('#focusPreview')).toContainText(
+        'As duas potências são iguais',
+      );
+
+      // Valores fora da faixa são normalizados antes de gerar.
+      await page.fill('#ftSteps', '999');
+      await expect(page.locator('#focusPreview')).toContainText(
+        '62 linhas em 31 passos de Z',
+      );
+      await page.click('#focusGenerate');
+      await expect(page.locator('#focusStatus')).toContainText('31 passos');
+    } finally {
+      await close();
+    }
+  });
+});

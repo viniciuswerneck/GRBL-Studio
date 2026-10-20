@@ -11,6 +11,7 @@ public/qrcode.js
 public/barcode.js
 public/batch.js
 public/production.js
+public/focusTest.js
 public/machine.js
 public/preflight.js
 public/gcodeEditor.js

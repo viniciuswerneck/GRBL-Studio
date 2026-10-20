@@ -82,6 +82,7 @@ export const MENU_ACTIONS = {
   appearance: 'appearance',
   openLogs: 'open-logs',
   materialTest: 'material-test',
+  focusTest: 'focus-test',
   machine: 'machine',
   openSvg: 'open-svg',
   openDxf: 'open-dxf',

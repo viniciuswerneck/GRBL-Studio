@@ -215,6 +215,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-IMG-10 | **Velocidade adaptativa**: passar rápido onde não há gravação e reduzir a velocidade onde há (dose = `S` ÷ velocidade). | Should | ✅ |
 | RF-IMG-11 | **Máxima velocidade na máquina real**: varredura bidirecional (zigue-zague), pulo de linhas em branco e mínimo de linhas no arquivo (mesmo `S`/`F` num só `G1`). | Should | ✅ |
 | RF-IMG-12 | Avisar quando a velocidade pedida (com a velocidade no claro) passa de `$110`/`$111` da máquina. | Could | ✅ |
+| RF-IMG-13 | **Teste de foco (spot)**: escada de Z **relativa ao Z atual** (G91/G90, volta ao início) com duas potências por passo, para achar a melhor altura de foco; prévia da faixa e aviso de potências iguais. | Could | ✅ |
 
 ### M10 — Macros e botões customizados
 

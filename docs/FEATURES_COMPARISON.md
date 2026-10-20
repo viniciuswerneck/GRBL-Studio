@@ -56,6 +56,7 @@
 | Vetorização | Sim | Sim (contorno/RDP) | ✅ |
 | Perfis de material | Sim | Sim (COMGO Z1: 3W/5W/10W) | ✅ |
 | Grade de teste de material | Não | Sim | ✅ (superior) |
+| Teste de foco (spot) | Não | Sim (escada de Z com 2 potências) | ✅ |
 
 ## Ferramentas de geração (RF-SYM-*)
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -68,6 +69,7 @@
 | Vários símbolos em grade (RF-SYM-9) | Não | Sim (lista → grade, com espaçamento) | ✅ |
 | **Lote / dados variáveis** (RF-SYM-10) | Não | Sim (CSV/TSV → fila de gravação, pausa para trocar a peça, contador e retomada) | ✅ |
 | **Modo produção** (RF-GC-12) | Não (só reexecutar manualmente) | Sim (repetir o job N vezes, contador, pausa entre cópias e trava de UI) | ✅ |
+| **Teste de foco** (RF-IMG-13) | Não | Sim (escada de Z relativa com 2 potências por passo, prévia da faixa) | ✅ |
 
 > Comparação: o **LightBurn** tem `Tools → Create Bar Code` (motor **zint**,
 > ~50 simbologias); o **LaserGRBL** não tem nenhuma ferramenta de geração.
@@ -81,15 +83,15 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1242 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1262 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Presets de material** (P2.12) e **teste de foco** (P2.13) — o **lote /
-   dados variáveis** (P2.10) e o **modo produção** (P2.11) já estão entregues.
+2. **Presets de material** (P2.12) — o **lote / dados variáveis** (P2.10), o
+   **modo produção** (P2.11) e o **teste de foco** (P2.13) já estão entregues.
 3. **Câmera + rotativa** (P3.1/P3.2).
 4. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
 5. **Nesting** (P3.7) — o clique no preview para mover (P2.14) já está entregue.

@@ -116,6 +116,10 @@ export function rebuildMenu(): void {
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.materialTest),
         },
         {
+          label: t('menu.focusTest'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.focusTest),
+        },
+        {
           label: t('menu.qrCode'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.qrCode),
         },

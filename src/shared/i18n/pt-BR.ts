@@ -263,6 +263,30 @@ export const ptBR = {
   'matTest.save': 'Salvar .gcode…',
   'matTest.status.generating': 'Gerando a grade de teste…',
   'matTest.status.done': 'Grade gerada. Confira no preview e envie ou salve.',
+  // --------------------------------------- teste de foco (RF-IMG-13)
+  'focus.title': 'Teste de foco (spot)',
+  'focus.hint':
+    'Grava uma escada de linhas, com o Z variando a cada par: a linha mais fina indica o melhor foco. O Z é relativo ao Z atual — o programa desce, sobe e volta ao início. Deixe folga e o Cancelar à mão.',
+  'focus.steps': 'Passos de Z',
+  'focus.zStep': 'Passo de Z (mm)',
+  'focus.zSign': 'Sentido do Z',
+  'focus.zSignUp': 'Z+ afasta do material',
+  'focus.zSignDown': 'Z+ aproxima do material',
+  'focus.length': 'Comprimento da linha (mm)',
+  'focus.spacing': 'Espaço entre linhas (mm)',
+  'focus.feed': 'Avanço (mm/min)',
+  'focus.powerLow': 'Potência baixa (%)',
+  'focus.powerHigh': 'Potência alta (%)',
+  'focus.mode': 'Modo do laser',
+  'focus.generate': 'Gerar e visualizar',
+  'focus.save': 'Salvar .gcode…',
+  'focus.preview':
+    '{lines} linhas em {steps} passos de Z: {zMin} a {zMax} mm (a partir do Z atual).',
+  'focus.warn.samePower':
+    'As duas potências são iguais — use valores diferentes para comparar o foco na marcação e no corte.',
+  'focus.status.done':
+    'Teste de foco gerado ({steps} passos). Confira no preview e envie ou salve.',
+  'focus.err.moduleMissing': 'Módulo do teste de foco não carregado.',
 
   // ------------------------------------------------ QR Code (v0.6, RF-SYM-1)
   'menu.qrCode': 'Código 2D (QR / Data Matrix)…',
@@ -1388,6 +1412,7 @@ export const ptBR = {
   'menu.view': 'Exibir',
   'menu.tools': 'Ferramentas',
   'menu.materialTest': 'Grade de teste de material…',
+  'menu.focusTest': 'Teste de foco (spot)…',
   'menu.design': 'Desenhar…',
   'menu.theme': 'Tema',
   'menu.language': 'Idioma',
