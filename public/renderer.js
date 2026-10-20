@@ -251,6 +251,14 @@ const el = {
   gcodeSendFrom: $('gcodeSendFrom'),
   gcodeSendSel: $('gcodeSendSel'),
   gcodeStatus: $('gcodeStatus'),
+  // ------------------------------------------------- biblioteca de jobs (P2.9)
+  joblibOpen: $('joblibOpen'),
+  joblibOverlay: $('joblibOverlay'),
+  joblibClose: $('joblibClose'),
+  joblibCount: $('joblibCount'),
+  joblibList: $('joblibList'),
+  joblibClear: $('joblibClear'),
+  joblibStatus: $('joblibStatus'),
   frameOverlay: $('frameOverlay'),
   frameClose: $('frameClose'),
   frameYp: $('frameYp'),
@@ -6124,6 +6132,7 @@ function updateControls() {
     el.gcodeEdit.title = hasFile ? t('ged.openHint') : t('ged.empty');
   }
   if (gedIsOpen()) updateGcodeEditorBar();
+  syncJobLibraryControls();
   if (el.pauseBtn) el.pauseBtn.disabled = !running;
   if (el.resumeBtn) el.resumeBtn.disabled = !paused;
   if (el.stopBtn) el.stopBtn.disabled = !(running || paused);
@@ -7369,6 +7378,414 @@ window.addEventListener('resize', () => {
   if (gedIsOpen()) renderGcodeWindow(true);
 });
 
+// ------------------------------------------ biblioteca de jobs (P2.9)
+//
+// Os últimos 50 programas executados ficam no main (`<userData>/joblib`), com
+// uma miniatura do preview. O renderer pede a lista e, só sob demanda, o
+// programa de um job — 50 arquivos nunca vêm para a memória de uma vez.
+//
+// O registro acontece **quando a gravação termina** (a biblioteca é o histórico
+// do que rodou). Reexecutar um job de lá atualiza a entrada existente em vez
+// de duplicá-la: o main compara o hash do programa.
+
+/** Teto de entradas — espelha `JOB_LIBRARY_MAX` no main. */
+const JOBLIB_MAX = 50;
+
+const joblib = {
+  entries: [],
+  /** Último estado dos botões (conectado e ocioso) — evita redesenhar à toa. */
+  enabled: false,
+  /** "Limpar tudo" armado: o segundo clique confirma. */
+  clearArmed: false,
+  clearTimer: null,
+  status: null,
+};
+
+function joblibIsOpen() {
+  return Boolean(
+    el.joblibOverlay && !el.joblibOverlay.classList.contains('hidden'),
+  );
+}
+
+/** Com job em voo o programa atual é imutável (progresso/retomada). */
+function joblibLocked() {
+  return state.jobState === 'running' || state.jobState === 'paused';
+}
+
+async function openJobLibrary() {
+  joblib.clearArmed = false;
+  joblib.status = null;
+  el.joblibOverlay.classList.remove('hidden');
+  await refreshJobLibrary();
+}
+
+function closeJobLibrary() {
+  joblib.clearArmed = false;
+  if (joblib.clearTimer) clearTimeout(joblib.clearTimer);
+  joblib.clearTimer = null;
+  el.joblibOverlay.classList.add('hidden');
+}
+
+async function refreshJobLibrary() {
+  try {
+    joblib.entries = await window.grbl.jobLibrary.list();
+  } catch (err) {
+    joblib.entries = [];
+    setJoblibStatus({
+      key: 'joblib.error',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+  renderJobLibrary();
+}
+
+function setJoblibStatus(status) {
+  joblib.status = status;
+  renderJoblibStatus();
+}
+
+function renderJoblibStatus() {
+  const status = joblib.status;
+  el.joblibStatus.textContent = status
+    ? t(status.key, status.params ?? {})
+    : t('joblib.recording');
+  el.joblibStatus.classList.toggle('attention', Boolean(status?.attention));
+}
+
+/** Data curta: hoje mostra só a hora; antes disso, dia/mês + hora. */
+function formatJobDate(ts) {
+  const date = new Date(ts);
+  const time = date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  if (date.toDateString() === new Date().toDateString()) return time;
+  const day = date.toLocaleDateString([], {
+    day: '2-digit',
+    month: '2-digit',
+  });
+  return `${day} ${time}`;
+}
+
+function renderJobLibrary() {
+  if (!el.joblibList) return;
+  const entries = joblib.entries;
+  joblib.enabled = state.connected && !joblibLocked();
+  el.joblibCount.textContent = t('joblib.count', {
+    count: entries.length,
+    max: JOBLIB_MAX,
+  });
+  el.joblibClear.disabled = entries.length === 0;
+  el.joblibClear.textContent = joblib.clearArmed
+    ? t('joblib.confirm')
+    : t('joblib.clear');
+
+  el.joblibList.replaceChildren();
+  if (!entries.length) {
+    const empty = document.createElement('p');
+    empty.className = 'joblib-empty';
+    empty.textContent = t('joblib.empty');
+    el.joblibList.appendChild(empty);
+  } else {
+    const frag = document.createDocumentFragment();
+    for (const entry of entries) frag.appendChild(buildJobLibraryItem(entry));
+    el.joblibList.appendChild(frag);
+  }
+  renderJoblibStatus();
+}
+
+/** Um job na lista: miniatura + nome/data + ações. */
+function buildJobLibraryItem(entry) {
+  const item = document.createElement('li');
+  item.className = 'joblib-item';
+  item.dataset.id = entry.id;
+
+  const info = document.createElement('div');
+  info.className = 'joblib-info';
+
+  const name = document.createElement('strong');
+  name.className = 'joblib-name';
+  name.textContent = entry.name;
+  name.title = entry.name;
+
+  const params = {
+    date: formatJobDate(entry.createdAt),
+    lines: entry.lines,
+    size: formatBytes(entry.bytes),
+  };
+  const meta = document.createElement('span');
+  meta.className = 'joblib-meta';
+  meta.textContent =
+    entry.estimatedSec > 0
+      ? t('joblib.metaTime', {
+          ...params,
+          time: formatTime(entry.estimatedSec),
+        })
+      : t('joblib.meta', params);
+
+  const tags = document.createElement('div');
+  tags.className = 'joblib-tags';
+  const source = document.createElement('span');
+  source.className = 'joblib-tag';
+  const label = t(`joblib.source.${entry.source}`);
+  source.textContent = label.startsWith('joblib.source.')
+    ? entry.source
+    : label;
+  tags.appendChild(source);
+  if (!entry.hasProgram) {
+    const missing = document.createElement('span');
+    missing.className = 'joblib-tag warn';
+    missing.textContent = t('joblib.noProgram');
+    tags.appendChild(missing);
+  }
+
+  info.append(name, meta, tags);
+
+  const actions = document.createElement('div');
+  actions.className = 'joblib-actions';
+
+  const canRun = entry.hasProgram && joblib.enabled;
+  const run = document.createElement('button');
+  run.type = 'button';
+  run.className = 'primary';
+  run.textContent = t('joblib.run');
+  run.disabled = !canRun;
+  run.title = !entry.hasProgram
+    ? t('joblib.unavailable')
+    : joblib.enabled
+      ? ''
+      : t('joblib.offline');
+  run.addEventListener('click', () => runLibraryJob(entry));
+
+  const duplicate = document.createElement('button');
+  duplicate.type = 'button';
+  duplicate.textContent = t('joblib.duplicate');
+  duplicate.title = t('joblib.duplicateHint');
+  duplicate.disabled = !entry.hasProgram || joblibLocked();
+  duplicate.addEventListener('click', () => duplicateLibraryJob(entry));
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'danger';
+  remove.textContent = t('joblib.remove');
+  remove.addEventListener('click', () => removeLibraryJob(entry));
+
+  actions.append(run, duplicate, remove);
+  item.append(joblibThumbnail(entry), info, actions);
+  return item;
+}
+
+/** Miniatura do job: o PNG do preview ou um marcador quando não há. */
+function joblibThumbnail(entry) {
+  if (
+    typeof entry.thumb === 'string' &&
+    /^data:image\/(?:png|jpeg);base64,/.test(entry.thumb)
+  ) {
+    const img = document.createElement('img');
+    img.className = 'joblib-thumb';
+    img.src = entry.thumb;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    return img;
+  }
+  const box = document.createElement('div');
+  box.className = 'joblib-thumb missing';
+  box.setAttribute('aria-hidden', 'true');
+  box.textContent = '▦';
+  return box;
+}
+
+/**
+ * Miniatura do preview (até 240×180). O canvas do preview é transparente fora
+ * dos traçados: se estiver vazio, devolve `null` (o card mostra o marcador).
+ */
+function capturePreviewThumbnail() {
+  const source = el.previewCanvas;
+  if (!source?.width || !source?.height) return null;
+  try {
+    // Sonda 32×24: descarta a miniatura quando não há nada desenhado.
+    const probe = document.createElement('canvas');
+    probe.width = 32;
+    probe.height = 24;
+    const pctx = probe.getContext('2d', { willReadFrequently: true });
+    if (!pctx) return null;
+    pctx.drawImage(source, 0, 0, probe.width, probe.height);
+    const data = pctx.getImageData(0, 0, probe.width, probe.height).data;
+    let painted = false;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] !== 0) {
+        painted = true;
+        break;
+      }
+    }
+    if (!painted) return null;
+
+    const out = document.createElement('canvas');
+    out.width = 240;
+    out.height = 180;
+    const ctx = out.getContext('2d');
+    if (!ctx) return null;
+    const bg = getComputedStyle(document.body).backgroundColor;
+    ctx.fillStyle = bg && bg !== 'rgba(0, 0, 0, 0)' ? bg : '#202020';
+    ctx.fillRect(0, 0, out.width, out.height);
+    const scale = Math.min(
+      out.width / source.width,
+      out.height / source.height,
+    );
+    const w = source.width * scale;
+    const h = source.height * scale;
+    ctx.drawImage(source, (out.width - w) / 2, (out.height - h) / 2, w, h);
+
+    // PNG mantém o traço nítido; se passar do teto do main, JPEG resolve.
+    const png = out.toDataURL('image/png');
+    if (png.length <= 40000) return png;
+    return out.toDataURL('image/jpeg', 0.82);
+  } catch {
+    return null;
+  }
+}
+
+/** Registra o job concluído — nunca interrompe nem falha o fluxo de gravação. */
+async function recordJobInLibrary() {
+  if (!state.lines.length) return;
+  try {
+    await window.grbl.jobLibrary.add({
+      name: state.fileName || 'job.gcode',
+      source: state.jobSource || 'file',
+      estimatedSec: state.estimatedSec,
+      program: state.lines,
+      // A miniatura é capturada **antes** do primeiro `await` (o frame modal
+      // do fim do job ainda não abriu).
+      thumb: capturePreviewThumbnail() ?? undefined,
+    });
+    if (joblibIsOpen()) await refreshJobLibrary();
+  } catch (err) {
+    console.warn('biblioteca de jobs:', err);
+  }
+}
+
+// ------------------------------------------------------------- ações
+
+async function runLibraryJob(entry) {
+  if (!state.connected || joblibLocked()) return;
+  try {
+    const text = await window.grbl.jobLibrary.read(entry.id);
+    if (text === null) {
+      setJoblibStatus({ key: 'joblib.unavailable', attention: true });
+      return;
+    }
+    closeJobLibrary();
+    applyJobLines(entry.name, text, entry.source);
+    appendLine(
+      t('joblib.loaded', { name: entry.name, lines: state.lines.length }),
+      'ok',
+    );
+    // `beginJob` roda o pré-voo e só então envia (RF-GC-9).
+    await beginJob(0);
+  } catch (err) {
+    setJoblibStatus({
+      key: 'joblib.error',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+}
+
+async function duplicateLibraryJob(entry) {
+  if (joblibLocked()) return;
+  try {
+    const text = await window.grbl.jobLibrary.read(entry.id);
+    if (text === null) {
+      setJoblibStatus({ key: 'joblib.unavailable', attention: true });
+      return;
+    }
+    closeJobLibrary();
+    applyJobLines(entry.name, text, entry.source);
+    appendLine(
+      t('joblib.loaded', { name: entry.name, lines: state.lines.length }),
+      'ok',
+    );
+  } catch (err) {
+    setJoblibStatus({
+      key: 'joblib.error',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+}
+
+async function removeLibraryJob(entry) {
+  try {
+    await window.grbl.jobLibrary.remove(entry.id);
+    joblib.entries = joblib.entries.filter((item) => item.id !== entry.id);
+    joblib.clearArmed = false;
+    renderJobLibrary();
+    setJoblibStatus({ key: 'joblib.removed' });
+  } catch (err) {
+    setJoblibStatus({
+      key: 'joblib.error',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+}
+
+/** "Limpar tudo" pede um segundo clique (5 s) — sem modal bloqueante. */
+async function clearJobLibrary() {
+  if (!joblib.entries.length) return;
+  if (!joblib.clearArmed) {
+    joblib.clearArmed = true;
+    setJoblibStatus({
+      key: 'joblib.clearConfirm',
+      params: { count: joblib.entries.length },
+      attention: true,
+    });
+    renderJobLibrary();
+    if (joblib.clearTimer) clearTimeout(joblib.clearTimer);
+    joblib.clearTimer = setTimeout(() => {
+      joblib.clearTimer = null;
+      joblib.clearArmed = false;
+      if (joblib.status?.key === 'joblib.clearConfirm') joblib.status = null;
+      renderJobLibrary();
+    }, 5000);
+    return;
+  }
+  if (joblib.clearTimer) clearTimeout(joblib.clearTimer);
+  joblib.clearTimer = null;
+  joblib.clearArmed = false;
+  try {
+    await window.grbl.jobLibrary.clear();
+    joblib.entries = [];
+    renderJobLibrary();
+    setJoblibStatus({ key: 'joblib.cleared' });
+  } catch (err) {
+    setJoblibStatus({
+      key: 'joblib.error',
+      params: { msg: err.message },
+      attention: true,
+    });
+  }
+}
+
+/** Os botões dependem de conexão/estado do job: redesenha só na transição. */
+function syncJobLibraryControls() {
+  if (!joblibIsOpen()) return;
+  const enabled = state.connected && !joblibLocked();
+  if (enabled === joblib.enabled) return;
+  renderJobLibrary();
+}
+
+// ------------------------------------------------------------ eventos
+
+el.joblibOpen.addEventListener('click', () => openJobLibrary());
+el.joblibClose.addEventListener('click', () => closeJobLibrary());
+el.joblibClear.addEventListener('click', () => clearJobLibrary());
+el.joblibOverlay.addEventListener('click', (ev) => {
+  if (ev.target === el.joblibOverlay) closeJobLibrary();
+});
+
 // ------------------------------------------------- preparação (imagem -> G-code)
 
 /** Maior lado aceito na importação (protege RAM: RNF-12). */
@@ -8317,7 +8734,7 @@ function simTick(ts) {
 }
 
 function simStart() {
-  if (!previewProgram.program || !previewProgram.program.moves.length) return;
+  if (!previewProgram.program?.moves.length) return;
   simPrepare();
   simState.running = true;
   simState.lastTs = 0;
@@ -9014,6 +9431,7 @@ function refreshTexts() {
     el.gcodeFileName.textContent = state.fileName || '';
     updateGcodeEditorBar();
   }
+  if (joblibIsOpen()) renderJobLibrary();
   renderImageInfo();
   renderImageStats();
   populateMachineProfiles();
@@ -9188,6 +9606,7 @@ function openOverlays() {
     el.qrOverlay,
     el.barcodeOverlay,
     el.gcodeOverlay,
+    el.joblibOverlay,
     el.tourOverlay,
     el.designOverlay,
   ].filter((o) => o && !o.classList.contains('hidden'));
@@ -9221,6 +9640,7 @@ document.addEventListener('keydown', (e) => {
       if (overlay === el.designOverlay) closeDesignModal();
       else if (overlay === el.tourOverlay) closeTour();
       else if (overlay === el.gcodeOverlay) closeGcodeEditor();
+      else if (overlay === el.joblibOverlay) closeJobLibrary();
       else overlay.classList.add('hidden');
     }
     return;
@@ -9244,6 +9664,7 @@ if (window.grbl.onAction)
   window.grbl.onAction((name) => {
     if (name === 'open-gcode') el.fileOpen.click();
     else if (name === 'edit-gcode') openGcodeEditor();
+    else if (name === 'job-library') openJobLibrary();
     else if (name === 'open-image') el.imageOpen.click();
     else if (name === 'appearance') openAppearance();
     else if (name === 'open-logs')
@@ -10556,6 +10977,8 @@ window.grbl.onJob((job) => {
   setJobState(job.state);
   if (job.state === 'finished') {
     appendLine(t('job.finished'), 'ok');
+    // Biblioteca de jobs (P2.9): registra o programa que acabou de rodar.
+    void recordJobInLibrary();
     // Volta o laser para a origem XY (caso precise repetir a gravação).
     if (state.connected) window.grbl.gotoZero();
     // Reabre o modal de posicionamento para repetir se necessário.

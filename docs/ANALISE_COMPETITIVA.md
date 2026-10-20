@@ -147,6 +147,10 @@ multiplataforma continua aberta.
   validação pelo pré-voo e reenvio de trecho com preâmbulo modal. UGS,
   gSender e LightBurn têm editores mais completos (busca/substituir em massa,
   macros de edição); o nosso cobre o fluxo de corrigir e reenviar.
+- **Biblioteca de jobs** entregue (P2.9/RF-GC-11): últimos 50 programas com
+  miniatura, reexecutar e duplicar. LightBurn tem *recent files* e o xTool
+  Studio uma biblioteca na nuvem; a nossa é **local**, guarda o programa (não o
+  caminho) e não depende do arquivo original.
 - **Sem suporte a galvo/DSP** (Ruida, Trocen, EZCad, Epilog) — LightBurn Pro,
   MeerK40t, EZCAD, RDWorks.
 - **Catálogo de máquinas = 30 perfis** (com Genérico), **import `.lbdev`** e
@@ -274,7 +278,7 @@ referência de recurso está.
 
 | Produto | Licença / preço | SO | Foco | Destaques | Falta |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **GRBL Studio** (v0.10.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF/PDF**, **QR/código de barras** (9 simbologias 1D + QR/Data Matrix/PDF417/Aztec), **simulação 2D**, painel **Máquina + pré-voo**, **editor de G-code**, 11 temas, 3 idiomas, 765 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting, AI/EPS/HPGL, biblioteca de jobs |
+| **GRBL Studio** (v0.10.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF/PDF**, **QR/código de barras** (9 simbologias 1D + QR/Data Matrix/PDF417/Aztec), **simulação 2D**, painel **Máquina + pré-voo**, **editor de G-code**, **biblioteca de jobs**, 11 temas, 3 idiomas, 775 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting, AI/EPS/HPGL |
 | **LaserGRBL** (v7.14.x) | GPLv3 · grátis | **Windows** (Wine no Linux) | GRBL 0.9/1.1 | Raster excelente (múltiplos ditherings), vetorização, botões customizados, WiFi ESP8266, overrides, comunidade grande | **Sem design**, camadas, câmera, rotativa, Z; sem macOS/Linux nativo; desenvolvimento lento |
 | **Rayforge** (1.13 beta, out/2026) | MIT · grátis | Linux, macOS, Windows (GTK4) | GRBL, Marlin, Ruida, Smoothieware | **Sketcher paramétrico**, camadas, URLs/materiais (60+), câmera, **rotativa 4 eixos**, **simulação 3D**, array/pattern, import SVG/DXF/PDF/AI/EPS/HPGL/bitmaps/`.lbrn2`/`.rd`, WCS G54–G59, no-go zones, *addons*, CLI/headless, 7 idiomas | Sem **galvo** (EZCad); Ruida ainda experimental; sem QR/código de barras; UI GTK (estilo diferente do Fluent) |
 | **MeerK40t** (0.9.9x) | MIT · grátis | Win/macOS/Linux (wxPython/Raspberry) | K40 (Lihuiyu), GRBL, Ruida, galvo EZCad2, fibra | Árvore de operações/camadas, câmera, rotativa, simulação, grade de material, Z jog, hatch/wobble, i18n (inclui pt) | **Em modo de manutenção** (baixa cadência); UI densa; sem QR/código de barras |

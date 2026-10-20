@@ -2658,6 +2658,12 @@ html[data-theme^="hc-"] a:focus-visible {
   z-index: 120;
 }
 
+/* A biblioteca de jobs é aberta pelo menu a qualquer momento — inclusive com
+   o modal de posicionamento na frente (ele reabre ao terminar a gravação). */
+#joblibOverlay {
+  z-index: 115;
+}
+
 /* ------------------------------------------- editor de G-code (P1.10) */
 
 /* Lista **virtualizada**: só a janela visível vira DOM (um arquivo de 100 mil
@@ -2821,6 +2827,123 @@ html[data-theme^="hc-"] a:focus-visible {
 }
 
 .gcode-status.attention {
+  color: var(--warn);
+}
+
+/* ---------------------------------------- biblioteca de jobs (P2.9) */
+
+.joblib-modal {
+  width: min(920px, 96vw);
+  max-height: 88vh;
+}
+
+.joblib-list {
+  flex: 1 1 auto;
+  margin: 0;
+  list-style: none;
+  min-height: 120px;
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.joblib-empty {
+  margin: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--text-sub);
+}
+
+.joblib-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+}
+
+.joblib-item:hover {
+  border-color: var(--stroke-strong);
+}
+
+.joblib-thumb {
+  flex: none;
+  width: 96px;
+  height: 72px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  object-fit: contain;
+}
+
+.joblib-thumb.missing {
+  display: grid;
+  place-items: center;
+  color: var(--text-sub);
+  font-size: var(--fs-20);
+}
+
+.joblib-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.joblib-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.joblib-meta {
+  font-size: var(--fs-12);
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.joblib-tags {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: center;
+}
+
+.joblib-tag {
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.joblib-tag.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+
+.joblib-actions {
+  flex: none;
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.joblib-actions button {
+  min-height: 28px;
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-12);
+}
+
+.joblib-status {
+  padding: 0 var(--sp-4) var(--sp-3);
+  min-height: 1.4em;
+}
+
+.joblib-status.attention {
   color: var(--warn);
 }
 

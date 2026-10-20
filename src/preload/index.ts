@@ -16,6 +16,8 @@ import type {
   GrblStatus,
   JogCommand,
   JobInfo,
+  JobLibraryAdd,
+  JobLibraryEntry,
   JobProgress,
   Lang,
   MachineSnapshot,
@@ -122,6 +124,19 @@ const api = {
   openLogs: (): Promise<string> => ipcRenderer.invoke(CHANNELS.openLogs),
   /** Famílias de fontes instaladas no sistema (seleção de fonte do desenho). */
   listFonts: (): Promise<string[]> => ipcRenderer.invoke(CHANNELS.fontsList),
+
+  // Biblioteca de jobs (P2.9): últimos 50 programas executados
+  jobLibrary: {
+    list: (): Promise<JobLibraryEntry[]> =>
+      ipcRenderer.invoke(CHANNELS.jobLibList),
+    add: (input: JobLibraryAdd): Promise<JobLibraryEntry> =>
+      ipcRenderer.invoke(CHANNELS.jobLibAdd, input),
+    read: (id: string): Promise<string | null> =>
+      ipcRenderer.invoke(CHANNELS.jobLibRead, id),
+    remove: (id: string): Promise<boolean> =>
+      ipcRenderer.invoke(CHANNELS.jobLibRemove, id),
+    clear: (): Promise<void> => ipcRenderer.invoke(CHANNELS.jobLibClear),
+  },
 
   // Eventos (main -> renderer)
   onConsole: (cb: (line: ConsoleLine) => void): Unsubscribe =>

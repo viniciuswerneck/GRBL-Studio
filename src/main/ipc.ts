@@ -45,6 +45,7 @@ import { parseSettings } from '../shared/protocol';
 import type {
   ConnectOptions,
   JogCommand,
+  JobLibraryAdd,
   OpenedImageFile,
   OpenedTextFile,
   OverrideAction,
@@ -56,6 +57,7 @@ import type {
   SpecialQuery,
 } from '../shared/types';
 import { GrblClient } from './services/GrblClient';
+import { JobLibrary } from './services/JobLibrary';
 import { PrefsStore } from './services/PrefsStore';
 import { SessionLog } from './services/SessionLog';
 
@@ -93,6 +95,8 @@ export interface IpcContext {
   prefs: PrefsStore;
   /** Log persistente de sessão (RNF-9). */
   log: SessionLog;
+  /** Biblioteca de jobs executados (P2.9). */
+  jobs: JobLibrary;
 }
 
 export interface IpcHooks {
@@ -115,6 +119,8 @@ export function registerIpc(
   // Log persistente de sessão (RNF-9): grava console e eventos.
   const log = new SessionLog(app.getPath('userData'));
   void log.init();
+  // Biblioteca de jobs (P2.9): programas executados + miniatura.
+  const jobs = new JobLibrary(path.join(app.getPath('userData'), 'joblib'));
 
   const send = (channel: string, payload: unknown): void => {
     const win = getWindow();
@@ -644,7 +650,17 @@ export function registerIpc(
     async (): Promise<string[]> => listSystemFonts(),
   );
 
-  return { client, prefs, log };
+  // ------------------------------------------------- biblioteca de jobs (P2.9)
+
+  ipcMain.handle(CHANNELS.jobLibList, () => jobs.list());
+  ipcMain.handle(CHANNELS.jobLibAdd, (_evt, input: JobLibraryAdd) =>
+    jobs.add(input),
+  );
+  ipcMain.handle(CHANNELS.jobLibRead, (_evt, id: string) => jobs.read(id));
+  ipcMain.handle(CHANNELS.jobLibRemove, (_evt, id: string) => jobs.remove(id));
+  ipcMain.handle(CHANNELS.jobLibClear, () => jobs.clear());
+
+  return { client, prefs, log, jobs };
 }
 
 /**

@@ -61,6 +61,14 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > preâmbulo modal da retomada. Do **v0.7** restam a **biblioteca de jobs
 > (P2.9)** e a validação Windows/macOS.
 
+> **Nota (19/10/2026, biblioteca de jobs):** o **P2.9** entrou como
+> **RF-GC-11** — os últimos 50 programas executados ficam em
+> `<userData>/joblib` (índice atômico + programa em gzip), com miniatura do
+> preview, **re-executar** (com pré-voo) e **duplicar** (cópia como programa
+> atual). Reexecutar o mesmo programa atualiza a entrada (hash) em vez de
+> duplicar; tetos de 50 entradas/32 MB descartam o mais antigo. Do **v0.7**
+> resta a **validação Windows/macOS**.
+
 | Fase | Status | Pendências |
 | :--- | :--- | :--- |
 | 0 — Fundação e docs | ✅ | Aprovação formal do `PRODUCT_SPEC`/ADRs e decisão da ADR-11 (você) |

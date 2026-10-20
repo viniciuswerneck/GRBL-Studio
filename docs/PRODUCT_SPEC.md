@@ -151,6 +151,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-GC-8 | Parada de emergência que interrompe o envio e para a máquina. | Must | ✅ |
 | RF-GC-9 | Validação/aviso de linhas perigosas e limites da área de trabalho. | Could | ✅ |
 | RF-GC-10 | Editor de G-code: numeração, realce, edição de linha, validação pelo pré-voo e reenvio de trecho com preâmbulo modal. | Should | ✅ |
+| RF-GC-11 | Biblioteca de jobs: últimos 50 programas executados, com miniatura, reexecutar e duplicar (sem depender do arquivo original). | Could | ✅ |
 
 ### M5 — Status, alarmes e segurança
 

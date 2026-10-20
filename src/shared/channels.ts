@@ -45,6 +45,12 @@ export const CHANNELS = {
   pickDir: 'app:pick-dir',
   openLogs: 'app:open-logs',
   fontsList: 'app:fonts:list',
+  // Biblioteca de jobs (P2.9): últimos programas executados
+  jobLibList: 'grbl:joblib:list',
+  jobLibAdd: 'grbl:joblib:add',
+  jobLibRead: 'grbl:joblib:read',
+  jobLibRemove: 'grbl:joblib:remove',
+  jobLibClear: 'grbl:joblib:clear',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',
@@ -79,6 +85,7 @@ export const MENU_ACTIONS = {
   openDxf: 'open-dxf',
   openPdf: 'open-pdf',
   design: 'design',
+  jobLibrary: 'job-library',
   qrCode: 'qr-code',
   barCode: 'bar-code',
   tour: 'tour',

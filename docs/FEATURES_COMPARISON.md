@@ -1,6 +1,6 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 19/10/2026 (**v0.8.0**). Status reflete o código atual em `main`.
+> Atualizado em 19/10/2026 (**v0.10.0** + não publicado). Status reflete o código atual em `main`.
 > Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
 > Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
@@ -15,6 +15,7 @@
 | Override Feed/Spindle/Rapid | Sim | Sim (feed/spindle/rapid) | ✅ |
 | Homing | Sim | Sim | ✅ |
 | Pausar / Retomar / Parar | Sim | Sim (job bar flutuante) | ✅ |
+| Biblioteca de jobs (miniatura, reexecutar, duplicar) | Não (só arquivos recentes) | Sim (últimos 50, com miniatura e retomada do programa guardado) | ✅ |
 | WiFi (ESP8266/ESP32) | Sim | Sim (TCP) | ✅ (não validado em HW) |
 | Macros / botões customizados | Sim | Sim | ✅ |
 | Configurações `$$` (viewer/editor) | Sim | Sim (grupos + perfis) | ✅ |
@@ -77,15 +78,14 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1054 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1137 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Catálogo de máquinas** (P2.5) + import de perfis `.lbdev` do LightBurn
-   (importação SVG/DXF/PDF, P1.6/P2.4, já existe).
-3. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
-4. **Câmera + rotativa** (P3.1/P3.2).
-5. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
+2. **Lote / dados variáveis** (P2.10) e **modo produção** (P2.11) — diferencial no grátis.
+3. **Câmera + rotativa** (P3.1/P3.2).
+4. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
+5. **Clicar no preview para mover** (P2.14) e **nesting** (P3.7).

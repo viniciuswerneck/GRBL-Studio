@@ -1202,3 +1202,191 @@ test.describe('GRBL Studio — editor de G-code (P1.10)', () => {
     }
   });
 });
+
+test.describe('GRBL Studio — biblioteca de jobs (P2.9)', () => {
+  /** PNG 1×1 válido (miniatura de teste). */
+  const PNG =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+  test('grava o job concluído e permite duplicar da biblioteca', async () => {
+    const emulator = await startGrblTcp();
+    const { app, page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    const openLibrary = async () => {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'job-library',
+        );
+      });
+    };
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          applyJobLines: (name: string, text: string) => void;
+        };
+        w.applyJobLines(
+          'historico.gcode',
+          'G21\nG90\nM4 S200\nG1 X5 Y5 F600\nM5',
+        );
+      });
+
+      await page.click('[data-tab="run"]');
+      await page.click('#playBtn');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Job concluído',
+        { timeout: 15000 },
+      );
+
+      // O fim do job reabre o modal de posicionamento; a biblioteca fica na
+      // frente dele (z-index próprio), mas fechamos para o teste não depender
+      // disso ao clicar.
+      await page.click('#frameClose');
+
+      await openLibrary();
+      const overlay = page.locator('#joblibOverlay');
+      await expect(overlay).not.toHaveClass(/hidden/);
+      const items = page.locator('#joblibList .joblib-item');
+      await expect(items).toHaveCount(1);
+      await expect(items.first()).toContainText('historico.gcode');
+      await expect(items.first()).toContainText(/Arquivo|Imagem/);
+      await expect(page.locator('#joblibCount')).toContainText('1 de 50');
+      // O preview tinha traçado → miniatura de verdade no card.
+      await expect(items.first().locator('img.joblib-thumb')).toHaveCount(1);
+
+      // "Duplicar" carrega a cópia como programa atual e fecha a biblioteca.
+      await items.first().getByRole('button', { name: 'Duplicar' }).click();
+      await expect(overlay).toHaveClass(/hidden/);
+      await expect(page.locator('#fileInfo')).toContainText('historico.gcode');
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Cópia carregada',
+      );
+
+      // Reexecutar da biblioteca: roda de verdade e **não** duplica a entrada
+      // (o main compara o hash do programa). O fim do job reabre o modal de
+      // posicionamento — é o sinal de que o job terminou.
+      const firstCreatedAt = await page.evaluate(async () => {
+        const lib = (
+          window as unknown as {
+            grbl: {
+              jobLibrary: { list: () => Promise<{ createdAt: number }[]> };
+            };
+          }
+        ).grbl.jobLibrary;
+        const list = await lib.list();
+        return list[0]?.createdAt ?? 0;
+      });
+      await openLibrary();
+      await items.first().getByRole('button', { name: 'Re-executar' }).click();
+      await expect(page.locator('#frameOverlay')).not.toHaveClass(/hidden/, {
+        timeout: 15000,
+      });
+      await expect
+        .poll(
+          async () =>
+            page.evaluate(async (prev) => {
+              const lib = (
+                window as unknown as {
+                  grbl: {
+                    jobLibrary: {
+                      list: () => Promise<{ createdAt: number }[]>;
+                    };
+                  };
+                }
+              ).grbl.jobLibrary;
+              const list = await lib.list();
+              return {
+                count: list.length,
+                newer: (list[0]?.createdAt ?? 0) > prev,
+              };
+            }, firstCreatedAt),
+          { timeout: 10000 },
+        )
+        .toEqual({ count: 1, newer: true });
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('lista, duplica (offline), remove e limpa com confirmação', async () => {
+    const { app, page, close } = await launchApp();
+    const openLibrary = async () => {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'job-library',
+        );
+      });
+    };
+    try {
+      await page.evaluate(async (thumb) => {
+        const api = (
+          window as unknown as {
+            grbl: {
+              jobLibrary: { add: (input: unknown) => Promise<unknown> };
+            };
+          }
+        ).grbl.jobLibrary;
+        await api.add({
+          name: 'um.gcode',
+          source: 'design',
+          program: ['G0 X1'],
+          thumb,
+        });
+        await api.add({ name: 'dois.gcode', program: ['G0 X2'] });
+      }, PNG);
+
+      await openLibrary();
+
+      const items = page.locator('#joblibList .joblib-item');
+      await expect(items).toHaveCount(2);
+      await expect(items.first()).toContainText('dois.gcode');
+      await expect(page.locator('#joblibCount')).toContainText('2 de 50');
+
+      // Sem conexão "Re-executar" fica bloqueado e explica o porquê.
+      const run = items.first().getByRole('button', { name: 'Re-executar' });
+      await expect(run).toBeDisabled();
+      await expect(run).toHaveAttribute(
+        'title',
+        'Conecte a máquina para reexecutar.',
+      );
+
+      // "Duplicar" não precisa de máquina: carrega a cópia e fecha.
+      await items.first().getByRole('button', { name: 'Duplicar' }).click();
+      await expect(page.locator('#joblibOverlay')).toHaveClass(/hidden/);
+      await expect(page.locator('#fileInfo')).toContainText('dois.gcode');
+
+      // Remover uma entrada.
+      await openLibrary();
+      await expect(items).toHaveCount(2);
+      await items.first().getByRole('button', { name: 'Remover' }).click();
+      await expect(items).toHaveCount(1);
+      await expect(page.locator('#joblibStatus')).toContainText(
+        'Job removido da biblioteca',
+      );
+
+      // "Limpar tudo" arma no primeiro clique e confirma no segundo.
+      await page.click('#joblibClear');
+      await expect(page.locator('#joblibStatus')).toContainText(
+        'Remover todos os 1 jobs',
+      );
+      await expect(page.locator('#joblibClear')).toContainText('Confirmar');
+      await page.click('#joblibClear');
+      await expect(items).toHaveCount(0);
+      await expect(page.locator('#joblibList .joblib-empty')).toContainText(
+        'Nenhum job ainda',
+      );
+      await expect(page.locator('#joblibCount')).toContainText('0 de 50');
+    } finally {
+      await close();
+    }
+  });
+});

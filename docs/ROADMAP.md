@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1054 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1137 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -163,7 +163,7 @@ diferencial que nenhum concorrente grátis tem.
 | P2.4 | **Importação DXF + PDF** | M | Reusa `shared/svg.ts`/contornos; testado com arquivos reais. |
 | ✅ P2.5 | **Catálogo 30+ máquinas** + **import `.lbdev`** + **smart connect** — entregue (30 perfis, importação e sugestão na conexão) | S | Ao conectar, ler `$$` e sugerir o perfil; importar perfil do LightBurn. |
 | ✅ P1.10 | **Editor de G-code** (realce + numeração + edição + validar + reenviar trecho) — entregue | M | Editar, validar e reenviar trecho. |
-| P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) | S | Últimos 50 jobs persistidos com parâmetros. |
+| ✅ P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) — entregue | S | Últimos 50 jobs persistidos com parâmetros. |
 | P2.14 | **Clicar no preview para mover** (pendência da v0.3) | S | Clique → `G0` para o ponto (com confirmação). |
 | — | **Validar Windows/macOS** em hardware real + assinatura de código | M | Relato/vídeo por SO; instalador sem aviso de "desenvolvedor desconhecido". |
 | — | **Nesting simples** (encaixe por caixa, reusa matriz/booleanas) | M | Aproveitamento de chapa demonstrado. |
@@ -273,8 +273,8 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
    (símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
-   **editor de G-code (P1.10) ✅**, biblioteca de jobs (P2.9) e validação
-   Win/macOS.
+   **editor de G-code (P1.10) ✅**, **biblioteca de jobs (P2.9) ✅**; resta a
+   validação Win/macOS.
 3. **v0.8** — lote/dados variáveis, modo produção, presets de material e
    simbologias extras.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do

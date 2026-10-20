@@ -263,6 +263,44 @@ export interface PdfImportFailure {
 
 export type PdfImportResponse = PdfImportResult | PdfImportFailure;
 
+/**
+ * Entrada da biblioteca de jobs (P2.9): um programa que já rodou.
+ *
+ * O programa em si **não** vem no índice — a UI pede sob demanda
+ * (`jobLibrary.read`), porque pode ter centenas de milhares de linhas.
+ */
+export interface JobLibraryEntry {
+  /** Identificador opaco (gerado no main, só `[a-z0-9-]`). */
+  id: string;
+  /** Nome do programa (arquivo/imagem/desenho). */
+  name: string;
+  /** Origem curta: `file`, `image`, `design`, `library`… */
+  source: string;
+  /** Quantas linhas o programa tinha. */
+  lines: number;
+  /** Tempo estimado de execução em segundos (0 = desconhecido). */
+  estimatedSec: number;
+  /** Quando rodou (epoch ms). */
+  createdAt: number;
+  /** Tamanho do programa em bytes (texto, sem compressão). */
+  bytes: number;
+  /** Miniatura PNG/JPEG em data URL (opcional). */
+  thumb?: string;
+  /** O programa foi guardado (dá para reexecutar/duplicar). */
+  hasProgram: boolean;
+}
+
+/** Job enviado pelo renderer para entrar na biblioteca. */
+export interface JobLibraryAdd {
+  name: string;
+  source?: string;
+  estimatedSec?: number;
+  /** Programa inteiro, linha a linha. */
+  program: string[];
+  /** Miniatura em data URL (o main valida formato e tamanho). */
+  thumb?: string;
+}
+
 /** Consulta especial `$#`/`$I`/`$G` (RF-CFG-3). */
 export type SpecialQuery = 'offsets' | 'info' | 'state';
 

@@ -622,6 +622,14 @@
             </button>
           </div>
           <div id="fileInfo" class="file-name" data-i18n="file.none">Nenhum arquivo carregado</div>
+          <button
+            type="button"
+            id="joblibOpen"
+            data-i18n="joblib.open"
+            data-i18n-title="joblib.openHint"
+          >
+            Biblioteca…
+          </button>
           <div class="progress"><span id="progressBar"></span></div>
           <div class="row">
             <button type="button" id="playBtn" disabled data-i18n="run.play">▶ Iniciar</button>
@@ -2115,6 +2123,31 @@
           </button>
         </div>
         <p class="hint gcode-status" id="gcodeStatus" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="joblibOverlay">
+      <div
+        class="modal joblib-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="joblibTitle"
+      >
+        <header class="modal-head">
+          <h3 id="joblibTitle" data-i18n="joblib.title">Biblioteca de jobs</h3>
+          <span class="hint" id="joblibCount"></span>
+          <button type="button" id="joblibClose" data-i18n="nav.close">
+            Fechar
+          </button>
+        </header>
+        <div class="modal-toolbar">
+          <span class="spacer"></span>
+          <button type="button" id="joblibClear" class="danger">
+            Limpar tudo
+          </button>
+        </div>
+        <ul class="joblib-list" id="joblibList"></ul>
+        <p class="hint joblib-status" id="joblibStatus" aria-live="polite"></p>
       </div>
     </div>
 

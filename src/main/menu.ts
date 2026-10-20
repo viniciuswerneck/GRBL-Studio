@@ -68,6 +68,10 @@ export function rebuildMenu(): void {
           label: t('menu.editGcode'),
           click: () => send(CHANNELS.evAction, MENU_ACTIONS.editGcode),
         },
+        {
+          label: t('menu.jobLibrary'),
+          click: () => send(CHANNELS.evAction, MENU_ACTIONS.jobLibrary),
+        },
         { type: 'separator' },
         { label: t('menu.quit'), click: () => app.quit() },
       ],

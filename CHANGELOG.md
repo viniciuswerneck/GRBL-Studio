@@ -6,6 +6,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — biblioteca de jobs (P2.9): reexecutar o que já rodou
+
+- **Biblioteca de jobs** em `Arquivo → Biblioteca de jobs…` e no botão
+  **Biblioteca…** da aba Execução: os **últimos 50 programas executados** ficam
+  em `<userData>/joblib`, com **miniatura do preview**, nome, origem, data,
+  linhas, tamanho e tempo estimado.
+- **Re-executar** roda o job de novo (passando pelo pré-voo normal) e
+  **Duplicar** carrega uma cópia como programa atual, para ajustar antes de
+  gravar. As duas ações usam o **programa guardado**, não um caminho de
+  arquivo — o original pode ter mudado ou sumido.
+- O registro acontece **ao terminar a gravação**; reexecutar o mesmo programa
+  **atualiza** a entrada (o main compara o hash) em vez de duplicar a lista.
+- Armazenamento fora do caminho crítico: índice `index.json` gravado de forma
+  atômica (tmp + rename) e o programa em `<id>.gz` (gzip assíncrono, para não
+  competir com o streaming serial — RNF-11). Tetos de **50 entradas** e **32 MB
+  comprimidos** descartam os mais antigos; programas acima de 16 MB entram só
+  como metadado ("sem programa guardado").
+- Nada vindo do renderer vira caminho: id com regex estrita (sem *path
+  traversal*), nome/origem/miniatura sanitizados (`data:image/png|jpeg` até
+  48 KB) e índice corrompido vira biblioteca vazia em vez de erro.
+- 10 testes de unidade (`tests/job-library.test.ts`) e 2 E2E (registro no fim
+  do job + reexecutar sem duplicar; listar/duplicar offline/remover/limpar).
+
 ### Added — editor de G-code (P1.10): corrigir e reenviar um trecho
 
 - **Editor de G-code** em `Arquivo → Editar G-code…` e no botão **Editar…** da
