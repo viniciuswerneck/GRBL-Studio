@@ -20,6 +20,7 @@ public/resume.js
 public/contour.js
 public/boolean.js
 public/offset.js
+public/nesting.js
 public/design.js
 public/designEditor.js
 public/fonts.js

@@ -27,6 +27,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   QR → formas → `designToGcode` e EAN-13 com HRI) e 1 E2E (inserir QR, trocar
   para 1D, gerar e visualizar).
 
+### Added — encaixe na chapa / nesting (P3.7)
+
+- **Encaixar na chapa…** no editor “Desenhar” (atalho **J**): distribui a
+  seleção — ou todos os objetos, quando nada está selecionado — na chapa com
+  **margem**, **espaçamento** entre peças e **rotação de 90°** quando couber
+  melhor. A chapa vem preenchida com o tamanho do documento e pode ser trocada.
+- Algoritmo **MaxRects** (best area fit, sem girar quando não precisa) em módulo puro
+  (`src/shared/nesting.ts`): encaixa as peças maiores primeiro, fatia os
+  retângulos livres e informa o **aproveitamento** da chapa. Peças que não
+  couberem **não são cortadas nem movidas** — o status avisa quantas ficaram
+  de fora.
+- O posicionamento reusa a geometria do editor (`placeEntities`): a peça é
+  transladada (e girada 90° em torno do próprio centro quando escolhido) sem
+  perder camada, estilo, potência/velocidade nem o sentido do contorno (furos
+  continuam furos). A operação entra no **undo/redo**.
+- **Testes**: 14 unitários (`tests/nesting.test.ts`: folga, margem, rotação,
+  sem rotação desnecessária, peça grande demais, entradas inválidas,
+  determinismo, não sobreposição e a transformação de entidades) e 1 E2E (duas peças → encaixe → canto na margem
+  → chapa pequena demais).
+
 ## [0.11.0] - 2026-10-20
 
 Marco **v0.8**: lote/dados variáveis, modo produção, presets de material

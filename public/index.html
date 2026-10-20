@@ -188,6 +188,12 @@
           <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
           <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
         </symbol>
+        <symbol id="ic-nest" viewBox="0 0 24 24">
+          <rect x="2.5" y="4.5" width="19" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2.6 2.2" />
+          <rect x="5" y="7" width="7" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <rect x="14" y="7" width="5" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <rect x="5" y="14" width="7" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" />
+        </symbol>
         <symbol id="ic-bool" viewBox="0 0 24 24">
           <path fill-rule="evenodd" d="M3.5 4.5h11v15h-11z M12.5 12a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0z" fill="currentColor" />
         </symbol>
@@ -1860,6 +1866,9 @@
             <button type="button" id="designArray" class="icon-btn" data-i18n-title="design.array" title="Matriz de cópias…">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-array" /></svg>
             </button>
+            <button type="button" id="designNest" class="icon-btn" data-i18n-title="design.nest" title="Encaixar na chapa (J)">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-nest" /></svg>
+            </button>
             <button type="button" id="designMirrorH" class="icon-btn" data-i18n-title="design.mirror.h" title="Espelhar na horizontal">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-mirror-h" /></svg>
             </button>
@@ -2304,6 +2313,61 @@
           <button type="button" id="designArrayCancel" data-i18n="design.cancel">Cancelar</button>
           <button type="button" id="designArrayConfirm" class="primary" data-i18n="design.array.create">
             Criar cópias
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designNestOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designNestTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designNestTitle" data-i18n="design.nest.title">Encaixe na chapa</h3>
+          <button type="button" id="designNestClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <p class="design-size-hint">
+            <span data-i18n="design.nest.hint">
+              Distribui as peças na chapa aproveitando o espaço. Sem seleção, encaixa todos os objetos do desenho.
+            </span>
+            <span id="designNestCount"></span>
+          </p>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.nest.sheetW">Chapa — largura (mm)</span>
+              <input type="number" id="designNestSheetW" min="1" max="100000" step="1" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.nest.sheetH">Chapa — altura (mm)</span>
+              <input type="number" id="designNestSheetH" min="1" max="100000" step="1" />
+            </label>
+          </div>
+          <div class="design-array-fields">
+            <label class="design-field">
+              <span data-i18n="design.nest.margin">Margem (mm)</span>
+              <input type="number" id="designNestMargin" min="0" max="1000" step="0.5" value="5" />
+            </label>
+            <label class="design-field">
+              <span data-i18n="design.nest.gap">Espaçamento (mm)</span>
+              <input type="number" id="designNestGap" min="0" max="1000" step="0.5" value="3" />
+            </label>
+          </div>
+          <label class="design-check design-check-field">
+            <input type="checkbox" id="designNestRotate" checked />
+            <span data-i18n="design.nest.rotate">Girar 90° quando couber melhor</span>
+          </label>
+          <p class="design-size-note" data-i18n="design.nest.note">
+            As peças são movidas para a chapa (canto superior esquerdo na margem). Peças que não couberem ficam onde estão e são avisadas.
+          </p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designNestCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designNestConfirm" class="primary" data-i18n="design.nest.run">
+            Encaixar
           </button>
         </footer>
       </div>

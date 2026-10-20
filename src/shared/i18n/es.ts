@@ -818,6 +818,24 @@ export const es = {
   'design.array.tooMany':
     'Demasiadas copias (máx. 1000). Reduzca columnas/filas.',
   'design.array.done': '{n} copia(s) creada(s).',
+  'design.nest': 'Encajar en la chapa…',
+  'design.nest.title': 'Encaje en la chapa',
+  'design.nest.hint':
+    'Distribuye las piezas en la chapa aprovechando el espacio. Sin selección, encaja todos los objetos del dibujo.',
+  'design.nest.count': '{n} pieza(s) para encajar.',
+  'design.nest.sheetW': 'Chapa — ancho (mm)',
+  'design.nest.sheetH': 'Chapa — alto (mm)',
+  'design.nest.margin': 'Margen (mm)',
+  'design.nest.gap': 'Separación (mm)',
+  'design.nest.rotate': 'Girar 90° cuando quepa mejor',
+  'design.nest.note':
+    'Las piezas se mueven a la chapa (esquina superior izquierda en el margen). Las que no quepan se quedan donde están y se avisan.',
+  'design.nest.run': 'Encajar',
+  'design.nest.none': 'No hay piezas para encajar.',
+  'design.nest.tooBig':
+    'Ninguna pieza cupo en la chapa. Aumente la chapa o reduzca margen/separación.',
+  'design.nest.done': '{n} pieza(s) encajada(s) · aprovechamiento {pct} %.',
+  'design.nest.unplaced': '{n} pieza(s) no cupieron en la chapa.',
   'design.bool.menu': 'Booleanas y contorno paralelo',
   'design.bool.union': 'Unir',
   'design.bool.subtract': 'Restar',

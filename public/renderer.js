@@ -442,6 +442,7 @@ const el = {
   designOverlay: $('designOverlay'),
   designSizeOverlay: $('designSizeOverlay'),
   designArrayOverlay: $('designArrayOverlay'),
+  designNestOverlay: $('designNestOverlay'),
   designOffsetOverlay: $('designOffsetOverlay'),
   designBoolMenu: $('designBoolMenu'),
   designBoolPop: $('designBoolPop'),
@@ -1003,6 +1004,7 @@ async function openPdfImport() {
 let DE = null;
 let BOOL = null;
 let OFFSET = null;
+let NEST = null;
 
 const DESIGN_BUNDLES = [
   'svg.js',
@@ -1013,6 +1015,7 @@ const DESIGN_BUNDLES = [
   'contour.js',
   'boolean.js',
   'offset.js',
+  'nesting.js',
 ];
 
 let designReady = null;
@@ -1022,6 +1025,7 @@ function ensureDesign() {
       DE = window.GRBL_DESIGN_EDITOR;
       BOOL = window.GRBL_BOOLEAN;
       OFFSET = window.GRBL_OFFSET;
+      NEST = window.GRBL_NEST;
     });
   }
   return designReady;
@@ -1870,6 +1874,124 @@ function dConfirmArray() {
   designState.selection = clones.map((_, i) => base + i);
   dAfterSelection();
   dStatus(t('design.array.done', { n: clones.length }), 'ok');
+}
+
+// ------------------------------------------------------------ encaixe na chapa
+
+function dNestDialogOpen() {
+  const o = el.designNestOverlay;
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+/**
+ * Peças do encaixe: a seleção, se houver; senão, todos os objetos do desenho.
+ * O `id` é único e devolve o grupo de índices para o `placeEntities`.
+ */
+function dNestPieces() {
+  if (!DE) return [];
+  const entities = DE.entityIndices(designState.shapes);
+  const selSet = dSelectionSet();
+  const chosen = selSet.size
+    ? entities.filter((idxs) => idxs.some((i) => selSet.has(i)))
+    : entities.slice();
+  const pieces = [];
+  for (let n = 0; n < chosen.length; n++) {
+    const idxs = chosen[n];
+    const b = DE.entityBounds(designState.shapes, idxs);
+    if (!b) continue;
+    const widthMm = b.maxX - b.minX;
+    const heightMm = b.maxY - b.minY;
+    if (!(widthMm > 0.001) || !(heightMm > 0.001)) continue;
+    pieces.push({ id: `e${n}`, idxs, widthMm, heightMm });
+  }
+  return pieces;
+}
+
+/** Abre o encaixe com a chapa do documento e folgas de corte usuais. */
+function dOpenNestDialog() {
+  const pieces = dNestPieces();
+  if (!pieces.length) {
+    dStatus(t('design.nest.none'), 'error');
+    return;
+  }
+  dCloseBoolMenu();
+  dCloseArrayDialog();
+  const sw = $('designNestSheetW');
+  const sh = $('designNestSheetH');
+  const mg = $('designNestMargin');
+  const gp = $('designNestGap');
+  const rot = $('designNestRotate');
+  if (sw) sw.value = String(designState.page.w);
+  if (sh) sh.value = String(designState.page.h);
+  if (mg) mg.value = '5';
+  if (gp) gp.value = '3';
+  if (rot) rot.checked = true;
+  const count = $('designNestCount');
+  if (count)
+    count.textContent = ` ${t('design.nest.count', { n: pieces.length })}`;
+  if (el.designNestOverlay) el.designNestOverlay.classList.remove('hidden');
+  if (sw) {
+    sw.focus();
+    sw.select();
+  }
+}
+
+function dCloseNestDialog() {
+  if (el.designNestOverlay) el.designNestOverlay.classList.add('hidden');
+}
+
+function dConfirmNest() {
+  if (!DE || !NEST) return;
+  const pieces = dNestPieces();
+  if (!pieces.length) {
+    dStatus(t('design.nest.none'), 'error');
+    return;
+  }
+  const rot = $('designNestRotate');
+  const spec = {
+    sheetWidthMm: dClamp(
+      dNum('designNestSheetW', designState.page.w),
+      1,
+      100000,
+    ),
+    sheetHeightMm: dClamp(
+      dNum('designNestSheetH', designState.page.h),
+      1,
+      100000,
+    ),
+    marginMm: dClamp(dNum('designNestMargin', 0), 0, 1000),
+    gapMm: dClamp(dNum('designNestGap', 0), 0, 1000),
+    allowRotate: rot ? rot.checked : true,
+  };
+  const res = NEST.nestParts(
+    pieces.map((p) => ({ id: p.id, widthMm: p.widthMm, heightMm: p.heightMm })),
+    spec,
+  );
+  dCloseNestDialog();
+  if (!res.placements.length) {
+    dStatus(t('design.nest.tooBig'), 'error');
+    return;
+  }
+  const byId = new Map(pieces.map((p) => [p.id, p]));
+  const entities = [];
+  const targets = [];
+  const moved = [];
+  for (const place of res.placements) {
+    const piece = byId.get(place.id);
+    if (!piece) continue;
+    entities.push(piece.idxs);
+    targets.push({ x: place.xMm, y: place.yMm, rotated: place.rotated });
+  }
+  designState.shapes = DE.placeEntities(designState.shapes, entities, targets);
+  for (const idxs of entities) for (const i of idxs) moved.push(i);
+  dPushHistory();
+  designState.selection = moved.sort((a, b) => a - b);
+  dAfterSelection();
+  const pct = Math.round(res.utilization * 100);
+  let msg = t('design.nest.done', { n: res.placements.length, pct });
+  if (res.unplaced.length)
+    msg += ` ${t('design.nest.unplaced', { n: res.unplaced.length })}`;
+  dStatus(msg, res.unplaced.length ? 'error' : 'ok');
 }
 
 // -------------------------------------------------------------- propriedades
@@ -4214,7 +4336,10 @@ function dDesignOpen() {
 function dOnKeyDown(e) {
   if (!dDesignOpen()) return;
   const sizeOpen =
-    dSizeDialogOpen() || dArrayDialogOpen() || dOffsetDialogOpen();
+    dSizeDialogOpen() ||
+    dArrayDialogOpen() ||
+    dNestDialogOpen() ||
+    dOffsetDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
   const symEditor = $('designSymbolEditor');
@@ -4224,6 +4349,7 @@ function dOnKeyDown(e) {
     if (sizeOpen) {
       dCloseSizeDialog();
       dCloseArrayDialog();
+      dCloseNestDialog();
       dCloseOffsetDialog();
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -4391,6 +4517,7 @@ function dOnKeyDown(e) {
   else if (key === 'n' || key === 'N') dSetTool('node');
   else if (key === 't' || key === 'T') dSetTool('text');
   else if (key === 'q' || key === 'Q') dSetTool('symbol');
+  else if (key === 'j' || key === 'J') dOpenNestDialog();
   else if (key === '+' || key === '=')
     dZoomAt(designState.pxW / 2, designState.pxH / 2, 1.2);
   else if (key === '-' || key === '_')
@@ -4566,6 +4693,7 @@ function closeDesignModal() {
   dCloseTextEditor();
   dCloseSizeDialog();
   dCloseArrayDialog();
+  dCloseNestDialog();
   dCloseOffsetDialog();
   dCloseBoolMenu();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
@@ -4819,6 +4947,7 @@ function dConfirmSize() {
     designClear: dClearAll,
     designDuplicate: dDuplicateSelection,
     designArray: dOpenArrayDialog,
+    designNest: dOpenNestDialog,
     designMirrorH: () => dMirror('h'),
     designMirrorV: () => dMirror('v'),
     designDistH: () => dDistribute('h'),
@@ -5014,6 +5143,35 @@ function dConfirmSize() {
   if (el.designArrayOverlay) {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
+    });
+  }
+
+  // diálogo "encaixe na chapa"
+  const nestConfirm = $('designNestConfirm');
+  if (nestConfirm) nestConfirm.addEventListener('click', dConfirmNest);
+  const nestCancel = $('designNestCancel');
+  if (nestCancel) nestCancel.addEventListener('click', dCloseNestDialog);
+  const nestClose = $('designNestClose');
+  if (nestClose) nestClose.addEventListener('click', dCloseNestDialog);
+  for (const id of [
+    'designNestSheetW',
+    'designNestSheetH',
+    'designNestMargin',
+    'designNestGap',
+  ]) {
+    const node = $(id);
+    if (node) {
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          dConfirmNest();
+        }
+      });
+    }
+  }
+  if (el.designNestOverlay) {
+    el.designNestOverlay.addEventListener('click', (e) => {
+      if (e.target === el.designNestOverlay) dCloseNestDialog();
     });
   }
 

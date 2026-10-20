@@ -405,6 +405,76 @@ export function arrayEntities(
   return out;
 }
 
+/** Onde uma entidade deve ficar (canto superior esquerdo) e se gira 90°. */
+export interface EntityPlacement {
+  /** Canto superior esquerdo desejado, em mm. */
+  x: number;
+  y: number;
+  /** Gira a entidade 90° no sentido horário (na tela) antes de posicionar. */
+  rotated?: boolean;
+}
+
+/**
+ * Move cada entidade para o canto pedido — é a “cola” entre o encaixe na chapa
+ * (`nesting.ts`) e a geometria do editor. Com `rotated`, gira 90° no sentido
+ * horário em torno do centro da caixa antes de mover (a rotação pura preserva
+ * o sentido do contorno, então furos continuam furos).
+ *
+ * Devolve uma **nova** lista (como as demais operações do editor); entidades
+ * sem pontos ou com alvo inválido ficam onde estão.
+ */
+export function placeEntities(
+  shapes: ReadonlyArray<Shape>,
+  entities: ReadonlyArray<ReadonlyArray<number>>,
+  targets: ReadonlyArray<EntityPlacement>,
+): Shape[] {
+  const result = shapes.slice();
+  if (!entities.length || entities.length !== targets.length) return result;
+
+  for (let e = 0; e < entities.length; e++) {
+    const entity = entities[e];
+    const target = targets[e];
+    if (!entity?.length || !target) continue;
+    if (!Number.isFinite(target.x) || !Number.isFinite(target.y)) continue;
+    const before = entityBounds(shapes, entity);
+    if (!before) continue;
+    const cx = (before.minX + before.maxX) / 2;
+    const cy = (before.minY + before.maxY) / 2;
+    // Rotação de 90° no sistema do editor (y para baixo): (dx, dy) → (-dy, dx).
+    const map = (p: Point): Point =>
+      target.rotated
+        ? { x: cx - (p.y - cy), y: cy + (p.x - cx) }
+        : { x: p.x, y: p.y };
+
+    let minX = Infinity;
+    let minY = Infinity;
+    for (const i of entity) {
+      const sh = shapes[i];
+      if (!sh) continue;
+      for (const p of sh.points) {
+        const q = map(p);
+        if (q.x < minX) minX = q.x;
+        if (q.y < minY) minY = q.y;
+      }
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(minY)) continue;
+    const dx = target.x - minX;
+    const dy = target.y - minY;
+    for (const i of entity) {
+      const sh = result[i];
+      if (!sh) continue;
+      result[i] = {
+        ...sh,
+        points: sh.points.map((p) => {
+          const q = map(p);
+          return { x: q.x + dx, y: q.y + dy };
+        }),
+      };
+    }
+  }
+  return result;
+}
+
 /** Rota `p` em torno de (cx, cy) por `angle` radianos (y-down). */
 export function rotatePoint(
   p: Point,

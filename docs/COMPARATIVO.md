@@ -23,7 +23,7 @@
 | **Design 2D / CAD** | ✅ básico-médio (prancheta, booleanas, offset, texto, matriz) | ✅ completo | ✅ **paramétrico** | ❌ | 🟡 (SVG) | ✅ |
 | **Import vetorial** | 🟡 SVG/DXF/PDF | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (exp.) | 🟡 SVG/DXF | 🟡 SVG/DXF |
 | **Camadas / multi-operação** | ✅ (parâmetros por camada + ordem de execução) | ✅ | ✅ | ❌ | ✅ | ✅ (16 camadas) |
-| **Nesting / matriz** | 🟡 matriz de cópias (sem nesting) | ✅ Quick + True (Pro) | 🟡 padrões | ❌ | ❌ | ✅ Smart Nesting |
+| **Nesting / matriz** | 🟡 matriz + nesting por caixa (sem encaixe irregular) | ✅ Quick + True (Pro) | 🟡 padrões | ❌ | ❌ | ✅ Smart Nesting |
 | **Câmera / rotativa** | ❌ | ✅ / ✅ | ✅ / ✅ (4 eixos) | ❌ / ❌ | ✅ / ✅ | ✅ / ✅ |
 | **Simulação de job** | ✅ (2D: playback + tempo, desde a 0.5.0) | ✅ | ✅ 3D | 🟡 (preview/tempo) | ✅ | ✅ 3D |
 | **QR Code / Data Matrix / PDF417 / código de barras** | ✅ (0.7.0: 9 simbologias 1D + QR + DM; 0.8.0: PDF417) | ✅ (Bar Code) | ❌ | ❌ | ❌ | ✅ (com lote) |
@@ -64,7 +64,7 @@
 3. **Importação vetorial** — SVG, DXF ASCII e PDF vetorial; Rayforge lê também AI/EPS/HPGL.
 4. **Catálogo de máquinas** — 22 perfis contra dezenas; importar `.lbdev` ainda
    não existe.
-5. **Nesting, API/CLI e plugins** — ausentes.
+5. **API/CLI e plugins** — ausentes (o nesting por caixa já está entregue).
 6. **Maturidade fora do Linux** — os builds de Windows/macOS passam no CI, mas
    não há validação publicada em hardware.
 

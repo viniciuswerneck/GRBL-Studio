@@ -32,7 +32,7 @@
 | Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |
 | Camadas / multi-operação (gravar + cortar) | Não | Sim (parâmetros por camada + ordem de execução) | ✅ |
-| Nesting | Não | Não | ⬜ |
+| Nesting (encaixe na chapa) | Não | Sim (MaxRects: margem, espaçamento e rotação 90°) | ✅ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -96,4 +96,4 @@
    produção (P2.11), presets de material (P2.12) e teste de foco (P2.13).
 3. **Câmera + rotativa** (P3.1/P3.2).
 4. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
-5. **Nesting** (P3.7) — o clique no preview para mover (P2.14) já está entregue.
+5. **Nesting irregular** (P3.7) — o encaixe por caixa já está entregue (20/10/2026).

@@ -280,7 +280,7 @@ referência de recurso está.
 
 | Produto | Licença / preço | SO | Foco | Destaques | Falta |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **GRBL Studio** (v0.11.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF/PDF**, **QR/código de barras** (9 simbologias 1D + QR/Data Matrix/PDF417/Aztec), **simulação 2D**, **clique no preview para mover**, painel **Máquina + pré-voo**, **editor de G-code**, **biblioteca de jobs**, **lote/modo produção**, **presets de material + dose**, **teste de foco**, 11 temas, 3 idiomas, 854 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting, AI/EPS/HPGL |
+| **GRBL Studio** (v0.11.0) | MIT · grátis | Linux (validado), Win, macOS (builds) | GRBL 1.1 | Protocolo robusto, pipeline de imagem otimizado, design 2D com booleanas/offset/texto/**camadas**, grade de material, **SVG/DXF/PDF**, **QR/código de barras** (9 simbologias 1D + QR/Data Matrix/PDF417/Aztec), **simulação 2D**, **clique no preview para mover**, painel **Máquina + pré-voo**, **editor de G-code**, **biblioteca de jobs**, **lote/modo produção**, **presets de material + dose**, **teste de foco**, **nesting por caixa**, 11 temas, 3 idiomas, 879 testes, auto-update | Câmera, rotativa, **simulação 3D**, nesting irregular, AI/EPS/HPGL |
 | **LaserGRBL** (v7.14.x) | GPLv3 · grátis | **Windows** (Wine no Linux) | GRBL 0.9/1.1 | Raster excelente (múltiplos ditherings), vetorização, botões customizados, WiFi ESP8266, overrides, comunidade grande | **Sem design**, camadas, câmera, rotativa, Z; sem macOS/Linux nativo; desenvolvimento lento |
 | **Rayforge** (1.13 beta, out/2026) | MIT · grátis | Linux, macOS, Windows (GTK4) | GRBL, Marlin, Ruida, Smoothieware | **Sketcher paramétrico**, camadas, URLs/materiais (60+), câmera, **rotativa 4 eixos**, **simulação 3D**, array/pattern, import SVG/DXF/PDF/AI/EPS/HPGL/bitmaps/`.lbrn2`/`.rd`, WCS G54–G59, no-go zones, *addons*, CLI/headless, 7 idiomas | Sem **galvo** (EZCad); Ruida ainda experimental; sem QR/código de barras; UI GTK (estilo diferente do Fluent) |
 | **MeerK40t** (0.9.9x) | MIT · grátis | Win/macOS/Linux (wxPython/Raspberry) | K40 (Lihuiyu), GRBL, Ruida, galvo EZCad2, fibra | Árvore de operações/camadas, câmera, rotativa, simulação, grade de material, Z jog, hatch/wobble, i18n (inclui pt) | **Em modo de manutenção** (baixa cadência); UI densa; sem QR/código de barras |
@@ -316,7 +316,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | **Design 2D / CAD** | ✅ (médio) | ✅ (completo) | ✅ (**paramétrico**) | ❌ | 🟡 (SVG) | ❌ (CAM) | ❌ (foco Inkscape) | ❌ | 🟡 (Designer) | 🟡 (só no 1.7 Edge) | ✅ | ✅ | 🟡 (básico) |
 | **Import vetorial** | 🟡 SVG/DXF/PDF | ✅ SVG/DXF/AI/PDF/3D | ✅ SVG/DXF/PDF/AI/EPS/HPGL/`.lbrn2`/`.rd` | 🟡 SVG (experimental) | 🟡 SVG/DXF | ✅ SVG/DXF/bitmap | ✅ SVG/EPS/DXF | 🟡 SVG/DXF | ✅ SVG/DXF | 🟡 (recebe G-code) | 🟡 SVG/DXF | 🟡 SVG/DXF | 🟡 imagem/vetor |
 | **Camadas / multi-operação** | ✅ (0.8.0/P2.2) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ (por cor) | 🟡 | 🟡 | ❌ | ✅ (16 camadas) | 🟡 | ❌ |
-| **Nesting / matriz de cópias** | 🟡 matriz (sem nesting) | ✅ Quick (2.1) + True (2.2, **Pro**) | 🟡 array/pattern | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ Smart Nesting | 🟡 matrizes | ❌ |
+| **Nesting / matriz de cópias** | 🟡 matriz + nesting por caixa (sem encaixe irregular) | ✅ Quick (2.1) + True (2.2, **Pro**) | 🟡 array/pattern | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ Smart Nesting | 🟡 matrizes | ❌ |
 | **Câmera / alinhamento** | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | **Rotativa (eixo A)** | ❌ | ✅ | ✅ (4 eixos) | ❌ | ✅ | 🟡 experimental | ❌ | ❌ | 🟡 | ✅ | ✅ | ✅ | ❌ |
 | **Simulação de job** | ✅ (2D + tempo) | ✅ | ✅ **3D** | 🟡 (preview/tempo) | ✅ | 🟡 (tempo) | 🟡 | 🟡 | ✅ 3D backplot | ✅ 3D | ✅ 3D | ✅ | 🟡 |
@@ -351,7 +351,7 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
 | Design 2D / CAD | ✅ (básico-médio) | ✅ (completo) | ✅ (**paramétrico**) | ❌ | ✅ (SVG) | ✅ (canvas) |
 | Booleanas / offset | ✅ | ✅ | ✅ | ❌ | parcial | parcial |
 | Camadas / multi-operação | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Nesting | ❌ | ✅ (2.1/2.2 Pro) | padrões | ❌ | ❌ | ✅ (Smart Nesting) |
+| Nesting | 🟡 por caixa (sem encaixe irregular) | ✅ (2.1/2.2 Pro) | padrões | ❌ | ❌ | ✅ (Smart Nesting) |
 | Import SVG / DXF / PDF / AI | SVG/DXF/PDF | SVG/DXF/PDF/AI/3D | **SVG/DXF/PDF/AI/EPS/HPGL/.lbrn2** | SVG (experimental) | SVG/DXF | SVG/DXF (e G-code) |
 | Câmera / alinhamento | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Rotativa (eixo A) | ❌ | ✅ | ✅ (4 eixos) | ❌ | ✅ | ✅ |
@@ -401,7 +401,8 @@ Legenda: ✅ tem · 🟡 parcial/limitado · ❌ não tem · *n/d* não publicad
    e até arquivos do LightBurn.
 4. **Catálogo de máquinas** — 22 perfis + Genérico contra dezenas, sem import
    `.lbdev`; atrito para quem tem Ortur/AtomStack/Sculpfun/xTool.
-5. **Nesting e automação** (REST API, CLI, addons).
+5. **Automação** (REST API, CLI, addons) e **nesting irregular** — o encaixe
+   por caixa já está entregue.
 7. **Ecossistema** — sem plugins, sem marketplace/AI, sem biblioteca de artes.
 8. **Maturidade fora do Linux** — builds Win/macOS existem, mas não há validação
    publicada em hardware; sem assinatura de código.

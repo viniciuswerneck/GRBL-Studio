@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1299 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 333 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -57,6 +57,10 @@ Já entregue (não repetir no planejamento):
       Aztec/código de barras entram como **um bloco de linhas** agrupado — move,
       escala, gira, recebe camada e potência como qualquer objeto, com
       **duplo clique** para reeditar o conteúdo — 20/10/2026.
+- [x] **Encaixe na chapa / nesting** (P3.7): **MaxRects** com margem,
+      espaçamento e **rotação 90°** quando cabe melhor; encaixa a seleção (ou
+      todos os objetos), informa o **aproveitamento** e avisa o que não coube —
+      20/10/2026.
 - [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
       gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
       peça, contador e retomada — 20/10/2026.
@@ -81,7 +85,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **865 testes** (Vitest, 50 arquivos) + E2E Playwright (48) + smoke headless.
+- [x] **879 testes** (Vitest, 51 arquivos) + E2E Playwright (49) + smoke headless.
 
 ---
 
@@ -186,7 +190,7 @@ diferencial que nenhum concorrente grátis tem.
 | ✅ P2.9 | **Biblioteca de jobs** (miniatura + re-executar + duplicar) — entregue | S | Últimos 50 jobs persistidos com parâmetros. |
 | ✅ P2.14 | **Clicar no preview para mover** (pendência da v0.3) — entregue | S | Clique → `G0` para o ponto (com confirmação). |
 | — | **Validar Windows/macOS** em hardware real + assinatura de código | M | Relato/vídeo por SO; instalador sem aviso de "desenvolvedor desconhecido". |
-| — | **Nesting simples** (encaixe por caixa, reusa matriz/booleanas) | M | Aproveitamento de chapa demonstrado. |
+| ✅ P3.7 | **Nesting** (encaixe por caixa: MaxRects com margem, espaçamento e rotação 90°) — entregue | M | Aproveitamento de chapa demonstrado. |
 
 ### v0.8 — Lote e produção em série
 
@@ -216,7 +220,7 @@ E2E. Documentação em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md) §18.
 | :-- | :-- | :-- | :-- |
 | P3.1 | **Câmera** (captura USB + alinhamento visual) | L | Overlay da peça; posicionar arrastando. |
 | P3.2 | **Rotativa (eixo A)** | L | Jog e job em cilindro; calibração por diâmetro. |
-| P3.7 | **Nesting avançado** (encaixe real) | M | Aproveitamento de chapa melhor que o encaixe por caixa. |
+| P3.7 | **Nesting avançado** (encaixe real, peças irregulares) — o encaixe por caixa já está entregue | M | Aproveitamento de chapa melhor que o encaixe por caixa. |
 | P3.4 | **Preview WebGL** (arquivos gigantes) | M | 14 M de linhas sem travar; fallback canvas. |
 | P3.5 | **Telemetria opt-in** + crash reporting (Sentry/GlitchTip) | S | Diagnóstico de campo; nenhum dado sem consentimento. |
 | P3.6 | **Migração do renderer para TS** (Svelte + electron-vite) | XL | ADR-2 concluído; `renderer.js` sai do repo; bundling instantâneo. |
@@ -341,7 +345,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | :-- | :-- | :-- | :-- | :-- |
 | 6 | **Número de série / contador** | Número diferente em cada peça (001, 002…). | Peça numerada, controle de lote. | ✅ `P2.10` |
 | 7 | **Dados variáveis (lista/planilha)** | Lê uma lista (CSV) e grava um valor diferente por peça. | 50 chaveiros com nomes distintos. | ✅ `P2.10` |
-| 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | Nesting simples (v0.7) · `P3.7` |
+| 8 | **Nesting** | Arrumar as peças na chapa pra caber mais e sobrar menos. | Cortar muitas pecinhas sem desperdiçar. | ✅ `P3.7` (encaixe por caixa) |
 | 9 | **Abas de retenção** | "Pestanhas" que seguram a peça pra ela não cair/voar. | Peça pequena que se solta no meio do corte. | ⬜ novo |
 | 10 | **Kerf / folga de corte** | Compensar a largura que o laser come. | Encaixe de caixa, inlay, peça que entra noutra. | ⬜ novo |
 | 11 | **Entrada/saída do corte** | Ajustar onde o corte entra/sai e refazer o canto. | Canto limpo, sem "bico" queimado. | ⬜ novo |

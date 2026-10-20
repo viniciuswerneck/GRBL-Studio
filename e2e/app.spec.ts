@@ -625,6 +625,75 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('encaixe na chapa: distribui as peças na margem (P3.7)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+
+      // Duas peças de tamanhos diferentes, em pontos distintos do desenho.
+      await page.click('#designToolRect');
+      for (const [x1, y1, x2, y2] of [
+        [120, 120, 240, 200],
+        [320, 260, 390, 320],
+      ]) {
+        await page.mouse.move(box.x + x1, box.y + y1);
+        await page.mouse.down();
+        await page.mouse.move(box.x + x2, box.y + y2);
+        await page.mouse.up();
+      }
+      const rows = page.locator('#designObjectList .design-obj');
+      await expect(rows).toHaveCount(2);
+
+      // Encaixe com a chapa padrão de 100 × 100 mm, margem e folga.
+      await page.keyboard.press('Control+a');
+      await page.click('#designNest');
+      await expect(page.locator('#designNestOverlay')).toBeVisible();
+      await expect(page.locator('#designNestCount')).toContainText('2 peça');
+      await page.fill('#designNestSheetW', '100');
+      await page.fill('#designNestSheetH', '100');
+      await page.fill('#designNestMargin', '5');
+      await page.fill('#designNestGap', '2');
+      await page.click('#designNestConfirm');
+      await expect(page.locator('#designNestOverlay')).toBeHidden();
+      await expect(page.locator('#designStatus')).toContainText('encaixada');
+      await expect(page.locator('#designStatus')).toContainText(
+        'aproveitamento',
+      );
+
+      // Uma peça fica exatamente no canto da margem (a maior, 5 × 5 mm).
+      const xs: string[] = [];
+      for (let i = 0; i < 2; i++) {
+        await rows.nth(i).click();
+        xs.push(await page.inputValue('#designPropX'));
+      }
+      expect(xs).toContain('5.0');
+
+      // Chapa menor que qualquer peça: nada se move e o aviso aparece.
+      // (Atalho J abre o encaixe com a seleção atual.)
+      await page.keyboard.press('Control+a');
+      await page.keyboard.press('j');
+      await expect(page.locator('#designNestOverlay')).toBeVisible();
+      await page.fill('#designNestSheetW', '6');
+      await page.fill('#designNestSheetH', '6');
+      await page.fill('#designNestMargin', '0');
+      await page.click('#designNestConfirm');
+      await expect(page.locator('#designStatus')).toContainText(
+        'Nenhuma peça coube',
+      );
+      await expect(rows).toHaveCount(2);
+    } finally {
+      await close();
+    }
+  });
+
   test('camadas: cria, renomeia, reordena e move objetos (P2.2)', async () => {
     const { app, page, close } = await launchApp();
     try {

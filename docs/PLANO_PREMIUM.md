@@ -80,12 +80,12 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 | **Teste de foco (P2.13/RF-IMG-13)** | ✅ (20/10/2026) | escada de Z com 2 potências por passo | Baixo |
 | **Biblioteca de jobs (P2.9)** | ✅ (19/10/2026) | histórico com miniatura + re-executar | Baixo |
 | Câmera (P3.1) / Rotativa (P3.2) | ⬜ | paridade LightBurn | Alto |
-| Nesting | ⬜ (matriz de cópias ✅) | encaixe real | Médio |
+| Nesting | ✅ encaixe por caixa, MaxRects (20/10/2026) | encaixe irregular (peças fora de caixa) | Médio |
 | Editor de G-code (P1.10) | ✅ | highlight + numeração + reenvio de trecho | Baixo |
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
 | Flatpak (P1.3) · onboarding (P1.4) | manifesto pronto (**não publicado**) / ✅ | publicados | Baixo |
 | Orçamentos RNF-11/12 (P1.8) | ✅ Linux (RNF-11: 269 MB X11 / 290 MB Wayland) | 3 SOs | Baixo |
-| E2E de job/protocolo (Fase 8) | 47 casos (job, pausa, alarme, lote, produção, foco, presets…) | fluxo completo de job | Médio |
+| E2E de job/protocolo (Fase 8) | 49 casos (job, pausa, alarme, lote, produção, foco, presets, nesting…) | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
 | Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
 
@@ -149,7 +149,7 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 | :-- | :-- | :-- | :-- |
 | P3.1 | **Câmera** (captura USB + alinhamento visual) | L | Overlay da peça; posicionar arrastando. |
 | P3.2 | **Rotativa (eixo A)** | L | Jog e job em cilindro; calibração por diâmetro. |
-| P3.7 | **Nesting** (encaixe real, reusa booleanas/offset) | M | Aproveitamento de chapa demonstrado. |
+| ✅ P3.7 | **Nesting** (encaixe por caixa: MaxRects, margem, folga e rotação 90°) — entregue; encaixe irregular em aberto | M | Aproveitamento de chapa demonstrado. |
 | P3.4 | **Preview WebGL** (arquivos gigantes) | M | 14 M de linhas sem travar; fallback canvas. |
 | P3.5 | **Telemetria opt-in** + crash reporting (Sentry/GlitchTip) | S | Diagnóstico de campo; 0 dados sem consentimento. |
 | P3.6 | **Migração do renderer para TS** (Svelte + electron-vite) | XL | ADR-2 concluído; `renderer.js` sai do repo; bundling instantâneo. |
