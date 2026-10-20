@@ -1,6 +1,6 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 20/10/2026 (**v0.11.0**). Status reflete o código atual em `main`.
+> Atualizado em 20/10/2026 (**v0.12.0**). Status reflete o código atual em `main`.
 > Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
 > Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
@@ -85,15 +85,14 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1299 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 333 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Release v0.11.0** — o v0.8 fechou com lote/dados variáveis (P2.10), modo
-   produção (P2.11), presets de material (P2.12) e teste de foco (P2.13).
-3. **Câmera + rotativa** (P3.1/P3.2).
-4. **Símbolo como objeto** no editor 2D (as simbologias em si estão fechadas).
-5. **Nesting irregular** (P3.7) — o encaixe por caixa já está entregue (20/10/2026).
+2. **Salvar/abrir o desenho** — hoje o editor só exporta `.gcode`.
+3. **Kerf/folga de corte** e **abas de retenção** (Anexo B do `ROADMAP.md`).
+4. **Câmera + rotativa** (P3.1/P3.2).
+5. **Preview WebGL** (P3.4) e **nesting irregular** (P3.7).

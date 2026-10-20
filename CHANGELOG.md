@@ -6,6 +6,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-20
+
+Marco **design 2D de verdade**: os símbolos viram objetos do desenho e as peças
+passam a ser **encaixadas na chapa**. Nada muda no protocolo nem no caminho de
+gravação — as duas funções caem no mesmo G-code do editor.
+
 ### Added — símbolo como objeto no editor “Desenhar” (S3)
 
 - **Ferramenta Símbolo** (barra do editor, atalho **Q**): QR Code, Data Matrix,
