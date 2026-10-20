@@ -41,6 +41,7 @@ import {
   imageMimeType,
 } from '../shared/fileFilters';
 import { BATCH_MAX_FILE_BYTES } from '../shared/batch';
+import { DESIGN_DOC_EXT, DESIGN_DOC_MAX_BYTES } from '../shared/designDoc';
 import { parsePdf, pdfToGcode, PdfError } from '../shared/pdf';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
 import { parseSettings } from '../shared/protocol';
@@ -642,6 +643,65 @@ export function registerIpc(
         defaultPath: 'grbl-presets.json',
         filters: [
           { name: t('filter.presets'), extensions: ['json'] },
+          { name: t('filter.all'), extensions: ['*'] },
+        ],
+      };
+      const owner = BrowserWindow.fromWebContents(evt.sender);
+      const result = owner
+        ? await dialog.showSaveDialog(owner, options)
+        : await dialog.showSaveDialog(options);
+      if (result.canceled || !result.filePath) return null;
+      await writeFile(result.filePath, content, 'utf8');
+      rememberDir(result.filePath);
+      return result.filePath;
+    },
+  );
+
+  // ------------------------------- documento do editor “Desenhar” (RF-DSN-16)
+
+  ipcMain.handle(
+    CHANNELS.designDocOpen,
+    async (evt): Promise<OpenedTextFile | null> => {
+      const filePath = await pickFile(evt.sender, {
+        title: t('dlg.openDesign'),
+        buttonLabel: t('dlg.open'),
+        properties: ['openFile'],
+        filters: [
+          { name: t('filter.design'), extensions: ['gstudio', 'json'] },
+          { name: t('filter.all'), extensions: ['*'] },
+        ],
+        defaultPath: await defaultDir(),
+      });
+      if (!filePath) return null;
+      rememberDir(filePath);
+
+      const info = await stat(filePath);
+      if (!info.isFile()) throw new Error(t('dlg.notFile'));
+      if (info.size > DESIGN_DOC_MAX_BYTES) {
+        throw new Error(t('dlg.tooBig', { size: formatMb(info.size) }));
+      }
+      const text = await readFile(filePath, 'utf8');
+      return { path: filePath, name: path.basename(filePath), text };
+    },
+  );
+
+  ipcMain.handle(
+    CHANNELS.designDocSave,
+    async (
+      evt,
+      content: unknown,
+      suggestedName?: unknown,
+    ): Promise<string | null> => {
+      if (typeof content !== 'string') throw new Error(t('dlg.missingContent'));
+      // Só o nome do arquivo: o diálogo decide a pasta (o renderer não manda
+      // caminho) e nada de `../` saindo da pasta escolhida.
+      const name =
+        typeof suggestedName === 'string' ? path.basename(suggestedName) : '';
+      const options = {
+        title: t('dlg.saveDesign'),
+        defaultPath: name || `desenho.${DESIGN_DOC_EXT}`,
+        filters: [
+          { name: t('filter.design'), extensions: [DESIGN_DOC_EXT] },
           { name: t('filter.all'), extensions: ['*'] },
         ],
       };

@@ -70,6 +70,14 @@
           <path d="M9 4v5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
           <rect x="6" y="6" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6" />
         </symbol>
+        <symbol id="ic-folder-open" viewBox="0 0 24 24">
+          <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2h7A1.5 1.5 0 0 1 19.2 8.5v1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M4.2 9.6h16.1a.9.9 0 0 1 .88 1.1l-1.75 7.4a1.5 1.5 0 0 1-1.46 1.15H5.1a1.5 1.5 0 0 1-1.46-1.15L2.9 10.7a.9.9 0 0 1 .88-1.1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </symbol>
+        <symbol id="ic-save" viewBox="0 0 24 24">
+          <path d="M5 3.5h10.2L20.5 8.8V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M7.5 3.5h6.2v5H7.5zM7.5 13h9v6.5h-9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </symbol>
         <symbol id="ic-close" viewBox="0 0 24 24">
           <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </symbol>
@@ -1726,6 +1734,7 @@
           <div class="design-title-left">
             <h3 id="designTitle" data-i18n="design.title">Desenhar</h3>
             <span class="design-badge" id="designDocBadge">150 × 130 mm</span>
+            <span class="design-doc-badge" id="designDocName">Sem título</span>
           </div>
           <div class="design-title-right">
             <button type="button" id="designUndo" class="icon-btn" data-i18n-title="design.undo" title="Desfazer (Ctrl+Z)">
@@ -2164,7 +2173,17 @@
               <ul id="designObjectList" class="design-object-list"></ul>
             </section>
             <section class="design-dock-section">
-              <header class="design-dock-head" data-i18n="design.document">Documento</header>
+              <header class="design-dock-head">
+                <span data-i18n="design.document">Documento</span>
+                <div class="design-layer-tools">
+                  <button type="button" id="designDocOpen" class="design-mini-btn" data-i18n-title="design.doc.open.hint" title="Abrir um desenho salvo (.gstudio) — Ctrl+O">
+                    <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-folder-open" /></svg>
+                  </button>
+                  <button type="button" id="designDocSave" class="design-mini-btn" data-i18n-title="design.doc.save.hint" title="Salvar o desenho para reabrir depois (.gstudio) — Ctrl+S">
+                    <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-save" /></svg>
+                  </button>
+                </div>
+              </header>
               <div class="design-dock-row">
                 <label class="design-mini">
                   <span data-i18n="design.doc.width">Largura</span>
@@ -2313,6 +2332,31 @@
           <button type="button" id="designArrayCancel" data-i18n="design.cancel">Cancelar</button>
           <button type="button" id="designArrayConfirm" class="primary" data-i18n="design.array.create">
             Criar cópias
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designDocConfirm">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designDocConfirmTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designDocConfirmTitle" data-i18n="design.doc.replace.title">Substituir o desenho?</h3>
+          <button type="button" id="designDocConfirmClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <p class="design-size-hint" data-i18n="design.doc.replace.hint">
+            O desenho atual tem alterações não salvas. Abrir outro documento descarta essas alterações.
+          </p>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designDocConfirmCancel" data-i18n="design.cancel">Cancelar</button>
+          <button type="button" id="designDocConfirmOk" class="primary" data-i18n="design.doc.replace.ok">
+            Descartar e abrir
           </button>
         </footer>
       </div>

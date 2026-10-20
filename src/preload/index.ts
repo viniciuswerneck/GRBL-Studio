@@ -124,6 +124,15 @@ const api = {
   /** Exporta os presets de material para um JSON (P2.12). */
   exportPresets: (content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.presetExport, content),
+  /** Abre um documento do editor (`.gstudio`). */
+  openDesignDoc: (): Promise<OpenedTextFile | null> =>
+    ipcRenderer.invoke(CHANNELS.designDocOpen),
+  /** Salva o documento do editor (`.gstudio`); `suggestedName` mantém o nome. */
+  saveDesignDoc: (
+    content: string,
+    suggestedName?: string,
+  ): Promise<string | null> =>
+    ipcRenderer.invoke(CHANNELS.designDocSave, content, suggestedName),
   /** Salva o log do console em `.log`/`.txt` (RF-CON-15). */
   saveLog: (content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.fileSaveLog, { content }),

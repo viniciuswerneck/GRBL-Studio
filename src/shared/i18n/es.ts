@@ -836,6 +836,22 @@ export const es = {
     'Ninguna pieza cupo en la chapa. Aumente la chapa o reduzca margen/separación.',
   'design.nest.done': '{n} pieza(s) encajada(s) · aprovechamiento {pct} %.',
   'design.nest.unplaced': '{n} pieza(s) no cupieron en la chapa.',
+  'design.doc.open.hint': 'Abrir un dibujo guardado (.gstudio) — Ctrl+O',
+  'design.doc.save.hint':
+    'Guardar el dibujo para abrirlo después (.gstudio) — Ctrl+S',
+  'design.doc.untitled': 'Sin título',
+  'design.doc.dirty': 'sin guardar',
+  'design.doc.opened': 'Dibujo abierto: {name}.',
+  'design.doc.saved': 'Dibujo guardado: {name}.',
+  'design.doc.error.json': 'El archivo no es un JSON válido.',
+  'design.doc.error.format': 'El archivo no es un dibujo de GRBL Studio.',
+  'design.doc.error.version':
+    'Este dibujo se guardó con una versión más nueva de la app. Actualice para abrirlo.',
+  'design.doc.error.toobig': 'El archivo es demasiado grande para abrirlo.',
+  'design.doc.replace.title': '¿Sustituir el dibujo?',
+  'design.doc.replace.hint':
+    'El dibujo actual tiene cambios sin guardar. Abrir otro documento los descarta.',
+  'design.doc.replace.ok': 'Descartar y abrir',
   'design.bool.menu': 'Booleanas y contorno paralelo',
   'design.bool.union': 'Unir',
   'design.bool.subtract': 'Restar',
@@ -1335,6 +1351,8 @@ export const es = {
   'dlg.tooBig': 'Archivo demasiado grande ({size}).',
   'dlg.missingContent': 'Falta el contenido del G-code.',
   'dlg.missingMacros': 'Falta el contenido de las macros.',
+  'dlg.openDesign': 'Abrir dibujo',
+  'dlg.saveDesign': 'Guardar dibujo',
   'dlg.importPresets': 'Importar presets de material',
   'dlg.exportPresets': 'Exportar presets de material',
   'dlg.missingPresets': 'Falta el contenido de los presets.',
@@ -1518,6 +1536,7 @@ export const es = {
   'console.saveFail': 'Fallo al guardar el registro: {msg}',
   'dlg.saveLog': 'Guardar registro de consola',
   'filter.log': 'Registro (texto)',
+  'filter.design': 'Dibujo de GRBL Studio',
   'filter.presets': 'Presets (JSON)',
 
   // ------------------------------------------------ estado (RF-STA-2/4/7)

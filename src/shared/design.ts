@@ -35,6 +35,22 @@ export type {
   DesignSymbolType,
 } from './designSymbol';
 
+// Documento do editor (`.gstudio`): salvar/abrir o desenho inteiro.
+export type {
+  DesignDoc,
+  DesignDocError,
+  DesignDocPage,
+  DesignDocParseResult,
+} from './designDoc';
+export {
+  DESIGN_DOC_EXT,
+  DESIGN_DOC_KIND,
+  DESIGN_DOC_MAX_BYTES,
+  DESIGN_DOC_VERSION,
+  parseDesignDoc,
+  serializeDesignDoc,
+} from './designDoc';
+
 export type ShapeKind =
   | 'rect'
   | 'circle'

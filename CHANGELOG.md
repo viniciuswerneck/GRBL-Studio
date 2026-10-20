@@ -6,6 +6,28 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — salvar/abrir o desenho (`.gstudio`, RF-DSN-16)
+
+- **Documento do editor “Desenhar”**: botões no painel **Documento** e atalhos
+  **Ctrl+S**/**Ctrl+O** salvam e reabrem a arte inteira — página, formas com
+  estilo/potência/velocidade/espessura, **camadas** (com a ordem de execução),
+  camada ativa, texto e **símbolo** (com os metadados de reedição). O nome do
+  arquivo e a marca de “não salvo” aparecem na barra de título do editor.
+- Formato **JSON versionado** (`kind: grbl-studio/design`, `version: 1`), legível
+  e diffável, em módulo puro (`src/shared/designDoc.ts`): coordenadas vão como
+  estão (**sem arredondar**), metadados passam pelos mesmos sanitizadores da
+  edição e a leitura **nunca lança** — arquivo corrompido, de outro app ou de
+  versão futura devolve um código de erro que a UI traduz.
+- Abrir pede confirmação quando há alterações não salvas, substitui o desenho e
+  vira o **novo ponto do undo/redo**; os contadores de grupo/camada continuam a
+  numeração do arquivo (sem ids repetidos depois de abrir).
+- O painel lateral agora **rola** em janelas baixas, mantendo a lista de objetos
+  com altura mínima (antes ela era esmagada quando o conteúdo passava da tela).
+- **Testes**: 8 unitários (`tests/design-doc.test.ts`: ida e volta sem perder
+  precisão, versão/formato, pontos inválidos, números fora de faixa, camadas
+  repetidas, numeração e documento vazio) e 1 E2E (desenhar → salvar → conferir
+  o JSON → limpar → abrir com confirmação → Ctrl+O).
+
 ## [0.12.0] - 2026-10-20
 
 Marco **design 2D de verdade**: os símbolos viram objetos do desenho e as peças

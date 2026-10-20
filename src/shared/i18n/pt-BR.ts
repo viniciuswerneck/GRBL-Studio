@@ -839,6 +839,22 @@ export const ptBR = {
     'Nenhuma peça coube na chapa. Aumente a chapa ou reduza margem/espaçamento.',
   'design.nest.done': '{n} peça(s) encaixada(s) · aproveitamento {pct} %.',
   'design.nest.unplaced': '{n} peça(s) não coube(ram) na chapa.',
+  'design.doc.open.hint': 'Abrir um desenho salvo (.gstudio) — Ctrl+O',
+  'design.doc.save.hint':
+    'Salvar o desenho para reabrir depois (.gstudio) — Ctrl+S',
+  'design.doc.untitled': 'Sem título',
+  'design.doc.dirty': 'não salvo',
+  'design.doc.opened': 'Desenho aberto: {name}.',
+  'design.doc.saved': 'Desenho salvo: {name}.',
+  'design.doc.error.json': 'O arquivo não é um JSON válido.',
+  'design.doc.error.format': 'O arquivo não é um desenho do GRBL Studio.',
+  'design.doc.error.version':
+    'Este desenho foi salvo por uma versão mais nova do app. Atualize para abrir.',
+  'design.doc.error.toobig': 'O arquivo é grande demais para abrir.',
+  'design.doc.replace.title': 'Substituir o desenho?',
+  'design.doc.replace.hint':
+    'O desenho atual tem alterações não salvas. Abrir outro documento descarta essas alterações.',
+  'design.doc.replace.ok': 'Descartar e abrir',
   'design.bool.menu': 'Booleanas e contorno paralelo',
   'design.bool.union': 'Unir',
   'design.bool.subtract': 'Subtrair',
@@ -1332,6 +1348,8 @@ export const ptBR = {
   'dlg.tooBig': 'Arquivo grande demais ({size}).',
   'dlg.missingContent': 'Conteúdo de G-code ausente.',
   'dlg.missingMacros': 'Conteúdo de macros ausente.',
+  'dlg.openDesign': 'Abrir desenho',
+  'dlg.saveDesign': 'Salvar desenho',
   'dlg.importPresets': 'Importar presets de material',
   'dlg.exportPresets': 'Exportar presets de material',
   'dlg.missingPresets': 'Conteúdo dos presets ausente.',
@@ -1513,6 +1531,7 @@ export const ptBR = {
   'console.saveFail': 'Falha ao salvar o log: {msg}',
   'dlg.saveLog': 'Salvar log do console',
   'filter.log': 'Log (texto)',
+  'filter.design': 'Desenho do GRBL Studio',
   'filter.presets': 'Presets (JSON)',
 
   // ------------------------------------------------ status (RF-STA-2/4/7)

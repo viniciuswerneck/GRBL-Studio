@@ -1424,6 +1424,7 @@ body.job-active .job-bar {
   gap: var(--sp-4);
   padding: var(--sp-4);
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 /* Corpo rolável dos modais sem layout próprio (ex.: Posicionar a gravadora):
@@ -1855,6 +1856,9 @@ html[data-theme="sand"] .design-canvas-wrap {
   min-height: 0;
   border-left: 1px solid var(--stroke);
   background: var(--bg);
+  /* Em janelas baixas as seções somam mais que a altura: a barra rola e a
+     lista de objetos mantém um mínimo utilizável (antes ela era esmagada). */
+  overflow-y: auto;
 }
 
 .design-dock-section {
@@ -1866,8 +1870,8 @@ html[data-theme="sand"] .design-canvas-wrap {
 }
 
 .design-dock-section.grow {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 1 0 auto;
+  min-height: 132px;
 }
 
 .design-dock-head {
@@ -1895,6 +1899,25 @@ html[data-theme="sand"] .design-canvas-wrap {
 .design-dock-row > * {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* nome do arquivo do desenho (barra de título) — discreto, com “não salvo” */
+.design-doc-badge {
+  max-width: 240px;
+  font-size: var(--fs-11, 11px);
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.design-doc-badge.dirty {
+  color: var(--text);
+}
+
+.design-doc-badge.dirty::after {
+  content: ' •';
+  color: var(--accent);
 }
 
 .design-field {
@@ -2104,10 +2127,13 @@ html[data-theme="sand"] .design-canvas-wrap {
 
 .design-layer-editor .design-dock-row {
   align-items: flex-end;
+  gap: 4px;
 }
 
 .design-layer-editor button {
   min-height: 26px;
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 /* Marca da camada na lista de objetos (mesma cor do canvas). */

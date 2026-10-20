@@ -815,6 +815,22 @@ export const en = {
     'No part fitted on the sheet. Increase the sheet or reduce margin/spacing.',
   'design.nest.done': '{n} part(s) nested · {pct} % used.',
   'design.nest.unplaced': '{n} part(s) did not fit on the sheet.',
+  'design.doc.open.hint': 'Open a saved drawing (.gstudio) — Ctrl+O',
+  'design.doc.save.hint':
+    'Save the drawing to reopen it later (.gstudio) — Ctrl+S',
+  'design.doc.untitled': 'Untitled',
+  'design.doc.dirty': 'unsaved',
+  'design.doc.opened': 'Drawing opened: {name}.',
+  'design.doc.saved': 'Drawing saved: {name}.',
+  'design.doc.error.json': 'The file is not valid JSON.',
+  'design.doc.error.format': 'The file is not a GRBL Studio drawing.',
+  'design.doc.error.version':
+    'This drawing was saved by a newer version of the app. Update to open it.',
+  'design.doc.error.toobig': 'The file is too large to open.',
+  'design.doc.replace.title': 'Replace the drawing?',
+  'design.doc.replace.hint':
+    'The current drawing has unsaved changes. Opening another document discards them.',
+  'design.doc.replace.ok': 'Discard and open',
   'design.bool.menu': 'Boolean and offset',
   'design.bool.union': 'Weld (union)',
   'design.bool.subtract': 'Subtract',
@@ -1301,6 +1317,8 @@ export const en = {
   'dlg.tooBig': 'File too large ({size}).',
   'dlg.missingContent': 'G-code content missing.',
   'dlg.missingMacros': 'Macro content missing.',
+  'dlg.openDesign': 'Open drawing',
+  'dlg.saveDesign': 'Save drawing',
   'dlg.importPresets': 'Import material presets',
   'dlg.exportPresets': 'Export material presets',
   'dlg.missingPresets': 'Preset content missing.',
@@ -1478,6 +1496,7 @@ export const en = {
   'console.saveFail': 'Failed to save log: {msg}',
   'dlg.saveLog': 'Save console log',
   'filter.log': 'Log (text)',
+  'filter.design': 'GRBL Studio drawing',
   'filter.presets': 'Presets (JSON)',
 
   // ------------------------------------------------ status (RF-STA-2/4/7)

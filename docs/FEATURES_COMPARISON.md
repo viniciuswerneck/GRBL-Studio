@@ -33,6 +33,7 @@
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |
 | Camadas / multi-operação (gravar + cortar) | Não | Sim (parâmetros por camada + ordem de execução) | ✅ |
 | Nesting (encaixe na chapa) | Não | Sim (MaxRects: margem, espaçamento e rotação 90°) | ✅ |
+| Salvar/abrir o desenho (`.gstudio`) | Não | Sim (documento versionado, Ctrl+S/Ctrl+O) | ✅ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -85,7 +86,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1 333 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 349 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |

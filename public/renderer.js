@@ -443,6 +443,7 @@ const el = {
   designSizeOverlay: $('designSizeOverlay'),
   designArrayOverlay: $('designArrayOverlay'),
   designNestOverlay: $('designNestOverlay'),
+  designDocConfirm: $('designDocConfirm'),
   designOffsetOverlay: $('designOffsetOverlay'),
   designBoolMenu: $('designBoolMenu'),
   designBoolPop: $('designBoolPop'),
@@ -1064,6 +1065,9 @@ const designState = {
   textEdit: null,
   symbolEdit: null,
   clipboard: null,
+  /** Arquivo do desenho aberto/salvo (`.gstudio`) e se há mudanças. */
+  docPath: null,
+  docDirty: false,
   seq: 0,
   /** Camadas/operações na ordem de execução (`Shape.layer` → `id`). */
   layers: [],
@@ -1233,6 +1237,8 @@ function dPushHistory() {
   designState.history.push(JSON.stringify(designState.shapes));
   if (designState.history.length > 80) designState.history.shift();
   designState.historyIdx = designState.history.length - 1;
+  designState.docDirty = true;
+  dUpdateDocName();
   dUpdateButtons();
 }
 
@@ -1992,6 +1998,141 @@ function dConfirmNest() {
   if (res.unplaced.length)
     msg += ` ${t('design.nest.unplaced', { n: res.unplaced.length })}`;
   dStatus(msg, res.unplaced.length ? 'error' : 'ok');
+}
+
+// ------------------------------------------- documento do desenho (.gstudio)
+
+function dBaseName(filePath) {
+  if (!filePath) return '';
+  const parts = String(filePath).split(/[\\/]/);
+  return parts[parts.length - 1] || '';
+}
+
+/** Rótulo do arquivo no painel “Documento” (com marca de não salvo). */
+function dUpdateDocName() {
+  const node = $('designDocName');
+  if (!node) return;
+  const base = dBaseName(designState.docPath);
+  node.textContent = base || t('design.doc.untitled');
+  node.title = designState.docPath
+    ? `${designState.docPath}${designState.docDirty ? ` (${t('design.doc.dirty')})` : ''}`
+    : t('design.doc.untitled');
+  node.classList.toggle(
+    'dirty',
+    Boolean(designState.docPath && designState.docDirty),
+  );
+}
+
+function dDocConfirmOpen() {
+  const o = el.designDocConfirm;
+  return Boolean(o && !o.classList.contains('hidden'));
+}
+
+let dDocConfirmResolve = null;
+
+/** Pergunta antes de descartar o desenho atual (Promise<boolean>). */
+function dConfirmDiscard() {
+  if (!el.designDocConfirm) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    dDocConfirmResolve = resolve;
+    el.designDocConfirm.classList.remove('hidden');
+  });
+}
+
+function dCloseDiscardConfirm(result) {
+  if (el.designDocConfirm) el.designDocConfirm.classList.add('hidden');
+  const resolve = dDocConfirmResolve;
+  dDocConfirmResolve = null;
+  if (resolve) resolve(result === true);
+}
+
+/** Conteúdo que vai para o arquivo (sem preferências da sessão). */
+function dDesignDocPayload() {
+  return {
+    page: { w: designState.page.w, h: designState.page.h },
+    shapes: designState.shapes,
+    layers: designState.layers,
+    activeLayer: designState.activeLayer,
+    seq: designState.seq,
+    layerSeq: designState.layerSeq,
+  };
+}
+
+/** Troca o desenho atual pelo documento lido do arquivo. */
+function dApplyDesignDoc(doc, filePath) {
+  designState.shapes = doc.shapes;
+  designState.page = { w: doc.page.w, h: doc.page.h };
+  designState.layers = doc.layers;
+  designState.activeLayer = doc.activeLayer;
+  designState.seq = doc.seq;
+  designState.layerSeq = doc.layerSeq;
+  designState.selection = [];
+  designState.rotApplied = 0;
+  designState.nodeEdit = null;
+  designState.textEdit = null;
+  designState.symbolEdit = null;
+  designState.drawing = null;
+  designState.freehandPoints = [];
+  designState.docPath = filePath || null;
+  dEnsureLayers();
+  dSaveLayers();
+  // O documento aberto é o novo “ponto zero” do undo/redo.
+  designState.history = [];
+  designState.historyIdx = -1;
+  dPushHistory();
+  designState.docDirty = false;
+  const pw = $('designPageW');
+  if (pw) pw.value = String(doc.page.w);
+  const ph = $('designPageH');
+  if (ph) ph.value = String(doc.page.h);
+  dUpdateDocName();
+  dUpdateDocBadge();
+  dFitPage();
+  dUpdateZoom();
+  dRender();
+  dUpdateProps();
+  dUpdateLayerList();
+  dUpdateLayerEditor();
+  dUpdateObjectList();
+  dUpdateStatus();
+  dUpdateButtons();
+}
+
+async function dOpenDesignDoc() {
+  if (!window.GRBL_DESIGN) return;
+  if (designState.docDirty) {
+    const ok = await dConfirmDiscard();
+    if (!ok) return;
+  }
+  try {
+    const file = await window.grbl.openDesignDoc();
+    if (!file) return;
+    const parsed = window.GRBL_DESIGN.parseDesignDoc(file.text);
+    if (!parsed.ok) {
+      dStatus(t(`design.doc.error.${parsed.error}`), 'error');
+      return;
+    }
+    dApplyDesignDoc(parsed.doc, file.path);
+    dStatus(t('design.doc.opened', { name: file.name }), 'ok');
+  } catch (err) {
+    dStatus(t('err.prefix', { msg: err.message }), 'error');
+  }
+}
+
+async function dSaveDesignDoc() {
+  if (!window.GRBL_DESIGN) return;
+  try {
+    const json = window.GRBL_DESIGN.serializeDesignDoc(dDesignDocPayload());
+    const suggested = dBaseName(designState.docPath) || 'desenho.gstudio';
+    const filePath = await window.grbl.saveDesignDoc(json, suggested);
+    if (!filePath) return;
+    designState.docPath = filePath;
+    designState.docDirty = false;
+    dUpdateDocName();
+    dStatus(t('design.doc.saved', { name: dBaseName(filePath) }), 'ok');
+  } catch (err) {
+    dStatus(t('err.prefix', { msg: err.message }), 'error');
+  }
 }
 
 // -------------------------------------------------------------- propriedades
@@ -4339,6 +4480,7 @@ function dOnKeyDown(e) {
     dSizeDialogOpen() ||
     dArrayDialogOpen() ||
     dNestDialogOpen() ||
+    dDocConfirmOpen() ||
     dOffsetDialogOpen();
   const editor = $('designTextEditor');
   const editorOpen = editor && !editor.classList.contains('hidden');
@@ -4350,6 +4492,7 @@ function dOnKeyDown(e) {
       dCloseSizeDialog();
       dCloseArrayDialog();
       dCloseNestDialog();
+      dCloseDiscardConfirm(false);
       dCloseOffsetDialog();
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -4415,6 +4558,16 @@ function dOnKeyDown(e) {
     if (k === 'y' || (k === 'z' && e.shiftKey)) {
       e.preventDefault();
       dRedo();
+      return;
+    }
+    if (k === 's') {
+      e.preventDefault();
+      dSaveDesignDoc();
+      return;
+    }
+    if (k === 'o') {
+      e.preventDefault();
+      dOpenDesignDoc();
       return;
     }
     if (k === 'a') {
@@ -4544,6 +4697,8 @@ function dApplyPageSize() {
   } catch {
     /* ignore */
   }
+  designState.docDirty = true;
+  dUpdateDocName();
   dUpdateDocBadge();
   dFitPage();
   dUpdateZoom();
@@ -4673,7 +4828,10 @@ async function openDesignModal() {
   dCloseTextEditor();
   dSetTool('select');
   dLoadSystemFonts();
-  if (!designState.history.length) dPushHistory();
+  if (!designState.history.length) {
+    dPushHistory();
+    designState.docDirty = false;
+  }
   requestAnimationFrame(() => {
     dResizeCanvas();
     dFitPage();
@@ -4685,6 +4843,7 @@ async function openDesignModal() {
     dUpdateStatus();
     dUpdateButtons();
     dUpdateDocBadge();
+    dUpdateDocName();
     dRender();
   });
 }
@@ -4694,6 +4853,7 @@ function closeDesignModal() {
   dCloseSizeDialog();
   dCloseArrayDialog();
   dCloseNestDialog();
+  dCloseDiscardConfirm(false);
   dCloseOffsetDialog();
   dCloseBoolMenu();
   if (el.designOverlay) el.designOverlay.classList.add('hidden');
@@ -5143,6 +5303,30 @@ function dConfirmSize() {
   if (el.designArrayOverlay) {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
+    });
+  }
+
+  // documento do desenho (salvar/abrir)
+  const docOpen = $('designDocOpen');
+  if (docOpen) docOpen.addEventListener('click', dOpenDesignDoc);
+  const docSave = $('designDocSave');
+  if (docSave) docSave.addEventListener('click', dSaveDesignDoc);
+  const docConfirmOk = $('designDocConfirmOk');
+  if (docConfirmOk)
+    docConfirmOk.addEventListener('click', () => dCloseDiscardConfirm(true));
+  const docConfirmCancel = $('designDocConfirmCancel');
+  if (docConfirmCancel)
+    docConfirmCancel.addEventListener('click', () =>
+      dCloseDiscardConfirm(false),
+    );
+  const docConfirmClose = $('designDocConfirmClose');
+  if (docConfirmClose)
+    docConfirmClose.addEventListener('click', () =>
+      dCloseDiscardConfirm(false),
+    );
+  if (el.designDocConfirm) {
+    el.designDocConfirm.addEventListener('click', (e) => {
+      if (e.target === el.designDocConfirm) dCloseDiscardConfirm(false);
     });
   }
 

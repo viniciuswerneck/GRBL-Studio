@@ -694,6 +694,92 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('salva e reabre o desenho (.gstudio) (RF-DSN-16)', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-doc-'));
+    const file = path.join(dir, 'peca.gstudio');
+    const { app, page, close } = await launchApp();
+    try {
+      // Diálogos nativos trocados por caminhos fixos (o teste não abre janela).
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: target,
+        })) as typeof dialog.showSaveDialog;
+        dialog.showOpenDialog = (async () => ({
+          canceled: false,
+          filePaths: [target],
+        })) as typeof dialog.showOpenDialog;
+      }, file);
+
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      await expect(page.locator('#designDocName')).toHaveText('Sem título');
+
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 120, box.y + 120);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 220, box.y + 190);
+      await page.mouse.up();
+      const rows = page.locator('#designObjectList .design-obj');
+      await expect(rows).toHaveCount(1);
+
+      // Salva: o arquivo é JSON do GRBL Studio com a forma.
+      await page.click('#designDocSave');
+      await expect(page.locator('#designStatus')).toContainText(
+        'Desenho salvo',
+      );
+      await expect(page.locator('#designDocName')).toHaveText('peca.gstudio');
+      await expect(page.locator('#designDocName')).not.toHaveClass(/dirty/);
+      const saved = JSON.parse(readFileSync(file, 'utf8')) as {
+        kind: string;
+        version: number;
+        page: { w: number; h: number };
+        shapes: unknown[];
+        layers: unknown[];
+      };
+      expect(saved.kind).toBe('grbl-studio/design');
+      expect(saved.version).toBe(1);
+      expect(saved.page).toEqual({ w: 150, h: 130 });
+      expect(saved.shapes).toHaveLength(1);
+      expect(saved.layers).toHaveLength(1);
+
+      // Mexer no desenho marca “não salvo”.
+      await page.click('#designClear');
+      await expect(rows).toHaveCount(0);
+      await expect(page.locator('#designDocName')).toHaveClass(/dirty/);
+
+      // Abrir pede confirmação (há mudanças não salvas) e restaura a peça.
+      await page.click('#designDocOpen');
+      await expect(page.locator('#designDocConfirm')).toBeVisible();
+      await page.click('#designDocConfirmOk');
+      await expect(page.locator('#designDocConfirm')).toBeHidden();
+      await expect(page.locator('#designStatus')).toContainText(
+        'Desenho aberto',
+      );
+      await expect(rows).toHaveCount(1);
+      await expect(page.locator('#designDocName')).toHaveText('peca.gstudio');
+      await expect(page.locator('#designDocName')).not.toHaveClass(/dirty/);
+
+      // Atalho Ctrl+O também abre (sem alterações, não pergunta nada).
+      await page.keyboard.press('Control+o');
+      await expect(page.locator('#designDocConfirm')).toBeHidden();
+      await expect(page.locator('#designStatus')).toContainText(
+        'Desenho aberto',
+      );
+      await expect(rows).toHaveCount(1);
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('camadas: cria, renomeia, reordena e move objetos (P2.2)', async () => {
     const { app, page, close } = await launchApp();
     try {

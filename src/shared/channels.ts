@@ -47,6 +47,9 @@ export const CHANNELS = {
   /** Presets de material (P2.12): importar/exportar JSON. */
   presetImport: 'file:open-presets',
   presetExport: 'file:save-presets',
+  /** Documento do editor “Desenhar” (`.gstudio`): abrir/salvar. */
+  designDocOpen: 'file:open-design',
+  designDocSave: 'file:save-design',
   pickDir: 'app:pick-dir',
   openLogs: 'app:open-logs',
   fontsList: 'app:fonts:list',

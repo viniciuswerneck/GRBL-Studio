@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 333 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 349 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -61,6 +61,10 @@ Já entregue (não repetir no planejamento):
       espaçamento e **rotação 90°** quando cabe melhor; encaixa a seleção (ou
       todos os objetos), informa o **aproveitamento** e avisa o que não coube —
       20/10/2026.
+- [x] **Salvar/abrir o desenho** (RF-DSN-16): documento `.gstudio` versionado
+      com página, formas, camadas, texto e símbolo; **Ctrl+S**/**Ctrl+O**,
+      confirmação antes de descartar alterações e leitura tolerante a arquivos
+      inválidos — 20/10/2026.
 - [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
       gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
       peça, contador e retomada — 20/10/2026.
@@ -85,7 +89,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **879 testes** (Vitest, 51 arquivos) + E2E Playwright (49) + smoke headless.
+- [x] **887 testes** (Vitest, 52 arquivos) + E2E Playwright (50) + smoke headless.
 
 ---
 
