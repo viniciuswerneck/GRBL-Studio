@@ -950,6 +950,17 @@ export const ptBR = {
   'design.cost.resultTimeOnly':
     '≈ {time} · informe a tarifa da máquina e o preço do material',
   'design.cost.noTime': 'Sem tempo estimado para este tamanho.',
+  'design.double': 'Gravar dos dois lados…',
+  'design.double.title': 'Gravar dos dois lados',
+  'design.double.hint':
+    'Gera dois programas: o lado A como está e o lado B espelhado na horizontal em torno do centro da arte. As marcas de registro caem nas mesmas posições, então a peça virada se alinha pelos mesmos pontos.',
+  'design.double.marks': 'Incluir marcas de registro (L)',
+  'design.double.offset': 'Distância da arte (mm)',
+  'design.double.size': 'Tamanho da marca (mm)',
+  'design.double.note':
+    'Corte o lado A, vire a peça na horizontal e rode o lado B. As marcas do lado A são refeitas no lado B: se estiverem alinhadas, o laser passa exatamente por cima.',
+  'design.double.save': 'Salvar os dois .gcode…',
+  'design.double.saved': 'Lado A e lado B salvos em {dir}',
   'design.fiducial': 'Marcas de registro…',
   'design.fiducial.title': 'Marcas de registro',
   'design.fiducial.hint':

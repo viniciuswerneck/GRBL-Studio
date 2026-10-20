@@ -947,6 +947,17 @@ export const es = {
   'design.cost.resultTimeOnly':
     '≈ {time} · indica la tarifa de la máquina y el precio del material',
   'design.cost.noTime': 'Sin tiempo estimado para este tamaño.',
+  'design.double': 'Grabar por los dos lados…',
+  'design.double.title': 'Grabar por los dos lados',
+  'design.double.hint':
+    'Genera dos programas: el lado A como está y el lado B espejado en horizontal alrededor del centro de la obra. Las marcas de registro caen en las mismas posiciones, así la pieza girada se alinea por los mismos puntos.',
+  'design.double.marks': 'Incluir marcas de registro (L)',
+  'design.double.offset': 'Distancia de la obra (mm)',
+  'design.double.size': 'Tamaño de la marca (mm)',
+  'design.double.note':
+    'Corta el lado A, gira la pieza en horizontal y ejecuta el lado B. Las marcas del lado A se repiten en el lado B: si están alineadas, el láser pasa justo encima.',
+  'design.double.save': 'Guardar los dos .gcode…',
+  'design.double.saved': 'Lado A y lado B guardados en {dir}',
   'design.fiducial': 'Marcas de registro…',
   'design.fiducial.title': 'Marcas de registro',
   'design.fiducial.hint':

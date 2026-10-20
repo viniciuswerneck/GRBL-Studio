@@ -631,6 +631,104 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('gravar dos dois lados: lado B espelhado com a mesma origem (Anexo B)', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-sides-'));
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showOpenDialog = (async () => ({
+          canceled: false,
+          filePaths: [target],
+        })) as typeof dialog.showOpenDialog;
+      }, dir);
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 150, box.y + 160);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y + 270);
+      await page.mouse.up();
+
+      await page.click('#designDouble');
+      await expect(page.locator('#designDoubleOverlay')).toBeVisible();
+      await expect(page.locator('#designDoubleMarks')).toBeChecked();
+      await page.click('#designDoubleSave');
+      await expect(page.locator('#designDoubleOverlay')).toHaveClass(/hidden/);
+
+      const fileA = path.join(dir, 'peca-lado-a.gcode');
+      const fileB = path.join(dir, 'peca-lado-b.gcode');
+      await expect
+        .poll(() => existsSync(fileA) && existsSync(fileB), {
+          timeout: 10_000,
+        })
+        .toBe(true);
+
+      const segs = (text: string) => {
+        const out: Array<{
+          a: { x: number; y: number };
+          b: { x: number; y: number };
+        }> = [];
+        let prev: { x: number; y: number } | null = null;
+        let armed = false;
+        for (const line of text.split('\n')) {
+          if (/^M[34]\b/.test(line)) {
+            armed = true;
+            continue;
+          }
+          if (line.startsWith('M5')) {
+            armed = false;
+            prev = null;
+            continue;
+          }
+          const m = /^G([01]) X(-?[\d.]+) Y(-?[\d.]+)/.exec(line);
+          if (!m) continue;
+          const pt = { x: Number(m[2]), y: Number(m[3]) };
+          if (m[1] === '0') {
+            prev = pt;
+            continue;
+          }
+          if (armed && prev) out.push({ a: prev, b: pt });
+          prev = pt;
+        }
+        return out;
+      };
+      const sa = segs(readFileSync(fileA, 'utf8'));
+      const sb = segs(readFileSync(fileB, 'utf8'));
+      expect(sa.length).toBeGreaterThan(4);
+      expect(sb).toHaveLength(sa.length);
+      const width = Math.max(...sa.flatMap((x) => [x.a.x, x.b.x]));
+      const near = (p: { x: number; y: number }, q: { x: number; y: number }) =>
+        Math.abs(p.x - q.x) < 0.02 && Math.abs(p.y - q.y) < 0.02;
+      const rest = sb.slice();
+      for (const seg of sa) {
+        const exp = {
+          a: { x: width - seg.a.x, y: seg.a.y },
+          b: { x: width - seg.b.x, y: seg.b.y },
+        };
+        const i = rest.findIndex(
+          (r) =>
+            (near(r.a, exp.a) && near(r.b, exp.b)) ||
+            (near(r.a, exp.b) && near(r.b, exp.a)),
+        );
+        expect(i).toBeGreaterThanOrEqual(0);
+        rest.splice(i, 1);
+      }
+      expect(rest).toEqual([]);
+      // O documento continua intacto: só o retângulo.
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('marcas de registro: insere os fiduciais em volta da arte (Anexo B)', async () => {
     const { app, page, close } = await launchApp();
     try {

@@ -2420,6 +2420,10 @@ html[data-theme="sand"] .design-canvas-wrap {
   font-variant-numeric: tabular-nums;
 }
 
+.design-double-marks {
+  margin: 2px 0 4px;
+}
+
 .design-tiles-canvas {
   display: block;
   width: 100%;

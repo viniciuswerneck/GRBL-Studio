@@ -503,6 +503,15 @@ export function designToGcode(
       const m = toMachine(p);
       return (m.x - cursor.x) ** 2 + (m.y - cursor.y) ** 2;
     };
+    // Caminho **aberto**: só as duas pontas são inícios válidos. Rotacionar a
+    // lista (como se faz num contorno fechado) criaria um segmento entre o
+    // último e o primeiro ponto que não existe no desenho — foi o que
+    // aconteceu com as marcas em L (3 pontos) e com traços livres.
+    if (!closed || pts.length < 3) {
+      return pts.length > 1 && dist2(pts[pts.length - 1]) < dist2(pts[0])
+        ? [...pts].reverse()
+        : [...pts];
+    }
     let best = 0;
     let bestDist = dist2(pts[0]);
     for (let i = 1; i < pts.length; i++) {
@@ -511,9 +520,6 @@ export function designToGcode(
         bestDist = d;
         best = i;
       }
-    }
-    if (!closed && pts.length > 1 && dist2(pts[pts.length - 1]) < bestDist) {
-      return [...pts].reverse();
     }
     return best === 0 ? [...pts] : [...pts.slice(best), ...pts.slice(0, best)];
   };

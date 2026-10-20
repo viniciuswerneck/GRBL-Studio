@@ -554,3 +554,73 @@ describe('espessura do traço (width)', () => {
     expect(paths(none)).toBe(1);
   });
 });
+
+describe('ordem do traçado em caminho aberto', () => {
+  /** Segmentos queimados (G0 de entrada + G1 até M5). */
+  function cutSegments(gcode: string) {
+    const out: Array<{
+      x0: number;
+      y0: number;
+      x1: number;
+      y1: number;
+    }> = [];
+    let prev: { x: number; y: number } | null = null;
+    let armed = false;
+    for (const line of gcode.split('\n')) {
+      if (/^M[34]\b/.test(line)) {
+        armed = true;
+        continue;
+      }
+      if (line.startsWith('M5')) {
+        armed = false;
+        prev = null;
+        continue;
+      }
+      const m = /^G([01]) X(-?[\d.]+) Y(-?[\d.]+)/.exec(line);
+      if (!m) continue;
+      const pt = { x: Number(m[2]), y: Number(m[3]) };
+      if (m[1] === '0') {
+        prev = pt;
+        continue;
+      }
+      if (armed && prev) {
+        out.push({ x0: prev.x, y0: prev.y, x1: pt.x, y1: pt.y });
+      }
+      prev = pt;
+    }
+    return out;
+  }
+
+  it('não gira a polilinha para começar no meio (marcas em L)', () => {
+    // L de 3 pontos: o ponto do meio é o mais próximo do cursor (0,0), mas
+    // rotacionar a lista criaria o segmento "ponta → ponta", que não existe.
+    const gcode = shapesToGcode(
+      [
+        {
+          kind: 'line',
+          points: [
+            { x: 10, y: 10 },
+            { x: 0, y: 10 },
+            { x: 0, y: 0 },
+          ],
+          closed: false,
+        },
+      ],
+      baseOpts,
+    );
+    const segs = cutSegments(gcode);
+    expect(segs).toHaveLength(2);
+    for (const s of segs) {
+      // Cada perna do L é horizontal ou vertical — nunca uma diagonal.
+      const straight =
+        Math.abs(s.x0 - s.x1) < 1e-6 || Math.abs(s.y0 - s.y1) < 1e-6;
+      expect(straight).toBe(true);
+    }
+    // E o caminho cobre exatamente as duas pernas originais.
+    const length = segs.reduce(
+      (sum, s) => sum + Math.hypot(s.x1 - s.x0, s.y1 - s.y0),
+      0,
+    );
+    expect(length).toBeCloseTo(20, 3);
+  });
+});

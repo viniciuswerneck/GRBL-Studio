@@ -925,6 +925,17 @@ export const en = {
   'design.cost.resultTimeOnly':
     '≈ {time} · enter the machine rate and the material price',
   'design.cost.noTime': 'No time estimate for this size.',
+  'design.double': 'Engrave both sides…',
+  'design.double.title': 'Engrave both sides',
+  'design.double.hint':
+    'Generates two programs: side A as it is and side B mirrored horizontally around the artwork center. The registration marks land in the same positions, so the flipped piece aligns on the same points.',
+  'design.double.marks': 'Include registration marks (L)',
+  'design.double.offset': 'Distance from artwork (mm)',
+  'design.double.size': 'Mark size (mm)',
+  'design.double.note':
+    'Cut side A, flip the piece horizontally and run side B. Side A marks are cut again on side B: if they are aligned, the laser goes exactly over them.',
+  'design.double.save': 'Save both .gcode…',
+  'design.double.saved': 'Side A and side B saved to {dir}',
   'design.fiducial': 'Registration marks…',
   'design.fiducial.title': 'Registration marks',
   'design.fiducial.hint':

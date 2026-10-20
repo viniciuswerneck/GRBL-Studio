@@ -1889,28 +1889,6 @@ function dConfirmArray() {
 // linhas abertas na camada ativa: gravam, não entram no kerf e não fecham a
 // peça. A geometria vem de `fiducialMarks` (módulo puro, testado).
 
-function dFiducialDialogOpen() {
-  const o = $('designFiducialOverlay');
-  return Boolean(o && !o.classList.contains('hidden'));
-}
-
-function dArtBounds() {
-  if (!designState.shapes.length) return null;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const sh of designState.shapes) {
-    for (const p of sh.points) {
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    }
-  }
-  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
-}
-
 function dOpenFiducialDialog() {
   if (!designState.shapes.length) {
     dStatus(t('design.status.needShape'), 'error');
@@ -1970,6 +1948,98 @@ function dConfirmFiducials() {
   dCloseFiducialDialog();
   dAfterSelection();
   dStatus(t('design.fiducial.done', { n: created.length }), 'ok');
+}
+
+// ------------------------------------------------------ gravar dos dois lados
+//
+// O lado B é o desenho **espelhado na horizontal em torno do centro da arte**
+// (não da página): o contorno cai na mesma caixa, então as marcas de registro
+// simétricas voltam às mesmas coordenadas e a peça virada se alinha por elas.
+// Nada é alterado no documento: os dois programas são gerados na hora e salvos
+// juntos (mesma pasta), com origem idêntica — os dois começam em X0 Y0.
+
+function dOpenDoubleDialog() {
+  if (!designState.shapes.length) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  dCloseBoolMenu();
+  const off = $('designDoubleOffset');
+  if (off && off.value.trim() === '') off.value = '5';
+  const size = $('designDoubleSize');
+  if (size && size.value.trim() === '') size.value = '10';
+  const marks = $('designDoubleMarks');
+  if (marks) marks.checked = true;
+  const overlay = $('designDoubleOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+function dCloseDoubleDialog() {
+  const overlay = $('designDoubleOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+/** Gera e salva `base-lado-a.gcode` e `base-lado-b.gcode` na pasta escolhida. */
+async function dSaveDoubleSided() {
+  const D = window.GRBL_DESIGN;
+  if (!D || !DE || !designState.shapes.length) {
+    dStatus(t('design.status.needShape'), 'error');
+    return;
+  }
+  let shapes = designState.shapes;
+  const withMarks = $('designDoubleMarks')
+    ? $('designDoubleMarks').checked
+    : true;
+  if (withMarks) {
+    const art = dArtBounds();
+    if (!art) {
+      dStatus(t('design.status.needShape'), 'error');
+      return;
+    }
+    const offset = D.sanitizeFiducialOffset(dNum('designDoubleOffset', 5));
+    const size = D.sanitizeFiducialSize(dNum('designDoubleSize', 10));
+    const lines = D.fiducialMarks(art, { kind: 'corners', offset, size });
+    const group = `g${designState.seq++}`;
+    const name = dNextName('marks');
+    // Cópia só para os programas: o documento fica como está.
+    shapes = [
+      ...shapes,
+      ...lines.map((points) => {
+        const shape = { kind: 'line', points, closed: false, group, name };
+        if (designState.activeLayer) shape.layer = designState.activeLayer;
+        return shape;
+      }),
+    ];
+  }
+  const mirrored = DE.mirrorEntities(
+    shapes,
+    new Set(shapes.map((_, i) => i)),
+    'h',
+  );
+  const doc = {
+    width: designState.page.w,
+    height: designState.page.h,
+    layers: designState.layers,
+  };
+  const opts = dReadEngraveOptions();
+  const sideA = D.designToGcode({ ...doc, shapes }, opts);
+  const sideB = D.designToGcode({ ...doc, shapes: mirrored }, opts);
+  const base =
+    dBaseName(designState.docPath).replace(/\.gstudio$/i, '') || 'peca';
+  try {
+    const saved = await window.grbl.saveGcodeTiles(
+      [
+        { name: `${base}-lado-a.gcode`, content: sideA },
+        { name: `${base}-lado-b.gcode`, content: sideB },
+      ],
+      base,
+    );
+    if (!saved) return;
+    dStatus(t('design.double.saved', { dir: saved.dir }), 'ok');
+    dCloseDoubleDialog();
+  } catch (err) {
+    dStatus(t('err.prefix', { msg: err.message }), 'error');
+  }
 }
 
 // ------------------------------------------------------------ encaixe na chapa
@@ -5837,6 +5907,22 @@ function dConfirmSize() {
   if (el.designArrayOverlay) {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
+    });
+  }
+
+  // diálogo "gravar dos dois lados"
+  const doubleBtn = $('designDouble');
+  if (doubleBtn) doubleBtn.addEventListener('click', dOpenDoubleDialog);
+  const doubleSave = $('designDoubleSave');
+  if (doubleSave) doubleSave.addEventListener('click', dSaveDoubleSided);
+  const doubleCancel = $('designDoubleCancel');
+  if (doubleCancel) doubleCancel.addEventListener('click', dCloseDoubleDialog);
+  const doubleClose = $('designDoubleClose');
+  if (doubleClose) doubleClose.addEventListener('click', dCloseDoubleDialog);
+  const doubleOverlay = $('designDoubleOverlay');
+  if (doubleOverlay) {
+    doubleOverlay.addEventListener('click', (e) => {
+      if (e.target === doubleOverlay) dCloseDoubleDialog();
     });
   }
 

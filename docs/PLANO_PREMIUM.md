@@ -60,11 +60,11 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 ---
 
-## 3. Gap analysis (v0.16.0 → meta)
+## 3. Gap analysis (v0.17.0 → meta)
 
 ✅ = já entregue · ⬜ = a fazer
 
-| Capacidade | Atual (v0.16.0) | Meta | Gap |
+| Capacidade | Atual (v0.17.0) | Meta | Gap |
 | :-- | :-- | :-- | :-- |
 | Sistemas | Linux validado; Win/macOS empacotados | 3 SÓ validados em hardware | Médio |
 | Ferramentas de desenho / texto / booleanas / offset | ✅ | manter e evoluir | Baixo |
@@ -91,7 +91,7 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
 | Flatpak (P1.3) · onboarding (P1.4) | manifesto pronto (**não publicado**) / ✅ | publicados | Baixo |
 | Orçamentos RNF-11/12 (P1.8) | ✅ Linux (RNF-11: 269 MB X11 / 290 MB Wayland) | 3 SOs | Baixo |
-| E2E de job/protocolo (Fase 8) | 55 casos (job, pausa, alarme, lote, produção, foco, presets, nesting, abas, custo, tiles, marcas) | fluxo completo de job | Médio |
+| E2E de job/protocolo (Fase 8) | 56 casos (job, pausa, alarme, lote, produção, foco, presets, nesting, abas, custo, tiles, marcas, dois lados) | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
 | Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
 

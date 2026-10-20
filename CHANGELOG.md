@@ -6,6 +6,37 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-20
+
+Frente e verso: o editor passa a gerar os **dois lados** de uma peça com o
+registro já alinhado — e o traçado de caminhos abertos (marcas em L, traços
+livres) foi corrigido.
+
+### Added — gravar dos dois lados (RF-DSN-23)
+
+- Botão **“Gravar dos dois lados…”** na barra do editor: gera **dois
+  programas** na mesma pasta — `peca-lado-a.gcode` (como está) e
+  `peca-lado-b.gcode` (**espelhado na horizontal** em torno do centro da arte).
+  O documento **não muda**: os dois arquivos são calculados na hora.
+- Os dois programas têm a **mesma caixa e a mesma origem (X0 Y0)**, porque o
+  espelho é feito em torno do centro da arte. As **marcas de registro** (L
+  simétricos) caem exatamente nas mesmas coordenadas: ao rodar o lado B, o laser
+  **refaz as marcas do lado A** — se passarem por cima, a peça está alinhada.
+- Opção **“Incluir marcas de registro (L)”** (ligada por padrão) com distância e
+  tamanho ajustáveis; as marcas entram só nos programas, não no desenho.
+
+### Fixed — caminho aberto não é mais rotacionado
+
+- O gerador escolhia o vértice mais próximo do laser para começar o traçado e
+  **rotacionava a lista** de pontos. Num contorno fechado isso é inofensivo, mas
+  num caminho **aberto** cria um segmento entre a última e a primeira ponta que
+  não existe no desenho — as **marcas em L** (3 pontos) saíam com uma diagonal
+  e os traços livres de 3+ pontos também. Agora, em caminho aberto, só as duas
+  pontas podem ser o início (com inversão do sentido quando a outra ponta está
+  mais perto).
+- Teste de regressão garante que um L gravado tem só as duas pernas (nada de
+  diagonal) e comprimento total correto.
+
 ## [0.16.0] - 2026-10-20
 
 Alinhamento físico: **marcas de registro** em volta da arte e **prévia do plano de
