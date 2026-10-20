@@ -6,6 +6,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-20
+
+Marco **oficina**: o desenho passa a ser um documento que se salva e reabre, e
+a camada compensa a largura que o laser come — a peça sai no tamanho desenhado.
+Inclui a correção do “Salvar .gcode”, que gravava o nome do arquivo em vez do
+programa em quase todos os fluxos.
+
 ### Added — folga de corte (kerf) por camada (RF-DSN-17)
 
 - **Campo “K”** no editor de camada: informa a largura que o laser remove (mm).

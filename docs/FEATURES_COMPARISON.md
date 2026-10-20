@@ -1,6 +1,6 @@
 # Comparação: LaserGRBL vs GRBL Studio
 
-> Atualizado em 20/10/2026 (**v0.12.0**). Status reflete o código atual em `main`.
+> Atualizado em 20/10/2026 (**v0.13.0**). Status reflete o código atual em `main`.
 > Para o confronto com **todo o mercado** (pagos e gratuitos — LightBurn,
 > Rayforge, MeerK40t, UGS, xTool, etc.), ver `ANALISE_COMPETITIVA.md` §7.
 
@@ -94,7 +94,7 @@
 
 ## Prioridades para o próximo ciclo
 1. Validar os builds **Windows/macOS** em hardware real e publicar **Flatpak** (P1.3).
-2. **Salvar/abrir o desenho** — hoje o editor só exporta `.gcode`.
-3. **Kerf/folga de corte** e **abas de retenção** (Anexo B do `ROADMAP.md`).
-4. **Câmera + rotativa** (P3.1/P3.2).
-5. **Preview WebGL** (P3.4) e **nesting irregular** (P3.7).
+2. **Abas de retenção** e **entrada/saída do corte** (Anexo B do `ROADMAP.md`).
+3. **Câmera + rotativa** (P3.1/P3.2).
+4. **Preview WebGL** (P3.4) e **nesting irregular** (P3.7).
+5. Testes em **hardware real** (Fase 8) — kerf e nesting já têm E2E, falta a máquina.
