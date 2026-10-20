@@ -4,7 +4,11 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Não publicado]
+## [0.11.0] - 2026-10-20
+
+Marco **v0.8**: lote/dados variáveis, modo produção, presets de material
+(com dose e JSON) e teste de foco — somados ao editor de G-code, à
+biblioteca de jobs, ao clique-no-preview e ao orçamento de RAM (RNF-11).
 
 ### Added — presets de material, dose e JSON (P2.12 / RF-IMG-14)
 

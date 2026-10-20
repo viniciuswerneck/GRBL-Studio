@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.10.0)
+## Estado atual (v0.11.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -277,7 +277,7 @@ da API. Justificativa: `PLANO_PREMIUM.md` §10.
 
 Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico). Resumo:
 
-1. **v0.6…v0.10 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) na
+1. **v0.6…v0.11 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) na
    **0.6.0**; na **0.7.0**, P0.2 (E2E de job), P0.4 (onboarding), P0.6 (fuzz +
    cobertura), 1D extras + **Data Matrix** e o catálogo de perfis de máquina; na
    **0.8.0**, P0.7 (painel "Máquina"), P0.8 (pré-voo MX-1…MX-15) e **P2.2
@@ -285,7 +285,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    **PDF417**; na **0.10.0**, **Aztec**. Em 19–20/10/2026 entraram ainda **P2.9**
    (biblioteca de jobs), **P2.14** (mover pelo preview), **P2.10**
    (lote/dados variáveis), **P2.11** (modo produção), **P2.13** (teste de foco)
-   e o **RNF-11** de RAM (269 MB em X11 / 290 MB em Wayland, medido). **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
+   e o **RNF-11** de RAM (269 MB em X11 / 290 MB em Wayland, medido); na
+   **0.11.0**, **P2.12** (presets de material com dose e JSON) e o marco do
+   **v0.8**. **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
    de mediana no A/B; melhor par 1 337 ms contra ≤ 1 500 ms) — trabalho de
    performance aberto. Continuam abertos **P0.3** (publicar Flatpak + winget/
    brew/AUR), **P0.5** (comparativo público) e o símbolo como objeto
@@ -293,9 +295,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
    **editor de G-code (P1.10) ✅**, **biblioteca de jobs (P2.9) ✅**; resta a
    validação Win/macOS.
-3. **v0.8 fechado** — lote/dados variáveis (P2.10), modo produção (P2.11),
-   presets de material (P2.12) e teste de foco (P2.13) entregues; falta só
-   marcar o marco (**release v0.11.0**).
+3. **v0.8 fechado** — ✅ **v0.11.0** publicada em 20/10/2026: lote/dados
+   variáveis (P2.10), modo produção (P2.11), presets de material (P2.12) e
+   teste de foco (P2.13).
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — as regras de oficina (kerf, abas), tiling e
