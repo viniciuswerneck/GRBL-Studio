@@ -77,6 +77,18 @@ Legenda: ✅ concluída · 🟡 parcial · ⬜ pendente.
 > pura (`src/shared/batch.ts`, bundle `batch.js` sob demanda) — nada de protocolo
 > no renderer.
 
+> **Nota (20/10/2026, modo produção):** o **P2.11** entrou como **RF-GC-12** —
+> o cartão **Execução** ganhou **Modo produção**: o programa atual é repetido
+> **N vezes** (1…999), com contador na barra de gravação (`Peça 3 de 10 · 2
+> concluídas`), **pausa entre as cópias** para trocar/conferir a peça e o
+> pré-voo rodando **uma vez por série**. Peça interrompida vira **Repetir
+> peça** (o contador não anda); **Encerrar** fica na barra de gravação, junto
+> com Pausar/Cancelar (RF-GC-8). **Trava de UI**: durante a série o programa
+> não pode ser trocado (abrir/editar/lote desabilitados, e qualquer outro
+> caminho que troque o programa encerra a produção via `applyJobLines`).
+> Máquina de estados pura em `src/shared/production.ts` (bundle `production.js`
+> sob demanda); o envio continua na fila normal do GRBL.
+
 > **Nota (19/10/2026, biblioteca de jobs):** o **P2.9** entrou como
 > **RF-GC-11** — os últimos 50 programas executados ficam em
 > `<userData>/joblib` (índice atômico + programa em gzip), com miniatura do

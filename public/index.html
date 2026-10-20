@@ -660,6 +660,36 @@
           </div>
           <div id="batchHint" class="hint hidden" role="status" aria-live="polite"></div>
 
+          <details class="group" open id="productionGroup">
+            <summary data-i18n="prod.title">Modo produção</summary>
+            <div class="row">
+              <label class="field">
+                <span data-i18n="prod.copies">Cópias</span>
+                <input
+                  type="number"
+                  id="prodCopies"
+                  min="1"
+                  max="999"
+                  step="1"
+                  value="1"
+                />
+              </label>
+              <button type="button" id="prodStart" data-i18n="prod.start">
+                ▶ Produção
+              </button>
+            </div>
+            <p class="hint" data-i18n="prod.hint">
+              Repete o programa atual N vezes, pausando para trocar a peça. O
+              pré-voo roda uma vez e o programa não muda no meio da série.
+            </p>
+            <div
+              id="prodStatus"
+              class="hint hidden"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </details>
+
           <details class="group" id="resumeGroup">
             <summary data-i18n="resume.title">Retomada (RF-GC-7)</summary>
             <div id="resumeInfo" class="hint" data-i18n="resume.hint">
@@ -872,6 +902,18 @@
         data-i18n="batch.next"
         data-i18n-title="batch.nextHint"
       >▶ Próxima peça</button>
+      <span class="job-bar-prod hidden" id="jobBarProd" role="status" aria-live="polite"></span>
+      <button
+        type="button"
+        id="prodNextBtn"
+        class="primary hidden"
+        disabled
+        data-i18n="prod.next"
+        data-i18n-title="prod.nextHint"
+      >▶ Próxima peça</button>
+      <button type="button" id="prodEndBtn" class="hidden" data-i18n="prod.stop">
+        Encerrar
+      </button>
       <button type="button" id="pauseBtn" disabled data-i18n="run.pause">⏸ Pausar</button>
       <button type="button" id="resumeBtn" disabled data-i18n="run.resume">▶ Retomar</button>
       <button

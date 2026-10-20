@@ -391,6 +391,12 @@ const el = {
   batchHint: $('batchHint'),
   jobBarBatch: $('jobBarBatch'),
   batchNextBtn: $('batchNextBtn'),
+  prodCopies: $('prodCopies'),
+  prodStart: $('prodStart'),
+  prodStatus: $('prodStatus'),
+  jobBarProd: $('jobBarProd'),
+  prodNextBtn: $('prodNextBtn'),
+  prodEndBtn: $('prodEndBtn'),
   qrBatch: $('qrBatch'),
   barBatch: $('barBatch'),
   tourOverlay: $('tourOverlay'),
@@ -5985,7 +5991,11 @@ function refreshBatch() {
     : check.errors.map((error) => batchTemplateErrorText(error)).join(' · ');
   if (el.batchStart) {
     el.batchStart.disabled =
-      !check.ok || total === 0 || batchActive() || !state.connected;
+      !check.ok ||
+      total === 0 ||
+      batchActive() ||
+      productionActive() ||
+      !state.connected;
   }
   if (el.batchFrom) {
     el.batchFrom.max = String(Math.max(1, total));
@@ -6185,6 +6195,11 @@ async function batchSendPiece() {
 async function startBatch() {
   const M = batchModule();
   if (!M) return;
+  // Modo produção (RF-GC-12) e lote não rodam juntos: os dois assumem a fila.
+  if (productionActive()) {
+    appendLine(t('batch.err.production'), 'error');
+    return;
+  }
   if (!state.connected) {
     appendLine(t('batch.err.connect'), 'error');
     return;
@@ -6315,6 +6330,291 @@ function resumeBatch() {
     'message',
   );
   void openBatchModal(stored.kind);
+}
+
+// ------------------------------------- modo produção (P2.11, RF-GC-12)
+//
+// Repete o **mesmo** programa N vezes, com contador e pausa entre as peças
+// para trocar/conferir a peça na mesa. A máquina de estados (cópia atual,
+// concluídas, repetição da peça interrompida, fim da série) vive no módulo
+// **puro** `src/shared/production.ts` (bundle `GRBL_PRODUCTION`, sob demanda);
+// aqui só há estado de tela e o encadeamento com o envio — nada de protocolo
+// na UI (AGENTS.md).
+//
+// Trava de UI: com a série em andamento o programa não pode ser trocado. Os
+// botões que trocam o programa ficam desabilitados e `applyJobLines` encerra a
+// produção como rede de segurança para qualquer outro caminho. Pausar e
+// Cancelar continuam sempre à mão na barra de gravação (RF-GC-8).
+
+/** Estado em tela (a verdade é a máquina de estados pura). */
+let production = {
+  total: 1,
+  copy: 0,
+  done: 0,
+  phase: 'idle',
+  failed: false,
+};
+
+/** Motivo da última cópia interrompida (vazio = sem erro). */
+let productionError = '';
+
+/** Módulo puro do modo produção (bundle sob demanda). */
+function productionModule() {
+  return window.GRBL_PRODUCTION;
+}
+
+/** Carrega o bundle uma vez (o campo de cópias já precisa do clamp). */
+let productionBundleLoad = null;
+function ensureProductionBundle() {
+  if (!productionBundleLoad) {
+    productionBundleLoad = requireBundle('production.js');
+  }
+  return productionBundleLoad;
+}
+
+/** `true` enquanto a série está gravando ou esperando a troca da peça. */
+function productionActive() {
+  return production.phase === 'running' || production.phase === 'waiting';
+}
+
+/** Cópias pedidas no campo, normalizadas pelo módulo puro (1…999). */
+function productionCopies() {
+  const M = productionModule();
+  return M
+    ? M.clampProductionCopies(el.prodCopies ? el.prodCopies.value : 1)
+    : 1;
+}
+
+/** Textos do contador (barra de gravação e cartão Execução). */
+function productionStatusText() {
+  const { total, copy, phase, failed } = production;
+  if (phase === 'running') {
+    return {
+      bar: t('prod.bar.running', {
+        copy,
+        total,
+        done: Math.max(0, production.done),
+      }),
+      card: t('prod.state.running', { copy, total }),
+    };
+  }
+  if (phase === 'waiting' && failed) {
+    return {
+      bar: t('prod.bar.failed', { copy, total }),
+      card: t('prod.state.failed', {
+        copy,
+        total,
+        reason: productionError || '—',
+      }),
+    };
+  }
+  if (phase === 'waiting') {
+    return {
+      bar: t('prod.bar.waiting', { copy, total }),
+      card: t('prod.state.waiting', { copy, total }),
+    };
+  }
+  if (phase === 'done') {
+    return { bar: '', card: t('prod.state.done', { total }) };
+  }
+  return { bar: '', card: '' };
+}
+
+/** Contador da barra de gravação, botões e trava de UI (RF-GC-12). */
+function updateProductionUi() {
+  const M = productionModule();
+  const active = productionActive();
+  const status = productionStatusText();
+  const alarm = state.grblState === 'Alarm' || state.grblState === 'Door';
+  const running = state.jobState === 'running' || state.jobState === 'paused';
+
+  document.body.classList.toggle('prod-active', active);
+
+  if (el.jobBarProd) {
+    el.jobBarProd.textContent = status.bar;
+    el.jobBarProd.classList.toggle(
+      'hidden',
+      !active || status.bar.length === 0,
+    );
+  }
+  if (el.prodNextBtn) {
+    // "Próxima peça" só existe quando a cópia anterior terminou (troca manual)
+    // ou foi interrompida (aí ele vira "Repetir peça").
+    const waiting = production.phase === 'waiting';
+    el.prodNextBtn.classList.toggle('hidden', !waiting);
+    el.prodNextBtn.disabled = !waiting || !state.connected;
+    el.prodNextBtn.textContent = production.failed
+      ? t('prod.retry')
+      : t('prod.next');
+    el.prodNextBtn.title = production.failed
+      ? t('prod.retryHint')
+      : t('prod.nextHint');
+  }
+  if (el.prodEndBtn) {
+    el.prodEndBtn.classList.toggle('hidden', !active);
+    el.prodEndBtn.disabled = !active;
+    el.prodEndBtn.title = t('prod.stopHint');
+  }
+  if (el.prodCopies) {
+    el.prodCopies.max = String(M ? M.PRODUCTION_MAX_COPIES : 999);
+    el.prodCopies.disabled = active;
+  }
+  if (el.prodStart) {
+    el.prodStart.textContent = t('prod.startN', { total: productionCopies() });
+    el.prodStart.disabled =
+      !state.connected ||
+      !state.lines.length ||
+      active ||
+      running ||
+      alarm ||
+      batchActive();
+    el.prodStart.title = !state.connected
+      ? t('conn.connectFirst')
+      : !state.lines.length
+        ? t('run.noGcode')
+        : alarm
+          ? t('status.alarmHint')
+          : '';
+  }
+  if (el.prodStatus) {
+    el.prodStatus.textContent = status.card;
+    el.prodStatus.classList.toggle('hidden', status.card.length === 0);
+    el.prodStatus.classList.toggle('attention', production.phase === 'waiting');
+  }
+
+  // Trava de UI: trocar o programa no meio da série é bloqueado (o
+  // `applyJobLines` encerra a produção se algo escapar por outro caminho).
+  if (el.fileOpen) el.fileOpen.disabled = active;
+  if (el.gcodeEdit) el.gcodeEdit.disabled = active || !state.lines.length;
+  if (el.batchOpenBtn) el.batchOpenBtn.disabled = active || batchActive();
+  if (el.resumeFrom) {
+    el.resumeFrom.disabled =
+      !state.connected || !state.lines.length || running || alarm || active;
+  }
+}
+
+/** Inicia a série: pré-voo uma vez e envia a primeira cópia. */
+async function startProduction() {
+  await ensureProductionBundle();
+  const M = productionModule();
+  if (!M) {
+    appendLine(t('prod.err.moduleMissing'), 'error');
+    return;
+  }
+  if (!state.connected) {
+    appendLine(t('prod.err.connect'), 'error');
+    return;
+  }
+  if (!state.lines.length) {
+    appendLine(t('prod.err.noFile'), 'error');
+    return;
+  }
+  if (state.grblState === 'Alarm' || state.grblState === 'Door') {
+    appendLine(t('prod.err.alarm'), 'error');
+    return;
+  }
+  if (batchActive()) {
+    appendLine(t('prod.err.batch'), 'error');
+    return;
+  }
+  const total = M.clampProductionCopies(
+    el.prodCopies ? el.prodCopies.value : 1,
+  );
+  if (el.prodCopies) el.prodCopies.value = String(total);
+  // O pré-voo é da série, não da peça: enquadramento e programa não mudam
+  // entre as cópias (as seguintes saem com `skipPreflight`).
+  if (!(await confirmPreflight(state.lines))) return;
+  production = M.productionStart(total);
+  productionError = '';
+  updateProductionUi();
+  appendLine(
+    t('prod.pieceStart', { copy: production.copy, total: production.total }),
+    'message',
+  );
+  beginJob(0, { skipPreflight: true });
+}
+
+/** Cópia concluída: pausa para a troca (ou fecha a série). */
+function productionCopyDone() {
+  const M = productionModule();
+  // Só uma cópia **em execução** avança a série (um "Iniciar" avulso durante a
+  // pausa serve para repetir a peça atual, sem mexer no contador).
+  if (!M || production.phase !== 'running') return;
+  production = M.productionCopyFinished(production);
+  productionError = '';
+  updateProductionUi();
+  if (production.phase === 'done') {
+    appendLine(t('prod.done', { total: production.total }), 'ok');
+    return;
+  }
+  appendLine(
+    t('prod.pieceDone', {
+      copy: production.copy,
+      total: production.total,
+    }),
+    'ok',
+  );
+}
+
+/** Cópia interrompida (erro, alarme ou cancelamento): repete a mesma. */
+function productionCopyFailed(reason) {
+  const M = productionModule();
+  if (!M || production.phase !== 'running') return;
+  production = M.productionFailed(production);
+  productionError = reason || '';
+  updateProductionUi();
+  appendLine(
+    t('prod.failed', {
+      copy: production.copy,
+      total: production.total,
+      reason: reason || '—',
+    }),
+    'error',
+  );
+}
+
+/** "Próxima peça" (ou "Repetir peça", depois de uma interrupção). */
+function productionNextPiece() {
+  const M = productionModule();
+  if (!M || production.phase !== 'waiting') return;
+  if (!state.connected) {
+    appendLine(t('prod.err.connect'), 'error');
+    return;
+  }
+  const next = M.productionNextCopy(production);
+  if (next.phase !== 'running') return;
+  production = next;
+  productionError = '';
+  updateProductionUi();
+  appendLine(
+    t('prod.pieceStart', { copy: production.copy, total: production.total }),
+    'message',
+  );
+  beginJob(0, { skipPreflight: true });
+}
+
+/** Encerra a série (cancelando a cópia em execução) e volta ao repouso. */
+function stopProduction() {
+  if (!productionActive()) return;
+  const M = productionModule();
+  const { copy, total } = production;
+  if (production.phase === 'running') window.grbl.stopJob();
+  if (M) production = M.productionStop(production);
+  productionError = '';
+  updateProductionUi();
+  appendLine(t('prod.stopped', { copy, total }), 'message');
+}
+
+/** Troca do programa: encerra a série (rede de segurança da trava de UI). */
+function endProductionForProgram() {
+  if (!productionActive()) return;
+  const M = productionModule();
+  const { copy, total } = production;
+  if (production.phase === 'running') window.grbl.stopJob();
+  if (M) production = M.productionStop(production);
+  productionError = '';
+  updateProductionUi();
+  appendLine(t('prod.endedByProgram', { copy, total }), 'message');
 }
 
 function frameJog(axis, sign) {
@@ -6846,6 +7146,8 @@ function updateControls() {
 
   // Lote (RF-SYM-10): "Próxima peça" e "Iniciar lote" dependem da conexão.
   updateBatchUi();
+  // Modo produção (RF-GC-12): contador, "Próxima peça" e trava de UI.
+  updateProductionUi();
 }
 
 /** Perfil da máquina selecionada (nunca `undefined`). */
@@ -7290,6 +7592,10 @@ el.fileOpen.addEventListener('click', async () => {
 });
 
 function applyJobLines(name, text, source = 'file') {
+  // Modo produção (RF-GC-12): trocar o programa no meio da série encerra a
+  // produção — repetir o programa errado queima material. Os botões da
+  // Execução já estão travados; isto cobre os demais caminhos.
+  if (productionActive()) endProductionForProgram();
   // Um arquivo novo substitui o que o editor tinha em mãos (P1.10).
   if (gedIsOpen()) {
     state.gcodeEdited = false; // o novo arquivo descarta as edições
@@ -11795,6 +12101,10 @@ window.grbl.onJob((job) => {
       // Lote (RF-SYM-10): a fila espera a troca da peça em vez de reabrir o
       // posicionamento — o próximo envio sai pelo botão "Próxima peça".
       batchPieceFinished();
+    } else if (productionActive()) {
+      // Modo produção (RF-GC-12): conta a cópia e espera a troca da peça; a
+      // próxima sai pelo botão "Próxima peça" (o pré-voo não se repete).
+      productionCopyDone();
     } else {
       // Reabre o modal de posicionamento para repetir se necessário.
       openFrameModal();
@@ -11805,6 +12115,7 @@ window.grbl.onJob((job) => {
     // Peça abortada no meio da fila: para o lote e deixa a decisão (repetir a
     // peça pelo "Começar na peça", pular ou encerrar) para o usuário.
     if (batchActive()) batchPieceFailed(job.error);
+    else if (productionActive()) productionCopyFailed(job.error);
   }
 });
 
@@ -11934,6 +12245,16 @@ if (el.batchPreviewBtn)
   el.batchPreviewBtn.addEventListener('click', refreshBatch);
 if (el.batchForget) el.batchForget.addEventListener('click', forgetBatch);
 if (el.batchStart) el.batchStart.addEventListener('click', startBatch);
+if (el.prodStart)
+  el.prodStart.addEventListener('click', () => void startProduction());
+if (el.prodNextBtn)
+  el.prodNextBtn.addEventListener('click', productionNextPiece);
+if (el.prodEndBtn) el.prodEndBtn.addEventListener('click', stopProduction);
+if (el.prodCopies)
+  el.prodCopies.addEventListener('input', () => {
+    // O clamp do total vem do módulo puro: carrega antes de redesenhar.
+    void ensureProductionBundle().then(updateProductionUi);
+  });
 if (el.batchNextBtn) el.batchNextBtn.addEventListener('click', batchNextPiece);
 if (el.frameYp) el.frameYp.addEventListener('click', () => frameJog('y', 1));
 if (el.frameXm) el.frameXm.addEventListener('click', () => frameJog('x', -1));
@@ -12278,6 +12599,7 @@ function prefetchBundles() {
   void requireBundle('qrcode.js');
   void requireBundle('barcode.js');
   void requireBundle('batch.js');
+  void requireBundle('production.js');
 }
 setTimeout(() => {
   if ('requestIdleCallback' in window) {

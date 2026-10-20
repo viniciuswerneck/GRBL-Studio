@@ -43,11 +43,11 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 | Critério | Líder hoje | Nossa meta | Como provar |
 | :-- | :-- | :-- | :-- |
-| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 731+ testes, E2E de job/protocolo no CI, 0 issues "travou" |
+| Confiabilidade de protocolo (0 travamentos) | ninguém publica | **#1 absoluto** | 808 testes, E2E de job/protocolo no CI, 0 issues "travou" |
 | Startup / RAM / FPS / DPI | ninguém publica | **#1 medido** | benchmark publicado (badge no README) — RNF-11/12 |
 | Pipeline de imagem (tempo por peça) | LaserGRBL / LightBurn | **#1** | benchmark por material (mesma máquina, mesmo arquivo) |
 | Fluxo "abrir → gravar" | LightBurn | **#1 (≤ 3 cliques)** | teste cronometrado, gravado em vídeo |
-| Fabricação integrada (material test, QR, barcode, lote) | LightBurn (*Bar Code*) / xTool | **#1 no segmento aberto**; empatar com o LightBurn | recursos + demo |
+| Fabricação integrada (material test, QR, barcode, lote) | LightBurn (*Bar Code*) / xTool | **#1 no segmento aberto**; empatar com o LightBurn | recursos + demo (lote ✅) |
 | Camadas / multi-operação | LightBurn / Rayforge | **paridade** | gravar + cortar numa passada |
 | Import vetorial (SVG/DXF/PDF) | Rayforge | **paridade** | abrir os mesmos arquivos |
 | Simulação de job | Rayforge (3D) | **paridade (2D + tempo)** | play/pause/seek antes de gravar |
@@ -60,11 +60,11 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 
 ---
 
-## 3. Gap analysis (v0.8.0 → meta)
+## 3. Gap analysis (v0.10.0 → meta)
 
 ✅ = já entregue · ⬜ = a fazer
 
-| Capacidade | Atual (v0.8.0) | Meta | Gap |
+| Capacidade | Atual (v0.10.0) | Meta | Gap |
 | :-- | :-- | :-- | :-- |
 | Sistemas | Linux validado; Win/macOS empacotados | 3 SÓ validados em hardware | Médio |
 | Ferramentas de desenho / texto / booleanas / offset | ✅ | manter e evoluir | Baixo |
@@ -75,15 +75,16 @@ Ganha-se por **combinação**, não por copiar o LightBurn recurso a recurso.
 | **DXF/PDF (P2.4)** | ✅ DXF ASCII + PDF vetorial | manter/evoluir (texto em PDF) | Médio |
 | **Catálogo de máquinas (P2.5)** | ✅ 22 perfis + Genérico | 30+ + import `.lbdev` + "smart connect" | Baixo |
 | **QR Code / código de barras (P2.7/P2.8)** | ✅ (0.6.0/0.7.0) | 2 ferramentas em Ferramentas | Baixo |
-| **Lote / dados variáveis** | ⬜ | CSV → fila de gravação (etiquetas) | Médio |
-| **Biblioteca de jobs** | ⬜ | histórico com miniatura + re-executar | Baixo |
+| **Lote / dados variáveis (P2.10/RF-SYM-10)** | ✅ (20/10/2026) | CSV → fila de gravação (etiquetas) | Baixo |
+| **Modo produção (P2.11/RF-GC-12)** | ✅ (20/10/2026) | repetir o job N vezes com contador e trava de UI | Baixo |
+| **Biblioteca de jobs (P2.9)** | ✅ (19/10/2026) | histórico com miniatura + re-executar | Baixo |
 | Câmera (P3.1) / Rotativa (P3.2) | ⬜ | paridade LightBurn | Alto |
 | Nesting | ⬜ (matriz de cópias ✅) | encaixe real | Médio |
 | Editor de G-code (P1.10) | ✅ | highlight + numeração + reenvio de trecho | Baixo |
 | API REST/CLI/plugins (P3.3) | ⬜ | headless + addons | Alto |
-| Flatpak (P1.3) · onboarding (P1.4) | scaffold / ✅ | publicados | Baixo |
-| Orçamentos RNF-11/12 medidos e publicados (P1.8) | parcial | ✅ público | Baixo |
-| E2E de job/protocolo (Fase 8) | 4 casos básicos | fluxo completo de job | Médio |
+| Flatpak (P1.3) · onboarding (P1.4) | manifesto pronto (**não publicado**) / ✅ | publicados | Baixo |
+| Orçamentos RNF-11/12 (P1.8) | ✅ Linux (RNF-11: 269 MB X11 / 290 MB Wayland) | 3 SOs | Baixo |
+| E2E de job/protocolo (Fase 8) | 42 casos (job, pausa, alarme, lote, produção…) | fluxo completo de job | Médio |
 | i18n | 3 idiomas | 5+ (fr/de) | Baixo |
 | Migração do renderer p/ TS (P3.6) | `renderer.js` vanilla | Svelte/electron-vite | Alto |
 
@@ -129,14 +130,15 @@ Objetivo: **provar** o que já somos e remover o atrito de entrada.
 
 ### Fase P2b — "Diferenciais que ninguém junta" (3–4 semanas) · o fosso
 > QR (P2.7) e código de barras (P2.8) entram já na **v0.6** (junto com a Fase P0);
-> lote/dados variáveis (**P2.10 ✅**) e o resto fecham na **v0.8**.
+> lote/dados variáveis (**P2.10 ✅**) e modo produção (**P2.11 ✅**) — o resto
+> fecha na **v0.8**.
 
 | # | Entregável | Esforço | DoD |
 | :-- | :-- | :-- | :-- |
 | ✅ P2.7 | **Gerador de QR Code** (ISO/IEC 18004) — entregue na **0.6.0** | M | Conteúdo → matriz → G-code; ECC, mm, quiet zone, preview (**S1**). |
 | ✅ P2.8 | **Gerador de código de barras** (Code 128/39, EAN-13/8, UPC-A) + HRI — entregue na **0.6.0** (extras na **0.7.0**) | M | Checksum + quiet zone + texto legível (**S2**). |
 | ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos), pausa para trocar a peça, contador e retomada. ⇢ *nenhum concorrente grátis faz isso completo*. |
-| P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
+| ✅ P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI — entregue (RF-GC-12, 20/10/2026) | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis; efeito de rede. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
 
@@ -240,7 +242,7 @@ teste em hardware).
 P2.5 catálogo + `.lbdev` + smart connect ✅, P1.10 editor de G-code ✅, P2.9
 biblioteca de jobs ✅ e validação Win/macOS.
 
-**v0.8:** P2.10 lote/dados variáveis, P2.11 modo produção, P2.12 presets,
+**v0.8:** P2.10 lote/dados variáveis ✅, P2.11 modo produção ✅, P2.12 presets,
 P2.13 teste de foco.
 
 **v0.9 / v1.0 (90+ dias):** P3.1 câmera, P3.2 rotativa, P3.7 nesting, P3.4 WebGL,

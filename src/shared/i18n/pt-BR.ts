@@ -550,6 +550,45 @@ export const ptBR = {
   'batch.stopped':
     'Lote encerrado na peça {index} de {total}. Use “Retomar lote” para continuar.',
   'batch.resuming': 'Retomando o lote na peça {index} de {total}.',
+  'batch.err.production':
+    'Há um modo produção em andamento: encerre a série antes de iniciar o lote.',
+
+  // ------------------------------------------- modo produção (RF-GC-12)
+  'prod.title': 'Modo produção',
+  'prod.copies': 'Cópias',
+  'prod.start': '▶ Produção',
+  'prod.startN': '▶ Produção ({total}×)',
+  'prod.hint':
+    'Repete o programa atual N vezes, pausando para trocar a peça. O pré-voo roda uma vez e o programa não muda no meio da série.',
+  'prod.next': '▶ Próxima peça',
+  'prod.retry': '▶ Repetir peça',
+  'prod.nextHint': 'Depois de trocar a peça na mesa, envie a próxima da série.',
+  'prod.retryHint':
+    'A peça foi interrompida: reposicione e repita a mesma peça.',
+  'prod.stop': 'Encerrar',
+  'prod.stopHint': 'Encerra o modo produção (a peça em execução é cancelada).',
+  'prod.state.running': 'Produção: gravando a peça {copy} de {total}.',
+  'prod.state.waiting':
+    'Peça {copy} de {total} pronta. Troque a peça e envie a próxima.',
+  'prod.state.failed':
+    'Peça {copy} de {total} interrompida: {reason}. Reposicione e repita a peça.',
+  'prod.state.done': 'Produção concluída: {total} peças.',
+  'prod.bar.running': 'Peça {copy} de {total} · {done} concluídas',
+  'prod.bar.waiting': 'Peça {copy} de {total} pronta — troque a peça',
+  'prod.bar.failed': 'Peça {copy} de {total} interrompida',
+  'prod.pieceStart': 'Produção: enviando a peça {copy} de {total}.',
+  'prod.pieceDone': 'Produção: peça {copy} de {total} concluída.',
+  'prod.done': 'Produção concluída: {total} peças gravadas.',
+  'prod.failed': 'Produção parada na peça {copy} de {total}: {reason}.',
+  'prod.stopped': 'Produção encerrada na peça {copy} de {total}.',
+  'prod.endedByProgram':
+    'Produção encerrada: o programa foi trocado na peça {copy} de {total}.',
+  'prod.err.connect': 'Conecte a máquina para iniciar a produção.',
+  'prod.err.noFile': 'Carregue um G-code antes de iniciar a produção.',
+  'prod.err.alarm': 'Saia do alarme antes de iniciar a produção.',
+  'prod.err.batch':
+    'Há um lote em andamento: encerre o lote antes de iniciar a produção.',
+  'prod.err.moduleMissing': 'Módulo do modo produção não carregado.',
 
   // ---------------------------------------------- boas-vindas / onboarding
   'tour.title': 'Boas-vindas ao GRBL Studio',

@@ -10,6 +10,7 @@ public/preview.js
 public/qrcode.js
 public/barcode.js
 public/batch.js
+public/production.js
 public/machine.js
 public/preflight.js
 public/gcodeEditor.js

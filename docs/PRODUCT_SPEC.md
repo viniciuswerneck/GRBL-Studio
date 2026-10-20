@@ -152,6 +152,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-GC-9 | Validação/aviso de linhas perigosas e limites da área de trabalho. | Could | ✅ |
 | RF-GC-10 | Editor de G-code: numeração, realce, edição de linha, validação pelo pré-voo e reenvio de trecho com preâmbulo modal. | Should | ✅ |
 | RF-GC-11 | Biblioteca de jobs: últimos 50 programas executados, com miniatura, reexecutar e duplicar (sem depender do arquivo original). | Could | ✅ |
+| RF-GC-12 | Modo produção: repetir o programa atual N vezes (1…999), com contador, pausa para trocar a peça entre cópias, repetição da peça interrompida e pré-voo uma vez por série. A troca de programa fica travada durante a série e pausa/cancelamento continuam acessíveis na barra de gravação. | Should | ✅ |
 
 ### M5 — Status, alarmes e segurança
 

@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1211 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1242 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -56,6 +56,10 @@ Já entregue (não repetir no planejamento):
 - [x] **Lote / dados variáveis** (P2.10/RF-SYM-10): planilha CSV/TSV → fila de
       gravação, uma peça por linha (`{1}`/`{nome}`/`{i:03}`), pausa para trocar a
       peça, contador e retomada — 20/10/2026.
+- [x] **Modo produção** (P2.11/RF-GC-12): repete o programa atual **N vezes**
+      (1…999) com contador, pausa para a troca da peça, repetição da peça
+      interrompida, pré-voo uma vez por série e **trava de UI** (o programa não
+      muda no meio) — 20/10/2026.
 - [x] **RAM dentro do orçamento** (RNF-11): 269,0 MB em X11 e 290,4 MB em Wayland
       (PSS, app sozinho, 10 min); medição reprodutível em `scripts/bench.mjs`
       (`docs/BENCHMARK.md` §6.6).
@@ -67,7 +71,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **808 testes** (Vitest, 46 arquivos) + E2E Playwright (39) + smoke headless.
+- [x] **820 testes** (Vitest, 47 arquivos) + E2E Playwright (42) + smoke headless.
 
 ---
 
@@ -182,7 +186,7 @@ diferencial que nenhum concorrente grátis tem.
 | # | Entregável | Esf. | DoD |
 | :-- | :-- | :-- | :-- |
 | ✅ P2.10 | **Lote / dados variáveis**: CSV/planilha → **fila de gravação** — entregue (RF-SYM-10, 20/10/2026) | M | Cada linha = 1 peça (QR/código de barras com modelo de campos `{1}`/`{nome}`/`{i:03}`), pausa para trocar a peça, contador e retomada. |
-| P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
+| ✅ P2.11 | **Modo produção**: repetir job N vezes, contador, trava de UI — entregue (RF-GC-12, 20/10/2026) | S | Ciclo contínuo seguro (pausa/emergência sempre acessíveis). |
 | P2.12 | **Galeria de presets de material** (JSON import/export + repo oficial) | S | Baixar/compartilhar perfis. |
 | P2.13 | **Teste de foco / spot** (2 linhas de potência) | S | Determinar o melhor foco por material. |
 | ✅ | ~~**S3 opcional**: Data Matrix, PDF417, Aztec; ITF-14/Codabar/Code 93~~ → **Data Matrix + 1D extras entregues na 0.7.0; PDF417 + grade na 0.9.0; Aztec na 0.10.0** | M | Simbologias com testes vetoriais. |
@@ -267,22 +271,24 @@ da API. Justificativa: `PLANO_PREMIUM.md` §10.
 
 Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico). Resumo:
 
-1. **v0.6/v0.7/v0.8/v0.9 (entregues)** — P2.7/P2.8 (QR Code e código de barras
-   1D) e os avisos de legibilidade na **0.6.0**; na **0.7.0**, P0.2 (E2E de job),
-   P0.4 (onboarding), P0.6 (fuzz + cobertura), as simbologias extras da S2/S3
-   (1D + **Data Matrix**) e o catálogo de perfis de máquina (RF-MAQ-10); na
+1. **v0.6…v0.10 (entregues)** — P2.7/P2.8 (QR Code e código de barras 1D) na
+   **0.6.0**; na **0.7.0**, P0.2 (E2E de job), P0.4 (onboarding), P0.6 (fuzz +
+   cobertura), 1D extras + **Data Matrix** e o catálogo de perfis de máquina; na
    **0.8.0**, P0.7 (painel "Máquina"), P0.8 (pré-voo MX-1…MX-15) e **P2.2
-   (camadas/multi-operação)**; na **0.9.0**, **RF-SYM-9** (grade de símbolos)
-   e **RF-SYM-7/PDF417**. O **P0.1** saiu só na parte Linux e
-   **startup/RAM ainda estão acima do orçamento** — otimizar performance é
-   trabalho aberto. Continuam abertos **P0.3** (Flatpak/winget/brew/AUR),
-   **P0.5** (comparativo público) e o que falta das ferramentas de símbolos
-   (símbolo como objeto) em [`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md).
+   (camadas/multi-operação)**; na **0.9.0**, **RF-SYM-9** (grade de símbolos) e
+   **PDF417**; na **0.10.0**, **Aztec**. Em 19–20/10/2026 entraram ainda **P2.9**
+   (biblioteca de jobs), **P2.14** (mover pelo preview), **P2.10**
+   (lote/dados variáveis), **P2.11** (modo produção) e o **RNF-11** de RAM
+   (269 MB em X11 / 290 MB em Wayland, medido). **Startup** segue acima do orçamento sob Xvfb/carga (1 779 ms
+   de mediana no A/B; melhor par 1 337 ms contra ≤ 1 500 ms) — trabalho de
+   performance aberto. Continuam abertos **P0.3** (publicar Flatpak + winget/
+   brew/AUR), **P0.5** (comparativo público) e o símbolo como objeto
+   ([`PLANO_QR_BARCODE.md`](PLANO_QR_BARCODE.md)).
 2. **v0.7 (restante)** — **catálogo 30+ + `.lbdev` + smart connect (P2.5) ✅**,
    **editor de G-code (P1.10) ✅**, **biblioteca de jobs (P2.9) ✅**; resta a
    validação Win/macOS.
-3. **v0.8** — lote/dados variáveis, modo produção, presets de material e
-   simbologias extras.
+3. **v0.8 (restante)** — **presets de material (P2.12)** e **teste de foco
+   (P2.13)**; o lote/dados variáveis (P2.10) e o modo produção (P2.11) já saíram.
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — as regras de oficina (kerf, abas), tiling e

@@ -34,7 +34,8 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
   linha) e **lote/dados variáveis**: uma planilha CSV/TSV vira uma **fila de
   gravação**, uma peça por linha (modelo com `{1}`, `{nome}`, `{i:03}`), com
   pausa para trocar a peça, contador e retomada; tudo vira G-code no mesmo
-  preview/Play.
+  preview/Play. Para repetir o **mesmo** programa em série, o **Modo produção**
+  repete o job **N vezes** com contador, pausa entre as peças e trava de UI.
 - **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
   laser e teto de `S`) como dado, não chumbado no código.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado

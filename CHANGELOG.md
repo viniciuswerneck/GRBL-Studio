@@ -6,6 +6,29 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### Added — modo produção: repetir o job N vezes (P2.11 / RF-GC-12)
+
+- **Modo produção** (cartão **Execução** → *Modo produção*): escolha **Cópias**
+  (1…999) e **▶ Produção** repete o **programa atual** N vezes. Entre uma peça e
+  outra o app **para** (nada de emendar uma peça na outra): troque/conferira a
+  peça na mesa e clique em **▶ Próxima peça**. O **pré-voo roda uma vez por
+  série** — enquadramento e programa não mudam entre as cópias.
+- **Contador sempre à mão** na barra de gravação (`Peça 3 de 10 · 2 concluídas`,
+  `Peça 3 de 10 pronta — troque a peça`) e na barra lateral; **Encerrar** fica ao
+  lado de Pausar/Cancelar, que continuam acessíveis durante toda a série
+  (RF-GC-8).
+- **Peça interrompida** (erro, alarme ou cancelamento) **não anda o contador**:
+  o botão vira **▶ Repetir peça** e repete a mesma cópia depois de reposicionar.
+  A última cópia fecha a série (`Produção concluída: 10 peças`).
+- **Trava de UI**: durante a série o programa não pode ser trocado — abrir
+  arquivo, editar e o lote ficam desabilitados, e qualquer outro caminho que
+  troque o programa (imagem, desenho, símbolo, biblioteca) **encerra** a
+  produção em vez de repetir o programa errado.
+- Máquina de estados **pura** em `src/shared/production.ts` (12 testes), bundle
+  mínimo `production.js` (`GRBL_PRODUCTION`) carregado sob demanda (RNF-11) e
+  **3 testes E2E** (série com contador, trava/Encerrar e troca de programa).
+  O estado vive na sessão; o programa continua no arquivo.
+
 ### Added — lote / dados variáveis: planilha → fila de gravação (P2.10 / RF-SYM-10)
 
 - **Lote de dados variáveis** (Ferramentas → **Lote de dados variáveis…**):

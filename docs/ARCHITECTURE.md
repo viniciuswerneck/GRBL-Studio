@@ -141,6 +141,7 @@ primeira tela usa**:
 | `shared/symbol/mask.ts` | Matriz/barras → segmentos de varredura (usa `zigzagHatch`); overscan/polaridade. | ✅ |
 | `shared/symbol/gcode.ts` | Símbolo + parâmetros → G-code GRBL (M3/M4, `M5` antes de `G0`, 3 decimais, passes). Pipeline 2D comum (`matrixToGcode`) para QR e Data Matrix. | ✅ |
 | `shared/batch.ts` | **Lote / dados variáveis** (puro): CSV/TSV com aspas/BOM/CRLF e detecção de separador e cabeçalho, modelo de campos (`{1}`, `{nome}`, `{i:03}`, `{total}`, `{{`/`}}`) com validação por código de erro, geração das peças e sanitização do que é persistido. | ✅ |
+| `shared/production.ts` | **Modo produção** (puro): máquina de estados da série de cópias (`idle → running → waiting → done`), total normalizado (1…999), contagem de concluídas, repetição da peça interrompida e progresso. Sem protocolo, DOM ou máquina. | ✅ |
 
 > Dois bundles esbuild (`public/qrcode.js` → `GRBL_QR`, `public/barcode.js` →
 > `GRBL_BARCODE`) e dois overlays no renderer (o 2D escolhe **QR × Data Matrix ×
@@ -154,6 +155,12 @@ primeira tela usa**:
 > com o gerador (que ele carrega sob demanda) e com a fila de envio. Cada peça é
 > gerada na hora — nada de N programas na memória — e o progresso fica em
 > `Prefs.batch` (sem persistir planilhas acima de 200 KB).
+>
+> O **modo produção** (RF-GC-12) é ainda mais enxuto: `public/production.js` →
+> `GRBL_PRODUCTION` decide só a máquina de estados da série (cópia atual,
+> concluídas, repetir a interrompida, fim) e o renderer reenvia **o mesmo**
+> programa pela fila normal (`beginJob`, sem repetir o pré-voo). O estado vive na
+> sessão: fechar o app encerra a série (o programa continua no arquivo).
 
 ### Imagem → G-code (Fase 5)
 

@@ -41,6 +41,7 @@ consumido pelo renderer em runtime** (JS puro que não importa TS):
 | `build:qrcode` | `public/qrcode.js` | `GRBL_QR` | `shared/symbol/entry.qr.ts` (QR/Data Matrix/PDF417/Aztec → G-code) |
 | `build:barcode` | `public/barcode.js` | `GRBL_BARCODE` | `shared/symbol/entry.barcode.ts` (1D + HRI → G-code) |
 | `build:batch` | `public/batch.js` | `GRBL_BATCH` | `shared/entry.batch.ts` (lote: CSV → peças; RF-SYM-10) |
+| `build:production` | `public/production.js` | `GRBL_PRODUCTION` | `shared/entry.production.ts` (modo produção: cópias; RF-GC-12) |
 | `build:i18n` | `public/i18n.js` | `GRBL_I18N` | `shared/i18n/entry.ts` (catálogos pt-BR/en/es + `applyDom`) |
 
 Os bundles em `public/*.js` listados acima são de build (estão no `.gitignore`):

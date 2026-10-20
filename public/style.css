@@ -1027,7 +1027,8 @@ input[type="checkbox"] {
    "Retomar lote" na barra lateral, e o lote gera as próprias peças — não pode
    depender de haver G-code carregado. */
 body.batch-active .sidebar #cardExecution,
-body.batch-stored .sidebar #cardExecution {
+body.batch-stored .sidebar #cardExecution,
+body.prod-active .sidebar #cardExecution {
   display: block;
 }
 
@@ -1309,8 +1310,12 @@ body.basic .basic-guide > * {
   z-index: 95;
   display: none;
   align-items: center;
-  gap: var(--sp-2);
-  max-width: min(640px, 92vw);
+  /* Com lote/produção a barra ganha contador + botões: quebra em duas linhas
+     em vez de empurrar Pausar/Cancelar para fora da janela (RF-GC-8). */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-1) var(--sp-2);
+  max-width: min(720px, 94vw);
   padding: var(--sp-2) var(--sp-3);
   background: var(--bg-card);
   border: 1px solid var(--stroke-strong);
@@ -3060,7 +3065,14 @@ html[data-theme^="hc-"] a:focus-visible {
 /* Fila de gravação: o contador vive na barra de gravação (sempre à mão) e a
    prévia fica numa lista com tabela simples — sem framework (RNF-11). */
 
-.job-bar-batch {
+.job-bar-batch,
+.job-bar-prod {
+  /* Contador da fila/série como legenda acima dos controles: os botões
+     (inclusive Pausar/Cancelar) ficam sempre na mesma linha, dentro da
+     janela (RF-GC-8). */
+  order: -1;
+  flex-basis: 100%;
+  text-align: center;
   font-size: var(--fs-12);
   font-weight: 600;
   color: var(--text-sub);
@@ -3070,7 +3082,8 @@ html[data-theme^="hc-"] a:focus-visible {
 
 /* Durante o lote a barra continua visível fora do job: é por ela que o
    usuário conclui a troca da peça (o job em si já terminou). */
-body.batch-active .job-bar {
+body.batch-active .job-bar,
+body.prod-active .job-bar {
   display: flex;
   opacity: 1;
 }
@@ -3139,7 +3152,8 @@ body.batch-active .job-bar {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.batch-active .job-bar {
+  body.batch-active .job-bar,
+  body.prod-active .job-bar {
     transition: none;
   }
 }

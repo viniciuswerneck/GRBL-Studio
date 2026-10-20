@@ -1667,3 +1667,159 @@ test.describe('GRBL Studio — lote / dados variáveis (P2.10/RF-SYM-10)', () =>
     }
   });
 });
+
+test.describe('GRBL Studio — modo produção (P2.11/RF-GC-12)', () => {
+  const PROGRAM =
+    'G21\nG90\nM4 S200\nG1 X40 Y0 F600\nG1 X40 Y40\nG1 X0 Y40\nM5';
+
+  /** Conecta no emulador e carrega o programa que será repetido. */
+  async function setupProduction(
+    page: Page,
+    emulator: { port: number },
+  ): Promise<void> {
+    await page.selectOption('#transportKind', 'tcp');
+    await page.fill('#tcpHost', '127.0.0.1');
+    await page.fill('#tcpPort', String(emulator.port));
+    await page.click('#connectBtn');
+    await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+    await page.evaluate((text) => {
+      const w = window as unknown as {
+        applyJobLines: (name: string, text: string) => void;
+      };
+      w.applyJobLines('peca.gcode', text);
+    }, PROGRAM);
+    await page.click('[data-tab="run"]');
+  }
+
+  test('repete o programa N vezes, pausa para a troca e fecha a série', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await setupProduction(page, emulator);
+
+      // O botão mostra o total escolhido (contador já na barra lateral).
+      await page.fill('#prodCopies', '3');
+      await expect(page.locator('#prodStart')).toContainText('3×');
+      await page.click('#prodStart');
+
+      // Cópia 1 no forno: contador na barra de gravação, sempre à mão.
+      await expect(page.locator('#jobBarProd')).toContainText('Peça 1 de 3');
+      await expect(page.locator('#fileInfo')).toContainText('peca.gcode');
+
+      // Terminou: **para** em vez de reexecutar (troca/conferência manual) e o
+      // pré-voo não se repete.
+      await expect(page.locator('#jobBarProd')).toContainText(
+        'Peça 1 de 3 pronta',
+        { timeout: 20_000 },
+      );
+      await expect(page.locator('#prodNextBtn')).toBeEnabled();
+      await expect(page.locator('#prodStatus')).toContainText(
+        'Peça 1 de 3 pronta',
+      );
+      await expect(page.locator('#prodNextBtn')).toHaveText(/Próxima peça/);
+
+      await page.click('#prodNextBtn');
+      await expect(page.locator('#jobBarProd')).toContainText('Peça 2 de 3');
+      await expect(page.locator('#jobBarProd')).toContainText('pronta', {
+        timeout: 20_000,
+      });
+      await page.click('#prodNextBtn');
+      // Última cópia: a série fecha e a barra volta ao normal (o programa é
+      // curto, então o estado final pode chegar antes do contador aparecer).
+      await expect(page.locator('#prodStatus')).toContainText(
+        'Produção concluída: 3 peças',
+        { timeout: 20_000 },
+      );
+      await expect(page.locator('#jobBarProd')).toHaveClass(/hidden/);
+      await expect(page.locator('#prodNextBtn')).toHaveClass(/hidden/);
+      await expect(page.locator('#prodEndBtn')).toHaveClass(/hidden/);
+      // Não é um lote: a barra não mostra o contador do lote.
+      await expect(page.locator('#jobBarBatch')).toHaveClass(/hidden/);
+      // O programa continua carregado e "Iniciar" volta ao normal.
+      await expect(page.locator('#fileInfo')).toContainText('peca.gcode');
+      await expect(page.locator('#playBtn')).toBeEnabled();
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('trava a troca de programa na série e "Encerrar" devolve a UI', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await setupProduction(page, emulator);
+      await page.fill('#prodCopies', '2');
+      await page.click('#prodStart');
+
+      // Trava de UI (RF-GC-12): o programa não pode ser trocado no meio da
+      // série — nem por arquivo, nem pelo editor, nem pelo lote.
+      await expect(page.locator('#fileOpen')).toBeDisabled();
+      await expect(page.locator('#gcodeEdit')).toBeDisabled();
+      await expect(page.locator('#batchOpenBtn')).toBeDisabled();
+      await expect(page.locator('#prodCopies')).toBeDisabled();
+      // Pausar e Cancelar continuam acessíveis (RF-GC-8).
+      await expect(page.locator('#pauseBtn')).toBeVisible();
+      await expect(page.locator('#stopBtn')).toBeVisible();
+
+      await expect(page.locator('#jobBarProd')).toContainText('pronta', {
+        timeout: 20_000,
+      });
+      // "Encerrar" fica na barra de gravação (sempre visível), não só na aba.
+      await expect(page.locator('#prodEndBtn')).toBeVisible();
+      await page.click('#prodEndBtn');
+
+      await expect(page.locator('#fileOpen')).toBeEnabled();
+      await expect(page.locator('#gcodeEdit')).toBeEnabled();
+      await expect(page.locator('#batchOpenBtn')).toBeEnabled();
+      await expect(page.locator('#prodCopies')).toBeEnabled();
+      await expect(page.locator('#jobBarProd')).toHaveClass(/hidden/);
+      await expect(page.locator('#prodStatus')).toHaveClass(/hidden/);
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Produção encerrada na peça 1 de 2',
+      );
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+
+  test('trocar o programa por outro caminho encerra a série', async () => {
+    const emulator = await startGrblTcp();
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+    });
+    try {
+      await setupProduction(page, emulator);
+      await page.fill('#prodCopies', '5');
+      await page.click('#prodStart');
+      await expect(page.locator('#jobBarProd')).toContainText('pronta', {
+        timeout: 20_000,
+      });
+
+      // Rede de segurança: qualquer caminho que troque o programa (imagem,
+      // desenho, símbolo, biblioteca) encerra a produção em vez de repetir o
+      // programa errado.
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          applyJobLines: (name: string, text: string) => void;
+        };
+        w.applyJobLines('outro.gcode', 'G21\nG90\nM5');
+      });
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Produção encerrada: o programa foi trocado',
+      );
+      await expect(page.locator('#jobBarProd')).toHaveClass(/hidden/);
+      await expect(page.locator('#prodNextBtn')).toHaveClass(/hidden/);
+      await expect(page.locator('#fileInfo')).toContainText('outro.gcode');
+      await expect(page.locator('#fileOpen')).toBeEnabled();
+    } finally {
+      await close();
+      emulator.close();
+    }
+  });
+});

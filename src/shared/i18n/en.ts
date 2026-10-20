@@ -528,6 +528,44 @@ export const en = {
   'batch.stopped':
     'Batch ended at piece {index} of {total}. Use “Resume batch” to continue.',
   'batch.resuming': 'Resuming the batch at piece {index} of {total}.',
+  'batch.err.production':
+    'A production run is in progress: end the run before starting the batch.',
+
+  // ------------------------------------------- production mode (RF-GC-12)
+  'prod.title': 'Production mode',
+  'prod.copies': 'Copies',
+  'prod.start': '▶ Production',
+  'prod.startN': '▶ Production ({total}×)',
+  'prod.hint':
+    'Repeats the current program N times, pausing to swap the piece. Preflight runs once and the program cannot change mid-run.',
+  'prod.next': '▶ Next piece',
+  'prod.retry': '▶ Repeat piece',
+  'prod.nextHint': 'After swapping the piece on the bed, send the next one.',
+  'prod.retryHint': 'The piece was interrupted: reposition and repeat it.',
+  'prod.stop': 'End',
+  'prod.stopHint': 'Ends production mode (the running piece is cancelled).',
+  'prod.state.running': 'Production: engraving piece {copy} of {total}.',
+  'prod.state.waiting':
+    'Piece {copy} of {total} done. Swap the piece and send the next one.',
+  'prod.state.failed':
+    'Piece {copy} of {total} interrupted: {reason}. Reposition and repeat it.',
+  'prod.state.done': 'Production finished: {total} pieces.',
+  'prod.bar.running': 'Piece {copy} of {total} · {done} done',
+  'prod.bar.waiting': 'Piece {copy} of {total} done — swap the piece',
+  'prod.bar.failed': 'Piece {copy} of {total} interrupted',
+  'prod.pieceStart': 'Production: sending piece {copy} of {total}.',
+  'prod.pieceDone': 'Production: piece {copy} of {total} done.',
+  'prod.done': 'Production finished: {total} pieces engraved.',
+  'prod.failed': 'Production stopped at piece {copy} of {total}: {reason}.',
+  'prod.stopped': 'Production ended at piece {copy} of {total}.',
+  'prod.endedByProgram':
+    'Production ended: the program was swapped at piece {copy} of {total}.',
+  'prod.err.connect': 'Connect the machine to start production.',
+  'prod.err.noFile': 'Load a G-code before starting production.',
+  'prod.err.alarm': 'Clear the alarm before starting production.',
+  'prod.err.batch':
+    'A batch is in progress: end the batch before starting production.',
+  'prod.err.moduleMissing': 'Production module not loaded.',
 
   // ------------------------------------------------ welcome / onboarding
   'tour.title': 'Welcome to GRBL Studio',
