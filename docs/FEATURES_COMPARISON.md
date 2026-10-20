@@ -35,6 +35,8 @@
 | Nesting (encaixe na chapa) | Não | Sim (MaxRects: margem, espaçamento e rotação 90°) | ✅ |
 | Salvar/abrir o desenho (`.gstudio`) | Não | Sim (documento versionado, Ctrl+S/Ctrl+O) | ✅ |
 | Kerf / folga de corte por camada | Sim (compensação de kerf) | Sim (externos +kerf/2, furos −kerf/2, ilhas e furo omitido) | ✅ |
+| Abas de retenção e sobre-corte (lead) | Parcial (abas manuais no G-code) | Sim (N abas por camada + sobre-corte na emenda) | ✅ |
+| Custo por peça | Não | Sim (tempo × tarifa/h + material × preço/m², R$/US$/€) | ✅ |
 
 ## Preview
 | Feature | LaserGRBL | GRBL Studio | Status |
@@ -87,7 +89,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1 351 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 365 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |

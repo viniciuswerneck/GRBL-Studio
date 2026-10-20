@@ -9,6 +9,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { sanitizeBatchPrefs } from '../../shared/batch';
+import { COST_MAX, sanitizeCurrency } from '../../shared/cost';
 import { isLang } from '../../shared/i18n';
 import { sanitizeMacros } from '../../shared/macros';
 import { sanitizePresets } from '../../shared/materialPresets';
@@ -239,6 +240,14 @@ function sanitize(input: unknown): Prefs {
   if (batch) prefs.batch = batch;
   if (Array.isArray(raw.materialPresets))
     prefs.materialPresets = sanitizePresets(raw.materialPresets);
+  // Custo por peça (Anexo B): tarifa/hora, preço/m² e moeda.
+  const costRate = finiteIn(raw.costRate, 0, COST_MAX);
+  if (costRate !== undefined) prefs.costRate = costRate;
+  const costMaterial = finiteIn(raw.costMaterial, 0, COST_MAX);
+  if (costMaterial !== undefined) prefs.costMaterial = costMaterial;
+  if (raw.costCurrency !== undefined) {
+    prefs.costCurrency = sanitizeCurrency(raw.costCurrency);
+  }
   return prefs;
 }
 

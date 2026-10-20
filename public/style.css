@@ -2140,6 +2140,64 @@ html[data-theme="sand"] .design-canvas-wrap {
   width: 3.2rem;
 }
 
+/* Parâmetros de corte avançados: fechados por padrão (não roubam altura) */
+.design-layer-adv {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  padding: 3px 6px;
+}
+
+.design-layer-adv > summary {
+  cursor: pointer;
+  font-size: var(--fs-11, 11px);
+  color: var(--text-sub);
+}
+
+.design-layer-adv > summary:hover {
+  color: var(--text);
+}
+
+.design-layer-adv .design-dock-row {
+  margin-top: 4px;
+}
+
+/* Custo por peça: separado do tamanho, mas no mesmo diálogo de geração */
+.design-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--stroke);
+}
+
+.design-cost-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: var(--fs-12, 12px);
+  color: var(--text-sub);
+}
+
+.design-size-modal .design-cost-head select {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 24px;
+  padding: 0 4px;
+}
+
+.design-size-modal .design-cost-head > span {
+  white-space: nowrap;
+}
+
+.design-cost-result {
+  margin: 0;
+  font-size: var(--fs-12, 12px);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .design-layer-editor button {
   min-height: 26px;
   padding: 0 6px;

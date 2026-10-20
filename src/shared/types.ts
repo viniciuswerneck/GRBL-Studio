@@ -390,6 +390,13 @@ export interface Prefs {
    * apagou todas (não ressuscitar as de fábrica).
    */
   materialPresets?: MaterialPreset[];
+  /**
+   * **Custo por peça** (Anexo B): tarifa da máquina por hora, preço do material
+   * por m² e a moeda usada para exibir. Ausente/0 = não mostra custo.
+   */
+  costRate?: number;
+  costMaterial?: number;
+  costCurrency?: import('./cost').CostCurrency;
 }
 
 /** Símbolos 2D disponíveis no modal "Código 2D". */

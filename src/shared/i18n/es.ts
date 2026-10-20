@@ -751,6 +751,12 @@ export const es = {
     'Pasadas de la capa — vacío usa el valor de grabado',
   'design.layer.kerf.hint':
     'Holgura de corte (kerf) en mm: los contornos externos crecen y los agujeros se reducen a la mitad; vacío = sin compensación',
+  'design.layer.cut': 'Corte: pestañas y sobrecorte',
+  'design.layer.tabs.hint':
+    'Pestañas de retención: cuántas “lengüetas” sujetan la pieza (0 = corte completo)',
+  'design.layer.tabWidth.hint': 'Ancho de cada pestaña en mm (por defecto 2)',
+  'design.layer.lead.hint':
+    'Sobrecorte (lead-in/out) en mm: sigue más allá del origen para que la unión no quede con pico; se ignora cuando hay pestañas',
   'design.layer.assign': 'Mover selección',
   'design.layer.assigned': '{n} objeto(s) movido(s) a {name}.',
   'design.layer.needSelection': 'Selecciona al menos un objeto para mover.',
@@ -782,6 +788,9 @@ export const es = {
     'Velocidad del objeto (mm/min) — vacío usa el valor de grabado',
   'design.obj.passes': 'N',
   'design.obj.kerf': 'K',
+  'design.obj.tabs': 'Pestañas',
+  'design.obj.tabWidth': 'Ancho',
+  'design.obj.lead': 'Sobrecorte',
   'design.obj.passes.hint':
     'Pasadas del objeto — vacío usa el valor de grabado',
   'design.obj.width': 'E',
@@ -929,6 +938,15 @@ export const es = {
   'design.size.current': 'Tamaño actual: {w} × {h} mm',
   'design.size.note':
     'Rellena un lado y el otro se ajusta a la misma proporción. Desbloquea el candado para redimensionar libremente.',
+  'design.cost.title': 'Coste de la pieza',
+  'design.cost.currencyHint': 'Moneda usada en el coste',
+  'design.cost.rate': 'Máquina / hora',
+  'design.cost.material': 'Material / m²',
+  'design.cost.result':
+    '≈ {time} · {total} (máquina {machine} + material {material})',
+  'design.cost.resultTimeOnly':
+    '≈ {time} · indica la tarifa de la máquina y el precio del material',
+  'design.cost.noTime': 'Sin tiempo estimado para este tamaño.',
   'design.size.invalid': 'Indica ancho y alto mayores que cero.',
 
   // ------------------------------------------------- ejecución y archivo

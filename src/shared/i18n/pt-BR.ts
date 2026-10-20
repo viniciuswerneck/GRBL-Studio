@@ -755,6 +755,12 @@ export const ptBR = {
     'Passadas da camada — vazio usa o padrão de gravação',
   'design.layer.kerf.hint':
     'Folga de corte (kerf) em mm: externos crescem e furos encolhem pela metade; vazio = sem compensação',
+  'design.layer.cut': 'Corte: abas e sobre-corte',
+  'design.layer.tabs.hint':
+    'Abas de retenção: quantas “pestanhas” seguram a peça (0 = corte inteiro)',
+  'design.layer.tabWidth.hint': 'Largura de cada aba em mm (padrão 2)',
+  'design.layer.lead.hint':
+    'Sobre-corte (lead-in/out) em mm: continua além da origem para a emenda não ficar com bico; ignorado quando há abas',
   'design.layer.assign': 'Mover seleção',
   'design.layer.assigned': '{n} objeto(s) movido(s) para {name}.',
   'design.layer.needSelection': 'Selecione ao menos um objeto para mover.',
@@ -786,6 +792,9 @@ export const ptBR = {
     'Velocidade do objeto (mm/min) — vazio usa o padrão de gravação',
   'design.obj.passes': 'N',
   'design.obj.kerf': 'K',
+  'design.obj.tabs': 'Abas',
+  'design.obj.tabWidth': 'Larg.',
+  'design.obj.lead': 'Sobre-corte',
   'design.obj.passes.hint':
     'Passadas do objeto — vazio usa o padrão de gravação',
   'design.obj.width': 'E',
@@ -932,6 +941,15 @@ export const ptBR = {
   'design.size.current': 'Tamanho atual: {w} × {h} mm',
   'design.size.note':
     'Preencha um lado e o outro é ajustado na mesma proporção. Destrave o cadeado para redimensionar livremente.',
+  'design.cost.title': 'Custo da peça',
+  'design.cost.currencyHint': 'Moeda usada no custo',
+  'design.cost.rate': 'Máquina / hora',
+  'design.cost.material': 'Material / m²',
+  'design.cost.result':
+    '≈ {time} · {total} (máquina {machine} + material {material})',
+  'design.cost.resultTimeOnly':
+    '≈ {time} · informe a tarifa da máquina e o preço do material',
+  'design.cost.noTime': 'Sem tempo estimado para este tamanho.',
   'design.size.invalid': 'Informe largura e altura maiores que zero.',
 
   // ------------------------------------------------- execução e arquivo

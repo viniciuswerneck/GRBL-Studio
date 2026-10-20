@@ -732,6 +732,12 @@ export const en = {
   'design.layer.passes.hint': 'Layer passes — empty uses the engraving default',
   'design.layer.kerf.hint':
     'Cut kerf in mm: outer contours grow and holes shrink by half; empty = no compensation',
+  'design.layer.cut': 'Cut: tabs and lead',
+  'design.layer.tabs.hint':
+    'Retention tabs: how many small bridges hold the piece (0 = full cut)',
+  'design.layer.tabWidth.hint': 'Width of each tab in mm (default 2)',
+  'design.layer.lead.hint':
+    'Overcut (lead-in/out) in mm: keeps cutting past the start so the seam has no burn point; ignored when tabs are set',
   'design.layer.assign': 'Move selection',
   'design.layer.assigned': '{n} object(s) moved to {name}.',
   'design.layer.needSelection': 'Select at least one object to move.',
@@ -763,6 +769,9 @@ export const en = {
     'Object feed (mm/min) — empty uses the engraving default',
   'design.obj.passes': 'N',
   'design.obj.kerf': 'K',
+  'design.obj.tabs': 'Tabs',
+  'design.obj.tabWidth': 'Width',
+  'design.obj.lead': 'Overcut',
   'design.obj.passes.hint': 'Object passes — empty uses the engraving default',
   'design.obj.width': 'W',
   'design.obj.width.hint':
@@ -907,6 +916,15 @@ export const en = {
   'design.size.current': 'Current size: {w} × {h} mm',
   'design.size.note':
     'Fill in one side and the other follows the same ratio. Unlock the padlock to resize freely.',
+  'design.cost.title': 'Cost per piece',
+  'design.cost.currencyHint': 'Currency used for the cost',
+  'design.cost.rate': 'Machine / hour',
+  'design.cost.material': 'Material / m²',
+  'design.cost.result':
+    '≈ {time} · {total} (machine {machine} + material {material})',
+  'design.cost.resultTimeOnly':
+    '≈ {time} · enter the machine rate and the material price',
+  'design.cost.noTime': 'No time estimate for this size.',
   'design.size.invalid': 'Enter width and height greater than zero.',
 
   // ------------------------------------------------- execução e arquivo

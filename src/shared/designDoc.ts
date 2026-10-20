@@ -25,6 +25,7 @@
 import type { DesignLayer, Point, Shape, ShapeKind } from './design';
 import { sanitizeDesignSymbol } from './designSymbol';
 import { sanitizeKerf } from './kerf';
+import { sanitizeLead, sanitizeTabCount, sanitizeTabWidth } from './tabs';
 
 /** Marca do arquivo — evita abrir qualquer JSON por engano. */
 export const DESIGN_DOC_KIND = 'grbl-studio/design';
@@ -186,6 +187,13 @@ function layer(raw: unknown): DesignLayer | null {
   if (src.mode === 'M3' || src.mode === 'M4') out.mode = src.mode;
   const kerf = sanitizeKerf(src.kerf);
   if (kerf > 0) out.kerf = kerf;
+  const tabs = sanitizeTabCount(src.tabs);
+  if (tabs > 0) {
+    out.tabs = tabs;
+    out.tabWidth = sanitizeTabWidth(src.tabWidth);
+  }
+  const lead = sanitizeLead(src.lead);
+  if (lead > 0) out.lead = lead;
   return out;
 }
 

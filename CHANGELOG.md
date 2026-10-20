@@ -6,6 +6,30 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Added — abas de retenção e sobre-corte por camada (RF-DSN-18/19)
+
+- **Abas de retenção**: a camada informa quantas “pestanhas” seguram a peça e a
+  largura de cada uma (mm). O contorno fechado é dividido em trechos de corte
+  separados pelas abas, onde o laser **desliga** — a peça pequena não se solta
+  nem voa, e cada trecho tem sua própria ignição. Contorno curto demais reduz
+  a contagem; sem espaço para nenhuma aba, corta inteiro (nada de job vazio).
+- **Sobre-corte (lead-in/out)**: continua o corte além da origem do contorno
+  para a emenda não ficar com um “bico” queimado (ponto duplo de ignição).
+  Ignorado quando a camada tem abas, que já dividem o contorno.
+- Os dois ficam num bloco **“Corte: abas e sobre-corte”** fechado por padrão no
+  editor de camada (não rouba altura do painel), aparecem na lista de camadas
+  (`A 4`, `S 0.4`) e vão para o cabeçalho do G-code (`; abas 4 × 2 mm`).
+  Persistem no documento `.gstudio`.
+
+### Added — custo por peça (Anexo B)
+
+- O diálogo **“Tamanho da arte”** passa a mostrar o custo estimado da peça:
+  **tempo de máquina** (o mesmo `estimateSeconds` do rótulo do G-code × tarifa
+  por hora) + **material** (área da arte × preço do m²). Moeda em R$, US$ ou €.
+- Tarifa, preço do material e moeda ficam nas **preferências** e voltam no
+  próximo desenho; a prévia recalcula ao mudar o tamanho (com *debounce*) e
+  **não toca no desenho** — só o “Gerar e visualizar” aplica a escala.
+
 ## [0.13.0] - 2026-10-20
 
 Marco **oficina**: o desenho passa a ser um documento que se salva e reabre, e

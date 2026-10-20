@@ -2663,6 +2663,10 @@ function dUpdateLayerList() {
       meta.push(`×${Math.round(layer.passes)}`);
     if (typeof layer.kerf === 'number' && layer.kerf > 0)
       meta.push(`K ${Number(layer.kerf.toFixed(2))}`);
+    if (typeof layer.tabs === 'number' && layer.tabs > 0)
+      meta.push(`A ${Math.round(layer.tabs)}`);
+    if (typeof layer.lead === 'number' && layer.lead > 0)
+      meta.push(`S ${Number(layer.lead.toFixed(2))}`);
 
     li.append(grip, dot, label);
     if (meta.length) {
@@ -2841,6 +2845,9 @@ function dUpdateLayerEditor() {
     'designLayerPasses',
     'designLayerKerf',
     'designLayerMode',
+    'designLayerTabs',
+    'designLayerTabWidth',
+    'designLayerLead',
   ]) {
     const node = $(id);
     if (node) node.disabled = !layer;
@@ -2869,6 +2876,26 @@ function dUpdateLayerEditor() {
     const v = layer && typeof layer.kerf === 'number' ? layer.kerf : 0;
     kerf.value = v > 0 ? String(Number(v.toFixed(2))) : '';
     kerf.placeholder = '0';
+  }
+
+  // Abas e sobre-corte: vazio = desligado (o placeholder mostra o padrão).
+  const tabs = $('designLayerTabs');
+  if (tabs) {
+    const v = layer && typeof layer.tabs === 'number' ? layer.tabs : 0;
+    tabs.value = v > 0 ? String(Math.round(v)) : '';
+    tabs.placeholder = '0';
+  }
+  const tabWidth = $('designLayerTabWidth');
+  if (tabWidth) {
+    const v = layer && typeof layer.tabWidth === 'number' ? layer.tabWidth : 0;
+    tabWidth.value = v > 0 ? String(Number(v.toFixed(2))) : '';
+    tabWidth.placeholder = '2';
+  }
+  const lead = $('designLayerLead');
+  if (lead) {
+    const v = layer && typeof layer.lead === 'number' ? layer.lead : 0;
+    lead.value = v > 0 ? String(Number(v.toFixed(2))) : '';
+    lead.placeholder = '0';
   }
 
   const mode = $('designLayerMode');
@@ -5012,7 +5039,9 @@ function dOpenSizeDialog() {
       w: w.toFixed(1),
       h: h.toFixed(1),
     });
+  dLoadCostFields();
   if (el.designSizeOverlay) el.designSizeOverlay.classList.remove('hidden');
+  dScheduleCost();
   if (W) {
     W.focus();
     W.select();
@@ -5038,6 +5067,119 @@ function dSizeSync(source) {
     if (Number.isFinite(h) && h > 0)
       W.value = (h * designState.sizeAspect).toFixed(1);
   }
+  dScheduleCost();
+}
+
+// ------------------------------------------------------ custo por peça (Anexo B)
+//
+// O custo sai do **mesmo** estimador do rótulo do arquivo (tempo × tarifa/h)
+// mais o material (área da arte × preço/m²). A prévia usa uma cópia escalada
+// das formas — o desenho só é alterado quando o usuário confirma o tamanho.
+
+let dCostTimer = 0;
+
+/** Preenche moeda/tarifas com a preferência salva (RF-CFG-5). */
+function dLoadCostFields() {
+  const rate = $('designCostRate');
+  const material = $('designCostMaterial');
+  const currency = $('designCostCurrency');
+  const prefs = state.prefs || {};
+  if (rate) rate.value = prefs.costRate > 0 ? String(prefs.costRate) : '';
+  if (material) {
+    material.value = prefs.costMaterial > 0 ? String(prefs.costMaterial) : '';
+  }
+  if (currency && window.GRBL_DESIGN) {
+    currency.value = window.GRBL_DESIGN.sanitizeCurrency(prefs.costCurrency);
+  }
+}
+
+/** Salva moeda/tarifas nas preferências e recalcula. */
+function dSaveCostFields() {
+  if (!window.GRBL_DESIGN) return;
+  const rate = window.GRBL_DESIGN.sanitizeCost(dNum('designCostRate', 0));
+  const material = window.GRBL_DESIGN.sanitizeCost(
+    dNum('designCostMaterial', 0),
+  );
+  const currency = window.GRBL_DESIGN.sanitizeCurrency(
+    $('designCostCurrency')?.value,
+  );
+  persistPrefs({
+    costRate: rate,
+    costMaterial: material,
+    costCurrency: currency,
+  });
+  dScheduleCost();
+}
+
+function dScheduleCost() {
+  clearTimeout(dCostTimer);
+  dCostTimer = setTimeout(dUpdateCost, 250);
+}
+
+/** Recalcula a linha de custo do diálogo de tamanho. */
+function dUpdateCost() {
+  const out = $('designCostResult');
+  if (!out || !dSizeDialogOpen()) return;
+  if (!window.GRBL_DESIGN || !window.GRBL_PREVIEW) return;
+  const b = designState.sizeBounds || dArtBounds();
+  const w = dNum('designSizeW', 0);
+  const h = dNum('designSizeH', 0);
+  if (!b || !(w > 0) || !(h > 0)) {
+    out.textContent = t('design.cost.noTime');
+    return;
+  }
+  // Cópia escalada: mesmo resultado do que o "Gerar" fará, sem tocar no desenho.
+  const curW = b.maxX - b.minX;
+  const curH = b.maxY - b.minY;
+  const sx = curW > 0.01 ? w / curW : 1;
+  const sy = curH > 0.01 ? h / curH : 1;
+  const shapes = designState.shapes.map((sh) => ({
+    ...sh,
+    points: sh.points.map((p) => ({
+      x: b.minX + (p.x - b.minX) * sx,
+      y: b.minY + (p.y - b.minY) * sy,
+    })),
+  }));
+  let seconds = 0;
+  try {
+    const gcode = window.GRBL_DESIGN.designToGcode(
+      {
+        shapes,
+        width: designState.page.w,
+        height: designState.page.h,
+        layers: designState.layers,
+      },
+      dReadEngraveOptions(),
+    );
+    seconds = window.GRBL_PREVIEW.estimateSeconds(
+      window.GRBL_PREVIEW.parseGcode(gcode),
+    );
+  } catch {
+    seconds = 0;
+  }
+  const currency = window.GRBL_DESIGN.sanitizeCurrency(
+    $('designCostCurrency')?.value,
+  );
+  const cost = window.GRBL_DESIGN.estimateCost({
+    seconds,
+    areaMm2: w * h,
+    machinePerHour: window.GRBL_DESIGN.sanitizeCost(dNum('designCostRate', 0)),
+    materialPerM2: window.GRBL_DESIGN.sanitizeCost(
+      dNum('designCostMaterial', 0),
+    ),
+  });
+  const time = formatTime(seconds);
+  if (cost.machine + cost.material <= 0) {
+    out.textContent = t('design.cost.resultTimeOnly', { time });
+    return;
+  }
+  const money = (v) => window.GRBL_DESIGN.formatMoney(v, currency);
+  out.textContent = t('design.cost.result', {
+    time,
+    total: money(cost.total),
+    machine: money(cost.machine),
+    material: money(cost.material),
+  });
 }
 
 /** Aplica o tamanho pedido (escala a arte em torno do canto superior esquerdo). */
@@ -5233,6 +5375,9 @@ function dConfirmSize() {
     ['designLayerSpeed', 'speed', 100, 20000],
     ['designLayerPasses', 'passes', 1, 99],
     ['designLayerKerf', 'kerf', 0, 10],
+    ['designLayerTabs', 'tabs', 0, 50],
+    ['designLayerTabWidth', 'tabWidth', 0.1, 20],
+    ['designLayerLead', 'lead', 0, 5],
   ]) {
     const node = $(id);
     if (node) {
@@ -5274,6 +5419,12 @@ function dConfirmSize() {
       }
     });
   }
+  for (const id of ['designCostRate', 'designCostMaterial']) {
+    const node = $(id);
+    if (node) node.addEventListener('change', dSaveCostFields);
+  }
+  const costCurrency = $('designCostCurrency');
+  if (costCurrency) costCurrency.addEventListener('change', dSaveCostFields);
   const sizeLock = $('designSizeLock');
   if (sizeLock) {
     sizeLock.addEventListener('click', () => {

@@ -786,6 +786,124 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('abas de retenção e sobre-corte por camada (Anexo B)', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-tabs-'));
+    const tabbed = path.join(dir, 'com-abas.gcode');
+    const leaded = path.join(dir, 'com-sobrecorte.gcode');
+    const { app, page, close } = await launchApp();
+    const waitFile = async (file: string): Promise<string> => {
+      await expect.poll(() => existsSync(file), { timeout: 10_000 }).toBe(true);
+      return readFileSync(file, 'utf8');
+    };
+    const point = (line: string): { x: number; y: number } => ({
+      x: Number(/X(-?\d+\.\d+)/.exec(line)?.[1]),
+      y: Number(/Y(-?\d+\.\d+)/.exec(line)?.[1]),
+    });
+    try {
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: target,
+        })) as typeof dialog.showSaveDialog;
+      }, tabbed);
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 140, box.y + 140);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 320, box.y + 280);
+      await page.mouse.up();
+      await expect(page.locator('#designObjectList .design-obj')).toHaveCount(
+        1,
+      );
+
+      // 4 abas de 2 mm: o laser desliga em cada uma (um M3/M4 por trecho).
+      await page.click('.design-layer-adv > summary');
+      await page.fill('#designLayerTabs', '4');
+      await page.locator('#designLayerTabs').dispatchEvent('change');
+      await page.fill('#designLayerTabWidth', '2');
+      await page.locator('#designLayerTabWidth').dispatchEvent('change');
+      await expect(page.locator('#designLayerList')).toContainText('A 4');
+      await page.click('#designSave');
+      const withTabs = await waitFile(tabbed);
+      expect(withTabs).toContain('; abas 4 × 2 mm');
+      expect(withTabs.match(/^M[34] S/gm)).toHaveLength(4);
+
+      // Sobre-corte de 0,5 mm: o último G1 fica 0,5 mm depois da origem.
+      await app.evaluate(({ dialog }, target) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: target,
+        })) as typeof dialog.showSaveDialog;
+      }, leaded);
+      await page.fill('#designLayerTabs', '');
+      await page.locator('#designLayerTabs').dispatchEvent('change');
+      await page.fill('#designLayerLead', '0.5');
+      await page.locator('#designLayerLead').dispatchEvent('change');
+      await page.click('#designSave');
+      const withLead = await waitFile(leaded);
+      expect(withLead).toContain('; sobre-corte 0.5 mm');
+      const lines = withLead.split('\n');
+      const first = lines.find((l) => l.startsWith('G0 '));
+      const last = lines.filter((l) => l.startsWith('G1 ')).pop();
+      if (!first || !last) throw new Error('G-code sem movimentos');
+      const a = point(first);
+      const b = point(last);
+      expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(0.5, 3);
+    } finally {
+      await close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('custo por peça no diálogo de tamanho (Anexo B)', async () => {
+    const { app, page, close } = await launchApp({
+      prefs: { costRate: 60, costMaterial: 100 },
+    });
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 140, box.y + 140);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y + 260);
+      await page.mouse.up();
+      await page.click('#designGenerate');
+      await expect(page.locator('#designSizeOverlay')).toBeVisible();
+      // Tarifas vêm das preferências e o custo aparece formatado.
+      await expect(page.locator('#designCostRate')).toHaveValue('60');
+      await expect(page.locator('#designCostMaterial')).toHaveValue('100');
+      await expect(page.locator('#designCostResult')).toContainText('R$');
+      await expect(page.locator('#designCostResult')).toContainText('máquina');
+      await expect(page.locator('#designCostResult')).toContainText('material');
+      // Mudar a tarifa recalcula e persiste.
+      await page.fill('#designCostRate', '120');
+      await page.locator('#designCostRate').dispatchEvent('change');
+      await expect
+        .poll(async () => {
+          const prefs = await page.evaluate(() => window.grbl.getPrefs());
+          return prefs.costRate;
+        })
+        .toBe(120);
+    } finally {
+      await close();
+    }
+  });
+
   test('salva e reabre o desenho (.gstudio) (RF-DSN-16)', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'grbl-doc-'));
     const file = path.join(dir, 'peca.gstudio');

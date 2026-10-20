@@ -18,6 +18,13 @@
 import type { DesignSymbolSpec } from './designSymbol';
 import { compensateKerf, sanitizeKerf } from './kerf';
 import { STROKE_STEP, strokePaths } from './offset';
+import {
+  overcutTail,
+  sanitizeLead,
+  sanitizeTabCount,
+  sanitizeTabWidth,
+  splitByTabs,
+} from './tabs';
 
 export type { DesignSymbolSpec } from './designSymbol';
 export {
@@ -39,6 +46,26 @@ export type {
 // Documento do editor (`.gstudio`): salvar/abrir o desenho inteiro.
 export type { KerfOptions } from './kerf';
 export { compensateKerf, KERF_MAX_MM, sanitizeKerf } from './kerf';
+export {
+  LEAD_MAX_MM,
+  loopLength,
+  overcutTail,
+  sanitizeLead,
+  sanitizeTabCount,
+  sanitizeTabWidth,
+  splitByTabs,
+  TAB_MAX_COUNT,
+  TAB_MAX_WIDTH_MM,
+} from './tabs';
+export type { CostBreakdown, CostCurrency, CostInputs } from './cost';
+export {
+  COST_CURRENCIES,
+  COST_MAX,
+  estimateCost,
+  formatMoney,
+  sanitizeCost,
+  sanitizeCurrency,
+} from './cost';
 
 export type {
   DesignDoc,
@@ -141,6 +168,19 @@ export interface DesignLayer {
    * Ausente/0 = o caminho é o desenho (comportamento histórico).
    */
   kerf?: number;
+  /**
+   * **Abas de retenção**: número de “pestanhas” que seguram a peça (o laser
+   * desliga em cada uma). `0`/ausente = contorno cortado por inteiro.
+   */
+  tabs?: number;
+  /** Largura de cada aba em mm (padrão 2 mm quando há abas). */
+  tabWidth?: number;
+  /**
+   * **Sobre-corte (lead-in/out)** em mm: continua o corte além da origem do
+   * contorno para a emenda não ficar com um “bico” queimado. Ignorado quando
+   * a camada tem abas (a peça é dividida em trechos).
+   */
+  lead?: number;
 }
 
 export interface DesignDocument {
@@ -402,6 +442,12 @@ export function designToGcode(
         typeof l.speed === 'number' ? `F ${l.speed}` : '',
         typeof l.passes === 'number' ? `N ${l.passes}` : '',
         typeof l.kerf === 'number' && l.kerf > 0 ? `K ${l.kerf} mm` : '',
+        typeof l.tabs === 'number' && l.tabs > 0
+          ? `A ${l.tabs} × ${sanitizeTabWidth(l.tabWidth)} mm`
+          : '',
+        typeof l.lead === 'number' && l.lead > 0
+          ? `S ${sanitizeLead(l.lead)} mm`
+          : '',
         l.mode ? l.mode : '',
       ].filter(Boolean);
       if (meta.length) parts.push(` (${meta.join(', ')})`);
@@ -476,9 +522,17 @@ export function designToGcode(
         : passes;
     const layerArm: 'M3' | 'M4' =
       layer?.mode === 'M3' || layer?.mode === 'M4' ? layer.mode : arm;
+    const layerTabs = sanitizeTabCount(layer?.tabs);
+    const layerTabWidth = sanitizeTabWidth(layer?.tabWidth);
+    const layerLead = sanitizeLead(layer?.lead);
     if (layer && declared.length > 1) {
       const name = layer.name ? `: ${commentText(layer.name)}` : '';
       lines.push(`; camada ${oi + 1}${name}`);
+    }
+    if (layerTabs > 0) {
+      lines.push(`; abas ${layerTabs} × ${layerTabWidth} mm (retenção)`);
+    } else if (layerLead > 0) {
+      lines.push(`; sobre-corte ${layerLead} mm (lead-in/out)`);
     }
     if (op.kerf > 0) {
       const omitted = op.shapes.filter((ps) => ps.kerf === null).length;
@@ -527,7 +581,35 @@ export function designToGcode(
         for (let sp = 0; sp < shapePasses; sp++) {
           for (const raw of paths) {
             if (raw.length < 2) continue;
+            // Abas: divide o contorno fechado em trechos de corte (o laser
+            // desliga nas “pestanhas”). Traço grosso e linha aberta ficam de
+            // fora: são gravação, não corte.
+            const tabbable =
+              closed && layerTabs > 0 && !(sh.width && sh.width > 0);
+            if (tabbable) {
+              const segments = splitByTabs(raw, layerTabs, layerTabWidth);
+              if (segments.length) {
+                for (const seg of segments) {
+                  const pts = orderFrom(seg, false);
+                  if (pts.length < 2) continue;
+                  emit(pts, false, shapeFeed, power, layerArm);
+                  cursor = toMachine(pts[pts.length - 1]);
+                }
+                continue;
+              }
+            }
             const pts = orderFrom(raw, closed);
+            // Sobre-corte: fecha o contorno e continua além da origem, na
+            // mesma direção (emenda sem “bico”).
+            if (closed && layerLead > 0) {
+              const tail = overcutTail(pts, layerLead);
+              if (tail.length) {
+                const full = [...pts, pts[0], ...tail];
+                emit(full, false, shapeFeed, power, layerArm);
+                cursor = toMachine(full[full.length - 1]);
+                continue;
+              }
+            }
             emit(pts, closed, shapeFeed, power, layerArm);
             const end = closed ? pts[0] : pts[pts.length - 1];
             cursor = toMachine(end);

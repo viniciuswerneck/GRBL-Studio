@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 351 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 365 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -92,7 +92,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Perfis de máquina como dado** (`src/shared/machines.ts`, RF-MAQ-10):
       curso, homing, `S-max`, módulo e potência de apontar por máquina;
       `scripts/probe-machine.mjs` e `grbl-send.mjs` para estudar a máquina real.
-- [x] **897 testes** (Vitest, 53 arquivos) + E2E Playwright (51) + smoke headless.
+- [x] **913 testes** (Vitest, 55 arquivos) + E2E Playwright (53) + smoke headless.
 
 ---
 
@@ -316,9 +316,10 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    teste de foco (P2.13).
 4. **v0.9/v1.0** — câmera, rotativa, nesting, API/CLI, plugins e migração do
    renderer para TypeScript.
-5. **Candidatos novos do Anexo** — as regras de oficina (abas), tiling e
-   registro, geradores e o kit de segurança/monitor; versões e esforço
-   **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
+5. **Candidatos novos do Anexo** — ✅ **abas de retenção, sobre-corte e custo
+   por peça** (v0.14.0); seguem abertos tiling e registro, geradores e o kit de
+   segurança/monitor; versões e esforço **propostos** na tabela do Anexo, a
+   ratificar antes de virar compromisso.
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
 > persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
@@ -433,10 +434,10 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 
 | Item | Versão sugerida | Esf. | Resumo do critério (DoD) |
 | :-- | :-- | :-- | :-- |
-| Abas de retenção | v0.7 | S | Peça pequena presa por N abas configuráveis; testado. |
-| Entrada/saída do corte | v0.7 | S | Lead-in/lead-out e canto sem "bico" no corte. |
+| Abas de retenção | v0.7 | S | ✅ RF-DSN-18 (0.14.0): N abas configuráveis por camada, laser desliga em cada uma. |
+| Entrada/saída do corte | v0.7 | S | ✅ RF-DSN-19 (0.14.0): sobre-corte na emenda, sem ponto duplo de ignição. |
 | Biblioteca de símbolos | v0.7 | S | Catálogo de ícones/formas arrastáveis, sem rede. |
-| Custo por peça | v0.8 | S | Custo estimado (tempo × tarifa + material) exibido. |
+| Custo por peça | v0.8 | S | ✅ RF-DSN-20 (0.14.0): tempo × tarifa/h + material × preço/m² no diálogo de tamanho. |
 | Tira de teste de código | v0.8 | S | Mesmo símbolo em N tamanhos; registro do mínimo legível. |
 | Geradores paramétricos | v0.8 | M | Caixa com encaixe + engrenagem (paramétrico, sem rede). |
 | Catálogo de materiais com avisos | v0.8 | M | Material com notas de segurança e presets ligados. |
