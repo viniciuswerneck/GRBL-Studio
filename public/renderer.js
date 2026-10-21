@@ -9987,8 +9987,10 @@ function applyJobLines(name, text, source = 'file') {
  * primeira peça, e repetir a checagem a cada peça travaria a fila no meio.
  */
 async function beginJob(startIndex = 0, { skipPreflight = false } = {}) {
-  if (!state.connected || !state.lines.length) return;
-  if (!skipPreflight && !(await confirmPreflight(state.lines))) return;
+  // `false` = não começou (sem conexão, sem programa ou pré-voo cancelado).
+  // A fila usa isso para não ficar presa esperando um job que nunca veio.
+  if (!state.connected || !state.lines.length) return false;
+  if (!skipPreflight && !(await confirmPreflight(state.lines))) return false;
   const total = state.lines.length;
   const start = Math.max(0, Math.min(Math.trunc(startIndex), total));
   const resume = window.GRBL_RESUME;
@@ -10005,6 +10007,7 @@ async function beginJob(startIndex = 0, { skipPreflight = false } = {}) {
   setGcodePreview(state.lines.join('\n'), state.fileName);
   previewProgram.done = start;
   window.grbl.startJob(program, state.fileName);
+  return true;
 }
 
 el.playBtn.addEventListener('click', () => beginJob(0));
@@ -14851,6 +14854,569 @@ window.grbl.onStatus((s) => {
 
 window.grbl.onConnection((conn) => setConnection(conn));
 
+// ---------------------------------- catálogo de materiais (RF-IMG-15)
+//
+// A ficha vem de `materialCatalog.ts` (bundle `GRBL_MATERIALS`, já carregado no
+// boot). Material perigoso (PVC, policarbonato, ABS, vinil…) **não** é
+// aplicado: o cartão mostra o motivo e os botões ficam desligados.
+
+const matCatalogState = { family: 'all', query: '' };
+
+function matCatalogModule() {
+  return window.GRBL_MATERIALS;
+}
+
+function setMatStatus(text, isError = false) {
+  const status = $('matStatus');
+  if (!status) return;
+  status.textContent = text;
+  status.classList.toggle('error', isError);
+}
+
+function matCard(item, module, action) {
+  const M = matCatalogModule();
+  const card = document.createElement('article');
+  card.className = `mat-card hazard-${item.hazard}`;
+  card.dataset.id = item.id;
+
+  const head = document.createElement('header');
+  const title = document.createElement('h4');
+  title.textContent = t(item.nameKey);
+  head.appendChild(title);
+  if (item.thicknessMm) {
+    const thickness = document.createElement('span');
+    thickness.className = 'mat-th';
+    thickness.textContent = t('mat.thickness', { mm: item.thicknessMm });
+    head.appendChild(thickness);
+  }
+  const badge = document.createElement('span');
+  badge.className = `mat-badge ${item.hazard}`;
+  badge.textContent = t(`mat.badge.${item.hazard}`);
+  head.appendChild(badge);
+  card.appendChild(head);
+
+  const warn = document.createElement('p');
+  warn.className = 'mat-warn';
+  warn.textContent = t(item.hazardKey);
+  card.appendChild(warn);
+
+  const rec = M?.materialRecommendation(item, module, action) ?? null;
+  if (item.hazard !== 'danger') {
+    const recLine = document.createElement('p');
+    recLine.className = 'mat-rec';
+    recLine.textContent = rec
+      ? `${t('mat.recommendation', {
+          power: rec.powerPercent,
+          speed: rec.speedMmMin,
+        })} · ${t('mat.passes', { n: rec.passes ?? 1 })}`
+      : t('mat.noRecipe');
+    card.appendChild(recLine);
+  }
+
+  if (item.noteKey) {
+    const note = document.createElement('p');
+    note.className = 'mat-note';
+    note.textContent = t(item.noteKey);
+    card.appendChild(note);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'mat-actions';
+  const blocked = item.hazard === 'danger';
+  const apply = document.createElement('button');
+  apply.type = 'button';
+  apply.textContent = t('mat.apply');
+  apply.disabled = blocked || !rec;
+  apply.addEventListener('click', () => applyCatalogMaterial(item, false));
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.textContent = t('mat.savePreset');
+  save.disabled = blocked || !rec;
+  save.addEventListener('click', () => applyCatalogMaterial(item, true));
+  actions.append(apply, save);
+  card.appendChild(actions);
+  return card;
+}
+
+function renderMatCatalog() {
+  const M = matCatalogModule();
+  const grid = $('matGrid');
+  if (!M || !grid) return;
+  const module = $('matModule')?.value || '5W';
+  const action = $('matAction')?.value || 'engrave';
+  const query = matCatalogState.query.trim().toLowerCase();
+  const list = M.catalogMaterials(matCatalogState.family).filter((item) => {
+    if (!query) return true;
+    return (
+      t(item.nameKey).toLowerCase().includes(query) ||
+      item.id.toLowerCase().includes(query)
+    );
+  });
+  grid.replaceChildren();
+  if (!list.length) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.textContent = t('mat.empty');
+    grid.appendChild(empty);
+    return;
+  }
+  for (const item of list) grid.appendChild(matCard(item, module, action));
+}
+
+function openMatCatalog() {
+  const M = matCatalogModule();
+  if (!M) return;
+  // O catálogo abre no módulo/ação que o formulário está usando.
+  const mod = $('matModule');
+  if (mod && el.profileModule) mod.value = el.profileModule.value;
+  const act = $('matAction');
+  if (act && el.profileAction) act.value = el.profileAction.value;
+  const family = $('matFamily');
+  if (family && family.options.length <= 1) {
+    const all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = t('mat.filter.all');
+    family.appendChild(all);
+    for (const key of M.catalogFamilies()) {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = t(`mat.family.${key}`);
+      family.appendChild(option);
+    }
+  }
+  setMatStatus('');
+  renderMatCatalog();
+  $('matOverlay')?.classList.remove('hidden');
+}
+
+function closeMatCatalog() {
+  $('matOverlay')?.classList.add('hidden');
+}
+
+/**
+ * Aplica a recomendação do manual (mesmo caminho do perfil de material) e, se
+ * pedido, abre o preset com nome/notas prontos para salvar.
+ */
+function applyCatalogMaterial(item, savePreset) {
+  const M = matCatalogModule();
+  if (!M) return;
+  if (!M.canApplyMaterial(item)) {
+    setMatStatus(t('mat.dangerBlocked'), true);
+    return;
+  }
+  const module = $('matModule')?.value || '5W';
+  const action = $('matAction')?.value || 'engrave';
+  const rec = M.materialRecommendation(item, module, action);
+  if (!rec) {
+    setMatStatus(t('mat.noRecipe'), true);
+    return;
+  }
+  if (el.profileModule) el.profileModule.value = module;
+  if (el.profileAction) el.profileAction.value = action;
+  populateMaterials();
+  if (el.profileMaterial) el.profileMaterial.value = rec.material;
+  if (el.profileMaterial?.value !== rec.material) {
+    setMatStatus(t('mat.noRecipe'), true);
+    return;
+  }
+  applyProfile();
+  const name = t(item.nameKey);
+  appendLine(t('mat.applied', { name }), 'ok');
+  closeMatCatalog();
+  if (!savePreset) return;
+  if (el.presetName) {
+    const thickness = item.thicknessMm ? ` ${item.thicknessMm} mm` : '';
+    const actionLabel = t(action === 'cut' ? 'action.cut' : 'action.engrave');
+    el.presetName.value = `${name}${thickness} — ${actionLabel}`;
+  }
+  if (el.presetNotes) {
+    el.presetNotes.value = item.noteKey ? t(item.noteKey) : '';
+  }
+  void openPresetModal({ new: true });
+}
+
+if ($('matCatalog')) {
+  $('matCatalog').addEventListener('click', openMatCatalog);
+  $('matClose')?.addEventListener('click', closeMatCatalog);
+  $('matOverlay')?.addEventListener('click', (ev) => {
+    if (ev.target === $('matOverlay')) closeMatCatalog();
+  });
+  $('matModule')?.addEventListener('change', renderMatCatalog);
+  $('matAction')?.addEventListener('change', renderMatCatalog);
+  $('matFamily')?.addEventListener('change', () => {
+    matCatalogState.family = $('matFamily').value;
+    renderMatCatalog();
+  });
+  $('matSearch')?.addEventListener('input', () => {
+    matCatalogState.query = $('matSearch').value;
+    renderMatCatalog();
+  });
+}
+
+// ---------------------------------------- fila de trabalhos (RF-GC-13)
+//
+// A agenda guarda **caminhos** (o main persiste e lê o arquivo na vez dele).
+// Um item por vez: ao terminar, o próximo entra sozinho; erro/alarme ou "Parar
+// fila" pausam a fila. O Stop e o emergência da barra continuam valendo.
+
+const queueState = { items: [], running: false, busy: false, ready: false };
+
+function queueModule() {
+  return window.GRBL_QUEUE;
+}
+
+function queueActive() {
+  return queueState.running;
+}
+
+function setQueueStatus(text, isError = false) {
+  const status = $('queueStatus');
+  if (!status) return;
+  status.textContent = text;
+  status.classList.toggle('error', isError);
+}
+
+function queueItemButton(label, title, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+/** Desenha a lista e a barra da gravação (uma função só: estado → tela). */
+function renderQueue() {
+  const Q = queueModule();
+  const list = $('queueList');
+  if (!Q || !list) return;
+  const progress = Q.queueProgress(queueState.items);
+  list.replaceChildren();
+  queueState.items.forEach((item, index) => {
+    const li = document.createElement('li');
+    li.className = `queue-item ${item.status}`;
+    li.dataset.id = item.id;
+
+    const name = document.createElement('span');
+    name.className = 'queue-name';
+    name.textContent = t('queue.item', { index: index + 1, name: item.name });
+    name.title = item.path;
+
+    const size = document.createElement('span');
+    size.className = 'queue-size';
+    size.textContent = formatBytes(item.sizeBytes);
+
+    const chip = document.createElement('span');
+    chip.className = `queue-chip ${item.status}`;
+    chip.textContent = t(`queue.status.${item.status}`);
+
+    li.append(name, size, chip);
+    if (!queueState.running) {
+      const up = queueItemButton(
+        '↑',
+        t('queue.up'),
+        () => void moveQueueItem(item.id, -1),
+      );
+      up.disabled = index === 0;
+      const down = queueItemButton(
+        '↓',
+        t('queue.down'),
+        () => void moveQueueItem(item.id, 1),
+      );
+      down.disabled = index === queueState.items.length - 1;
+      const remove = queueItemButton(
+        '✕',
+        t('queue.remove'),
+        () => void removeQueueItem(item.id),
+      );
+      li.append(up, down, remove);
+    }
+    list.appendChild(li);
+  });
+
+  const empty = $('queueEmpty');
+  if (empty) empty.classList.toggle('hidden', queueState.items.length > 0);
+  const countText = queueState.items.length
+    ? t('queue.count', { done: progress.done, total: progress.total })
+    : '';
+  if ($('queueCount')) $('queueCount').textContent = countText;
+  if ($('queueCardCount')) $('queueCardCount').textContent = countText;
+  const busy = state.jobState === 'running' || state.jobState === 'paused';
+  if ($('queueStart')) {
+    $('queueStart').disabled =
+      queueState.running || busy || progress.pending + progress.running === 0;
+  }
+  if ($('queueClear')) {
+    $('queueClear').disabled = queueState.running || !queueState.items.length;
+  }
+  if ($('queueAdd')) $('queueAdd').disabled = queueState.running;
+
+  // Barra fixa da gravação: fila x/y + "Parar fila".
+  const runningItem = queueState.items.find((i) => i.status === 'running');
+  const bar = $('jobBarQueue');
+  if (bar) {
+    bar.classList.toggle('hidden', !queueState.running);
+    if (queueState.running) {
+      bar.textContent = runningItem
+        ? t('queue.bar', {
+            position: progress.position,
+            total: progress.total,
+            name: runningItem.name,
+          })
+        : t('queue.bar.waiting', {
+            position: progress.position,
+            total: progress.total,
+          });
+    }
+  }
+  if ($('queueStopBtn')) {
+    $('queueStopBtn').classList.toggle('hidden', !queueState.running);
+    $('queueStopBtn').disabled = !queueState.running;
+  }
+}
+
+async function saveQueue() {
+  // O main saneia `running` → `pending` ao gravar (um reinício não deixa item
+  // "gravando" para sempre). Em memória o item em execução continua `running`.
+  const runningId =
+    queueState.items.find((item) => item.status === 'running')?.id ?? '';
+  try {
+    queueState.items = await window.grbl.queueSave(queueState.items);
+  } catch (err) {
+    setQueueStatus(t('queue.loadFail', { msg: err.message }), true);
+  }
+  if (runningId) {
+    queueState.items = queueState.items.map((item) =>
+      item.id === runningId ? { ...item, status: 'running' } : item,
+    );
+  }
+  renderQueue();
+}
+
+async function queueInit() {
+  try {
+    await loadBundle('queue.js');
+  } catch {
+    return;
+  }
+  queueState.ready = true;
+  try {
+    queueState.items = queueModule().sanitizeQueue(
+      await window.grbl.queueLoad(),
+    );
+  } catch (err) {
+    appendLine(t('queue.loadFail', { msg: err.message }), 'error');
+  }
+  renderQueue();
+}
+
+async function addQueueFiles() {
+  try {
+    const picked = await window.grbl.queuePick();
+    if (!picked.length) return;
+    queueState.items = queueModule().queueAdd(queueState.items, picked);
+    await saveQueue();
+    setQueueStatus(t('queue.added', { count: picked.length }));
+  } catch (err) {
+    setQueueStatus(t('queue.loadFail', { msg: err.message }), true);
+  }
+}
+
+async function moveQueueItem(id, delta) {
+  queueState.items = queueModule().queueMove(queueState.items, id, delta);
+  await saveQueue();
+}
+
+async function removeQueueItem(id) {
+  queueState.items = queueModule().queueRemove(queueState.items, id);
+  await saveQueue();
+}
+
+async function clearQueue() {
+  if (queueState.running) return;
+  queueState.items = [];
+  await saveQueue();
+  setQueueStatus('');
+}
+
+function openQueue() {
+  renderQueue();
+  $('queueOverlay')?.classList.remove('hidden');
+}
+
+function closeQueue() {
+  $('queueOverlay')?.classList.add('hidden');
+}
+
+/** Começa a fila: tudo volta a "na fila" e o primeiro item entra. */
+async function startQueue() {
+  if (!state.connected) {
+    setQueueStatus(t('queue.needConnection'), true);
+    return;
+  }
+  if (state.jobState === 'running' || state.jobState === 'paused') {
+    setQueueStatus(t('queue.busy'), true);
+    return;
+  }
+  if (batchActive() || productionActive()) {
+    setQueueStatus(t('queue.busy'), true);
+    return;
+  }
+  queueState.items = queueModule().queuePrepareRun(queueState.items);
+  queueState.running = true;
+  queueState.busy = false;
+  await saveQueue();
+  closeQueue();
+  void queueRunNext();
+}
+
+/** Para a fila: interrompe o item atual e o devolve para "na fila". */
+async function stopQueue() {
+  if (!queueState.running) return;
+  queueState.running = false;
+  if (queueState.busy) {
+    const running = queueState.items.find((i) => i.status === 'running');
+    if (running) {
+      queueState.items = queueModule().queueMark(
+        queueState.items,
+        running.id,
+        'pending',
+      );
+    }
+    queueState.busy = false;
+    try {
+      await window.grbl.stopJob();
+    } catch {
+      // Sem conexão não há o que parar.
+    }
+  }
+  await saveQueue();
+  appendLine(t('queue.stopped'), 'message');
+  setQueueStatus(t('queue.stopped'));
+}
+
+async function queueRunNext() {
+  if (!queueState.running || queueState.busy) return;
+  const Q = queueModule();
+  const index = Q.queueNextIndex(queueState.items);
+  if (index < 0) {
+    queueState.running = false;
+    queueState.busy = false;
+    await saveQueue();
+    appendLine(t('queue.done', { total: queueState.items.length }), 'ok');
+    return;
+  }
+  const item = queueState.items[index];
+  queueState.items = Q.queueMark(queueState.items, item.id, 'running');
+  queueState.busy = true;
+  renderQueue();
+  await saveQueue();
+
+  let opened;
+  try {
+    opened = await window.grbl.queueRead(item.path);
+  } catch (err) {
+    queueState.items = Q.queueMark(queueState.items, item.id, 'failed');
+    queueState.busy = false;
+    console.warn('fila:', err);
+    appendLine(t('queue.itemMissing', { name: item.name }), 'error');
+    await saveQueue();
+    void queueRunNext();
+    return;
+  }
+  applyJobLines(opened.name, opened.text);
+  if (!state.lines.length) {
+    queueState.items = Q.queueMark(queueState.items, item.id, 'failed');
+    queueState.busy = false;
+    appendLine(t('queue.itemMissing', { name: item.name }), 'error');
+    await saveQueue();
+    void queueRunNext();
+    return;
+  }
+  // O pré-voo roda uma vez, no primeiro item (como no lote/modo produção).
+  if (index === 0 && !(await confirmPreflight(state.lines))) {
+    queueState.items = Q.queueMark(queueState.items, item.id, 'pending');
+    queueState.running = false;
+    queueState.busy = false;
+    appendLine(t('queue.preflightCancelled'), 'error');
+    await saveQueue();
+    return;
+  }
+  const progress = Q.queueProgress(queueState.items);
+  appendLine(
+    t('queue.started', {
+      name: item.name,
+      position: progress.position,
+      total: progress.total,
+    }),
+    'ok',
+  );
+  const started = await beginJob(0, { skipPreflight: true });
+  if (!started) {
+    queueState.items = Q.queueMark(queueState.items, item.id, 'pending');
+    queueState.running = false;
+    queueState.busy = false;
+    appendLine(t('queue.needConnection'), 'error');
+    await saveQueue();
+  }
+}
+
+/** Item concluído: marca e chama o próximo (com uma folga para o gotoZero). */
+async function queueItemFinished() {
+  const Q = queueModule();
+  const running = queueState.items.find((i) => i.status === 'running');
+  if (running) {
+    queueState.items = Q.queueMark(queueState.items, running.id, 'done');
+  }
+  queueState.busy = false;
+  await saveQueue();
+  const progress = Q.queueProgress(queueState.items);
+  if (running) {
+    appendLine(
+      t('queue.itemDone', {
+        name: running.name,
+        done: progress.done,
+        total: progress.total,
+      }),
+      'ok',
+    );
+  }
+  window.setTimeout(() => void queueRunNext(), 600);
+}
+
+/** Item abortado (erro/alarme/Stop do painel): a fila para e espera decisão. */
+async function queueItemFailed(reason) {
+  const Q = queueModule();
+  const running = queueState.items.find((i) => i.status === 'running');
+  if (running) {
+    queueState.items = Q.queueMark(queueState.items, running.id, 'failed');
+  }
+  queueState.running = false;
+  queueState.busy = false;
+  await saveQueue();
+  appendLine(
+    t('queue.itemFailed', {
+      name: running?.name ?? '—',
+      reason: reason ?? '—',
+    }),
+    'error',
+  );
+}
+
+if ($('queueOpen')) {
+  $('queueOpen').addEventListener('click', openQueue);
+  $('queueClose')?.addEventListener('click', closeQueue);
+  $('queueOverlay')?.addEventListener('click', (ev) => {
+    if (ev.target === $('queueOverlay')) closeQueue();
+  });
+  $('queueAdd')?.addEventListener('click', () => void addQueueFiles());
+  $('queueClear')?.addEventListener('click', () => void clearQueue());
+  $('queueStart')?.addEventListener('click', () => void startQueue());
+  $('queueStopBtn')?.addEventListener('click', () => void stopQueue());
+  void queueInit();
+}
+
 window.grbl.onJob((job) => {
   setJobState(job.state);
   if (job.state === 'finished') {
@@ -14859,7 +15425,10 @@ window.grbl.onJob((job) => {
     void recordJobInLibrary();
     // Volta o laser para a origem XY (caso precise repetir a gravação).
     if (state.connected) window.grbl.gotoZero();
-    if (batchActive()) {
+    if (queueActive()) {
+      // Fila de trabalhos (RF-GC-13): o próximo item entra sozinho.
+      void queueItemFinished();
+    } else if (batchActive()) {
       // Lote (RF-SYM-10): a fila espera a troca da peça em vez de reabrir o
       // posicionamento — o próximo envio sai pelo botão "Próxima peça".
       batchPieceFinished();
@@ -14878,6 +15447,7 @@ window.grbl.onJob((job) => {
     // peça pelo "Começar na peça", pular ou encerrar) para o usuário.
     if (batchActive()) batchPieceFailed(job.error);
     else if (productionActive()) productionCopyFailed(job.error);
+    else if (queueActive()) void queueItemFailed(job.error);
   }
 });
 

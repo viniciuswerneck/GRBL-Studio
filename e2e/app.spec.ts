@@ -29,7 +29,12 @@ const APP_ROOT = path.join(__dirname, '..');
  * temporário para não tocar nas preferências do ambiente.
  */
 async function launchApp(
-  options: { onboarding?: boolean; prefs?: Record<string, unknown> } = {},
+  options: {
+    onboarding?: boolean;
+    prefs?: Record<string, unknown>;
+    /** Arquivos extras gravados no `userData` antes de abrir (ex.: fila). */
+    files?: Record<string, string>;
+  } = {},
 ) {
   const userData = mkdtempSync(path.join(tmpdir(), 'grbl-e2e-'));
   // O tour de boas-vindas (P0.4) só aparece na primeira execução; nos testes
@@ -40,6 +45,9 @@ async function launchApp(
       JSON.stringify({ onboarding: 1, ...(options.prefs ?? {}) }),
       'utf8',
     );
+  }
+  for (const [name, content] of Object.entries(options.files ?? {})) {
+    writeFileSync(path.join(userData, name), content, 'utf8');
   }
   const app = await electron.launch({
     args: [APP_ROOT, `--user-data-dir=${userData}`, '--no-sandbox'],
@@ -52,7 +60,7 @@ async function launchApp(
     await app.close();
     rmSync(userData, { recursive: true, force: true });
   };
-  return { app, page, close };
+  return { app, page, close, userData };
 }
 
 test.describe('GRBL Studio — fluxo da UI', () => {
@@ -1567,6 +1575,8 @@ test.describe('GRBL Studio — fluxo da UI', () => {
  */
 function startGrblTcp(
   statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>',
+  /** Atraso antes de cada `ok` (ms) — simula uma máquina ocupada. */
+  delayMs = 0,
 ): Promise<{ port: number; close: () => void }> {
   const settings = [
     '$0=10',
@@ -1622,7 +1632,9 @@ function startGrblTcp(
         buffer = buffer.slice(index + 1);
         index = buffer.indexOf('\n');
         if (!line) continue;
-        socket.write(replies[line] ?? 'ok\r\n');
+        const reply = replies[line] ?? 'ok\r\n';
+        if (delayMs > 0) setTimeout(() => socket.write(reply), delayMs);
+        else socket.write(reply);
       }
     });
     socket.on('error', () => {});
@@ -3057,6 +3069,258 @@ test.describe('GRBL Studio — presets de material (P2.12/RF-IMG-8)', () => {
       await expect(page.locator('#profileModule')).toHaveValue('3W');
     } finally {
       await close();
+    }
+  });
+  test('catálogo de materiais aplica a receita e bloqueia o material perigoso', async () => {
+    const { page, close } = await launchApp();
+    try {
+      await page.click('.sidebar-tabs .tab[data-tab="image"]');
+      await page.click('#matCatalog');
+      await expect(page.locator('#matOverlay')).toBeVisible();
+      await expect(page.locator('#matGrid .mat-card')).toHaveCount(26);
+
+      // Plástico: PVC, policarbonato, ABS e vinil são "Perigo" (sem aplicar).
+      await page.selectOption('#matFamily', 'plastic');
+      await expect(page.locator('#matGrid .mat-card')).toHaveCount(5);
+      const pvc = page.locator('.mat-card[data-id="pvc"]');
+      await expect(pvc.locator('.mat-badge')).toHaveText('Perigo');
+      await expect(pvc.locator('.mat-actions button').first()).toBeDisabled();
+      await expect(pvc).toContainText('NÃO GRAVE');
+
+      // Madeira com o módulo 5 W e corte: o MDF tem receita do manual.
+      await page.selectOption('#matFamily', 'wood');
+      await page.selectOption('#matModule', '5W');
+      await page.selectOption('#matAction', 'cut');
+      const mdf = page.locator('.mat-card[data-id="mdf"]');
+      await expect(mdf.locator('.mat-rec')).toContainText('mm/min');
+      await mdf.locator('.mat-actions button').first().click();
+      await expect(page.locator('#matOverlay')).toBeHidden();
+      await expect(page.locator('#profileModule')).toHaveValue('5W');
+      await expect(page.locator('#profileAction')).toHaveValue('cut');
+      await expect(page.locator('#profileMaterial')).toHaveValue('Tábua 3 mm');
+      await expect(page.locator('#imgSpeed')).not.toHaveValue('');
+      await expect(page.locator('#imgSmax')).not.toHaveValue('');
+
+      // "Aplicar e salvar preset" já abre o preset com nome/notas prontos.
+      await page.click('#matCatalog');
+      await page.selectOption('#matFamily', 'wood');
+      await page.selectOption('#matModule', '5W');
+      await page.selectOption('#matAction', 'cut');
+      await page
+        .locator('.mat-card[data-id="mdf"] .mat-actions button')
+        .nth(1)
+        .click();
+      await expect(page.locator('#presetOverlay')).toBeVisible();
+      await expect(page.locator('#presetName')).toHaveValue(/MDF/);
+      await expect(page.locator('#presetNotes')).not.toHaveValue('');
+    } finally {
+      await close();
+    }
+  });
+
+  test('fila de trabalhos persiste, reordena e explica a falta de conexão', async () => {
+    const queueFile = 'queue.json';
+    const { page, close, userData } = await launchApp({
+      files: {
+        [queueFile]: JSON.stringify([
+          {
+            id: 'aaaaaa01',
+            path: '/tmp/peca-1.gcode',
+            name: 'peca-1.gcode',
+            sizeBytes: 184320,
+            status: 'pending',
+            addedAt: 1,
+          },
+          {
+            id: 'aaaaaa02',
+            path: '/tmp/peca-2.gcode',
+            name: 'peca-2.gcode',
+            sizeBytes: 92160,
+            status: 'done',
+            addedAt: 2,
+          },
+        ]),
+      },
+    });
+    try {
+      await page.click('.sidebar-tabs .tab[data-tab="run"]');
+      await expect(page.locator('#queueCardCount')).toHaveText(
+        '1 de 2 concluídos',
+      );
+      await page.click('#queueOpen');
+      await expect(page.locator('#queueOverlay')).toBeVisible();
+      await expect(page.locator('.queue-item')).toHaveCount(2);
+      await expect(page.locator('.queue-item').first()).toContainText(
+        'peca-1.gcode',
+      );
+      await expect(
+        page.locator('.queue-item').first().locator('.queue-chip'),
+      ).toHaveText('Na fila');
+
+      // Sem conexão o clique explica o motivo (não fica mudo).
+      await page.click('#queueStart');
+      await expect(page.locator('#queueStatus')).toContainText(
+        'Conecte a máquina',
+      );
+
+      // Descer o primeiro item e conferir que o JSON da fila mudou.
+      await page
+        .locator('.queue-item')
+        .first()
+        .getByRole('button', { name: 'Descer' })
+        .click();
+      await expect(page.locator('.queue-item').first()).toContainText(
+        'peca-2.gcode',
+      );
+      const saved = JSON.parse(
+        readFileSync(path.join(userData, queueFile), 'utf8'),
+      ) as Array<{ name: string }>;
+      expect(saved.map((item) => item.name)).toEqual([
+        'peca-2.gcode',
+        'peca-1.gcode',
+      ]);
+
+      // Remover e limpar.
+      await page
+        .locator('.queue-item')
+        .first()
+        .getByRole('button', { name: 'Remover' })
+        .click();
+      await expect(page.locator('.queue-item')).toHaveCount(1);
+      await page.click('#queueClear');
+      await expect(page.locator('.queue-item')).toHaveCount(0);
+      await expect(page.locator('#queueEmpty')).toBeVisible();
+      await expect(page.locator('#queueStart')).toBeDisabled();
+    } finally {
+      await close();
+    }
+  });
+  test('fila grava os dois programas em sequência no emulador', async () => {
+    const emulator = await startGrblTcp();
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-queue-'));
+    const fileA = path.join(dir, 'peca-a.gcode');
+    const fileB = path.join(dir, 'peca-b.gcode');
+    const program = [
+      'G21',
+      'G90',
+      'G0 X10 Y10',
+      'M4 S200',
+      'G1 X20 Y20 F500',
+      'M5',
+    ].join('\n');
+    writeFileSync(fileA, program, 'utf8');
+    writeFileSync(fileB, program, 'utf8');
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+      files: {
+        'queue.json': JSON.stringify([
+          {
+            id: 'aaaaaa01',
+            path: fileA,
+            name: 'peca-a.gcode',
+            sizeBytes: program.length,
+            status: 'pending',
+            addedAt: 1,
+          },
+          {
+            id: 'aaaaaa02',
+            path: fileB,
+            name: 'peca-b.gcode',
+            sizeBytes: program.length,
+            status: 'pending',
+            addedAt: 2,
+          },
+        ]),
+      },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await page.click('.sidebar-tabs .tab[data-tab="run"]');
+      await page.click('#queueOpen');
+      await expect(page.locator('.queue-item')).toHaveCount(2);
+      await page.click('#queueStart');
+      await expect(page.locator('#queueOverlay')).toBeHidden();
+
+      // A barra mostra a fila rodando (1/2) com "Parar fila" à mão.
+      await expect(page.locator('#jobBarQueue')).toContainText('peca-a.gcode');
+      await expect(page.locator('#queueStopBtn')).toBeVisible();
+
+      // O emulador responde `ok` a tudo: os dois itens terminam sozinhos.
+      await expect(page.locator('#jobBarQueue')).toBeHidden({ timeout: 30000 });
+      await expect(page.locator('#consoleOutput')).toContainText(
+        'Fila concluída',
+      );
+      await page.click('#queueOpen');
+      await expect(page.locator('.queue-chip.done')).toHaveCount(2);
+      await expect(page.locator('#queueCount')).toHaveText('2 de 2 concluídos');
+    } finally {
+      await close();
+      emulator.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+  test('parar a fila devolve o item atual para a fila', async () => {
+    const emulator = await startGrblTcp(undefined, 25);
+    const dir = mkdtempSync(path.join(tmpdir(), 'grbl-queue-stop-'));
+    const fileA = path.join(dir, 'peca-longa.gcode');
+    const fileB = path.join(dir, 'peca-longa-2.gcode');
+    const lines = ['G21', 'G90', 'G0 X10 Y10', 'M4 S200'];
+    for (let i = 0; i < 60; i++) lines.push(`G1 X${10 + (i % 20)} Y20 F500`);
+    lines.push('M5');
+    writeFileSync(fileA, lines.join('\n'), 'utf8');
+    writeFileSync(fileB, lines.join('\n'), 'utf8');
+    const { page, close } = await launchApp({
+      prefs: { autoConnect: false },
+      files: {
+        'queue.json': JSON.stringify([
+          {
+            id: 'aaaaaa01',
+            path: fileA,
+            name: 'peca-longa.gcode',
+            sizeBytes: 1,
+            status: 'pending',
+            addedAt: 1,
+          },
+          {
+            id: 'aaaaaa02',
+            path: fileB,
+            name: 'peca-longa-2.gcode',
+            sizeBytes: 1,
+            status: 'pending',
+            addedAt: 2,
+          },
+        ]),
+      },
+    });
+    try {
+      await page.selectOption('#transportKind', 'tcp');
+      await page.fill('#tcpHost', '127.0.0.1');
+      await page.fill('#tcpPort', String(emulator.port));
+      await page.click('#connectBtn');
+      await expect(page.locator('#stateBadge')).toHaveText(/Ocioso|Idle/);
+
+      await page.click('.sidebar-tabs .tab[data-tab="run"]');
+      await page.click('#queueOpen');
+      await page.click('#queueStart');
+      await expect(page.locator('#jobBarQueue')).toContainText(
+        'peca-longa.gcode',
+      );
+      await page.click('#queueStopBtn');
+      await expect(page.locator('#jobBarQueue')).toBeHidden();
+      await expect(page.locator('#consoleOutput')).toContainText('Fila parada');
+
+      await page.click('#queueOpen');
+      await expect(page.locator('.queue-chip.running')).toHaveCount(0);
+      await expect(page.locator('.queue-chip.pending')).toHaveCount(2);
+    } finally {
+      await close();
+      emulator.close();
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

@@ -153,6 +153,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-GC-10 | Editor de G-code: numeração, realce, edição de linha, validação pelo pré-voo e reenvio de trecho com preâmbulo modal. | Should | ✅ |
 | RF-GC-11 | Biblioteca de jobs: últimos 50 programas executados, com miniatura, reexecutar e duplicar (sem depender do arquivo original). | Could | ✅ |
 | RF-GC-12 | Modo produção: repetir o programa atual N vezes (1…999), com contador, pausa para trocar a peça entre cópias, repetição da peça interrompida e pré-voo uma vez por série. A troca de programa fica travada durante a série e pausa/cancelamento continuam acessíveis na barra de gravação. | Should | ✅ |
+| RF-GC-13 | **Fila de trabalhos (agenda)**: enfileirar arquivos G-code, reordenar, remover e gravar **um após o outro**; a fila é **persistida** (`queue.json`) e sobrevive ao reinício, o pré-voo roda uma vez no primeiro item, o item concluído avança sozinho e erro/alarme/“Parar fila” pausam a agenda devolvendo o item atual para a fila. O Stop e a emergência continuam acessíveis na barra de gravação. | Should | ✅ |
 
 ### M5 — Status, alarmes e segurança
 
@@ -216,6 +217,7 @@ Prioridade: **Must** / **Should** / **Could**. Status refere-se ao MVP atual
 | RF-IMG-11 | **Máxima velocidade na máquina real**: varredura bidirecional (zigue-zague), pulo de linhas em branco e mínimo de linhas no arquivo (mesmo `S`/`F` num só `G1`). | Should | ✅ |
 | RF-IMG-12 | Avisar quando a velocidade pedida (com a velocidade no claro) passa de `$110`/`$111` da máquina. | Could | ✅ |
 | RF-IMG-14 | **Presets de material do usuário**: salvar os ajustes atuais (potência, velocidade, passadas, modo) com nome e notas, aplicar, excluir e **exportar/importar JSON** para compartilhar receitas; cada preset mostra a **dose** (J/mm) para comparar e **levar a receita entre módulos** (3 W/5 W/10 W). | Should | ✅ |
+| RF-IMG-15 | **Catálogo de materiais com ficha de segurança**: fichas por material (família, espessura típica, recomendação do manual de potência/velocidade/passadas e **aviso de risco**). Material perigoso — PVC, policarbonato, ABS, vinil, fibra de vidro e espuma de poliuretano — é marcado como **Perigo** e **não é aplicado**; aplicar preenche os campos como o perfil de material e pode abrir o preset com nome/notas prontos. Filtro por família e busca por nome. | Should | ✅ |
 | RF-IMG-13 | **Teste de foco (spot)**: escada de Z **relativa ao Z atual** (G91/G90, volta ao início) com duas potências por passo, para achar a melhor altura de foco; prévia da faixa e aviso de potências iguais. | Could | ✅ |
 
 ### M10 — Macros e botões customizados

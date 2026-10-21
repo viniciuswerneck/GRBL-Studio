@@ -60,6 +60,11 @@ export const CHANNELS = {
   jobLibRead: 'grbl:joblib:read',
   jobLibRemove: 'grbl:joblib:remove',
   jobLibClear: 'grbl:joblib:clear',
+  // Fila de trabalhos (RF-GC-13): agenda persistida
+  queueLoad: 'queue:load',
+  queueSave: 'queue:save',
+  queuePick: 'queue:pick',
+  queueRead: 'queue:read',
 
   // Main -> Renderer (push)
   evConsole: 'grbl:ev:console',

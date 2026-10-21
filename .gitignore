@@ -5,6 +5,7 @@ public/gcode.worker.js
 public/materialTest.js
 public/macros.js
 public/materials.js
+public/queue.js
 public/machines.js
 public/preview.js
 public/tiling.js

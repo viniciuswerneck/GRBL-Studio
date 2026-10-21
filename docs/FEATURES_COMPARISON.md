@@ -32,6 +32,8 @@
 | Gabarito / molde para repetir a peça | Não | Sim (contorno externo + folga, marcas L opcionais no mesmo grupo) | ✅ |
 | Biblioteca de formas prontas | Parcial (símbolos/ícones) | Sim (14 formas offline, clique ou arrastar, tamanho em mm, um grupo) | ✅ |
 | Tira de teste de código (menor tamanho legível) | Não | Sim (mesmo símbolo em até 10 tamanhos, legenda embaixo, um bloco) | ✅ |
+| Catálogo de materiais com aviso de segurança | Parcial (tabela do manual) | Sim (26 fichas, recomendação por módulo/ação, PVC/ABS/vinil em **Perigo** e bloqueados) | ✅ |
+| Fila de trabalhos (agenda persistida) | Não | Sim (enfileirar/reordenar, grava em sequência, pré-voo uma vez, Stop e emergência à mão) | ✅ |
 | Booleanas / contorno paralelo (offset) | Não | Sim | ✅ |
 | Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |
@@ -95,7 +97,7 @@
 | macOS | Não | **Empacotado** (.dmg/.zip, CI; não validado em HW) | 🟡 |
 | Windows | Sim | **Empacotado** (.exe/.msi/.zip, CI; não validado em HW) | 🟡 |
 | Dark/Light theme | Múltiplos | 11 temas | ✅ |
-| i18n | Não | pt-BR/en/es (1 432 chaves, paridade por type-check) | ✅ |
+| i18n | Não | pt-BR/en/es (1 587 chaves, paridade por type-check) | ✅ |
 | Assistente para leigos | Não | Sim (wizard) | ✅ |
 | Log de sessão persistente | Não | Sim (exportável) | ✅ |
 | Auto-update | Não | Sim (`electron-updater`) | ✅ |

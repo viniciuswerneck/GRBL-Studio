@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 20/10/2026 (v0.20.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 20/10/2026 (v0.21.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.20.0)
+## Estado atual (v0.21.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 470 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 587 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -106,7 +106,14 @@ Já entregue (não repetir no planejamento):
       tamanhos, enfileirados com espaço ajustável e o tamanho escrito embaixo
       (fonte de traço único) — descobre o menor tamanho legível do material —
       v0.20.0.
-- [x] **970 testes** (Vitest, 61 arquivos) + E2E Playwright (60) + smoke headless.
+- [x] **Catálogo de materiais com avisos** (RF-IMG-15): ficha por material com
+      a recomendação do manual e o **aviso de risco**; PVC, policarbonato, ABS,
+      vinil, fibra de vidro e espuma de poliuretano ficam em **Perigo** e não
+      são aplicados — v0.21.0.
+- [x] **Fila de trabalhos (agenda)** (RF-GC-13): enfileirar, reordenar e gravar
+      os programas em sequência, com a fila persistida, pré-voo uma vez e
+      Stop/emergência sempre à mão — v0.21.0.
+- [x] **981 testes** (Vitest, 62 arquivos) + E2E Playwright (64) + smoke headless.
 
 ---
 
@@ -117,7 +124,7 @@ A lista vinha **crescendo**: o Anexo B propôs **26 itens novos** em cima dos
 voltar a **encolher**, o backlog fica dividido em três — e nada novo entra na
 lista ativa.
 
-**A. Ativos (software puro, fecha aqui).** Restam **3**; cada release marca 1–2
+**A. Ativos (software puro, fecha aqui).** Restam **1**; cada release marca 1–2
 como ✅ e o número só cai:
 
 | # | Item | Esf. | Alvo | Pronto quando |
@@ -127,8 +134,8 @@ como ✅ e o número só cai:
 | 3 | ~~Texto em curva/arco~~ | S | ✅ v0.19 | RF-DSN-26: texto dobrado sobre arco de raio escolhido, sem esticar as letras |
 | 4 | ~~Biblioteca de símbolos~~ | S | ✅ v0.20 | RF-DSN-27: catálogo offline de formas arrastáveis, no tamanho escolhido |
 | 5 | ~~Tira de teste de código~~ | S | ✅ v0.20 | RF-DSN-28: mesmo símbolo em N tamanhos, com o tamanho anotado embaixo |
-| 6 | **Catálogo de materiais com avisos** | M | v0.21 | Ficha por material (potência/velocidade + segurança) ligada aos presets |
-| 7 | **Agenda / fila de trabalhos** | S | v0.21 | Fila persistida rodando em sequência com emergência acessível |
+| 6 | ~~Catálogo de materiais com avisos~~ | M | ✅ v0.21 | RF-IMG-15: ficha por material (potência/velocidade + segurança) ligada aos presets |
+| 7 | ~~Agenda / fila de trabalhos~~ | S | ✅ v0.21 | RF-GC-13: fila persistida rodando em sequência com emergência acessível |
 | 8 | **Centerline (imagem → linha única)** | M | v0.22 | Esqueletização com teste em logos reais |
 
 **B. Congelado por hardware/OS** — não conta como pendência ativa; sai daqui
@@ -375,8 +382,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
    renderer para TypeScript.
 5. **Candidatos novos do Anexo** — ✅ **abas, sobre-corte e custo por peça**
    (v0.14.0), **tiling** (v0.15.0), **marcas de registro** (v0.16.0), **gravar dos dois lados** (v0.17.0), **geradores** (v0.18.0), **gabarito** e **texto em arco** (v0.19.0),
-   **biblioteca de símbolos** e **tira de teste** (v0.20.0); seguem
-   abertos o kit de segurança/monitor; versões e esforço
+   **biblioteca de símbolos** e **tira de teste** (v0.20.0), **catálogo de
+   materiais** e **fila de trabalhos** (v0.21.0); seguem
+   abertos o kit de segurança/monitor e o **centerline** (v0.22); versões e esforço
    **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log

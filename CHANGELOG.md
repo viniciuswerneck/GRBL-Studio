@@ -6,6 +6,50 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-20
+
+Fecha os dois últimos itens **M/S** da fila ativa fora do centerline: o
+**catálogo de materiais com avisos** (gravar com segurança) e a **fila de
+trabalhos** (gravar vários programas em sequência).
+
+### Added — catálogo de materiais (RF-IMG-15)
+
+- Botão **“Materiais…”** na aba Imagem: catálogo **offline** de 26 fichas por
+  material (madeira, papel, plástico, couro, tecido, metal, vidro, pedra e
+  outros), com **família**, **espessura típica**, a **recomendação do manual**
+  (potência, velocidade e passadas para o módulo 3 W/5 W/10 W e a ação
+  gravar/cortar) e o **preparo** do material.
+- Cada ficha traz o **aviso de segurança**. **PVC, policarbonato, ABS, vinil,
+  fibra de vidro e espuma de poliuretano** são marcados como **Perigo** e os
+  botões ficam desligados — o aviso explica o gás liberado (cloro/HCl, HCN, pó
+  de vidro). Os demais avisam sobre fumaça, formaldeído, risco de incêndio e
+  preparo (tinta/papel térmico no vidro, exaustão em metal e couro).
+- **Aplicar** preenche módulo, ação, material, velocidade e `S-max` pelo mesmo
+  caminho do perfil de material; **Aplicar e salvar preset** abre o preset com
+  nome e notas prontos. Filtro por família e busca por nome.
+
+### Added — fila de trabalhos (RF-GC-13)
+
+- Cartão **“Fila de trabalhos”** na aba Execução: **adicionar arquivos**
+  (múltipla escolha), **reordenar** (↑/↓), **remover**, **limpar** e **iniciar**.
+  Um item por caminho; o tamanho e o estado aparecem na lista.
+- A fila é **persistida** em `queue.json` (só caminho/nome/estado — os programas
+  não são copiados) e sobrevive ao reinício. Item que estava “gravando” volta a
+  “na fila”.
+- **Iniciar** grava um item por vez: o **pré-voo roda uma vez** no primeiro, o
+  item concluído **avança sozinho** (com o retorno ao zero), e a barra de
+  gravação mostra `Fila x/y: nome` com **“Parar fila”**. Parar devolve o item
+  atual para a fila; **erro/alarme** marcam o item como falhou e pausam a agenda;
+  iniciar de novo **continua de onde parou** (só as falhas voltam; peças prontas
+  não são regravadas).
+- O Stop e o **emergência** da barra continuam valendo durante a fila. O renderer
+  só lê arquivos que estão na fila (lista de permissão no main).
+
+### Changed
+
+- O pré-voo do job agora informa se o envio realmente começou (a fila não fica
+  presa esperando um job que não partiu).
+
 ## [0.20.0] - 2026-10-20
 
 Fecha os dois últimos itens **S** da fila ativa: **biblioteca de símbolos**

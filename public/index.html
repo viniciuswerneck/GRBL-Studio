@@ -505,6 +505,14 @@
           <div class="hint" data-i18n="img.steps.hint">Passo 1: escolha a imagem · Passo 2: gere o G-code · Passo 3: conecte e envie.</div>
           <div class="row">
             <button type="button" id="imageOpen" data-i18n="img.chooseEllipsis">Escolher imagem…</button>
+            <button
+              type="button"
+              id="matCatalog"
+              data-i18n="mat.open"
+              data-i18n-title="mat.hint"
+            >
+              Materiais…
+            </button>
             <button type="button" id="imageReplace" class="hidden" data-i18n="img.replace">Trocar imagem…</button>
             <button type="button" id="imageCancel" class="hidden danger" data-i18n="nav.cancel">Cancelar</button>
           </div>
@@ -774,6 +782,19 @@
             </div>
           </details>
         </details>
+
+        <details class="card" id="cardQueue" open>
+          <summary data-i18n="queue.title">Fila de trabalhos</summary>
+          <div class="hint" data-i18n="queue.hintShort">
+            Enfileire programas e grave um após o outro; a fila fica salva.
+          </div>
+          <div class="row">
+            <button type="button" id="queueOpen" data-i18n="queue.open">
+              Abrir fila…
+            </button>
+            <span class="hint" id="queueCardCount"></span>
+          </div>
+        </details>
         </div>
 
         <div class="tab-panel" data-panel="macros">
@@ -956,6 +977,16 @@
         data-i18n="batch.next"
         data-i18n-title="batch.nextHint"
       >▶ Próxima peça</button>
+      <span class="job-bar-queue hidden" id="jobBarQueue" role="status" aria-live="polite"></span>
+      <button
+        type="button"
+        id="queueStopBtn"
+        class="hidden"
+        data-i18n="queue.stop"
+        data-i18n-title="queue.stopHint"
+      >
+        Parar fila
+      </button>
       <span class="job-bar-prod hidden" id="jobBarProd" role="status" aria-live="polite"></span>
       <button
         type="button"
@@ -3078,6 +3109,95 @@
           Dose = energia por milímetro (aproximada, sem o ponto do laser): serve
           para comparar receitas e transferir entre módulos.
         </p>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="matOverlay">
+      <div
+        class="modal mat-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="matTitle"
+      >
+        <header class="modal-head">
+          <h3 id="matTitle" data-i18n="mat.title">Catálogo de materiais</h3>
+          <button type="button" id="matClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body mat-body">
+          <p class="hint" data-i18n="mat.hint">
+            Ficha por material com a recomendação do manual e o aviso de
+            segurança. Material perigoso não é aplicado.
+          </p>
+          <div class="mat-filters">
+            <label class="field"
+              ><span data-i18n="profile.module">Módulo</span>
+              <select id="matModule">
+                <option value="3W">3W (Sculpfun C1)</option>
+                <option value="5W">5W</option>
+                <option value="10W">10W</option>
+              </select>
+            </label>
+            <label class="field"
+              ><span data-i18n="profile.action">Ação</span>
+              <select id="matAction">
+                <option value="engrave" data-i18n="action.engrave">Gravação</option>
+                <option value="cut" data-i18n="action.cut">Corte</option>
+              </select>
+            </label>
+            <label class="field"
+              ><span data-i18n="mat.filter.family">Família</span>
+              <select id="matFamily">
+                <option value="all" data-i18n="mat.filter.all">Todas as famílias</option>
+              </select>
+            </label>
+            <label class="field"
+              ><span data-i18n="mat.search">Buscar material</span>
+              <input
+                type="search"
+                id="matSearch"
+                data-i18n-placeholder="mat.searchPlaceholder"
+                placeholder="Ex.: MDF, acrílico, PVC…"
+                autocomplete="off"
+              />
+            </label>
+          </div>
+          <div class="mat-grid" id="matGrid"></div>
+          <p class="hint mat-status" id="matStatus" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="queueOverlay">
+      <div
+        class="modal queue-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="queueTitle"
+      >
+        <header class="modal-head">
+          <h3 id="queueTitle" data-i18n="queue.title">Fila de trabalhos</h3>
+          <span class="hint" id="queueCount"></span>
+          <button type="button" id="queueClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-toolbar">
+          <button type="button" id="queueAdd" data-i18n="queue.add">Adicionar arquivos…</button>
+          <button type="button" id="queueClear" data-i18n="queue.clear">Limpar fila</button>
+          <span class="spacer"></span>
+          <button type="button" id="queueStart" class="primary" data-i18n="queue.start">
+            Iniciar fila
+          </button>
+        </div>
+        <div class="modal-body queue-body">
+          <p class="hint" data-i18n="queue.hint">
+            Enfileire os programas na ordem de gravação. A fila fica salva e roda
+            um item por vez; o Stop e o emergência continuam à mão.
+          </p>
+          <p class="hint hidden" id="queueEmpty" data-i18n="queue.empty">
+            A fila está vazia. Adicione arquivos G-code.
+          </p>
+          <ol class="queue-list" id="queueList"></ol>
+          <p class="hint queue-status" id="queueStatus" role="status" aria-live="polite"></p>
+        </div>
       </div>
     </div>
 

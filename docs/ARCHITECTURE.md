@@ -111,6 +111,8 @@ primeira tela usa**:
 | `shared/protocol.ts` | Parser de status/`$$`/erros/alarmes (funções puras). | ✅ |
 | `shared/channels.ts` | Nomes de canais IPC (fonte única). | ✅ |
 | `services/PrefsStore` | Persistência em `<userData>/prefs.json` (ADR-6): porta, baud, tema, idioma, unidades, macros. | ✅ |
+| `services/JobLibrary` | Últimos jobs executados em `<userData>/joblib/` (índice + programa gzip). | ✅ |
+| `services/JobQueueStore` | Fila de trabalhos em `<userData>/queue.json` (RF-GC-13): só caminho/nome/estado, escrita atômica e **lista de permissão** de leitura — o renderer não lê arquivo arbitrário. | ✅ |
 | `shared/appInfo.ts` | Identidade do app (nome, autor, licença, URLs) + whitelist de links externos. | ✅ |
 | `main/menu.ts` | Menu nativo (Exibir/Tema/Idioma/Ajuda→Sobre) montado no idioma ativo. | ✅ |
 | `ipc.ts` (`file:save-gcode`) | Diálogo nativo e escrita do `.gcode` gerado pela UI. | ✅ |

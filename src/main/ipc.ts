@@ -62,6 +62,7 @@ import type {
 } from '../shared/types';
 import { GrblClient } from './services/GrblClient';
 import { JobLibrary } from './services/JobLibrary';
+import { JobQueueStore } from './services/JobQueueStore';
 import { PrefsStore } from './services/PrefsStore';
 import { SessionLog } from './services/SessionLog';
 
@@ -101,6 +102,8 @@ export interface IpcContext {
   log: SessionLog;
   /** Biblioteca de jobs executados (P2.9). */
   jobs: JobLibrary;
+  /** Fila de trabalhos persistida (RF-GC-13). */
+  queue: JobQueueStore;
 }
 
 export interface IpcHooks {
@@ -125,6 +128,8 @@ export function registerIpc(
   void log.init();
   // Biblioteca de jobs (P2.9): programas executados + miniatura.
   const jobs = new JobLibrary(path.join(app.getPath('userData'), 'joblib'));
+  // Fila de trabalhos (RF-GC-13): caminhos + estado, persistidos.
+  const queue = new JobQueueStore(app.getPath('userData'));
 
   const send = (channel: string, payload: unknown): void => {
     const win = getWindow();
@@ -851,7 +856,32 @@ export function registerIpc(
   ipcMain.handle(CHANNELS.jobLibRemove, (_evt, id: string) => jobs.remove(id));
   ipcMain.handle(CHANNELS.jobLibClear, () => jobs.clear());
 
-  return { client, prefs, log, jobs };
+  // ------------------------------------------------- fila de trabalhos (RF-GC-13)
+  ipcMain.handle(CHANNELS.queueLoad, () => queue.load());
+  ipcMain.handle(CHANNELS.queueSave, (_evt, items: unknown) =>
+    queue.save(items),
+  );
+  ipcMain.handle(CHANNELS.queuePick, async (evt): Promise<unknown[]> => {
+    const owner = BrowserWindow.fromWebContents(evt.sender);
+    const options: OpenDialogOptions = {
+      title: t('dlg.queueAdd'),
+      buttonLabel: t('dlg.open'),
+      properties: ['openFile', 'multiSelections'],
+      filters: GCODE_DIALOG_FILTERS,
+      defaultPath: await defaultDir(),
+    };
+    const result = owner
+      ? await dialog.showOpenDialog(owner, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || !result.filePaths.length) return [];
+    rememberDir(result.filePaths[0]);
+    return queue.addPaths(result.filePaths);
+  });
+  ipcMain.handle(CHANNELS.queueRead, (_evt, filePath: unknown) =>
+    queue.read(filePath),
+  );
+
+  return { client, prefs, log, jobs, queue };
 }
 
 /**

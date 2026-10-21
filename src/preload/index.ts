@@ -7,6 +7,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { CHANNELS } from '../shared/channels';
 import type { MenuAction } from '../shared/channels';
 import type { SettingRow } from '../shared/grblSettings';
+import type { JobQueueItem } from '../shared/jobQueue';
 import type {
   AppInfo,
   ConnectOptions,
@@ -133,6 +134,15 @@ const api = {
   /** Exporta os presets de material para um JSON (P2.12). */
   exportPresets: (content: string): Promise<string | null> =>
     ipcRenderer.invoke(CHANNELS.presetExport, content),
+  /** Fila de trabalhos (RF-GC-13): ler/gravar/escolher arquivos/ler programa. */
+  queueLoad: (): Promise<JobQueueItem[]> =>
+    ipcRenderer.invoke(CHANNELS.queueLoad),
+  queueSave: (items: JobQueueItem[]): Promise<JobQueueItem[]> =>
+    ipcRenderer.invoke(CHANNELS.queueSave, items),
+  queuePick: (): Promise<JobQueueItem[]> =>
+    ipcRenderer.invoke(CHANNELS.queuePick),
+  queueRead: (path: string): Promise<OpenedTextFile> =>
+    ipcRenderer.invoke(CHANNELS.queueRead, path),
   /** Abre um documento do editor (`.gstudio`). */
   openDesignDoc: (): Promise<OpenedTextFile | null> =>
     ipcRenderer.invoke(CHANNELS.designDocOpen),

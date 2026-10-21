@@ -3499,3 +3499,201 @@ body.prod-active .job-bar {
     transition: none;
   }
 }
+
+/* ------------------------------------------- catálogo de materiais (RF-IMG-15) */
+
+.mat-modal,
+.queue-modal {
+  width: min(900px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.queue-modal {
+  width: min(720px, 94vw);
+}
+
+.mat-body,
+.queue-body {
+  overflow-y: auto;
+}
+
+.mat-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.mat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--sp-2);
+}
+
+.mat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--sp-2);
+  border: 1px solid var(--stroke);
+  border-left: 3px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+}
+
+.mat-card.hazard-ok {
+  border-left-color: #30a46c;
+}
+
+.mat-card.hazard-caution {
+  border-left-color: #f5a524;
+}
+
+.mat-card.hazard-danger {
+  border-left-color: #e5484d;
+}
+
+.mat-card header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.mat-card h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.mat-th {
+  font-size: 10px;
+  color: var(--text-sub);
+}
+
+.mat-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.mat-badge.ok {
+  color: #30a46c;
+  border-color: #30a46c;
+}
+
+.mat-badge.caution {
+  color: #f5a524;
+  border-color: #f5a524;
+}
+
+.mat-badge.danger {
+  color: #e5484d;
+  border-color: #e5484d;
+}
+
+.mat-warn,
+.mat-rec,
+.mat-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.mat-card.hazard-danger .mat-warn {
+  color: #e5484d;
+  font-weight: 600;
+}
+
+.mat-rec {
+  color: var(--text-sub);
+}
+
+.mat-note {
+  font-size: 10px;
+  color: var(--text-sub);
+}
+
+.mat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.mat-actions button {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+}
+
+.queue-item.running {
+  border-color: var(--accent);
+}
+
+.queue-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-size {
+  font-size: 10px;
+  color: var(--text-sub);
+}
+
+.queue-chip {
+  padding: 1px 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.queue-chip.done {
+  color: #30a46c;
+  border-color: #30a46c;
+}
+
+.queue-chip.failed {
+  color: #e5484d;
+  border-color: #e5484d;
+}
+
+.queue-chip.running {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.queue-item button {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+.job-bar-queue {
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
