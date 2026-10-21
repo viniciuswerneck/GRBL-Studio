@@ -1950,6 +1950,115 @@ function dConfirmFiducials() {
   dStatus(t('design.fiducial.done', { n: created.length }), 'ok');
 }
 
+// -------------------------------------------------------------- biblioteca
+//
+// Catálogo offline de formas (RF-DSN-27). A geometria vem de `shapesLibrary.ts`;
+// aqui só a vitrine (SVG gerado dos mesmos pontos) e a inserção como grupo —
+// clique põe no centro da página, arrastar solta no ponto escolhido.
+
+/** Caminho SVG do item, encaixado num quadrado de 100×100 (Y invertido). */
+function dLibPreviewPath(item) {
+  const box = dShapesBox(item.paths.map((path) => ({ points: path.points })));
+  if (!box) return '';
+  const pad = 8;
+  const inner = 100 - pad * 2;
+  const w = Math.max(box.maxX - box.minX, 1e-6);
+  const h = Math.max(box.maxY - box.minY, 1e-6);
+  const scale = Math.min(inner / w, inner / h);
+  const ox = pad + (inner - w * scale) / 2;
+  const oy = pad + (inner - h * scale) / 2;
+  return item.paths
+    .map((path) => {
+      const pts = path.points
+        .map((p) => {
+          const x = ox + (p.x - box.minX) * scale;
+          const y = oy + (box.maxY - p.y) * scale;
+          return `${x.toFixed(2)} ${y.toFixed(2)}`;
+        })
+        .join(' L ');
+      return `M ${pts}${path.closed ? ' Z' : ''}`;
+    })
+    .join(' ');
+}
+
+/** Monta a grade de formas uma única vez (o catálogo é estático). */
+function dBuildLibraryGrid() {
+  const grid = $('designLibGrid');
+  if (!grid || grid.childElementCount) return;
+  const D = window.GRBL_DESIGN;
+  if (!D) return;
+  for (const item of D.SHAPE_LIBRARY) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'design-lib-item';
+    btn.dataset.id = item.id;
+    btn.draggable = true;
+    btn.title = t(item.nameKey);
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', dLibPreviewPath(item));
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '3');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+
+    const label = document.createElement('span');
+    label.textContent = t(item.nameKey);
+    btn.append(svg, label);
+
+    btn.addEventListener('dragstart', (e) => {
+      if (!e.dataTransfer) return;
+      e.dataTransfer.setData('application/x-grbl-shape', item.id);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    grid.appendChild(btn);
+  }
+}
+
+function dOpenLibrary() {
+  dBuildLibraryGrid();
+  $('designLibOverlay')?.classList.remove('hidden');
+}
+
+function dCloseLibrary() {
+  $('designLibOverlay')?.classList.add('hidden');
+}
+
+/** Insere a forma centrada em `center` (mm) — sem centro, no meio da página. */
+function dInsertLibraryItem(id, center) {
+  const D = window.GRBL_DESIGN;
+  const item = D?.libraryItem(id);
+  if (!D || !item) return;
+  const size = D.sanitizeLibrarySize(dNum('designLibSize', 40) || 40);
+  const at = center ?? {
+    x: designState.page.w / 2,
+    y: designState.page.h / 2,
+  };
+  const cx = dClamp(at.x, 2, Math.max(2, designState.page.w - 2));
+  const cy = dClamp(at.y, 2, Math.max(2, designState.page.h - 2));
+  const shapes = D.libraryShapes(item, size, cx, cy);
+  if (!shapes.length) return;
+  const name = dNextGroupName(t(item.nameKey));
+  const group = `g${designState.seq++}`;
+  for (const sh of shapes) {
+    sh.group = group;
+    sh.name = name;
+    if (designState.activeLayer) sh.layer = designState.activeLayer;
+    designState.shapes.push(sh);
+  }
+  dPushHistory();
+  designState.selection = designState.shapes
+    .map((_, i) => i)
+    .filter((i) => designState.shapes[i].group === group);
+  dAfterSelection();
+  dStatus(t('design.lib.done', { name }), 'ok');
+}
+
 // ---------------------------------------------------------------- gabarito
 //
 // Molde em volta da peça (arte ou seleção) com folga de encaixe. A geometria
@@ -4019,11 +4128,29 @@ function dCloseTextEditor() {
   designState.textEdit = null;
 }
 
+/**
+ * Depois de mostrar/esconder campos, o painel flutuante muda de altura: mede de
+ * novo e sobe (ou desliza) para não sair da área visível do editor.
+ */
+function dReflowFloatingEditor(box) {
+  if (!box || box.classList.contains('hidden')) return;
+  const wrap = $('designCanvasWrap');
+  const wh = wrap ? wrap.clientHeight : designState.pxH;
+  const ww = wrap ? wrap.clientWidth : designState.pxW;
+  const bh = box.offsetHeight || 0;
+  const bw = box.offsetWidth || 0;
+  const top = Number.parseFloat(box.style.top) || 8;
+  const left = Number.parseFloat(box.style.left) || 8;
+  box.style.top = `${dClamp(top, 8, Math.max(8, wh - bh - 8))}px`;
+  box.style.left = `${dClamp(left, 8, Math.max(8, ww - bw - 8))}px`;
+}
+
 /** O espaçamento de preenchimento só aparece no modo "Preenchido". */
 function dSyncTextModeUi() {
   const mode = $('designTextMode') ? $('designTextMode').value : 'vector';
   const opts = $('designTextFillOpts');
   if (opts) opts.classList.toggle('hidden', mode !== 'fill');
+  dReflowFloatingEditor($('designTextEditor'));
 }
 
 /**
@@ -4308,6 +4435,17 @@ function dSyncSymbolTypeUi() {
         : 'design.symbol.add',
     );
   }
+  dSyncSymbolStripUi();
+}
+
+/** Tira de teste: esconde o tamanho único e mostra tamanhos/espaço. */
+function dSyncSymbolStripUi() {
+  const on = Boolean($('designSymbolStrip')?.checked);
+  const opts = $('designSymbolStripOpts');
+  if (opts) opts.classList.toggle('hidden', !on);
+  const sizeField = $('designSymbolSizeField');
+  if (sizeField) sizeField.classList.toggle('hidden', on);
+  dReflowFloatingEditor($('designSymbolEditor'));
 }
 
 function dOpenSymbolEditor(world, editing) {
@@ -4337,13 +4475,21 @@ function dOpenSymbolEditor(world, editing) {
     if (lines) lines.value = String(meta.linesPerMm ?? 10);
     const hri = $('designSymbolHri');
     if (hri) hri.checked = meta.hri !== false;
+    const strip = $('designSymbolStrip');
+    if (strip) strip.checked = Boolean(meta.strip);
+    const stripSizes = $('designSymbolStripSizes');
+    if (stripSizes && meta.strip) {
+      stripSizes.value = meta.strip.sizes.join(', ');
+    }
+    const stripGap = $('designSymbolStripGap');
+    if (stripGap && meta.strip) stripGap.value = String(meta.strip.gapMm);
     // O bloco pode ter sido escalado depois de inserido: o tamanho mostrado é o
     // **atual** (lado maior no 2D, largura no 1D), não o da especificação.
     const b =
       editing.indices?.length && DE
         ? DE.selectionBounds(designState.shapes, editing.indices)
         : null;
-    if (b && size) {
+    if (b && size && !meta.strip) {
       const side =
         meta.type === 'barcode'
           ? b.maxX - b.minX
@@ -4353,14 +4499,24 @@ function dOpenSymbolEditor(world, editing) {
       }
     }
   }
+  if (!editing) {
+    const strip = $('designSymbolStrip');
+    if (strip) strip.checked = false;
+    const stripSizes = $('designSymbolStripSizes');
+    if (stripSizes) stripSizes.value = '10, 15, 20, 25, 30';
+    const stripGap = $('designSymbolStripGap');
+    if (stripGap) stripGap.value = '5';
+  }
   dSyncSymbolTypeUi();
   const p = dW2S(world.x, world.y);
   const wrap = $('designCanvasWrap');
   const ww = wrap ? wrap.clientWidth : designState.pxW;
   const wh = wrap ? wrap.clientHeight : designState.pxH;
   box.style.left = `${dClamp(p.x + 14, 8, Math.max(8, ww - 260))}px`;
-  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - 420))}px`;
   box.classList.remove('hidden');
+  // Mede depois de mostrar: com os campos da tira o painel passa da altura fixa.
+  const bh = box.offsetHeight || 420;
+  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - bh - 8))}px`;
   const val = $('designSymbolValue');
   if (val) {
     val.focus();
@@ -4432,6 +4588,126 @@ function dSymbolWarnings(codes, type) {
   return out;
 }
 
+/** Caixa de um conjunto de formas (ou null se não houver ponto finito). */
+function dShapesBox(shapes) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const sh of shapes) {
+    for (const p of sh.points) {
+      if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+  }
+  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
+}
+
+/**
+ * Tira de teste (RF-DSN-28): gera cada tamanho, enfileira com o espaço pedido e
+ * escreve o tamanho embaixo com a fonte de traço único. Tudo entra como **um
+ * bloco** (mesmo grupo), centralizado no ponto de inserção e preso à página.
+ */
+async function dBuildCodeStrip(spec, sizes, gap, origin) {
+  const D = window.GRBL_DESIGN;
+  const cells = [];
+  for (const size of sizes) {
+    let cell;
+    try {
+      cell = await dSymbolCell({ ...spec, sizeMm: size });
+    } catch (err) {
+      dStatus(
+        t('design.status.symbolFail', {
+          msg: dSymbolErrorText(spec.type, err),
+        }),
+        'error',
+      );
+      return null;
+    }
+    const placed = D.symbolCellToDesignShapes(cell, { x: 0, y: 0 });
+    if (!placed.shapes.length) {
+      dStatus(
+        t('design.status.symbolFail', { msg: t('design.status.symbolEmpty') }),
+        'error',
+      );
+      return null;
+    }
+    cells.push({ size, placed, warnings: cell.warnings ?? [] });
+  }
+  const plan = D.placeStrip(
+    cells.map((c) => ({
+      widthMm: c.placed.widthMm,
+      heightMm: c.placed.heightMm,
+    })),
+    gap,
+  );
+  if (!plan.slots.length) return null;
+
+  const capH = dClamp(Math.min(...sizes) * 0.3, 3, 5);
+  const captionTop = plan.heightMm + 2;
+  const totalH = captionTop + capH;
+  const shapes = [];
+  cells.forEach((cell, i) => {
+    const slot = plan.slots[i];
+    if (!slot) return;
+    for (const sh of cell.placed.shapes) {
+      shapes.push({
+        ...sh,
+        points: sh.points.map((p) => ({
+          x: p.x + slot.x,
+          y: p.y + slot.y,
+        })),
+      });
+    }
+    if (!window.GRBL_FONTS) return;
+    const caption = window.GRBL_FONTS.textToShapes({
+      text: `${cell.size} mm`,
+      fontId: 'simplex',
+      size: capH,
+      x: 0,
+      y: 0,
+      letterSpacing: 0.08,
+    });
+    const box = dShapesBox(caption);
+    if (!box) return;
+    const dx = slot.x + (slot.widthMm - (box.maxX - box.minX)) / 2 - box.minX;
+    const dy = captionTop - box.minY;
+    for (const sh of caption) {
+      shapes.push({
+        ...sh,
+        points: sh.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+      });
+    }
+  });
+
+  // Centraliza no ponto de inserção e mantém a tira dentro da página.
+  const x0 = dClamp(
+    origin.x - plan.widthMm / 2,
+    2,
+    Math.max(2, designState.page.w - plan.widthMm - 2),
+  );
+  const y0 = dClamp(
+    origin.y - totalH / 2,
+    2,
+    Math.max(2, designState.page.h - totalH - 2),
+  );
+  for (const sh of shapes) {
+    for (const p of sh.points) {
+      p.x += x0;
+      p.y += y0;
+    }
+  }
+  return {
+    shapes,
+    widthMm: plan.widthMm,
+    heightMm: totalH,
+    warnings: cells.flatMap((c) => c.warnings),
+  };
+}
+
 /**
  * Insere o símbolo como **um bloco de formas** (RF-SYM-8): cada trecho de
  * varredura vira uma linha aberta no mesmo grupo, então mover/escalar/girar,
@@ -4445,7 +4721,18 @@ async function dCommitSymbol() {
     return;
   }
   const type = $('designSymbolType') ? $('designSymbolType').value : 'qr';
-  const spec = window.GRBL_DESIGN?.sanitizeDesignSymbol({
+  const D = window.GRBL_DESIGN;
+  // Tira de teste (RF-DSN-28): o mesmo símbolo em N tamanhos, com legenda.
+  const stripOn = Boolean($('designSymbolStrip')?.checked);
+  const stripSizes = stripOn
+    ? (D?.parseStripSizes($('designSymbolStripSizes')?.value) ?? [])
+    : [];
+  if (stripOn && stripSizes.length < 2) {
+    dStatus(t('design.symbol.stripFew'), 'error');
+    return;
+  }
+  const stripGap = D?.sanitizeStripGap(dNum('designSymbolStripGap', 5)) ?? 5;
+  const spec = D?.sanitizeDesignSymbol({
     type,
     text: value,
     sizeMm: dNum('designSymbolSize', 30) || 30,
@@ -4456,6 +4743,7 @@ async function dCommitSymbol() {
       type === 'barcode' ? $('designSymbolSymbology')?.value : undefined,
     hri:
       type === 'barcode' ? Boolean($('designSymbolHri')?.checked) : undefined,
+    strip: stripOn ? { sizes: stripSizes, gapMm: stripGap } : undefined,
   });
   if (!spec) {
     dStatus(t('design.status.symbolEmpty'), 'error');
@@ -4465,17 +4753,28 @@ async function dCommitSymbol() {
   const origin = edit ? { x: edit.x, y: edit.y } : { x: 50, y: 50 };
   dStatus(t('design.status.generating'));
 
-  let cell;
-  try {
-    cell = await dSymbolCell(spec);
-  } catch (err) {
-    dStatus(
-      t('design.status.symbolFail', { msg: dSymbolErrorText(spec.type, err) }),
-      'error',
-    );
-    return;
+  let placed;
+  let warnings = [];
+  if (stripOn) {
+    placed = await dBuildCodeStrip(spec, stripSizes, stripGap, origin);
+    if (!placed) return;
+    warnings = placed.warnings;
+  } else {
+    let cell;
+    try {
+      cell = await dSymbolCell(spec);
+    } catch (err) {
+      dStatus(
+        t('design.status.symbolFail', {
+          msg: dSymbolErrorText(spec.type, err),
+        }),
+        'error',
+      );
+      return;
+    }
+    placed = window.GRBL_DESIGN?.symbolCellToDesignShapes(cell, origin);
+    warnings = cell?.warnings ?? [];
   }
-  const placed = window.GRBL_DESIGN?.symbolCellToDesignShapes(cell, origin);
   if (!placed?.shapes.length) {
     dStatus(
       t('design.status.symbolFail', { msg: t('design.status.symbolEmpty') }),
@@ -4527,7 +4826,7 @@ async function dCommitSymbol() {
   dCloseSymbolEditor();
   dAfterSelection();
 
-  const warns = dSymbolWarnings(cell.warnings, spec.type);
+  const warns = dSymbolWarnings(warnings, spec.type);
   const msg = t(
     edit?.editing ? 'design.status.symbolUpdate' : 'design.status.symbolAdd',
     {
@@ -6335,6 +6634,50 @@ function dConfirmSize() {
     });
   }
 
+  // diálogo "biblioteca"
+  const libBtn = $('designLib');
+  if (libBtn) libBtn.addEventListener('click', dOpenLibrary);
+  const libClose = $('designLibClose');
+  if (libClose) libClose.addEventListener('click', dCloseLibrary);
+  const libDone = $('designLibDone');
+  if (libDone) libDone.addEventListener('click', dCloseLibrary);
+  const libOverlay = $('designLibOverlay');
+  const libGrid = $('designLibGrid');
+  if (libGrid) {
+    libGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest?.('.design-lib-item');
+      if (!btn) return;
+      dInsertLibraryItem(btn.dataset.id);
+      dCloseLibrary();
+    });
+  }
+  if (libOverlay) {
+    libOverlay.addEventListener('click', (e) => {
+      if (e.target === libOverlay) dCloseLibrary();
+    });
+    libOverlay.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer?.types?.includes('application/x-grbl-shape')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+    libOverlay.addEventListener('drop', (e) => {
+      const id = e.dataTransfer?.getData('application/x-grbl-shape');
+      if (!id) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      dInsertLibraryItem(
+        id,
+        inside ? dS2W(e.clientX - rect.left, e.clientY - rect.top) : undefined,
+      );
+      dCloseLibrary();
+    });
+  }
+
   // diálogo "gabarito"
   const jigBtn = $('designJig');
   if (jigBtn) jigBtn.addEventListener('click', dOpenJigDialog);
@@ -6580,6 +6923,8 @@ function dConfirmSize() {
   }
   const symType = $('designSymbolType');
   if (symType) symType.addEventListener('change', dSyncSymbolTypeUi);
+  const symStrip = $('designSymbolStrip');
+  if (symStrip) symStrip.addEventListener('change', dSyncSymbolStripUi);
   dSyncSymbolTypeUi();
   // Lembra parâmetros de gravação/texto entre sessões (abrir → desenhar → gravar).
   if (el.designOverlay) {

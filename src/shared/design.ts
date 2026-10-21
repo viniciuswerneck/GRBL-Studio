@@ -97,6 +97,35 @@ export {
   sanitizeJigClearance,
 } from './jig';
 export { ARC_RADIUS_MIN_MM, arcTextShapes, minArcRadius } from './textArc';
+export type {
+  LibraryCategory,
+  LibraryItem,
+  LibraryPath,
+} from './shapesLibrary';
+export {
+  LIBRARY_DEFAULT_MM,
+  LIBRARY_MAX_MM,
+  LIBRARY_MIN_MM,
+  SHAPE_LIBRARY,
+  libraryItem,
+  libraryShapes,
+  sanitizeLibrarySize,
+} from './shapesLibrary';
+export type { StripPlacement, StripSlot, StripSpec } from './codeTestStrip';
+export {
+  STRIP_DEFAULT_GAP_MM,
+  STRIP_DEFAULT_SIZES,
+  STRIP_GAP_MAX_MM,
+  STRIP_GAP_MIN_MM,
+  STRIP_MAX_ITEMS,
+  STRIP_MAX_MM,
+  STRIP_MIN_MM,
+  parseStripSizes,
+  placeStrip,
+  sanitizeStripGap,
+  sanitizeStripSize,
+  sanitizeStripSpec,
+} from './codeTestStrip';
 export type { CostBreakdown, CostCurrency, CostInputs } from './cost';
 export {
   COST_CURRENCIES,

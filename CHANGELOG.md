@@ -6,6 +6,39 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-20
+
+Fecha os dois últimos itens **S** da fila ativa: **biblioteca de símbolos**
+para começar a arte com uma forma pronta e **tira de teste de código** para
+descobrir o menor símbolo que o scanner lê no material.
+
+### Added — biblioteca de símbolos (RF-DSN-27)
+
+- Botão **“Biblioteca…”** na barra do editor: catálogo **offline** de 14 formas
+  (estrela 5/6 pontas, hexágono, coração, raio, seta, lua, sol, moldura, cantos,
+  check, cruz, X e divisória), com **prévia vetorial** e nome em pt-BR/en/es.
+- **Clique** insere a forma no centro da página; **arrastar** até a prancheta
+  solta a forma no ponto do ponteiro. O campo **Tamanho (mm)** vale para a maior
+  dimensão (a forma não estica) e cada inserção é **um grupo** + **um desfazer**,
+  na camada ativa.
+
+### Added — tira de teste de código (RF-DSN-28)
+
+- Opção **“Tira de teste (vários tamanhos)”** no editor de símbolo: gera o
+  **mesmo código** em até 10 tamanhos (ex.: `10, 15, 20, 25, 30`), enfileirados
+  com **espaço** ajustável (1–50 mm) e o tamanho **escrito embaixo** com a fonte
+  de traço único. Grava-se uma vez e o menor tamanho legível define o tamanho a
+  usar no material.
+- A tira entra como **um bloco** (mesmo grupo), é centralizada no ponto de
+  inserção, presa à página e guarda os tamanhos no bloco — **reeditar** (duplo
+  clique) abre o painel com a tira marcada. Menos de dois tamanhos: aviso e nada
+  é inserido.
+
+### Changed
+
+- Painéis flutuantes de **texto** e **símbolo** se reencaixam na área visível
+  quando mostram/escondem campos (o botão de confirmar não sai mais da tela).
+
 ## [0.19.0] - 2026-10-20
 
 Dois itens da fila ativa de uma vez: **gabarito (molde)** para repetir a peça

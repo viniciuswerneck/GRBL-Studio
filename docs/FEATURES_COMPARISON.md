@@ -30,6 +30,8 @@
 | Texto no app | Não | Sim (vetor, traço único, preenchido) | ✅ |
 | Texto em curva/arco | Não | Sim (raio escolhido, sem esticar as letras; raio guardado no bloco) | ✅ |
 | Gabarito / molde para repetir a peça | Não | Sim (contorno externo + folga, marcas L opcionais no mesmo grupo) | ✅ |
+| Biblioteca de formas prontas | Parcial (símbolos/ícones) | Sim (14 formas offline, clique ou arrastar, tamanho em mm, um grupo) | ✅ |
+| Tira de teste de código (menor tamanho legível) | Não | Sim (mesmo símbolo em até 10 tamanhos, legenda embaixo, um bloco) | ✅ |
 | Booleanas / contorno paralelo (offset) | Não | Sim | ✅ |
 | Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |

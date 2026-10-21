@@ -737,6 +737,117 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('biblioteca de símbolos e tira de teste de código (Anexo B)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+
+      // Biblioteca: clique insere no centro da página, como um grupo.
+      await page.click('#designLib');
+      await expect(page.locator('#designLibOverlay')).toBeVisible();
+      await expect(page.locator('.design-lib-item')).toHaveCount(14);
+      await page.click('.design-lib-item[data-id="star5"]');
+      await expect(page.locator('#designLibOverlay')).toHaveClass(/hidden/);
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+      await expect(
+        page.locator('#designObjectList .design-obj').first(),
+      ).toContainText('Estrela (5 pontas) 1');
+      await expect(page.locator('#designStatus')).toContainText(
+        'Estrela (5 pontas) 1 inserido',
+      );
+      // 40 mm na maior dimensão (a estrela é mais larga que alta) centrada em
+      // 150×130 → canto em (55, 46) e 40 × 38 mm.
+      expect(
+        Number(await page.locator('#designPropX').inputValue()),
+      ).toBeCloseTo(55, 1);
+      expect(
+        Number(await page.locator('#designPropY').inputValue()),
+      ).toBeCloseTo(46, 1);
+
+      // Arrastar solta a forma no ponto do ponteiro (não no centro).
+      await page.click('#designLib');
+      // DnD nativo (HTML5): dragstart na forma e drop no ponto do canvas.
+      await page.evaluate(() => {
+        const item = document.querySelector(
+          '.design-lib-item[data-id="heart"]',
+        );
+        const overlay = document.getElementById('designLibOverlay');
+        const canvas = document.getElementById('designCanvas');
+        if (!item || !overlay || !canvas) throw new Error('sem elementos');
+        const dt = new DataTransfer();
+        item.dispatchEvent(
+          new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }),
+        );
+        const rect = canvas.getBoundingClientRect();
+        overlay.dispatchEvent(
+          new DragEvent('drop', {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+            clientX: rect.left + 300,
+            clientY: rect.top + 220,
+          }),
+        );
+      });
+      await expect(page.locator('#designLibOverlay')).toHaveClass(/hidden/);
+      await expect(page.locator('#designObjCount')).toHaveText('2');
+      await expect(page.locator('#designStatus')).toContainText(
+        'Coração 1 inserido',
+      );
+      expect(
+        Number(await page.locator('#designPropW').inputValue()),
+      ).toBeCloseTo(40, 1);
+      const heartX = Number(await page.locator('#designPropX').inputValue());
+      expect(heartX).not.toBe(55);
+
+      // Tira de teste: mesmo QR em 3 tamanhos + legenda, um grupo só.
+      await page.click('#designToolSymbol');
+      await page.mouse.click(box.x + 640, box.y + 360);
+      await page.fill('#designSymbolValue', 'GRBL-STRIP');
+      await page.check('#designSymbolStrip');
+      await expect(page.locator('#designSymbolStripOpts')).toBeVisible();
+      await page.fill('#designSymbolStripSizes', '15, 25, 35');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designSymbolEditor')).toBeHidden();
+      await expect(page.locator('#designObjCount')).toHaveText('3');
+      await expect(page.locator('#designStatus')).toContainText('Símbolo 1');
+      // 15 + 25 + 35 mm e dois espaços de 5 mm; altura 35 + 2 + legenda 5.
+      await expect(page.locator('#designStatus')).toContainText(
+        '85.0 × 41.5 mm',
+      );
+      // A caixa desenhada é um pouco menor: a zona de silêncio do QR não é
+      // marcada, mas o espaço reservado no plano conta com ela.
+      const stripW = Number(await page.locator('#designPropW').inputValue());
+      const stripH = Number(await page.locator('#designPropH').inputValue());
+      expect(stripW).toBeGreaterThan(70);
+      expect(stripW).toBeLessThan(90);
+      expect(stripH).toBeGreaterThan(35);
+      expect(stripH).toBeLessThan(45);
+
+      // Tamanhos de menos: avisa e não insere nada.
+      await page.click('#designToolSymbol');
+      await page.mouse.click(box.x + 640, box.y + 360);
+      await page.fill('#designSymbolValue', 'X');
+      await page.check('#designSymbolStrip');
+      await page.fill('#designSymbolStripSizes', '10');
+      await page.click('#designSymbolAdd');
+      await expect(page.locator('#designStatus')).toContainText(
+        'pelo menos dois tamanhos',
+      );
+      await expect(page.locator('#designObjCount')).toHaveText('3');
+    } finally {
+      await close();
+    }
+  });
+
   test('geradores: caixa com encaixe e engrenagem entram como um grupo (Anexo B)', async () => {
     const { app, page, close } = await launchApp();
     try {

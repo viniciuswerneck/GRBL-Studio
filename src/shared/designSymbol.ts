@@ -16,6 +16,7 @@
  * Puro e testável: sem DOM, sem bundles, sem IPC.
  */
 
+import { type StripSpec, sanitizeStripSpec } from './codeTestStrip';
 import type { SymbolExtent, SymbolSegment } from './symbol/mask';
 
 /** Tipos de símbolo aceitos como objeto. */
@@ -41,6 +42,8 @@ export interface DesignSymbolSpec {
   linesPerMm?: number;
   /** Código de barras: desenha o texto legível (HRI). */
   hri?: boolean;
+  /** Tira de teste (RF-DSN-28): repete o símbolo nestes tamanhos. */
+  strip?: StripSpec;
 }
 
 /** Faixa de tamanho aceita (mm) — abaixo disso o símbolo vira ruído. */
@@ -130,6 +133,8 @@ export function sanitizeDesignSymbol(input: unknown): DesignSymbolSpec | null {
     spec.ecc = raw.ecc;
   }
   if (typeof raw.hri === 'boolean') spec.hri = raw.hri;
+  const strip = sanitizeStripSpec(raw.strip);
+  if (strip) spec.strip = strip;
   return spec;
 }
 

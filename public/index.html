@@ -200,6 +200,10 @@
           <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
           <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6" />
         </symbol>
+        <symbol id="ic-library" viewBox="0 0 24 24">
+          <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          <path d="M16.5 13.2l3.3 6.6h-6.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+        </symbol>
         <symbol id="ic-jig" viewBox="0 0 24 24">
           <rect x="4.5" y="4.5" width="15" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.4 2" />
           <path d="M8.5 8.5h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.4" />
@@ -1914,6 +1918,9 @@
             <button type="button" id="designJig" class="icon-btn" data-i18n-title="design.jig" title="Gabarito…">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-jig" /></svg>
             </button>
+            <button type="button" id="designLib" class="icon-btn" data-i18n-title="design.lib" title="Biblioteca…">
+              <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-library" /></svg>
+            </button>
             <button type="button" id="designMirrorH" class="icon-btn" data-i18n-title="design.mirror.h" title="Espelhar na horizontal">
               <svg class="design-ic" aria-hidden="true" focusable="false"><use href="#ic-mirror-h" /></svg>
             </button>
@@ -2135,7 +2142,7 @@
                 </select>
               </label>
               <div class="design-text-row">
-                <label class="design-field">
+                <label class="design-field" id="designSymbolSizeField">
                   <span id="designSymbolSizeLabel" data-i18n="design.symbol.size">Tamanho (mm)</span>
                   <input type="number" id="designSymbolSize" min="5" max="400" step="1" value="30" />
                 </label>
@@ -2157,6 +2164,20 @@
                 <input type="checkbox" id="designSymbolHri" checked />
                 <span data-i18n="design.symbol.hri">Texto legível (HRI)</span>
               </label>
+              <label class="design-check">
+                <input type="checkbox" id="designSymbolStrip" />
+                <span data-i18n="design.symbol.strip">Tira de teste (vários tamanhos)</span>
+              </label>
+              <div class="design-text-row hidden" id="designSymbolStripOpts">
+                <label class="design-field">
+                  <span data-i18n="design.symbol.stripSizes">Tamanhos (mm)</span>
+                  <input type="text" id="designSymbolStripSizes" value="10, 15, 20, 25, 30" spellcheck="false" />
+                </label>
+                <label class="design-field">
+                  <span data-i18n="design.symbol.stripGap">Espaço (mm)</span>
+                  <input type="number" id="designSymbolStripGap" min="1" max="50" step="1" value="5" />
+                </label>
+              </div>
               <div class="design-text-actions">
                 <button type="button" id="designSymbolCancel" data-i18n="design.cancel">Cancelar</button>
                 <button type="button" id="designSymbolAdd" class="primary" data-i18n="design.symbol.add">Adicionar</button>
@@ -2375,6 +2396,35 @@
           <button type="button" id="designSizeConfirm" class="primary" data-i18n="design.generate">
             Gerar e visualizar
           </button>
+        </footer>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="designLibOverlay">
+      <div
+        class="modal design-size-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="designLibTitle"
+      >
+        <header class="modal-head">
+          <h3 id="designLibTitle" data-i18n="design.lib.title">Biblioteca de símbolos</h3>
+          <button type="button" id="designLibClose" data-i18n="nav.close">Fechar</button>
+        </header>
+        <div class="modal-body design-size-body">
+          <p class="design-size-hint" data-i18n="design.lib.hint">
+            Clique para inserir no centro da página ou arraste a forma até o ponto desejado.
+          </p>
+          <div class="design-size-fields">
+            <label class="design-field">
+              <span data-i18n="design.lib.size">Tamanho (mm)</span>
+              <input type="number" id="designLibSize" min="5" max="400" step="1" value="40" />
+            </label>
+          </div>
+          <div class="design-lib-grid" id="designLibGrid"></div>
+        </div>
+        <footer class="modal-foot">
+          <button type="button" id="designLibDone" class="primary" data-i18n="nav.close">Fechar</button>
         </footer>
       </div>
     </div>
