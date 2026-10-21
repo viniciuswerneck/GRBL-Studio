@@ -631,6 +631,112 @@ test.describe('GRBL Studio — fluxo da UI', () => {
     }
   });
 
+  test('maximizar o editor de desenho ocupa a janela inteira', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const modal = page.locator('#designOverlay .design-modal');
+      const view = await page.evaluate(() => ({
+        w: window.innerWidth,
+        h: window.innerHeight,
+      }));
+      const before = await modal.boundingBox();
+      if (!before) throw new Error('modal sem área');
+
+      await page.click('#designMaximize');
+      await expect(modal).toHaveClass(/maximized/);
+      await expect(page.locator('#designOverlay')).toHaveClass(/design-max/);
+      const after = await modal.boundingBox();
+      if (!after) throw new Error('modal sem área');
+      // Sem padding do overlay: encosta nas quatro bordas (nada cortado).
+      expect(Math.round(after.x)).toBe(0);
+      expect(Math.round(after.y)).toBe(0);
+      expect(Math.round(after.width)).toBe(view.w);
+      expect(Math.round(after.height)).toBe(view.h);
+      expect(after.width).toBeGreaterThan(before.width);
+
+      // A barra de status (embaixo) continua inteira dentro da janela.
+      const status = await page.locator('.design-statusbar').boundingBox();
+      if (!status) throw new Error('status sem área');
+      expect(status.y + status.height).toBeLessThanOrEqual(view.h + 1);
+
+      await expect(page.locator('#designMaximize')).toHaveAttribute(
+        'title',
+        'Restaurar',
+      );
+      await page.click('#designMaximize');
+      await expect(modal).not.toHaveClass(/maximized/);
+      await expect(page.locator('#designOverlay')).not.toHaveClass(
+        /design-max/,
+      );
+      const back = await modal.boundingBox();
+      expect(Math.round(back?.width ?? 0)).toBe(Math.round(before.width));
+    } finally {
+      await close();
+    }
+  });
+
+  test('gabarito e texto em arco (Anexo B)', async () => {
+    const { app, page, close } = await launchApp();
+    try {
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(
+          'grbl:ev:action',
+          'design',
+        );
+      });
+      await expect(page.locator('#designOverlay')).toBeVisible();
+      const box = await page.locator('#designCanvas').boundingBox();
+      if (!box) throw new Error('canvas sem área');
+
+      // Retângulo de partida.
+      await page.click('#designToolRect');
+      await page.mouse.move(box.x + 180, box.y + 180);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 320, box.y + 280);
+      await page.mouse.up();
+
+      // Gabarito em volta da peça.
+      await page.click('#designJig');
+      await expect(page.locator('#designJigOverlay')).toBeVisible();
+      await page.click('#designJigInsert');
+      await expect(page.locator('#designJigOverlay')).toHaveClass(/hidden/);
+      await expect(page.locator('#designStatus')).toContainText('Gabarito 1');
+      await expect(page.locator('#designObjCount')).toHaveText('2');
+      await page.click('#designUndo');
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+
+      // Texto em arco: raio pequeno demais avisa e não insere.
+      await page.click('#designToolText');
+      await page.mouse.click(box.x + 420, box.y + 320);
+      await page.fill('#designTextValue', 'ARCO');
+      await page.fill('#designTextSize', '20');
+      await page.fill('#designTextArc', '5');
+      await page.click('#designTextAdd');
+      await expect(page.locator('#designStatus')).toContainText(
+        'Aumente o raio',
+      );
+      await expect(page.locator('#designObjCount')).toHaveText('1');
+
+      // Com raio suficiente, entra no desenho.
+      await page.fill('#designTextArc', '120');
+      await page.click('#designTextAdd');
+      await expect(page.locator('#designTextEditor')).toBeHidden();
+      await expect(page.locator('#designObjCount')).toHaveText('2');
+      await expect(
+        page.locator('#designObjectList .design-obj').first(),
+      ).toContainText('Texto 1');
+    } finally {
+      await close();
+    }
+  });
+
   test('geradores: caixa com encaixe e engrenagem entram como um grupo (Anexo B)', async () => {
     const { app, page, close } = await launchApp();
     try {

@@ -1604,10 +1604,17 @@ body.job-active .job-bar {
   max-height: 94vh;
 }
 
+/* Maximizado ocupa a janela inteira: o overlay perde o padding (senão o
+   modal de 100vh estoura 16 px em cima e embaixo e corta a barra de status). */
+#designOverlay.design-max {
+  padding: 0;
+}
+
 .design-modal.maximized {
-  width: 100vw;
-  height: 100vh;
-  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border: 0;
   border-radius: 0;
 }
 
@@ -1926,6 +1933,15 @@ html[data-theme="sand"] .design-canvas-wrap {
   gap: 3px;
   font-size: 11px;
   color: var(--text-sub);
+}
+
+/* O `.hidden` global vem antes no arquivo e perde para o `display: flex`
+   acima (mesma especificidade, ordem posterior): reafirma aqui para os campos
+   condicionais do painel de texto (preenchimento) sumirem de verdade. */
+.design-field.hidden,
+.design-check.hidden,
+.design-mini.hidden {
+  display: none;
 }
 
 .design-modal .design-field input,
@@ -2259,6 +2275,8 @@ html[data-theme="sand"] .design-canvas-wrap {
   position: absolute;
   z-index: 6;
   width: 244px;
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
@@ -2418,6 +2436,13 @@ html[data-theme="sand"] .design-canvas-wrap {
   font-size: var(--fs-12);
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+.design-text-arc-hint {
+  margin: -2px 0 var(--sp-2);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-sub);
 }
 
 .gen-tabs {

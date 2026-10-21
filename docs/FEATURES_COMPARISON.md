@@ -28,6 +28,8 @@
 |---|---|---|---|
 | Editor vetorial (formas, caneta, nós) | Não | Sim (retângulo, elipse, linha, caneta, nós) | ✅ |
 | Texto no app | Não | Sim (vetor, traço único, preenchido) | ✅ |
+| Texto em curva/arco | Não | Sim (raio escolhido, sem esticar as letras; raio guardado no bloco) | ✅ |
+| Gabarito / molde para repetir a peça | Não | Sim (contorno externo + folga, marcas L opcionais no mesmo grupo) | ✅ |
 | Booleanas / contorno paralelo (offset) | Não | Sim | ✅ |
 | Matriz de cópias / espelhar / distribuir / agrupar / snap | Não | Sim | ✅ |
 | Potência/velocidade/espessura **por objeto** | Não | Sim (+ copiar/colar estilo) | ✅ |

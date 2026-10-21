@@ -90,6 +90,13 @@ export {
   sanitizeGear,
   slotIntervals,
 } from './generators';
+export type { JigResult } from './jig';
+export {
+  JIG_CLEARANCE_MAX_MM,
+  jigOutlines,
+  sanitizeJigClearance,
+} from './jig';
+export { ARC_RADIUS_MIN_MM, arcTextShapes, minArcRadius } from './textArc';
 export type { CostBreakdown, CostCurrency, CostInputs } from './cost';
 export {
   COST_CURRENCIES,
@@ -172,6 +179,8 @@ export interface Shape {
     bold?: boolean;
     /** Linhas por mm do preenchimento (modo `fill`). */
     spacing?: number;
+    /** Raio do arco em mm (0/ausente = texto reto). */
+    arc?: number;
   };
 }
 

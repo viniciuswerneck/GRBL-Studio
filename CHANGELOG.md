@@ -6,6 +6,45 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-20
+
+Dois itens da fila ativa de uma vez: **gabarito (molde)** para repetir a peça
+no mesmo ponto e **texto em curva/arco** no editor 2D — mais o conserto do
+botão de maximizar do editor.
+
+### Added — gabarito (RF-DSN-25)
+
+- Botão **“Gabarito…”** na barra do editor: gera o **molde** em volta da peça
+  (seleção ou arte inteira) deslocando o **contorno externo** pela folga de
+  encaixe — a peça é apoiada dentro do molde e volta sempre ao mesmo lugar.
+- Folga de 0–5 mm (padrão 0,4 mm) e **marcas de registro (L)** opcionais em
+  volta do molde, com distância configurável.
+- Só **contornos fechados** viram molde (o mesmo critério *even-odd* do kerf):
+  furos, ilhas e linhas abertas ficam de fora — o status avisa quantas formas
+  foram ignoradas. Molde e marcas entram como **um grupo** e **um passo de
+  desfazer**.
+
+### Added — texto em curva/arco (RF-DSN-26)
+
+- Campo **“Arco (raio, mm)”** no editor de texto: `0` mantém reto, positivo
+  curva para cima e negativo para baixo. O bloco é dobrado sobre o arco **sem
+  esticar as letras** (comprimento de arco e altura preservados), com as linhas
+  extras acompanhando como arcos concêntricos.
+- **Raio mínimo** calculado pela largura do texto (aviso com o valor mínimo em
+  vez de gerar um texto fechado em círculo) e o raio fica guardado no bloco —
+  **reeditar** o texto mantém a curva.
+
+### Fixed
+
+- **Maximizar o editor de desenho** agora ocupa a janela inteira: o overlay
+  perde o padding quando maximizado (antes o modal de `100vh` estourava 16 px
+  em cima e embaixo e **cortava a barra de status**). O botão também troca para
+  **“Restaurar”** (ícone e dica) enquanto está maximizado.
+- **Painel de texto**: o campo de **preenchimento** aparecia mesmo no modo
+  vetor (o `.hidden` global perdia para o `display: flex` do campo) e o painel
+  podia passar da área visível com o novo campo do arco — agora ele mede a
+  própria altura antes de se posicionar.
+
 ## [0.18.0] - 2026-10-20
 
 Peças paramétricas: **caixa com encaixe** e **engrenagem** saem prontas do

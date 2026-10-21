@@ -1950,6 +1950,88 @@ function dConfirmFiducials() {
   dStatus(t('design.fiducial.done', { n: created.length }), 'ok');
 }
 
+// ---------------------------------------------------------------- gabarito
+//
+// Molde em volta da peça (arte ou seleção) com folga de encaixe. A geometria
+// vem de `jig.ts` (contorno externo deslocado com o mesmo offset do kerf); as
+// marcas opcionais usam `fiducialMarks` e entram no **mesmo grupo**, então o
+// molde inteiro anda junto.
+
+function dOpenJigDialog() {
+  dCloseBoolMenu();
+  const overlay = $('designJigOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+}
+
+function dCloseJigDialog() {
+  const overlay = $('designJigOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function dMakeJig() {
+  const D = window.GRBL_DESIGN;
+  if (!D) return;
+  const sel = designState.selection.length
+    ? designState.selection
+    : designState.shapes.map((_, i) => i);
+  const picked = sel.map((i) => designState.shapes[i]).filter(Boolean);
+  const clearance = D.sanitizeJigClearance(dGenNum('jigClearance', 0.4));
+  const res = D.jigOutlines(picked, clearance);
+  if (!res.outlines.length) {
+    dStatus(t('design.jig.none'), 'error');
+    return;
+  }
+  const name = dNextGroupName(t('design.jig.name'));
+  const group = `g${designState.seq++}`;
+  const shapes = res.outlines.map((points) => ({
+    kind: 'line',
+    points,
+    closed: true,
+    group,
+    name,
+  }));
+  const withMarks = $('jigMarks') ? $('jigMarks').checked : true;
+  if (withMarks) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const points of res.outlines) {
+      for (const p of points) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+    if (Number.isFinite(minX)) {
+      const offset = D.sanitizeFiducialOffset(dGenNum('jigMarkOffset', 5));
+      const lines = D.fiducialMarks(
+        { minX, minY, maxX, maxY },
+        { kind: 'corners', offset, size: 10 },
+      );
+      for (const points of lines) {
+        shapes.push({ kind: 'line', points, closed: false, group, name });
+      }
+    }
+  }
+  for (const sh of shapes) {
+    if (designState.activeLayer) sh.layer = designState.activeLayer;
+    designState.shapes.push(sh);
+  }
+  dPushHistory();
+  designState.selection = designState.shapes
+    .map((_, i) => i)
+    .filter((i) => designState.shapes[i].group === group);
+  dAfterSelection();
+  const extra = res.skipped
+    ? ` ${t('design.jig.skipped', { n: res.skipped })}`
+    : '';
+  dStatus(t('design.jig.done', { name }) + extra, 'ok');
+  dCloseJigDialog();
+}
+
 // --------------------------------------------------------------- geradores
 //
 // Caixa com encaixe e engrenagem: a geometria vem de `generators.ts` (puro e
@@ -3907,6 +3989,11 @@ function dOpenTextEditor(world, editing) {
     if (bold) bold.checked = meta.bold !== false;
     const spacing = $('designTextSpacing');
     if (spacing) spacing.value = String(meta.spacing ?? 5);
+    const arc = $('designTextArc');
+    if (arc) arc.value = String(meta.arc ?? 0);
+  } else {
+    const arc = $('designTextArc');
+    if (arc) arc.value = '0';
   }
   dSyncTextModeUi();
   const p = dW2S(world.x, world.y);
@@ -3914,8 +4001,11 @@ function dOpenTextEditor(world, editing) {
   const ww = wrap ? wrap.clientWidth : designState.pxW;
   const wh = wrap ? wrap.clientHeight : designState.pxH;
   box.style.left = `${dClamp(p.x + 14, 8, Math.max(8, ww - 260))}px`;
-  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - 320))}px`;
   box.classList.remove('hidden');
+  // Mede depois de mostrar: com o campo do arco o painel pode passar da altura
+  // fixa antiga e o botão "Adicionar" ficava fora da área visível.
+  const bh = box.offsetHeight || 320;
+  box.style.top = `${dClamp(p.y + 14, 8, Math.max(8, wh - bh - 8))}px`;
   const val = $('designTextValue');
   if (val) {
     val.focus();
@@ -4126,6 +4216,19 @@ async function dCommitText() {
     return;
   }
 
+  // Texto em arco: dobra o bloco já convertido em contornos. O raio mínimo
+  // evita que o texto feche em círculo (as pontas passariam do ápice).
+  const arc = dNum('designTextArc', 0);
+  const D = window.GRBL_DESIGN;
+  if (D && Math.abs(arc) > 0) {
+    const min = D.minArcRadius(shapes);
+    if (Math.abs(arc) < min) {
+      dStatus(t('design.text.arcSmall', { min: Math.ceil(min) }), 'error');
+      return;
+    }
+    shapes = D.arcTextShapes(shapes, arc, anchor.y);
+  }
+
   let group = edit?.group ?? `g${designState.seq++}`;
   const name = edit?.name ?? dNextName('text');
 
@@ -4157,7 +4260,7 @@ async function dCommitText() {
   for (const sh of shapes) {
     sh.group = group;
     sh.name = name;
-    sh.text = { value, font, size, mode, bold, spacing };
+    sh.text = { value, font, size, mode, bold, spacing, arc };
     Object.assign(sh, style);
     if (!sh.layer && designState.activeLayer) {
       sh.layer = designState.activeLayer;
@@ -5958,16 +6061,28 @@ function dConfirmSize() {
   if (closeBtn) closeBtn.addEventListener('click', closeDesignModal);
   const maxBtn = $('designMaximize');
   if (maxBtn) {
-    maxBtn.addEventListener('click', () => {
+    const setMaximized = (on) => {
       const m = overlay.querySelector('.design-modal');
       if (!m) return;
-      m.classList.toggle('maximized');
+      m.classList.toggle('maximized', on);
+      // O overlay sem padding é o que faz o editor ocupar a janela de verdade.
+      overlay.classList.toggle('design-max', on);
+      maxBtn.setAttribute('aria-pressed', String(on));
+      maxBtn.dataset.i18nTitle = on ? 'design.restore' : 'design.maximize';
+      maxBtn.title = t(on ? 'design.restore' : 'design.maximize');
+      const use = maxBtn.querySelector('use');
+      if (use) use.setAttribute('href', on ? '#ic-restore' : '#ic-maximize');
       requestAnimationFrame(() => {
         dResizeCanvas();
         dFitPage();
         dUpdateZoom();
         dRender();
       });
+    };
+    maxBtn.addEventListener('click', () => {
+      const m = overlay.querySelector('.design-modal');
+      if (!m) return;
+      setMaximized(!m.classList.contains('maximized'));
     });
   }
 
@@ -6217,6 +6332,22 @@ function dConfirmSize() {
   if (el.designArrayOverlay) {
     el.designArrayOverlay.addEventListener('click', (e) => {
       if (e.target === el.designArrayOverlay) dCloseArrayDialog();
+    });
+  }
+
+  // diálogo "gabarito"
+  const jigBtn = $('designJig');
+  if (jigBtn) jigBtn.addEventListener('click', dOpenJigDialog);
+  const jigDo = $('designJigInsert');
+  if (jigDo) jigDo.addEventListener('click', dMakeJig);
+  const jigCancel = $('designJigCancel');
+  if (jigCancel) jigCancel.addEventListener('click', dCloseJigDialog);
+  const jigClose = $('designJigClose');
+  if (jigClose) jigClose.addEventListener('click', dCloseJigDialog);
+  const jigOverlay = $('designJigOverlay');
+  if (jigOverlay) {
+    jigOverlay.addEventListener('click', (e) => {
+      if (e.target === jigOverlay) dCloseJigDialog();
     });
   }
 
