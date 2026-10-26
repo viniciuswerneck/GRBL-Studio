@@ -7,6 +7,11 @@
  *
  * Uso (headless):
  *   xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/manual-capture.mjs
+ *   MANUAL_LANG=en xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/manual-capture.mjs
+ *   MANUAL_LANG=es xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/manual-capture.mjs
+ *
+ * `MANUAL_LANG` aceita `pt-BR` (padrão), `en` ou `es`. Os prints em inglês e
+ * espanhol vão para `docs/manual/img/en/` e `docs/manual/img/es/`.
  *
  * Requer `npm run build` antes (usa o `dist/`).
  */
@@ -19,8 +24,44 @@ import { _electron as electron } from 'playwright';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(HERE, '..');
-const OUT = path.join(APP_ROOT, 'docs', 'manual', 'img');
+const MANUAL_LANG = process.env.MANUAL_LANG || 'pt-BR';
+if (!['pt-BR', 'en', 'es'].includes(MANUAL_LANG)) {
+  throw new Error(`MANUAL_LANG inválido: ${MANUAL_LANG}`);
+}
+const LANG_DIR = MANUAL_LANG === 'pt-BR' ? '' : MANUAL_LANG;
+const OUT = path.join(APP_ROOT, 'docs', 'manual', 'img', LANG_DIR);
 mkdirSync(OUT, { recursive: true });
+
+/** Textos de exemplo que aparecem nos prints, por idioma. */
+const TEXT = {
+  'pt-BR': {
+    sampleName: 'placa-40x40.gcode',
+    sampleToken: 'placa',
+    badName: 'sem-avanco.gcode',
+    badToken: 'sem-avanco',
+    presetName: 'MDF 3 mm — gravação',
+    presetNotes: '100% / 1000 mm/min, 1 passada. Testado no MDF 3 mm.',
+    batchCsv: 'nome,cargo\nAna,Dev\nBruno,Ops\nCarla,Design',
+  },
+  en: {
+    sampleName: 'plate-40x40.gcode',
+    sampleToken: 'plate',
+    badName: 'no-feed.gcode',
+    badToken: 'no-feed',
+    presetName: 'MDF 3 mm — engraving',
+    presetNotes: '100% / 1000 mm/min, 1 pass. Tested on 3 mm MDF.',
+    batchCsv: 'name,role\nAna,Dev\nBruno,Ops\nCarla,Design',
+  },
+  es: {
+    sampleName: 'placa-40x40.gcode',
+    sampleToken: 'placa',
+    badName: 'sin-avance.gcode',
+    badToken: 'sin-avance',
+    presetName: 'MDF 3 mm — grabado',
+    presetNotes: '100% / 1000 mm/min, 1 pasada. Probado en MDF de 3 mm.',
+    batchCsv: 'nombre,puesto\nAna,Dev\nBruno,Ops\nCarla,Design',
+  },
+}[MANUAL_LANG];
 
 /** Emulador GRBL mínimo via TCP (mesmo do E2E). */
 function startGrblTcp(statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>') {
@@ -60,12 +101,16 @@ function startGrblTcp(statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>') {
     $N: '$N0=G21\r\n$N1=G90\r\nok\r\n',
     $$: `${settings.join('\r\n')}\r\nok\r\n`,
   };
+  let replyDelay = 0;
+  let currentStatusLine = statusLine;
   const server = createServer((socket) => {
     let buffer = '';
     socket.write('Grbl 1.1h ["$" for help]\r\n');
     socket.on('data', (chunk) => {
       const text = chunk.toString('utf8');
-      for (const byte of text) if (byte === '?') socket.write(`${statusLine}\r\n`);
+      for (const byte of text) {
+        if (byte === '?') socket.write(`${currentStatusLine}\r\n`);
+      }
       buffer += text.replace(/\?/g, '');
       let index = buffer.indexOf('\n');
       while (index >= 0) {
@@ -73,7 +118,14 @@ function startGrblTcp(statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>') {
         buffer = buffer.slice(index + 1);
         index = buffer.indexOf('\n');
         if (!line) continue;
-        socket.write(replies[line] ?? 'ok\r\n');
+        const reply = replies[line] ?? 'ok\r\n';
+        if (replyDelay > 0 && reply === 'ok\r\n') {
+          setTimeout(() => {
+            if (!socket.destroyed) socket.write(reply);
+          }, replyDelay);
+        } else {
+          socket.write(reply);
+        }
       }
     });
     socket.on('error', () => {});
@@ -81,7 +133,16 @@ function startGrblTcp(statusLine = '<Idle|MPos:1.500,2.250,0.000|FS:0,0>') {
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const port = server.address().port;
-      resolve({ port, close: () => server.close() });
+      resolve({
+        port,
+        close: () => server.close(),
+        setDelay: (ms) => {
+          replyDelay = ms;
+        },
+        setStatus: (line) => {
+          currentStatusLine = line;
+        },
+      });
     });
   });
 }
@@ -102,13 +163,25 @@ G90
 G1 X10 Y10
 `;
 
+/** Programa mais longo para o print da barra de job em execução. */
+const JOB_BAR_SAMPLE = (() => {
+  const lines = ['G21', 'G90', 'M4 S200', 'G0 X0 Y0'];
+  for (let i = 0; i <= 36; i += 1) {
+    const y = ((i * 40) / 36).toFixed(2);
+    const x = i % 2 === 0 ? 40 : 0;
+    lines.push(`G1 X${x} Y${y} F600`);
+  }
+  lines.push('G1 X0 Y40', 'M5');
+  return `${lines.join('\n')}\n`;
+})();
+
 const log = (...a) => console.log(...a);
 
 async function main() {
   const userData = mkdtempSync(path.join(tmpdir(), 'grbl-manual-'));
   const work = mkdtempSync(path.join(tmpdir(), 'grbl-manual-files-'));
-  const sample = path.join(work, 'placa-40x40.gcode');
-  const bad = path.join(work, 'sem-avanco.gcode');
+  const sample = path.join(work, TEXT.sampleName);
+  const bad = path.join(work, TEXT.badName);
   writeFileSync(sample, SAMPLE, 'utf8');
   writeFileSync(bad, BAD_GCODE, 'utf8');
   writeFileSync(
@@ -116,12 +189,13 @@ async function main() {
     JSON.stringify({
       onboarding: 1,
       theme: 'dark',
-      lang: 'pt-BR',
+      lang: MANUAL_LANG,
       mode: 'advanced',
       autoConnect: false,
     }),
     'utf8',
   );
+  log(`Capturando manual ${MANUAL_LANG} em ${OUT}`);
 
   const emulator = await startGrblTcp();
   const app = await electron.launch({
@@ -177,6 +251,15 @@ async function main() {
     if ((await el.count()) === 0) throw new Error(`sem ${sel}`);
     await el.first().click();
   };
+  const waitForFileInfo = (token) =>
+    page.waitForFunction(
+      (needle) =>
+        (document.getElementById('fileInfo')?.textContent || '').includes(
+          needle,
+        ),
+      token,
+      { timeout: 15_000 },
+    );
   const step = async (name, fn) => {
     try {
       await fn();
@@ -191,25 +274,13 @@ async function main() {
     await page.fill('#tcpHost', '127.0.0.1');
     await page.fill('#tcpPort', String(emulator.port));
     await click('#connectBtn');
-    await page.waitForFunction(
-      () =>
-        (document.getElementById('connectBtn')?.textContent || '').includes(
-          'Desconectar',
-        ),
-      { timeout: 15_000 },
-    );
+    await page.waitForSelector('.sidebar.is-connected', { timeout: 15_000 });
     await page.waitForTimeout(600);
 
     // Carrega um G-code de exemplo para o preview/DRO ficarem realistas.
     await stubDialog(sample);
     await action('open-gcode');
-    await page.waitForFunction(
-      () =>
-        (document.getElementById('fileInfo')?.textContent || '').includes(
-          'placa',
-        ),
-      { timeout: 15_000 },
-    );
+    await waitForFileInfo(TEXT.sampleToken);
     await page.waitForTimeout(800);
     await zoomPreviewOut();
 
@@ -248,10 +319,11 @@ async function main() {
       await stubDialog(path.join(APP_ROOT, 'build', 'icon.png'));
       await click('#imageOpen');
       await page.waitForFunction(
-        () =>
-          !(document.getElementById('imageInfo')?.textContent || '').includes(
-            'Nenhuma',
-          ),
+        () => {
+          const btn = document.getElementById('imgGenerate');
+          return Boolean(btn && !btn.disabled);
+        },
+        undefined,
         { timeout: 15_000 },
       );
       await click('#imgGenerate');
@@ -264,13 +336,7 @@ async function main() {
       await page.click('[data-tab="run"]');
       await stubDialog(sample);
       await action('open-gcode');
-      await page.waitForFunction(
-        () =>
-          (document.getElementById('fileInfo')?.textContent || '').includes(
-            'placa',
-          ),
-        { timeout: 15_000 },
-      );
+      await waitForFileInfo(TEXT.sampleToken);
       await page.waitForTimeout(600);
       await zoomPreviewOut();
       await shot('05-execucao');
@@ -337,13 +403,7 @@ async function main() {
     await step('14-pre-voo', async () => {
       await stubDialog(bad);
       await action('open-gcode');
-      await page.waitForFunction(
-        () =>
-          (document.getElementById('fileInfo')?.textContent || '').includes(
-            'sem-avanco',
-          ),
-        { timeout: 15_000 },
-      );
+      await waitForFileInfo(TEXT.badToken);
       await page.waitForTimeout(500);
       await click('#playBtn');
       await page.waitForSelector('#preflightOverlay:not(.hidden)');
@@ -371,21 +431,12 @@ async function main() {
       await page.click('[data-tab="run"]');
       await stubDialog(sample);
       await action('open-gcode');
-      await page.waitForFunction(
-        () =>
-          (document.getElementById('fileInfo')?.textContent || '').includes(
-            'placa',
-          ),
-        { timeout: 15_000 },
-      );
+      await waitForFileInfo(TEXT.sampleToken);
+      await closeOverlay('frameOverlay');
       await click('#playBtn');
-      await page.waitForFunction(
-        () =>
-          (document.getElementById('consoleOutput')?.textContent || '').includes(
-            'Job concluído',
-          ),
-        { timeout: 30_000 },
-      );
+      await page.waitForSelector('#frameOverlay:not(.hidden)', {
+        timeout: 30_000,
+      });
       await page.waitForTimeout(600);
       await closeOverlay('frameOverlay');
       await action('job-library');
@@ -399,11 +450,8 @@ async function main() {
     await step('17-presets', async () => {
       await action('presets');
       await page.waitForSelector('#presetOverlay:not(.hidden)');
-      await page.fill('#presetName', 'MDF 3 mm — gravação');
-      await page.fill(
-        '#presetNotes',
-        '100% / 1000 mm/min, 1 passada. Testado no MDF 3 mm.',
-      );
+      await page.fill('#presetName', TEXT.presetName);
+      await page.fill('#presetNotes', TEXT.presetNotes);
       await click('#presetCreate');
       await page.waitForFunction(
         () => document.querySelectorAll('#presetList .preset-item').length > 0,
@@ -440,10 +488,7 @@ async function main() {
     await step('21-lote', async () => {
       await action('batch');
       await page.waitForSelector('#batchOverlay:not(.hidden)');
-      await page.fill(
-        '#batchCsv',
-        'nome,cargo\nAna,Dev\nBruno,Ops\nCarla,Design',
-      );
+      await page.fill('#batchCsv', TEXT.batchCsv);
       await page.waitForTimeout(800);
       await shot('21-lote');
       await closeOverlay('batchOverlay');
@@ -487,7 +532,11 @@ async function main() {
       });
     };
 
-    await designDialog('24-biblioteca-simbolos', '#designLib', 'designLibOverlay');
+    await designDialog(
+      '24-biblioteca-simbolos',
+      '#designLib',
+      'designLibOverlay',
+    );
     await designDialog('25-gabarito', '#designJig', 'designJigOverlay');
     await designDialog('26-geradores', '#designGen', 'designGenOverlay');
     await designDialog('27-dois-lados', '#designDouble', 'designDoubleOverlay');
@@ -497,7 +546,11 @@ async function main() {
       'designFiducialOverlay',
     );
     await designDialog('29-tiles', '#designTiles', 'designTilesOverlay');
-    await designDialog('30-matriz-copias', '#designArray', 'designArrayOverlay');
+    await designDialog(
+      '30-matriz-copias',
+      '#designArray',
+      'designArrayOverlay',
+    );
     await designDialog('31-encaixe', '#designNest', 'designNestOverlay');
 
     await step('32-contorno-paralelo', async () => {
@@ -561,6 +614,34 @@ async function main() {
       await page.waitForSelector('#aboutOverlay:not(.hidden)');
       await shot('37-sobre');
       await closeOverlay('aboutOverlay');
+    });
+
+    // Print extra: barra flutuante durante um job em execução.
+    await step('07b-barra-job', async () => {
+      writeFileSync(sample, JOB_BAR_SAMPLE, 'utf8');
+      await page.click('[data-tab="run"]');
+      await stubDialog(sample);
+      await action('open-gcode');
+      await waitForFileInfo(TEXT.sampleToken);
+      await closeOverlay('frameOverlay');
+      emulator.setDelay(400);
+      emulator.setStatus('<Run|MPos:20.000,20.000,0.000|FS:600,200>');
+      await click('#playBtn');
+      await page.waitForSelector('body.job-active', { timeout: 10_000 });
+      await page.waitForTimeout(900);
+      await shot('07b-barra-job');
+      try {
+        await click('#stopBtn');
+        await page.waitForFunction(
+          () => !document.body.classList.contains('job-active'),
+          undefined,
+          { timeout: 10_000 },
+        );
+      } catch {
+        // O job pode ter terminado entre o print e o cancelamento.
+      }
+      emulator.setDelay(0);
+      emulator.setStatus('<Idle|MPos:20.000,20.000,0.000|FS:0,0>');
     });
 
     log('Captura concluída.');

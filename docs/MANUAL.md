@@ -264,7 +264,7 @@ preferir o modo guiado, clique em **Assistente** e siga os passos.
 
 ![Figura 1 — Tela principal com um G-code carregado e a máquina conectada](img/01-tela-principal.png)
 
-A janela se divide em quatro áreas:
+A janela se divide em cinco áreas:
 
 | Área | O que tem |
 | :--- | :--- |
