@@ -367,11 +367,23 @@
           <div class="lang-switcher" id="langSwitcher">
             <fieldset aria-label="Idioma">
               <legend class="sr-only" data-i18n="langSwitcher.label">Idioma</legend>
-              <select id="langSelect" aria-label="Idioma">
-                <option value="pt-BR" data-i18n="langSwitcher.pt">Português</option>
-                <option value="en" data-i18n="langSwitcher.en">English</option>
-                <option value="es" data-i18n="langSwitcher.es">Español</option>
-              </select>
+              <div class="custom-select" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Idioma">
+                <button type="button" class="custom-select-trigger" id="langTrigger" aria-labelledby="langTrigger">
+                  <span class="custom-select-value" data-i18n="langSwitcher.pt">Português</span>
+                  <svg class="icon custom-select-icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                </button>
+                <ul class="custom-select-options" role="listbox" id="langOptions" hidden>
+                  <li role="option" data-value="pt-BR" data-i18n="langSwitcher.pt" aria-selected="true">Português</li>
+                  <li role="option" data-value="en" data-i18n="langSwitcher.en" aria-selected="false">English</li>
+                  <li role="option" data-value="es" data-i18n="langSwitcher.es" aria-selected="false">Español</li>
+                </ul>
+                <!-- Hidden select for fallback/no-JS -->
+                <select id="langSelect" hidden aria-hidden="true">
+                  <option value="pt-BR" data-i18n="langSwitcher.pt">Português</option>
+                  <option value="en" data-i18n="langSwitcher.en">English</option>
+                  <option value="es" data-i18n="langSwitcher.es">Español</option>
+                </select>
+              </div>
             </fieldset>
             <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
           </div>
@@ -1471,6 +1483,7 @@ npm install && npm run build && npm start</code>
       </div>
       <div class="container footer-bottom">
         <p>© 2026 Vinicius Werneck · WerneckLab · <a href="https://grblstudio.werneck.dev.br">grblstudio.werneck.dev.br</a></p>
+        <p>Desenvolvido por <a href="https://lab.werneck.dev.br" target="_blank" rel="noopener noreferrer">WerneckLab</a> · <a href="https://grblstudio.werneck.dev.br">grblstudio.werneck.dev.br</a></p>
         <p>Feito para Linux. <span class="heart">♥</span> Sem Wine, sem pressa, sem nuvem.</p>
       </div>
     </footer>
