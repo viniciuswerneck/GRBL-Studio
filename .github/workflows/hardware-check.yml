@@ -1,0 +1,87 @@
+name: Hardware Checklist
+
+on:
+  workflow_dispatch:
+    inputs:
+      port:
+        description: 'Porta serial (ex.: /dev/ttyUSB0)'
+        required: true
+        default: '/dev/ttyUSB0'
+      baud:
+        description: 'Baud rate'
+        required: true
+        default: '115200'
+      duration-short:
+        description: 'Duração job curto (segundos)'
+        required: true
+        default: '300'
+      duration-long:
+        description: 'Duração job longo (segundos)'
+        required: true
+        default: '600'
+  schedule:
+    # Executa toda segunda-feira às 02:00 UTC
+    - cron: '0 2 * * 1'
+
+# Requer self-hosted runner com label "grbl-hardware" e máquina física conectada
+jobs:
+  hardware-check:
+    name: Hardware Checklist
+    runs-on: [self-hosted, linux, x64, grbl-hardware]
+    timeout-minutes: 30
+    env:
+      GRBL_PORT: ${{ github.event.inputs.port || '/dev/ttyUSB0' }}
+      GRBL_BAUD: ${{ github.event.inputs.baud || '115200' }}
+      GRBL_DURATION_SHORT: ${{ github.event.inputs.duration-short || '300' }}000
+      GRBL_DURATION_LONG: ${{ github.event.inputs.duration-long || '600' }}000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run Hardware Checklist
+        id: checklist
+        run: |
+          node scripts/hardware-checklist.mjs \
+            --port "${GRBL_PORT}" \
+            --baud "${GRBL_BAUD}" \
+            --duration-short "${GRBL_DURATION_SHORT}" \
+            --duration-long "${GRBL_DURATION_LONG}" \
+            --output hardware-checklist-${{ github.run_id }}.json
+
+      - name: Upload Hardware Checklist Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hardware-checklist-${{ github.run_id }}
+          path: hardware-checklist-*.json
+          retention-days: 30
+
+      - name: Check for failures
+        if: always()
+        run: |
+          REPORT=$(ls hardware-checklist-*.json | head -1)
+          if [ -f "$REPORT" ]; then
+            FAILED=$(jq '.summary.failed' "$REPORT")
+            if [ "$FAILED" -gt 0 ]; then
+              echo "::error::Hardware checklist falhou: $FAILED teste(s) com FAIL"
+              jq '.tests[] | select(.status=="FAIL") | {id: .id, name: .name, error: .error}' "$REPORT"
+              exit 1
+            fi
+            echo "✅ Todos os testes passaram"
+          else
+            echo "::error::Relatório não encontrado"
+            exit 1
+          fi

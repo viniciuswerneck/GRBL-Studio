@@ -18,18 +18,19 @@ npm install
 ## Compilar
 
 ```bash
-npm run build        # tsc + empacota preload e os bundles do renderer (esbuild)
+npm run build        # electron-vite (main/preload) + esbuild (worker e bundles)
 npm run typecheck    # apenas verificação de tipos (tsc --noEmit)
-npm run dev          # tsc em watch (main/preload/shared)
+npm run dev          # electron-vite dev
 ```
 
-O `build` faz duas coisas: `tsc` compila `src/**` para `dist/**` (main,
-preload, shared, renderer) e, em seguida, o `esbuild` empacota **cada bundle
-consumido pelo renderer em runtime** (JS puro que não importa TS):
+O `build` faz duas coisas: `electron-vite build` (config em
+`electron.vite.config.ts`) empacota o main em `dist/main/index.js` e o preload
+em `dist/preload/index.js`; em seguida, o `esbuild` empacota o worker e **cada
+bundle consumido pelo renderer em runtime** (JS puro que não importa TS) em
+`public/`:
 
 | Script | Saída | Global | Fonte |
 | :--- | :--- | :--- | :--- |
-| `build:preload` | `dist/preload/index.js` | — | `src/preload/index.ts` (roda com `sandbox: true`: não pode usar `require` relativo) |
 | `build:worker` | `public/gcode.worker.js` | — | `src/renderer/gcode.worker.ts` (imagem → G-code fora da thread) |
 | `build:materials` | `public/materials.js` | `GRBL_MATERIALS` | `shared/materials.ts` (perfis de material) |
 | `build:adjust` | `public/adjust.js` | `GRBL_ADJUST` | `shared/image/adjust.ts` (ajustes de imagem) |
@@ -166,8 +167,8 @@ npm run format:check  # biome format .
 ```
 
 - Configuração em `biome.json` (aspas simples, `;`, 2 espaços, 80 colunas).
-- `vcs.useIgnoreFile` faz o Biome respeitar o `.gitignore` (não toca `dist/` nem
-  `public/gcode.worker.js`).
+- `vcs.useIgnoreFile` faz o Biome respeitar o `.gitignore` (não toca `out/`,
+  `dist/` nem `public/gcode.worker.js`).
 - A regra `style/noNonNullAssertion` está **desativada de propósito**: o código
   usa `!` em laços numéricos e o `tsc` estrito é a rede de segurança de tipos.
 - Rode `npm run lint` antes de cada commit (faz parte do DoD).

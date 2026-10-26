@@ -66,6 +66,7 @@
 | PDF | Não | Sim (vetorial: object streams, `cm`, Form XObjects e rotação; 1ª página; texto/imagens ignorados) | ✅ |
 | Rasterização (Line-to-line/Dithering) | Sim | Sim (line-to-line + Floyd–Steinberg) | ✅ |
 | Vetorização | Sim | Sim (contorno/RDP) | ✅ |
+| Centerline (imagem → linha única) | Sim | Sim (esqueleto Zhang–Suen + poda/RDP) | ✅ |
 | Perfis de material | Sim | Sim (COMGO Z1: 3W/5W/10W) | ✅ |
 | Grade de teste de material | Não | Sim | ✅ (superior) |
 | Teste de foco (spot) | Não | Sim (escada de Z com 2 potências) | ✅ |

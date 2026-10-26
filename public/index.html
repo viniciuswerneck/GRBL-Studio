@@ -327,6 +327,7 @@
                     <button type="button" id="guideTypePhoto" data-i18n="guide.type.photo">Foto</button>
                     <button type="button" id="guideTypeBW" data-i18n="guide.type.bw">P&amp;B</button>
                     <button type="button" id="guideTypeVector" data-i18n="guide.type.vector">Contorno</button>
+                    <button type="button" id="guideTypeCenter" data-i18n="guide.type.center" data-i18n-title="algo.centerline">Linha</button>
                   </div>
                 </label>
                 <label class="field" data-i18n="img.material">
@@ -541,6 +542,7 @@
                   <option value="line">Line-to-line</option>
                   <option value="dither">Dithering (Floyd–Steinberg)</option>
                   <option value="vector" data-i18n="algo.vector">Vetorizar (contorno / recorte)</option>
+                  <option value="centerline" data-i18n="algo.centerline">Linha única (centerline)</option>
                 </select>
               </label>
               <label class="field raster-only" data-i18n="img.lines"
@@ -556,12 +558,18 @@
               <label class="field raster-only" data-i18n="img.dot"
                 >Ponto (mm) <input type="number" id="imgDot" value="0.08" min="0" step="0.01"
               /></label>
-              <label class="field vector-only" data-i18n="img.simplify"
+              <label class="field path-only" data-i18n="img.simplify"
                 >Suavização (px) <input type="number" id="imgSimplify" value="0.5" min="0" step="0.1"
+              /></label>
+              <label class="field centerline-only" data-i18n="img.minBranch"
+                >Ramo mínimo (px) <input type="number" id="imgMinBranch" value="4" min="0" max="500" step="1"
               /></label>
             </div>
             <div id="algoHint" class="hint vector-only" data-i18n="img.algoHint">
               Vetorizar gera só o contorno (recorte): o Limiar B&amp;W define o que é recortado, e o desenho vira linhas fechadas a potência máxima (S-max).
+            </div>
+            <div id="centerlineHint" class="hint centerline-only" data-i18n="img.centerlineHint">
+              Linha única reduz cada traço ao seu centro (esqueleto): letras e logos grossos viram um desenho de uma passada só. O traço fica aberto nas pontas e o Limiar B&amp;W define o que é matéria.
             </div>
             <label class="field" data-i18n="img.brightness">Brilho <input type="range" id="imgBrightness" min="-1" max="1" step="0.05" value="0" /></label>
             <label class="field" data-i18n="img.contrast">Contraste <input type="range" id="imgContrast" min="-1" max="1" step="0.05" value="0" /></label>

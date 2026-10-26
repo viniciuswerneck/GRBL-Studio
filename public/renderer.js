@@ -155,6 +155,7 @@ const el = {
   guideTypePhoto: $('guideTypePhoto'),
   guideTypeBW: $('guideTypeBW'),
   guideTypeVector: $('guideTypeVector'),
+  guideTypeCenter: $('guideTypeCenter'),
   guideMaterial: $('guideMaterial'),
   wizardTitle: $('wizardTitle'),
   wizardStatus: $('wizardStatus'),
@@ -175,6 +176,7 @@ const el = {
   imgDirection: $('imgDirection'),
   imgDot: $('imgDot'),
   imgSimplify: $('imgSimplify'),
+  imgMinBranch: $('imgMinBranch'),
   imgBrightness: $('imgBrightness'),
   imgContrast: $('imgContrast'),
   imgWhiteClip: $('imgWhiteClip'),
@@ -11283,10 +11285,13 @@ function formatTime(sec) {
 }
 
 function formatStats(stats) {
+  // Centerline conta traços abertos; o vetor conta contornos fechados.
   const contours =
     typeof stats.contours === 'number' && stats.contours > 0
       ? t('stats.contours', { count: stats.contours })
-      : '';
+      : typeof stats.paths === 'number' && stats.paths > 0
+        ? t('stats.paths', { count: stats.paths })
+        : '';
   return (
     t('stats.format', {
       rows: stats.rows,
@@ -11550,14 +11555,23 @@ el.imgKeepAspect.addEventListener('change', () => {
 
 // ------------------------------------------------------------------ gerar
 
-/** Linhas/mm, direção e ponto valem só no raster; suavização só no vetor (RF-IMG-6). */
+/** Linhas/mm, direção e ponto valem só no raster; caminhos valem no vetor/centerline. */
 function updateAlgorithmVisibility() {
-  const vector = el.imgAlgorithm.value === 'vector';
+  const algo = el.imgAlgorithm.value;
+  const vector = algo === 'vector';
+  const center = algo === 'centerline';
   document.querySelectorAll('.vector-only').forEach((node) => {
     node.classList.toggle('hidden', !vector);
   });
+  document.querySelectorAll('.centerline-only').forEach((node) => {
+    node.classList.toggle('hidden', !center);
+  });
+  // A suavização vale para os dois modos de caminho (RF-IMG-6 / RF-IMG-16).
+  document.querySelectorAll('.path-only').forEach((node) => {
+    node.classList.toggle('hidden', !vector && !center);
+  });
   document.querySelectorAll('.raster-only').forEach((node) => {
-    node.classList.toggle('hidden', vector);
+    node.classList.toggle('hidden', vector || center);
   });
 }
 
@@ -11604,9 +11618,14 @@ function readImageOptions() {
     algorithm: el.imgAlgorithm.value,
     passes: Number(el.imgPasses.value),
     bidirectional: el.imgBidirectional?.checked ?? true,
-    // Só existe no modo vetor: assim o campo vazio nunca invalida os modos raster.
-    ...(el.imgAlgorithm.value === 'vector'
+    // Só existem nos modos de caminho: assim um campo vazio nunca invalida os
+    // modos raster (RF-IMG-6 / RF-IMG-16).
+    ...(el.imgAlgorithm.value === 'vector' ||
+    el.imgAlgorithm.value === 'centerline'
       ? { simplifyPx: Number(el.imgSimplify.value) }
+      : {}),
+    ...(el.imgAlgorithm.value === 'centerline'
+      ? { minBranchPx: Number(el.imgMinBranch.value) }
       : {}),
   };
 }
@@ -12163,6 +12182,7 @@ const CONVERSION_CONTROLS = [
   'imgDirection',
   'imgDot',
   'imgSimplify',
+  'imgMinBranch',
   'imgPasses',
   'imgSpeed',
   'imgMode',
@@ -12290,15 +12310,18 @@ function drawContours(flat, box) {
   let i = 0;
   while (i < flat.length) {
     const n = flat[i++];
-    if (n <= 0) break;
+    if (!n) break;
+    // `n < 0` = traço aberto (centerline); `n > 0` = contorno fechado (vetor).
+    const open = n < 0;
+    const len = Math.abs(n);
     ctx.beginPath();
-    for (let k = 0; k < n; k++) {
+    for (let k = 0; k < len; k++) {
       const x = box.x + flat[i++] * box.w;
       const y = box.y + flat[i++] * box.h;
       if (k === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
-    ctx.closePath();
+    if (!open) ctx.closePath();
     ctx.stroke();
   }
   ctx.restore();
@@ -15822,6 +15845,8 @@ function setGuideType(algo) {
     el.guideTypeBW.classList.toggle('primary', algo === 'dither');
   if (el.guideTypeVector)
     el.guideTypeVector.classList.toggle('primary', algo === 'vector');
+  if (el.guideTypeCenter)
+    el.guideTypeCenter.classList.toggle('primary', algo === 'centerline');
 }
 if (el.guideTypePhoto)
   el.guideTypePhoto.addEventListener('click', () => setGuideType('line'));
@@ -15829,6 +15854,10 @@ if (el.guideTypeBW)
   el.guideTypeBW.addEventListener('click', () => setGuideType('dither'));
 if (el.guideTypeVector)
   el.guideTypeVector.addEventListener('click', () => setGuideType('vector'));
+if (el.guideTypeCenter)
+  el.guideTypeCenter.addEventListener('click', () =>
+    setGuideType('centerline'),
+  );
 setGuideType('line');
 
 // Material no guia.

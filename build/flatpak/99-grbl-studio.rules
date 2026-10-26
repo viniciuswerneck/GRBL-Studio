@@ -1,0 +1,25 @@
+# Udev rules para dispositivos GRBL (USB/Serial)
+# Adiciona permissões para /dev/ttyUSB* e /dev/ttyACM* comuns em placas GRBL
+# Para usar: sudo cp 99-grbl-studio.rules /etc/udev/rules.d/ && sudo udevadm control --reload && sudo udevadm trigger
+
+# CH340 / CH341 (COMGO, Sculpfun, Ortur, AtomStack, etc.)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", MODE="0666", GROUP="dialout", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", MODE="0666", GROUP="dialout", TAG+="uaccess"
+
+# CP2102 / CP2104 (Sculpfun, TwoTrees, etc.)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0666", GROUP="dialout", TAG+="uaccess"
+
+# FTDI (Alguns Arduinos, controladores personalizados)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666", GROUP="dialout", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", MODE="0666", GROUP="dialout", TAG+="uaccess"
+
+# Arduino / Atmel (Uno, Mega, Nano)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0043", MODE="0666", GROUP="dialout", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0001", MODE="0666", GROUP="dialout", TAG+="uaccess"
+
+# Genérico: qualquer dispositivo CDC-ACM
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", MODE="0666", GROUP="dialout", TAG+="uaccess"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0666", GROUP="dialout", TAG+="uaccess"
+
+# Permite acesso via polkit (uaccess) para aplicações Flatpak/sandbox
+TAG+="uaccess"

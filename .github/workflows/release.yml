@@ -1,81 +1,354 @@
 name: Release
 
-# Publica uma release do GitHub com os artefatos (AppImage + deb no Linux,
-# .exe/.msi no Windows, .dmg no macOS) quando uma tag `v*` é empurrada.
-# `workflow_dispatch` gera apenas os artefatos (upload como artifact) sem
-# criar release.
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
+  packages: write
+  id-token: write
+
+env:
+  NODE_VERSION: '20'
+  GRBL_BENCH: '1'
 
 jobs:
-  build:
-    name: Empacotar (${{ matrix.os }})
+  # --------------------------------------------------------------
+  # Build, lint, typecheck, test (unit + e2e)
+  # --------------------------------------------------------------
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for changelog generation
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (X11)
+        run: xvfb-run -a npm run test:e2e
+        env:
+          DISPLAY: ':99'
+
+  # --------------------------------------------------------------
+  # Benchmark matrix: X11 + Wayland (via xvfb)
+  # --------------------------------------------------------------
+  benchmark:
+    name: Benchmark (${{ matrix.display }})
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Informativo: runners compartilhados inflam startup/PSS e não devem
+    # bloquear a publicação. O gate oficial é o hardware real (P1-3).
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: linux
-            artifact: grbl-studio-linux
-            files: |
-              release/*.AppImage
-              release/*.deb
-          - os: windows-latest
-            target: win
-            artifact: grbl-studio-windows
-            files: |
-              release/*.exe
-              release/*.msi
-              release/*.zip
-          - os: macos-latest
-            target: mac
-            artifact: grbl-studio-macos
-            files: |
-              release/*.dmg
-              release/*.zip
-    runs-on: ${{ matrix.os }}
+          - display: X11
+            env:
+              DISPLAY: ':99'
+              WAYLAND_DISPLAY: ''
+              XDG_SESSION_TYPE: 'x11'
+          - display: Wayland
+            env:
+              DISPLAY: ':99'
+              WAYLAND_DISPLAY: 'wayland-0'
+              XDG_SESSION_TYPE: 'wayland'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Instalar dependências
+      - name: Install dependencies
         run: npm ci
-        env:
-          # O app não usa navegadores do Playwright (o E2E usa o Electron).
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
-      - name: Qualidade (lint + tipos + testes)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build
+        run: npm run build
+
+      - name: Start Xvfb (X11)
+        if: matrix.display == 'X11'
         run: |
-          npm run lint
-          npm run typecheck
-          npm test
+          /usr/bin/Xvfb :99 -screen 0 1280x720x24 &
+          sleep 1
 
-      - name: Empacotar
-        run: npm run build && npx electron-builder --${{ matrix.target }} --publish never --config electron-builder.yml
+      - name: Run benchmark (X11)
+        if: matrix.display == 'X11'
+        run: |
+          xvfb-run -a node scripts/bench.mjs --dwell=30000 --strict --json > bench-x11.json
+        env:
+          DISPLAY: ':99'
+          WAYLAND_DISPLAY: ''
+          XDG_SESSION_TYPE: 'x11'
 
-      - name: Artefatos (workflow_dispatch)
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      - name: Run benchmark (Wayland via xvfb)
+        if: matrix.display == 'Wayland'
+        run: |
+          xvfb-run -a node scripts/bench.mjs --dwell=30000 --strict --json > bench-wayland.json
+        env:
+          DISPLAY: ':99'
+          WAYLAND_DISPLAY: 'wayland-0'
+          XDG_SESSION_TYPE: 'wayland'
+
+      - name: Check X11 thresholds
+        if: matrix.display == 'X11'
+        run: |
+          node -e "
+            const fs = require('fs');
+            const r = JSON.parse(fs.readFileSync('bench-x11.json', 'utf8'));
+            const env = r.environment;
+            const b = r.budgets;
+
+            const startup = b.find(x => x.key === 'startup').measured;
+            const pss = b.find(x => x.key === 'pss').measured;
+            const latency = b.find(x => x.key === 'latency').measured;
+
+            console.log('Startup:', startup, 'ms');
+            console.log('PSS:', pss, 'MB');
+            console.log('Latency p95:', latency, 'ms');
+
+            let failed = false;
+            if (startup > 1800) { console.error('❌ Startup > 1800 ms'); failed = true; }
+            if (pss > 300) { console.error('❌ PSS X11 > 300 MB'); failed = true; }
+            if (latency > 20) { console.error('❌ IPC p95 > 20 ms'); failed = true; }
+
+            if (failed) process.exit(1);
+          "
+
+      - name: Check Wayland thresholds
+        if: matrix.display == 'Wayland'
+        run: |
+          node -e "
+            const fs = require('fs');
+            const r = JSON.parse(fs.readFileSync('bench-wayland.json', 'utf8'));
+            const b = r.budgets;
+
+            const startup = b.find(x => x.key === 'startup').measured;
+            const pss = b.find(x => x.key === 'pss').measured;
+            const latency = b.find(x => x.key === 'latency').measured;
+
+            console.log('Startup:', startup, 'ms');
+            console.log('PSS:', pss, 'MB');
+            console.log('Latency p95:', latency, 'ms');
+
+            let failed = false;
+            if (startup > 1800) { console.error('❌ Startup > 1800 ms'); failed = true; }
+            if (pss > 320) { console.error('❌ PSS Wayland > 320 MB'); failed = true; }
+            if (latency > 20) { console.error('❌ IPC p95 > 20 ms'); failed = true; }
+
+            if (failed) process.exit(1);
+          "
+
+      - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.files }}
+          name: bench-${{ matrix.display }}
+          path: |
+            bench-x11.json
+            bench-wayland.json
+          retention-days: 30
 
-      - name: Publicar release (tags)
-        if: startsWith(github.ref, 'refs/tags/')
+  # --------------------------------------------------------------
+  # Package Linux artifacts (AppImage, deb)
+  # --------------------------------------------------------------
+  package-linux:
+    name: Package Linux
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package Linux (AppImage + deb)
+        run: npm run package:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Collect artifacts
+        run: |
+          ls -la release/
+          echo "ARTIFACTS=$(find release -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.flatpak' \) | tr '\n' ' ')" >> $GITHUB_ENV
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            release/*.AppImage
+            release/*.deb
+          retention-days: 30
+
+  # --------------------------------------------------------------
+  # Generate changelog from CHANGELOG.md
+  # --------------------------------------------------------------
+  changelog:
+    name: Generate Changelog
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      notes: ${{ steps.extract.outputs.notes }}
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog for this version
+        id: extract
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Extract section from CHANGELOG.md for this version
+          # Format: ## [VERSION] - DATE ... until next ## [
+          awk -v ver="$VERSION" '
+            BEGIN { found=0; printing=0 }
+            /^## \[/ {
+              if (found && printing) exit
+              if ($0 ~ "\\[" ver "\\]") { found=1; printing=1; next }
+            }
+            printing { print }
+          ' CHANGELOG.md > release-notes.md
+
+          # If not found (edge case), use last commit
+          if [ ! -s release-notes.md ]; then
+            echo "## $VERSION" > release-notes.md
+            echo "" >> release-notes.md
+            git log -1 --pretty=format:"%s" >> release-notes.md
+          fi
+
+          # Escape for JSON
+          NOTES=$(cat release-notes.md | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+          echo "notes=$NOTES" >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+          retention-days: 30
+
+  # --------------------------------------------------------------
+  # Create GitHub Release and upload artifacts
+  # --------------------------------------------------------------
+  release:
+    name: Create Release
+    needs: [package-linux, changelog]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-packages
+          path: ./release-artifacts
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: ./release-notes
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.files }}
-          generate_release_notes: true
-          fail_on_unmatched_files: false
+          tag_name: ${{ github.ref_name }}
+          name: GRBL Studio ${{ github.ref_name }}
+          body_path: ./release-notes/release-notes.md
+          draft: false
+          prerelease: false
+          files: |
+            ./release-artifacts/*.AppImage
+            ./release-artifacts/*.deb
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify release artifacts
+        run: |
+          echo "Release created: ${{ github.ref_name }}"
+          ls -la ./release-artifacts/
+
+  # --------------------------------------------------------------
+  # Summary / status check
+  # --------------------------------------------------------------
+  status:
+    name: Status
+    needs: [build-and-test, package-linux, changelog, release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.build-and-test.result }}" != "success" ]]; then
+            echo "❌ Build & Test failed"
+            exit 1
+          fi
+          if [[ "${{ needs.package-linux.result }}" != "success" ]]; then
+            echo "❌ Package Linux failed"
+            exit 1
+          fi
+          if [[ "${{ needs.changelog.result }}" != "success" ]]; then
+            echo "❌ Changelog failed"
+            exit 1
+          fi
+          if [[ "${{ github.event_name }}" == "push" && "${{ needs.release.result }}" != "success" ]]; then
+            echo "❌ Release failed"
+            exit 1
+          fi
+          echo "✅ All checks passed - Release ${{ github.ref_name }} published successfully"

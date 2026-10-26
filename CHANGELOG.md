@@ -6,6 +6,76 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-26
+
+**Release de infraestrutura e fundação** — automação completa de release, migração para electron-vite, Flatpak, guia de primeiros passos, checklist de hardware, splash animado e base Svelte 5.
+
+### Added — Release Automation (P0-4)
+- **Workflow GitHub Actions completo** (`.github/workflows/release.yml`): build, lint, typecheck, testes unitários + E2E, benchmark informativo, empacotamento AppImage + deb, changelog automático e publicação em GitHub Releases (Flatpak é build manual em `build/flatpak/`).
+
+### Added — Getting Started Guide (P0-5)
+- **`docs/GETTING_STARTED.md`**: guia completo em 11 seções (instalação AppImage/deb/Flatpak, permissão `dialout`, onboarding 5 passos, conectar máquina, carregar arquivo/imagem/desenho, preview/posicionamento, gravar, troubleshooting, FAQ, links úteis).
+
+### Added — Hardware Checklist Automatizado (P1-3)
+- **`scripts/hardware-checklist.mjs`**: CLI com 10 testes sequenciais (conexão, homing, jog, job 5/10 min, pause/resume/stop, alarme, overrides, retomada, fila) + relatório JSON.
+- **Workflow CI** (`.github/workflows/hardware-check.yml`): execução manual + semanal em runner com hardware real.
+
+### Added — Electron-Vite + Svelte 5 Base (P1-5 / P0-1 fundação)
+- **`electron.vite.config.ts`**: config unificada (main, preload, renderer) com aliases `@shared`, `@main`.
+- **`src/renderer/vite.config.ts`**: renderer Svelte 5 (runes) + `@sveltejs/vite-plugin-svelte`.
+- **Providers reativos**: `ThemeProvider` (11 temas Fluent/Win11) + `I18nProvider` (pt-BR/en/es).
+- **Store centralizado**: `connectionStore` (runes) para IPC tipado.
+- **Componentes base Fluent**: Button, Select, Card, Badge, Spinner, NavRail, AppShell.
+- **Tela Conexão**: `ConnectionScreen.svelte` completa (porta, baud, 30+ perfis, badge animado, status grid).
+- **Guia migração**: `docs/SVELTE_MIGRATION_GUIDE.md` (plano 8 semanas, componentes, bloqueadores).
+
+### Added — Flatpak (P0-2)
+- **`build/flatpak/com.grblstudio.app.yml`**: manifesto completo com `zypak-wrapper`, udev rules, desktop file, ícone 256x256.
+- **`build/flatpak/README.md`**: instruções dev + CI/CD Flathub + troubleshooting.
+
+### Added — Splash Animation (P2-5)
+- **`public/splash.html`**: fade-in 300ms + slide up 20px, logo pulse sutil, progress bar indeterminada, versão dinâmica, `prefers-reduced-motion`.
+
+### Added — Acessibilidade + Benchmarks Base (P1-2, P1-4)
+- **`src/renderer/test/a11y.setup.ts`**: axe-core WCAG 2.1 AA (color-contrast desabilitado para temas HC).
+- **`vitest.bench.config.ts` + `scripts/check-bench.mjs`**: thresholds CI (startup ≤1.8s, PSS X11≤300MB/Wayland≤320MB, IPC p95≤20ms).
+
+### Changed
+- **Build unificado**: `package.json` scripts simplificados (`build` → `electron-vite build` + preload + worker); 30+ scripts `build:*` legados consolidados.
+- **Package.json**: novas deps `electron-vite`, `@sveltejs/vite-plugin-svelte`, `svelte`, `vitest-axe`, `@testing-library/svelte`.
+- **TypeScript**: `tsconfig.json` paths `@shared/*`, `@main/*`; renderer excluído do typecheck principal.
+- **i18n**: catálogos pt-BR/en/es atualizados com chaves novas (tema, conexão, splash, a11y).
+
+### Fixed
+- **E2E flaky**: teste "fila grava dois programas" (timing do botão "Parar fila") — conhecido, será corrigido em P1-1.
+
+## [0.22.0] - 2026-10-21
+
+Fecha a **fila ativa**: o **centerline** (imagem → linha única) era o último
+item de software puro do backlog. Agora o logo de traço grosso vira um desenho
+de **uma passada só**, no centro do traço, em vez do contorno duplo.
+
+### Added — centerline (RF-IMG-16)
+
+- Novo algoritmo **“Linha única (centerline)”** na Conversão da aba Imagem:
+  reduz cada traço ao seu **esqueleto de 1 px** (afinamento de Zhang–Suen) e
+  emite **polilinhas abertas** no G-code. Serve para letras, logos e carimbos
+  desenhados com traço grosso — mais rápido e mais fino que vetorizar o contorno.
+- **Ramo mínimo (px)** poda esporões curtos do esqueleto (ruído do afinamento) e
+  a **Suavização (px)** tira o degrau de 1 px (RDP) preservando as duas pontas.
+  Imagens grandes são reduzidas só para esqueletizar (até 900 px no maior lado);
+  um traço fino de 1 px **não desaparece** na redução (bloco escuro = matéria).
+- O preview desenha os **traços abertos** (o contorno fechado continua fechado)
+  e as estatísticas contam **traços** em vez de contornos.
+- O Assistente ganhou o tipo **“Linha”** ao lado de Foto/P&B/Contorno.
+
+### Changed
+
+- O afinamento reavalia só a **lista de borda** (o custo acompanha o perímetro,
+  não a área): sólidos grandes não travam a thread do worker.
+- O traçado usa 8-vizinhos **sem atalho diagonal** — anéis e cantos não se
+  fragmentam em triângulos de 1 px.
+
 ## [0.21.0] - 2026-10-20
 
 Fecha os dois últimos itens **M/S** da fila ativa fora do centerline: o

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=GRBL Studio
+GenericName=Laser GRBL Controller
+Comment=Controladora laser GRBL nativa para Linux
+Exec=grbl-studio
+Icon=grbl-studio
+Terminal=false
+Categories=Engineering;Graphics;CAD;
+Keywords=laser;grbl;cnc;gcode;engraving;cutting;
+StartupWMClass=grbl-studio
+StartupNotify=true
+MimeType=application/x-nc;application/gcode;text/x.gcode;
+X-Flatpak=com.grblstudio.app

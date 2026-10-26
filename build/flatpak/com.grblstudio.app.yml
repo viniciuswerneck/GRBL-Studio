@@ -11,6 +11,8 @@ base: org.electronjs.Electron2.BaseApp
 base-version: '24.08'
 command: grbl-studio
 separate-locales: false
+rename-desktop-file: grbl-studio.desktop
+rename-icon: grbl-studio
 
 finish-args:
   - --share=ipc
@@ -22,6 +24,16 @@ finish-args:
   - --share=network
   # Abrir/salvar G-code e imagens do usuário (RF-CFG-5).
   - --filesystem=home
+  # Acesso a /run/udev para detectar dispositivos (opcional, melhora listagem).
+  - --filesystem=/run/udev:ro
+
+# Políticas de sandbox adicionais para Electron
+# --allow=devel é necessário para o Node/Electron em alguns casos
+# env-vars para configuração
+environment:
+  ELECTRON_OZONE_PLATFORM_HINT: auto
+  # Desabilita sandbox do Electron (gerenciado pelo Flatpak + zypak)
+  ELECTRON_DISABLE_SANDBOX: '1'
 
 modules:
   - name: grbl-studio
@@ -31,10 +43,44 @@ modules:
       - mkdir -p /app/grbl-studio
       - cp GRBL-Studio.AppImage /app/grbl-studio/
       - chmod +x /app/grbl-studio/GRBL-Studio.AppImage
+      # Extrai o AppImage (necessário para zypak-wrapper encontrar o binário)
       - cd /app/grbl-studio && ./GRBL-Studio.AppImage --appimage-extract >/dev/null
       - rm -f /app/grbl-studio/GRBL-Studio.AppImage
+      # Desktop file
+      - install -Dm644 grbl-studio.desktop /app/share/applications/grbl-studio.desktop
+      # Ícone
+      - install -Dm644 grbl-studio.png /app/share/icons/hicolor/256x256/apps/grbl-studio.png
+      # Udev rules para serial (opcional, melhora detecção)
+      - install -Dm644 99-grbl-studio.rules /app/lib/udev/rules.d/99-grbl-studio.rules
     sources:
       - type: file
         path: grbl-studio.sh
       - type: file
+        path: grbl-studio.desktop
+      - type: file
+        path: grbl-studio.png
+      - type: file
+        path: 99-grbl-studio.rules
+      - type: file
         path: ../../release/GRBL-Studio.AppImage
+        dest: .
+
+  # Módulo para instalar zypak se não estiver no BaseApp (fallback)
+  - name: zypak-wrapper
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 zypak-wrapper /app/bin/zypak-wrapper
+    sources:
+      - type: script
+        dest-filename: zypak-wrapper
+        commands:
+          - |
+            #!/bin/sh
+            # Wrapper zypak para Electron no Flatpak
+            # Busca o binário extraído do AppImage
+            APP_DIR="/app/grbl-studio/squashfs-root"
+            if [ ! -x "$APP_DIR/grbl-studio" ]; then
+              echo "ERRO: Binário não encontrado em $APP_DIR/grbl-studio" >&2
+              exit 1
+            fi
+            exec zypak-wrapper "$APP_DIR/grbl-studio" "$@"

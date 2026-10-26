@@ -73,6 +73,7 @@ export const ptBR = {
   'guide.type.photo': 'Foto',
   'guide.type.bw': 'P&B',
   'guide.type.vector': 'Contorno',
+  'guide.type.center': 'Linha',
   'wizard.startHint': 'Conecte a gravadora para começar.',
   'wizard.title': 'Passo {n} de {total} — {title}',
   'wizard.paramsTitle': 'Tamanho, tipo e material',
@@ -160,13 +161,19 @@ export const ptBR = {
   'img.type': 'Tipo',
   'img.material': 'Material',
   'algo.vector': 'Vetorizar (contorno / recorte)',
+  'algo.centerline': 'Linha única (centerline)',
   'img.lines': 'Linhas/mm',
   'img.direction': 'Direção',
   'img.dot': 'Ponto (mm)',
   'img.simplify': 'Suavização (px)',
+  'img.minBranch': 'Ramo mínimo (px)',
   'img.algoHint':
     'Vetorizar gera só o contorno (recorte): o Limiar B&W define o que é ' +
     'recortado, e o desenho vira linhas fechadas a potência máxima (S-max).',
+  'img.centerlineHint':
+    'Linha única reduz cada traço ao seu centro (esqueleto): letras e logos ' +
+    'grossos viram um desenho de uma passada só. O traço fica aberto nas ' +
+    'pontas e o Limiar B&W define o que é matéria.',
   'img.brightness': 'Brilho',
   'img.contrast': 'Contraste',
   'img.threshold': 'Limiar B&W',
@@ -1420,6 +1427,7 @@ export const ptBR = {
   'stats.format':
     '{rows} linhas × {cols} amostras · {segments} segmentos · {size} · ~{time}',
   'stats.contours': ' · {count} contornos',
+  'stats.paths': ' · {count} traços',
   'time.sec': '{s} s',
   'time.minSec': '{m} min {r} s',
   'time.min': '{m} min',

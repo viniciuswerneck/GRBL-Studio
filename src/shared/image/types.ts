@@ -21,8 +21,8 @@ export interface AdjustOptions {
   bwThreshold: number;
 }
 
-/** Algoritmo de conversão (RF-IMG-4 / RF-IMG-5 / RF-IMG-6). */
-export type Algorithm = 'line' | 'dither' | 'vector';
+/** Algoritmo de conversão (RF-IMG-4 / RF-IMG-5 / RF-IMG-6 / RF-IMG-16). */
+export type Algorithm = 'line' | 'dither' | 'vector' | 'centerline';
 
 /** Direção da varredura (RF-IMG-4). */
 export type ScanDirection = 'h' | 'v';
@@ -84,10 +84,21 @@ export interface ImageToGcodeOptions {
    */
   gapThresholdMm?: number;
   /**
-   * Suavização do contorno em modo `vector` (RF-IMG-6): Ramer–Douglas–Peucker
-   * com tolerância em pixels da imagem. Padrão 0.5. Ignorado nos demais modos.
+   * Suavização do contorno em modo `vector` (RF-IMG-6) e do traço em modo
+   * `centerline` (RF-IMG-16): Ramer–Douglas–Peucker com tolerância em pixels
+   * da imagem. Padrão 0.5 (contorno) / 0.75 (centerline). Ignorado nos demais.
    */
   simplifyPx?: number;
+  /**
+   * Centerline (RF-IMG-16): poda esporões com menos que isto (pixels da malha
+   * de trabalho). Padrão 4. Ignorado nos demais modos.
+   */
+  minBranchPx?: number;
+  /**
+   * Centerline (RF-IMG-16): maior lado da malha usada para esqueletizar.
+   * Padrão 900 — acima disso a imagem é reduzida (traço fino sobrevive).
+   */
+  centerlineMaxDim?: number;
   /**
    * Varredura em zigue-zague (ida e volta) nos modos `line`/`dither`: evita o
    * `G0` de retorno de cada linha. Padrão `true` (RF-IMG-4).
@@ -122,6 +133,8 @@ export interface GcodeStats {
   bounds: { xMin: number; xMax: number; yMin: number; yMax: number };
   /** Contornos gerados (só no modo `vector`). */
   contours?: number;
+  /** Traços (polilinhas) gerados no modo `centerline` (RF-IMG-16). */
+  paths?: number;
 }
 
 export interface GcodeResult {
@@ -130,9 +143,10 @@ export interface GcodeResult {
   /** Matriz de potência (0..1, 1 = branco) usada no preview, `rows * cols`. */
   grid: Float32Array;
   /**
-   * Só no modo `vector`: caminhos dos contornos para o preview desenhar as
-   * linhas de corte de verdade. Formato "comprimento-prefixado":
+   * Só nos modos `vector`/`centerline`: caminhos para o preview desenhar as
+   * linhas de verdade. Formato "comprimento-prefixado":
    * `[n, x0, y0, x1, y1, ..., n, ...]`, com x/y normalizados 0..1 da área.
+   * `n > 0` = contorno fechado; `n < 0` = traço aberto (centerline).
    */
   contourPaths?: Float32Array;
 }

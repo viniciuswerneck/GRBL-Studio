@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRBL Studio</title>
+  <!-- Tema aplicado antes do primeiro paint (sem flash) -->
+  <script type="module" src="./src/theme-boot.ts"></script>
+  <!-- Tokens CSS (Fluent/Win11) -->
+  <link rel="stylesheet" href="./tokens.css">
+  <!-- Preload bundles críticos -->
+  <link rel="preload" href="./i18n.js" as="script">
+  <link rel="preload" href="./machines.js" as="script">
+</head>
+<body>
+  <div id="app"></div>
+  <!-- Vanilla JS renderer (funcional) -->
+  <script src="./renderer.js"></script>
+</body>
+</html>

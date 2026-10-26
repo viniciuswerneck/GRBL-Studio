@@ -1,6 +1,6 @@
 # GRBL Studio - Roadmap
 
-> **Atualizado em 20/10/2026 (v0.21.0).** Este arquivo é a **visão de execução por
+> **Atualizado em 21/10/2026 (v0.22.0).** Este arquivo é a **visão de execução por
 > versão** — tudo o que falta, em ordem. O *raciocínio* (mercado, fosso, riscos)
 > está em [`PLANO_PREMIUM.md`](PLANO_PREMIUM.md); os requisitos, em
 > [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md); o detalhe das ferramentas de geração, em
@@ -18,7 +18,7 @@
 
 ---
 
-## Estado atual (v0.21.0)
+## Estado atual (v0.22.0)
 
 **Fases 0–6 concluídas**; **Fase 7 (polish) e Fase 8 (qualidade) parciais** —
 detalhe em `PLANO_DE_ACAO.md` §1.1 e no `CHANGELOG.md`.
@@ -45,7 +45,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Importação SVG** (P1.6), **DXF ASCII e PDF vetorial** (P2.4) e **grade de
       teste de material** (P1.7).
 - [x] **Builds Win/macOS/Linux no CI** (P1.1) + **auto-update** (P1.2).
-- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 587 chaves), Assistente (wizard),
+- [x] 11 temas (Fluent), **i18n pt-BR/en/es** (1 592 chaves), Assistente (wizard),
       log de sessão.
 - [x] **Ferramentas de símbolo**: **QR Code** (ISO/IEC 18004 próprio, ECC L/M/Q/H,
       tamanho alvo em mm) e **código de barras 1D** (Code 128, EAN-13/8, UPC-A,
@@ -113,7 +113,7 @@ Já entregue (não repetir no planejamento):
 - [x] **Fila de trabalhos (agenda)** (RF-GC-13): enfileirar, reordenar e gravar
       os programas em sequência, com a fila persistida, pré-voo uma vez e
       Stop/emergência sempre à mão — v0.21.0.
-- [x] **981 testes** (Vitest, 62 arquivos) + E2E Playwright (64) + smoke headless.
+- [x] **1 006 testes** (Vitest, 63 arquivos) + E2E Playwright (65) + smoke headless.
 
 ---
 
@@ -124,8 +124,8 @@ A lista vinha **crescendo**: o Anexo B propôs **26 itens novos** em cima dos
 voltar a **encolher**, o backlog fica dividido em três — e nada novo entra na
 lista ativa.
 
-**A. Ativos (software puro, fecha aqui).** Restam **1**; cada release marca 1–2
-como ✅ e o número só cai:
+**A. Ativos (software puro, fecha aqui).** Restam **0** — a lista ativa
+**fechou**; cada release marcava 1–2 como ✅ e o número só caía:
 
 | # | Item | Esf. | Alvo | Pronto quando |
 | :-- | :-- | :-- | :-- | :-- |
@@ -136,7 +136,7 @@ como ✅ e o número só cai:
 | 5 | ~~Tira de teste de código~~ | S | ✅ v0.20 | RF-DSN-28: mesmo símbolo em N tamanhos, com o tamanho anotado embaixo |
 | 6 | ~~Catálogo de materiais com avisos~~ | M | ✅ v0.21 | RF-IMG-15: ficha por material (potência/velocidade + segurança) ligada aos presets |
 | 7 | ~~Agenda / fila de trabalhos~~ | S | ✅ v0.21 | RF-GC-13: fila persistida rodando em sequência com emergência acessível |
-| 8 | **Centerline (imagem → linha única)** | M | v0.22 | Esqueletização com teste em logos reais |
+| 8 | ~~Centerline (imagem → linha única)~~ | M | ✅ v0.22 | RF-IMG-16: esqueleto de 1 px, poda de esporões e traço aberto no G-code |
 
 **B. Congelado por hardware/OS** — não conta como pendência ativa; sai daqui
 quando houver máquina/assinatura: câmera e "gravar em peça já pronta",
@@ -383,9 +383,9 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 5. **Candidatos novos do Anexo** — ✅ **abas, sobre-corte e custo por peça**
    (v0.14.0), **tiling** (v0.15.0), **marcas de registro** (v0.16.0), **gravar dos dois lados** (v0.17.0), **geradores** (v0.18.0), **gabarito** e **texto em arco** (v0.19.0),
    **biblioteca de símbolos** e **tira de teste** (v0.20.0), **catálogo de
-   materiais** e **fila de trabalhos** (v0.21.0); seguem
-   abertos o kit de segurança/monitor e o **centerline** (v0.22); versões e esforço
-   **propostos** na tabela do Anexo, a ratificar antes de virar compromisso.
+   materiais** e **fila de trabalhos** (v0.21.0) e **centerline** (v0.22.0);
+   segue aberto o kit de segurança/monitor; versões e esforço **propostos** na
+   tabela do Anexo, a ratificar antes de virar compromisso.
 
 > **Nota (17/10/2026):** as pendências pontuais de status/jog/console e o log
 > persistente de sessão (RNF-9) foram concluídos — ver `CHANGELOG.md` e
@@ -466,7 +466,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | # | Item | O que é | Onde usa | Onde entra |
 | :-- | :-- | :-- | :-- | :-- |
 | 34 | **Vetorização (imagem → linha)** | Transforma foto/logo em linhas. | Logo em JPG → contorno de corte. | ✅ RF-IMG-6 |
-| 35 | **Puxar o risco do meio (centerline)** | Tira só o "esqueleto" de um desenho grosso. | Letra/desenho de contorno → linha única. | ⬜ novo |
+| 35 | **Puxar o risco do meio (centerline)** | Tira só o "esqueleto" de um desenho grosso. | Letra/desenho de contorno → linha única. | ✅ RF-IMG-16 |
 | 36 | **Texto em curva / arco** | Escrever acompanhando uma curva ou círculo. | Nome em volta de um selo, texto curvado. | ⬜ novo |
 | 37 | **Preenchimentos e texturas** | Encher a área com linhas/ondas/pontos. | Textura numa área grande, em vez de sólido. | 🟡 parcial (hatch) |
 | 38 | **Biblioteca de símbolos** | Setas, réguas, marcas e ícones prontos pra arrastar. | Não desenhar do zero no Inkscape. | ⬜ novo |
@@ -518,7 +518,7 @@ Ver `PLANO_DE_ACAO.md` §1.1 (status) e `PLANO_PREMIUM.md` §8 (caminho crítico
 | Gravar em peça já pronta | v0.9 | S | Alinhar desenho ao alvo existente (fiducial/visão simples). |
 | Gabarito (jig / molde) | v0.9 | S | Gerar molde de encaixe a partir da peça. |
 | Imprimir e cortar | v0.9 | M | Corte sobre impresso com marcas de registro. |
-| Centerline (imagem → linha única) | v0.9 | M | Traço do meio por esqueletização; teste com logos. |
+| Centerline (imagem → linha única) | v0.9 | M | ✅ RF-IMG-16 (0.22.0): esqueleto de 1 px (Zhang–Suen), poda de esporões e RDP; traço aberto no G-code. |
 | Texto em curva / arco | v0.9 | S | Texto ao longo de caminho/arco no editor 2D. |
 | Mapa de altura | v0.9 | L | Correção de foco por superfície (entrada de altura). |
 | Relevo (3D / depth map) | v0.9 | M | Potência por profundidade a partir de mapa de cinza. |

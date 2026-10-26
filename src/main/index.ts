@@ -77,7 +77,9 @@ function createSplash(): void {
     splashWindow = null;
   });
   void splashWindow
-    .loadFile(path.join(__dirname, '../../public/splash.html'))
+    .loadFile(path.join(__dirname, '../../public/splash.html'), {
+      query: { version: app.getVersion() },
+    })
     .catch(() => {
       /* Sem splash: a janela principal abre do mesmo jeito. */
     });

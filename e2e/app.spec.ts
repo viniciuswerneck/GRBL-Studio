@@ -1304,7 +1304,13 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       await page.locator('#designCostRate').dispatchEvent('change');
       await expect
         .poll(async () => {
-          const prefs = await page.evaluate(() => window.grbl.getPrefs());
+          const prefs = await page.evaluate(() =>
+            (
+              window as unknown as {
+                grbl: { getPrefs(): Promise<{ costRate: number }> };
+              }
+            ).grbl.getPrefs(),
+          );
           return prefs.costRate;
         })
         .toBe(120);
@@ -1361,8 +1367,12 @@ test.describe('GRBL Studio — fluxo da UI', () => {
       );
       // A prévia do plano é desenhada no canvas do diálogo.
       const painted = await page.evaluate(() => {
-        const canvas = document.querySelector('#designTilesCanvas');
+        const canvas = document.querySelector(
+          '#designTilesCanvas',
+        ) as HTMLCanvasElement | null;
+        if (!canvas) throw new Error('canvas de tiles não encontrado');
         const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('contexto 2d indisponível');
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         let n = 0;
         for (let i = 3; i < data.length; i += 4) if (data[i] > 0) n++;
@@ -3321,6 +3331,103 @@ test.describe('GRBL Studio — presets de material (P2.12/RF-IMG-8)', () => {
       await close();
       emulator.close();
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+test.describe('GRBL Studio — centerline (RF-IMG-16)', () => {
+  /**
+   * Cruz preta de 64×64 com barras de 10 px (PNG RGB gerado por script):
+   * o esqueleto tem 4 braços e uma junção — o caso clássico de "linha única".
+   */
+  const PNG_PLUS =
+    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAqUlEQVR4nO2PgQ2AMBCEuv/SuoEpkfhquAHgWMfHt6YP3F0B0/MD1uV8nU8sgOl8YgFM5xMLYDqfWADT+cQCmM4nFsB0PrEApvOJBTCdTyyA6XxiAUznEwtgun33e1bA9AqYXgHTK2B6/w1Qtu92dD6xAKbziQUwnU8sgOl8YgFM5xMLYDqfWADT+cQCmM4nFsB0PrEApvOJBTCdTyyA6XTiwytgep8POAHTMuoCpICmMgAAAABJRU5ErkJggg==';
+
+  /** Carrega um PNG pelo diálogo real, com o `showOpenDialog` trocado. */
+  async function loadImage(
+    app: Awaited<ReturnType<typeof launchApp>>['app'],
+    page: Awaited<ReturnType<typeof launchApp>>['page'],
+    base64: string,
+  ) {
+    const file = path.join(
+      mkdtempSync(path.join(tmpdir(), 'grbl-center-')),
+      'cruz.png',
+    );
+    writeFileSync(file, Buffer.from(base64, 'base64'));
+    await app.evaluate(({ dialog }, filePath) => {
+      const d = dialog as unknown as Record<string, unknown>;
+      d.showOpenDialog = async () => ({
+        canceled: false,
+        filePaths: [filePath],
+      });
+    }, file);
+    await app.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0]?.webContents.send(
+        'grbl:ev:action',
+        'open-image',
+      );
+    });
+    await expect(page.locator('#cardImage')).toHaveClass(/has-image/);
+  }
+
+  test('mostra os campos, gera traços abertos e salva o G-code', async () => {
+    const { app, page, close } = await launchApp();
+    const target = path.join(
+      mkdtempSync(path.join(tmpdir(), 'grbl-center-out-')),
+      'cruz.gcode',
+    );
+    try {
+      await loadImage(app, page, PNG_PLUS);
+      await page.click('button[data-tab="image"]');
+      // O grupo "Conversão" nasce recolhido.
+      await page.locator('details.group:has(#imgAlgorithm) > summary').click();
+
+      // Os campos de caminho aparecem só no modo centerline.
+      await expect(page.locator('#imgMinBranch')).toBeHidden();
+      await page.selectOption('#imgAlgorithm', 'centerline');
+      await expect(page.locator('#imgMinBranch')).toBeVisible();
+      await expect(page.locator('#imgSimplify')).toBeVisible();
+      await expect(page.locator('#centerlineHint')).toBeVisible();
+      await expect(page.locator('#imgLines')).toBeHidden();
+
+      await page.click('#imgGenerate');
+      await expect(page.locator('#imgStats')).toContainText('traços', {
+        timeout: 20_000,
+      });
+
+      // Carregar a imagem abre o "Posicionar a gravadora" por cima; fecha.
+      if (await page.locator('#frameOverlay').isVisible()) {
+        await page.click('#frameClose');
+      }
+
+      await app.evaluate(({ dialog }, filePath) => {
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath,
+        })) as typeof dialog.showSaveDialog;
+      }, target);
+      await page.click('#imgSave');
+      await expect
+        .poll(() => existsSync(target), { timeout: 10_000 })
+        .toBe(true);
+      const gcode = readFileSync(target, 'utf8');
+
+      expect(gcode.startsWith('G21\nG90\nG94\nM5')).toBe(true);
+      expect(gcode).toContain('M4');
+      expect(gcode.trimEnd().endsWith('M5')).toBe(true);
+      // A cruz tem 4 braços: pelo menos 4 segmentos de queima.
+      const g1 = gcode.split('\n').filter((l) => l.startsWith('G1'));
+      expect(g1.length).toBeGreaterThanOrEqual(4);
+      // Nenhum G0 herda feed (invariante do AGENTS.md).
+      expect(
+        gcode
+          .split('\n')
+          .filter((l) => l.startsWith('G0'))
+          .every((l) => !l.includes('F')),
+      ).toBe(true);
+    } finally {
+      await close();
+      rmSync(path.dirname(target), { recursive: true, force: true });
     }
   });
 });

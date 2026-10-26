@@ -1,12 +1,23 @@
 # GRBL Studio
 
 [![CI](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/ci.yml)
+[![Release](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/release.yml/badge.svg)](https://github.com/viniciuswerneck/GRBL-Studio/actions/workflows/release.yml)
+[![Flatpak](https://img.shields.io/badge/Flatpak-com.grblstudio.app-blue)](https://flathub.org/apps/com.grblstudio.app)
 
 **Português** · [English](README.en.md) · [Español](README.es.md)
 
 GRBL Studio é uma alternativa moderna e nativa para Linux ao LaserGRBL, feita em
 Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 **GRBL 1.1**.
+
+## 🎯 Destaques da v0.23.0
+
+- ✅ **Release Automation**: GitHub Actions completo (build → test → bench → AppImage/deb/Flatpak → Release)
+- ✅ **Flatpak**: manifesto pronto para Flathub (`build/flatpak/`)
+- ✅ **Guia Primeiros Passos**: `docs/GETTING_STARTED.md` (11 seções)
+- ✅ **Hardware Checklist**: script automatizado + CI para validação em máquina real
+- ✅ **electron-vite + Svelte 5**: fundação pronta para migração do renderer
+- ✅ **Splash animado**: fade-in + pulse + progress bar (respeita `prefers-reduced-motion`)
 
 ## Funcionalidades
 
@@ -43,7 +54,7 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
   passadas) com nome e notas, aplique depois, veja a **dose (J/mm)** e
   **exporte/importe JSON** para compartilhar; **Ajustar à máquina** leva a
   receita para outro módulo (3 W/5 W/10 W) preservando a dose.
-- **Perfis de máquina** de 22 modelos + Genérico GRBL (curso, homing, módulo do
+- **Perfis de máquina** de 30+ modelos + Genérico GRBL (curso, homing, módulo do
   laser e teto de `S`) como dado, não chumbado no código.
 - **Modo Básico** com wizard de 6 passos para quem está começando; modo Avançado
   completo e **tour de boas-vindas** de 5 passos na primeira execução.
@@ -55,11 +66,18 @@ Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 
 ## Instalação
 
-Pacotes prontos (**AppImage** e **`.deb`**) na página de
+Pacotes prontos (**AppImage**, **`.deb`** e **Flatpak**) na página de
 [Releases](https://github.com/viniciuswerneck/GRBL-Studio/releases):
 
 ```bash
+# AppImage (recomendado — sem instalação, roda em qualquer distro)
 chmod +x GRBL-Studio-*.AppImage && ./GRBL-Studio-*.AppImage
+
+# .deb (Ubuntu, Debian, Mint, Pop!_OS)
+sudo apt install ./grbl-studio_*_amd64.deb
+
+# Flatpak (via Flathub — quando publicado)
+flatpak install flathub com.grblstudio.app
 ```
 
 Ou a partir do código:
@@ -74,20 +92,26 @@ npx electron --no-sandbox .
 ```
 
 No Linux, o acesso à porta serial pode exigir o grupo `dialout` — instruções em
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) e [Guia Primeiros Passos](docs/GETTING_STARTED.md).
 
 ## Desenvolvimento
 
-- Testes: `npm test` (Vitest)
-- Lint/format: `npm run lint` (Biome)
-- Type-check: `npm run typecheck`
-- Smoke (headless): `GRBL_SMOKE_TEST=1 xvfb-run -a npx electron --no-sandbox .`
-- Guia completo: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+```bash
+npm install              # dependências
+npm run build            # build completo (electron-vite + preload + worker)
+npm start                # roda o app
+npm run test             # testes unitários + integração (Vitest)
+npm run test:e2e         # testes E2E (Playwright)
+npm run typecheck        # tsc --noEmit
+npm run lint             # Biome check
+npm run bench            # benchmark de performance (RNF-11/12)
+npm run bench:check      # valida thresholds CI
+```
 
 ## Comparativo
 
 Como o GRBL Studio se compara aos principais programas de laser — dados de
-**18/10/2026**, com as fontes: **[comparativo completo](docs/COMPARATIVO.md)**.
+**26/10/2026**, com as fontes: **[comparativo completo](docs/COMPARATIVO.md)**.
 
 | | GRBL Studio | LightBurn | Rayforge | LaserGRBL | xTool Studio |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -110,6 +134,8 @@ Como o GRBL Studio se compara aos principais programas de laser — dados de
 - [Comparação com LaserGRBL](docs/FEATURES_COMPARISON.md)
 - [Comparativo com o mercado](docs/COMPARATIVO.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Guia Primeiros Passos](docs/GETTING_STARTED.md)
+- [Guia Migração Svelte 5](docs/SVELTE_MIGRATION_GUIDE.md)
 
 ## Licença
 

@@ -60,3 +60,12 @@ blob-report/
 # Build do Flatpak
 build-dir/
 .flatpak-builder/
+
+# Build electron-vite
+out/
+
+# Arquivos temporários
+*.diff
+
+# Script local de publicação (contém credenciais — nunca commitar)
+publish-release.sh

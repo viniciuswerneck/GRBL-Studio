@@ -7,8 +7,8 @@ import {
   sanitizeBox,
   sanitizeGear,
   slotIntervals,
-  type Point,
 } from '../src/shared/generators';
+import type { Point } from '../src/shared/design';
 
 function bbox(points: Point[]) {
   let minX = Infinity;

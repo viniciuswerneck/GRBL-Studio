@@ -66,6 +66,7 @@ export const es = {
   'guide.type.photo': 'Foto',
   'guide.type.bw': 'B/N',
   'guide.type.vector': 'Contorno',
+  'guide.type.center': 'Línea',
   'wizard.startHint': 'Conecte el grabador para empezar.',
   'wizard.title': 'Paso {n} de {total} — {title}',
   'wizard.paramsTitle': 'Tamaño, tipo y material',
@@ -153,12 +154,18 @@ export const es = {
   'img.type': 'Tipo',
   'img.material': 'Material',
   'algo.vector': 'Vectorizar (contorno/recorte)',
+  'algo.centerline': 'Línea única (centerline)',
   'img.lines': 'Líneas/mm',
   'img.direction': 'Dirección',
   'img.dot': 'Punto (mm)',
   'img.simplify': 'Suavizado (px)',
+  'img.minBranch': 'Rama mínima (px)',
   'img.algoHint':
     'Vectorizar genera solo el contorno (recorte): el Umbral B/N define lo que se recorta, y el dibujo se convierte en líneas cerradas a potencia máxima (S-max).',
+  'img.centerlineHint':
+    'Línea única reduce cada trazo a su centro (esqueleto): letras y logos ' +
+    'gruesos se convierten en un dibujo de una sola pasada. El trazo queda ' +
+    'abierto en las puntas y el Umbral B/N define lo que es materia.',
   'img.brightness': 'Brillo',
   'img.contrast': 'Contraste',
   'img.threshold': 'Umbral B/N',
@@ -1422,6 +1429,7 @@ export const es = {
   'stats.format':
     '{rows} líneas × {cols} muestras · {segments} segmentos · {size} · ~{time}',
   'stats.contours': ' · {count} contornos',
+  'stats.paths': ' · {count} trazos',
   'time.sec': '{s} s',
   'time.minSec': '{m} min {r} s',
   'time.min': '{m} min',

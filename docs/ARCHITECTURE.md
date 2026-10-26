@@ -186,6 +186,7 @@ primeira tela usa**:
 | `shared/image/format.ts` | Utilitários dos emissores: `formatCoord` (3 decimais), `MAX_S` e invariante da área de trabalho. | ✅ |
 | `shared/image/contour.ts` | Traçado de contornos (arestas + resolução de sela) e simplificação RDP (RF-IMG-6). | ✅ |
 | `shared/image/vector.ts` | Emissão de G-code de recorte (contorno fechado a `sMax`) + grade de preview binária (RF-IMG-6). | ✅ |
+| `shared/image/centerline.ts` | Centerline: máscara de trabalho (redução limitada), afinamento de Zhang–Suen com lista de borda, traçado em polilinhas abertas, poda de esporões e RDP (RF-IMG-16). | ✅ |
 | `renderer/gcode.worker.ts` | Executa o pipeline fora da thread principal (ADR-7). | ✅ |
 
 ---

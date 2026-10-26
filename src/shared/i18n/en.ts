@@ -64,6 +64,7 @@ export const en = {
   'guide.type.photo': 'Photo',
   'guide.type.bw': 'B&W',
   'guide.type.vector': 'Outline',
+  'guide.type.center': 'Line',
   'wizard.startHint': 'Connect the laser to get started.',
   'wizard.title': 'Step {n} of {total} — {title}',
   'wizard.paramsTitle': 'Size, type and material',
@@ -151,12 +152,18 @@ export const en = {
   'img.type': 'Type',
   'img.material': 'Material',
   'algo.vector': 'Vectorize (outline / cut)',
+  'algo.centerline': 'Centerline (single line)',
   'img.lines': 'Lines/mm',
   'img.direction': 'Direction',
   'img.dot': 'Dot (mm)',
   'img.simplify': 'Smoothing (px)',
+  'img.minBranch': 'Min. branch (px)',
   'img.algoHint':
     'Vectorize generates only the outline (cut): the B&W Threshold defines what gets cut, and the drawing becomes closed lines at full power (S-max).',
+  'img.centerlineHint':
+    'Centerline reduces each stroke to its middle (skeleton): bold letters and ' +
+    'logos become a single-pass drawing. Strokes stay open at the ends and the ' +
+    'B&W Threshold defines what is material.',
   'img.brightness': 'Brightness',
   'img.contrast': 'Contrast',
   'img.threshold': 'B&W Threshold',
@@ -1389,6 +1396,7 @@ export const en = {
   'stats.format':
     '{rows} lines × {cols} samples · {segments} segments · {size} · ~{time}',
   'stats.contours': ' · {count} contours',
+  'stats.paths': ' · {count} strokes',
   'time.sec': '{s} s',
   'time.minSec': '{m} min {r} s',
   'time.min': '{m} min',

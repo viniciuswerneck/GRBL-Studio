@@ -20,6 +20,7 @@ import {
   type ScanGeometry,
 } from './raster';
 import type { GcodeResult, GcodeStats, ImageToGcodeOptions } from './types';
+import { centerlineToGcode } from './centerline';
 import { vectorToGcode } from './vector';
 
 /** Velocidade dos `G0` assumida só na estimativa de tempo (padrão `$25` do GRBL). */
@@ -53,9 +54,26 @@ export function validateOptions(opts: ImageToGcodeOptions): void {
   if (
     opts.algorithm !== 'line' &&
     opts.algorithm !== 'dither' &&
-    opts.algorithm !== 'vector'
+    opts.algorithm !== 'vector' &&
+    opts.algorithm !== 'centerline'
   ) {
-    throw new Error('Algoritmo inválido (line/dither/vector).');
+    throw new Error('Algoritmo inválido (line/dither/vector/centerline).');
+  }
+  if (
+    opts.minBranchPx !== undefined &&
+    (!Number.isFinite(opts.minBranchPx) ||
+      opts.minBranchPx < 0 ||
+      opts.minBranchPx > 500)
+  ) {
+    throw new Error('Ramo mínimo inválido (use 0 a 500 px).');
+  }
+  if (
+    opts.centerlineMaxDim !== undefined &&
+    (!Number.isFinite(opts.centerlineMaxDim) ||
+      opts.centerlineMaxDim < 32 ||
+      opts.centerlineMaxDim > 4000)
+  ) {
+    throw new Error('Resolução do centerline inválida (use 32 a 4000 px).');
   }
   if (
     opts.simplifyPx !== undefined &&
@@ -85,6 +103,9 @@ export function imageToGcode(
 
   if (opts.algorithm === 'vector') {
     return vectorToGcode(rgba, imgWidth, imgHeight, opts);
+  }
+  if (opts.algorithm === 'centerline') {
+    return centerlineToGcode(rgba, imgWidth, imgHeight, opts);
   }
 
   const geom = computeScanGeometry(opts.geometry);
