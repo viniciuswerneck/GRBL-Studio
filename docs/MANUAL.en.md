@@ -246,7 +246,7 @@ and then the main window. The **welcome tour** opens automatically in 5 steps:
 4. **Preview and position** — zoom/pan, faint outline, mark center.
 5. **Engrave** — Play, floating bar, real-time overrides.
 
-![Figure 3 — Welcome tour, step 1 of 5](img/03-tour.png)
+![Figure 3 — Welcome tour, step 1 of 5](manual/img/en/03-tour.png)
 
 - Check **Don't show on next launch** to dismiss the tour.
 - To see it again: menu **Help → Welcome tour**.
@@ -263,7 +263,7 @@ prefer the guided mode, click **Assistant** and follow the steps.
 
 ## 4. The main screen
 
-![Figure 1 — Main screen with a G-code loaded and the machine connected](img/01-tela-principal.png)
+![Figure 1 — Main screen with a G-code loaded and the machine connected](manual/img/en/01-tela-principal.png)
 
 The window is divided into five areas:
 
@@ -341,7 +341,7 @@ G92 X0 Y0
 
 ## 5. Connecting the machine
 
-![Figure 2 — Connection card (WiFi/TCP transport used in the emulator)](img/02-conexao.png)
+![Figure 2 — Connection card (WiFi/TCP transport used in the emulator)](manual/img/en/02-conexao.png)
 
 ### 5.1 USB (serial) connection
 
@@ -412,7 +412,7 @@ pointer power. It is used by preflight and by the preview.
 
 ## 6. Opening an existing G-code
 
-![Figure 5 — Run tab with a G-code loaded](img/05-execucao.png)
+![Figure 5 — Run tab with a G-code loaded](manual/img/en/05-execucao.png)
 
 1. Open the **Run** tab.
 2. Click **Open G-code…** (or use **File → Open G-code…** in the menu).
@@ -439,7 +439,7 @@ pointer power. It is used by preflight and by the preview.
 
 ## 7. Importing an image
 
-![Figure 4 — Image tab with the image loaded and the parameters](img/04-imagem.png)
+![Figure 4 — Image tab with the image loaded and the parameters](manual/img/en/04-imagem.png)
 
 The **Image** tab converts PNG/JPG/BMP/GIF/WebP/AVIF into raster or vector
 G-code.
@@ -481,7 +481,7 @@ Threshold** or **Vectorize (outline / cut)** to reduce time and mess.
 
 ## 8. Previewing and positioning
 
-![Figure 6 — “Position the laser” dialog](img/06-posicionar.png)
+![Figure 6 — “Position the laser” dialog](manual/img/en/06-posicionar.png)
 
 ### 8.1 Preview
 
@@ -523,7 +523,7 @@ at `X0 Y0`.
 
 ## 9. Engraving and controlling the job
 
-![Figure 7 — Run panel: start, batch, production and resume](img/07-gravar.png)
+![Figure 7 — Run panel: start, batch, production and resume](manual/img/en/07-gravar.png)
 
 ### 9.1 Starting
 
@@ -536,7 +536,7 @@ at `X0 Y0`.
 
 ### 9.2 Floating bar (always visible)
 
-![Figure 7b — Floating bar during engraving](img/07b-barra-job.png)
+![Figure 7b — Floating bar during engraving](manual/img/en/07b-barra-job.png)
 
 During the job, a floating bar is overlaid on everything:
 
@@ -575,7 +575,7 @@ to “save” the job by poking at the console with the laser on.
 
 ## 10. Real-time overrides
 
-![Figure 9 — Overrides card (Feed, Rapid and Power)](img/09-overrides.png)
+![Figure 9 — Overrides card (Feed, Rapid and Power)](manual/img/en/09-overrides.png)
 
 Overrides adjust the machine **while it moves**, without stopping the job. The
 active value comes from the status (`Ov:`).
@@ -605,7 +605,7 @@ programmed values.
 
 ## 11. Console, DRO and status
 
-![Figure 8 — Laser tab: DRO, connection, motion and console](img/08-console-dro.png)
+![Figure 8 — Laser tab: DRO, connection, motion and console](manual/img/en/08-console-dro.png)
 
 ### 11.1 DRO and status
 
@@ -660,7 +660,7 @@ line commands (`$G`, `$$`, `$#`, `$I`, `G92 …`).
 
 ## 12. Macros
 
-![Figure 10 — Macros tab with the default buttons](img/10-macros.png)
+![Figure 10 — Macros tab with the default buttons](manual/img/en/10-macros.png)
 
 Macros are buttons that send one or more G-code commands. The app ships a safe set
 by default:
@@ -698,7 +698,7 @@ limits or turn the laser on without a defined `S`.
 
 ### 13.1 Machine panel
 
-![Figure 11 — “Machine” panel with the firmware diagnostics](img/11-maquina.png)
+![Figure 11 — “Machine” panel with the firmware diagnostics](manual/img/en/11-maquina.png)
 
 Open it from the **Tools → Machine and diagnostics** menu or the **Machine
 settings ($$)** button. The panel shows:
@@ -718,7 +718,7 @@ the clipboard (useful for support).
 
 ### 13.2 `$$` settings
 
-![Figure 12 — Machine settings editor](img/12-configuracoes.png)
+![Figure 12 — Machine settings editor](manual/img/en/12-configuracoes.png)
 
 The editor lists the parameters with **name, description and unit**. You can:
 
@@ -758,7 +758,7 @@ values before any change.
 
 ## 14. G-code editor
 
-![Figure 13 — G-code editor with validation and partial sending](img/13-editor-gcode.png)
+![Figure 13 — G-code editor with validation and partial sending](manual/img/en/13-editor-gcode.png)
 
 Open it through the **Edit…** button on the Run tab or the **File → Edit
 G-code…** menu.
@@ -788,7 +788,7 @@ coordinates.
 
 ## 15. Preflight
 
-![Figure 14 — Preflight blocking a G1 without feed](img/14-pre-voo.png)
+![Figure 14 — Preflight blocking a G1 without feed](manual/img/en/14-pre-voo.png)
 
 Preflight runs automatically when you click **Start**. It classifies the findings:
 
@@ -812,7 +812,7 @@ Preflight runs automatically when you click **Start**. It classifies the finding
 
 ## 16. Job queue
 
-![Figure 15 — Queue with one file queued](img/15-fila.png)
+![Figure 15 — Queue with one file queued](manual/img/en/15-fila.png)
 
 The queue runs several files in sequence, without you having to open them one by
 one.
@@ -839,7 +839,7 @@ program, use **Production mode** (section 23).
 
 ## 17. Job library
 
-![Figure 16 — Library with a finished job](img/16-biblioteca-jobs.png)
+![Figure 16 — Library with a finished job](manual/img/en/16-biblioteca-jobs.png)
 
 The last **50 programs executed** stay in the library, with a thumbnail.
 
@@ -865,7 +865,7 @@ changed the image/drawing afterwards, the old job keeps the G-code from that tim
 
 ## 18. Material presets
 
-![Figure 17 — Material presets: creating and applying recipes](img/17-presets.png)
+![Figure 17 — Material presets: creating and applying recipes](manual/img/en/17-presets.png)
 
 A preset is a **recipe** that worked: power, speed, passes, mode and notes. It
 saves you from redoing tests every time.
@@ -897,7 +897,7 @@ engraving” preset should not be applied to “cutting”.
 
 ## 19. Material catalog
 
-![Figure 18 — Material catalog with safety warnings](img/18-materiais.png)
+![Figure 18 — Material catalog with safety warnings](manual/img/en/18-materiais.png)
 
 The catalog brings material cards with recommended power/speed, passes, notes and
 a **safety warning**.
@@ -922,7 +922,7 @@ machine and your module. The catalog does not replace the material test.
 
 ## 20. Material test
 
-![Figure 19 — Material test grid](img/19-teste-material.png)
+![Figure 19 — Material test grid](manual/img/en/19-teste-material.png)
 
 It engraves a grid of squares, each with a combination of **speed × power**, so
 you can find the ideal parameters.
@@ -948,7 +948,7 @@ you can find the ideal parameters.
 
 ## 21. Focus test
 
-![Figure 20 — Focus test (spot)](img/20-teste-foco.png)
+![Figure 20 — Focus test (spot)](manual/img/en/20-teste-foco.png)
 
 It engraves a ladder of lines with **Z changing every pair**. The thinnest line
 indicates the best focus height.
@@ -975,7 +975,7 @@ keep **Cancel** at hand. Use different powers to compare marking and cutting.
 
 ## 22. Batch with variable data
 
-![Figure 21 — Batch with a CSV sheet and a preview of the pieces](img/21-lote.png)
+![Figure 21 — Batch with a CSV sheet and a preview of the pieces](manual/img/en/21-lote.png)
 
 The batch turns a sheet into a **queue of pieces**, one per row. It is ideal for
 QR codes/barcodes with variable data (names, URLs, serial numbers).
@@ -1031,7 +1031,7 @@ series.
 
 ## 23. Production mode
 
-![Figure 22 — Production mode in the Run panel](img/22-producao.png)
+![Figure 22 — Production mode in the Run panel](manual/img/en/22-producao.png)
 
 Production mode repeats the **current program** N times, pausing between pieces.
 
@@ -1098,7 +1098,7 @@ at a known scale.
 
 ## 26. Vector editor (Design)
 
-![Figure 23 — Vector editor with rectangle and ellipse](img/23-desenhar.png)
+![Figure 23 — Vector editor with rectangle and ellipse](manual/img/en/23-desenhar.png)
 
 The **Design** editor is a drawing board in **mm**, with rulers, a grid and the
 machine area. The G-code comes out **anchored at the origin (X0 Y0)**, in the
@@ -1173,7 +1173,7 @@ cut last.
 
 ## 28. Shape library
 
-![Figure 24 — Shape library](img/24-biblioteca-simbolos.png)
+![Figure 24 — Shape library](manual/img/en/24-biblioteca-simbolos.png)
 
 The library brings ready-made shapes: stars (5/6 points), hexagon, heart,
 lightning bolt, arrow, moon, sun, frame, corners, check, cross, X mark and
@@ -1189,7 +1189,7 @@ divider.
 
 ## 29. Jig (mold)
 
-![Figure 25 — Jig (mold) from the outline](img/25-gabarito.png)
+![Figure 25 — Jig (mold) from the outline](manual/img/en/25-gabarito.png)
 
 The jig creates a **mold** around the part, with clearance and registration
 marks, to position repeated parts.
@@ -1215,7 +1215,7 @@ origin for each one.
 
 ## 30. Parametric generators
 
-![Figure 26 — Finger-jointed box generator](img/26-geradores.png)
+![Figure 26 — Finger-jointed box generator](manual/img/en/26-geradores.png)
 
 The generator creates parametric shapes:
 
@@ -1242,7 +1242,7 @@ clearance must compensate for your laser's kerf.
 
 ## 31. Engrave both sides
 
-![Figure 27 — Engrave both sides](img/27-dois-lados.png)
+![Figure 27 — Engrave both sides](manual/img/en/27-dois-lados.png)
 
 The wizard generates **two G-code files**: side A and side B **mirrored**, with
 the same origin and registration marks to align.
@@ -1269,7 +1269,7 @@ the final part.
 
 ## 32. Registration marks
 
-![Figure 28 — Registration marks (corners or crosses)](img/28-marcas-registro.png)
+![Figure 28 — Registration marks (corners or crosses)](manual/img/en/28-marcas-registro.png)
 
 Inserts alignment marks around the artwork:
 
@@ -1288,7 +1288,7 @@ fitting.
 
 ## 33. Split into tiles
 
-![Figure 29 — Split into tiles with preview](img/29-tiles.png)
+![Figure 29 — Split into tiles with preview](manual/img/en/29-tiles.png)
 
 For artwork larger than the machine area, the app splits it into **tiles** with
 overlap.
@@ -1315,7 +1315,7 @@ large artwork.
 
 ## 34. Array of copies
 
-![Figure 30 — Array of copies](img/30-matriz-copias.png)
+![Figure 30 — Array of copies](manual/img/en/30-matriz-copias.png)
 
 Creates several copies of the selected object in a grid.
 
@@ -1335,7 +1335,7 @@ material.
 
 ## 35. Nest on sheet
 
-![Figure 31 — Nest on sheet](img/31-encaixe.png)
+![Figure 31 — Nest on sheet](manual/img/en/31-encaixe.png)
 
 Nesting arranges the parts on the sheet to make use of the material.
 
@@ -1356,7 +1356,7 @@ generating.
 
 ## 36. Offset contour
 
-![Figure 32 — Offset contour (parallel)](img/32-contorno-paralelo.png)
+![Figure 32 — Offset contour (parallel)](manual/img/en/32-contorno-paralelo.png)
 
 Creates contours parallel to a shape, for cutting, reinforcement or kerf.
 
@@ -1381,7 +1381,7 @@ Creates contours parallel to a shape, for cutting, reinforcement or kerf.
 
 ## 37. Artwork size
 
-![Figure 33 — “Artwork size” dialog](img/33-tamanho-arte.png)
+![Figure 33 — “Artwork size” dialog](manual/img/en/33-tamanho-arte.png)
 
 Before generating, the app asks for the final artwork size:
 
@@ -1399,7 +1399,7 @@ the artwork size is the final scale.
 
 ## 38. QR Code, Data Matrix, PDF417 and Aztec
 
-![Figure 34 — 2D code dialog with a generated QR](img/34-qr.png)
+![Figure 34 — 2D code dialog with a generated QR](manual/img/en/34-qr.png)
 
 The app generates 2D symbols as raster G-code.
 
@@ -1440,7 +1440,7 @@ and validate the scan.
 
 ## 39. 1D barcode
 
-![Figure 35 — 1D barcode dialog](img/35-codigo-barras.png)
+![Figure 35 — 1D barcode dialog](manual/img/en/35-codigo-barras.png)
 
 Supported symbologies: **Code 128/GS1-128, EAN-13, EAN-8, UPC-A, Code 39,
 ITF-14, Codabar and Code 93**.
@@ -1467,7 +1467,7 @@ validates and shows an error if the code is invalid.
 
 ## 40. Appearance and language
 
-![Figure 36 — Appearance and language](img/36-aparencia.png)
+![Figure 36 — Appearance and language](manual/img/en/36-aparencia.png)
 
 Open it in **View → Appearance and language…**.
 
@@ -1485,7 +1485,7 @@ battery and reduces eye strain.
 
 ## 41. About
 
-![Figure 37 — About dialog](img/37-sobre.png)
+![Figure 37 — About dialog](manual/img/en/37-sobre.png)
 
 Shows the version, license (MIT), author (Vinicius Werneck), developer
 (WerneckLab), GitHub repository and the website. Use

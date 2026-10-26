@@ -245,7 +245,7 @@ automaticamente em 5 passos:
 4. **Preview e posicionar** — zoom/pan, contorno fraco, marcar centro.
 5. **Gravar** — Play, barra flutuante, overrides em tempo real.
 
-![Figura 3 — Tour de boas-vindas, passo 1 de 5](img/03-tour.png)
+![Figura 3 — Tour de boas-vindas, passo 1 de 5](manual/img/03-tour.png)
 
 - Marque **Não mostrar na próxima abertura** para dispensar o tour.
 - Para rever depois: menu **Ajuda → Tour de boas-vindas**.
@@ -262,7 +262,7 @@ preferir o modo guiado, clique em **Assistente** e siga os passos.
 
 ## 4. A tela principal
 
-![Figura 1 — Tela principal com um G-code carregado e a máquina conectada](img/01-tela-principal.png)
+![Figura 1 — Tela principal com um G-code carregado e a máquina conectada](manual/img/01-tela-principal.png)
 
 A janela se divide em cinco áreas:
 
@@ -338,7 +338,7 @@ G92 X0 Y0
 
 ## 5. Conectar a máquina
 
-![Figura 2 — Cartão de conexão (transporte WiFi/TCP usado no emulador)](img/02-conexao.png)
+![Figura 2 — Cartão de conexão (transporte WiFi/TCP usado no emulador)](manual/img/02-conexao.png)
 
 ### 5.1 Conexão USB (serial)
 
@@ -408,7 +408,7 @@ limites e potência de apontar. Ele é usado pelo pré-voo e pelo preview.
 
 ## 6. Abrir um G-code pronto
 
-![Figura 5 — Aba Execução com um G-code carregado](img/05-execucao.png)
+![Figura 5 — Aba Execução com um G-code carregado](manual/img/05-execucao.png)
 
 1. Abra a aba **Execução**.
 2. Clique em **Abrir G-code…** (ou use **Arquivo → Abrir G-code…** no menu).
@@ -435,7 +435,7 @@ como referência, não como cronômetro.
 
 ## 7. Importar uma imagem
 
-![Figura 4 — Aba Imagem com a imagem carregada e os parâmetros](img/04-imagem.png)
+![Figura 4 — Aba Imagem com a imagem carregada e os parâmetros](manual/img/04-imagem.png)
 
 A aba **Imagem** converte PNG/JPG/BMP/GIF/WebP/AVIF em G-code raster ou vetorial.
 
@@ -474,7 +474,7 @@ B&W** ou **Vetorizar (contorno / recorte)** para reduzir o tempo e a sujeira.
 
 ## 8. Pré-visualizar e posicionar
 
-![Figura 6 — Diálogo “Posicionar a gravadora”](img/06-posicionar.png)
+![Figura 6 — Diálogo “Posicionar a gravadora”](manual/img/06-posicionar.png)
 
 ### 8.1 Preview
 
@@ -516,7 +516,7 @@ posicione o laser nesse canto. O G-code do editor já sai ancorado em `X0 Y0`.
 
 ## 9. Gravar e controlar o job
 
-![Figura 7 — Painel Execução: iniciar, lote, produção e retomada](img/07-gravar.png)
+![Figura 7 — Painel Execução: iniciar, lote, produção e retomada](manual/img/07-gravar.png)
 
 ### 9.1 Iniciar
 
@@ -529,7 +529,7 @@ posicione o laser nesse canto. O G-code do editor já sai ancorado em `X0 Y0`.
 
 ### 9.2 Barra flutuante (sempre visível)
 
-![Figura 7b — Barra flutuante durante a gravação](img/07b-barra-job.png)
+![Figura 7b — Barra flutuante durante a gravação](manual/img/07b-barra-job.png)
 
 Durante o job, uma barra flutuante fica sobreposta a tudo:
 
@@ -568,7 +568,7 @@ quando não há diálogo aberto.
 
 ## 10. Overrides em tempo real
 
-![Figura 9 — Cartão de overrides (Feed, Rápido e Potência)](img/09-overrides.png)
+![Figura 9 — Cartão de overrides (Feed, Rápido e Potência)](manual/img/09-overrides.png)
 
 Os overrides ajustam a máquina **em movimento**, sem parar o job. O valor ativo
 vem do status (`Ov:`).
@@ -598,7 +598,7 @@ programados.
 
 ## 11. Console, DRO e status
 
-![Figura 8 — Aba Gravadora: DRO, conexão, movimento e console](img/08-console-dro.png)
+![Figura 8 — Aba Gravadora: DRO, conexão, movimento e console](manual/img/08-console-dro.png)
 
 ### 11.1 DRO e status
 
@@ -654,7 +654,7 @@ comandos de linha (`$G`, `$$`, `$#`, `$I`, `G92 …`).
 
 ## 12. Macros
 
-![Figura 10 — Aba Macros com os botões padrão](img/10-macros.png)
+![Figura 10 — Aba Macros com os botões padrão](manual/img/10-macros.png)
 
 As macros são botões que enviam um ou mais comandos G-code. O app traz um
 conjunto seguro por padrão:
@@ -692,7 +692,7 @@ ou liguem o laser sem `S` definido.
 
 ### 13.1 Painel Máquina
 
-![Figura 11 — Painel “Máquina” com diagnóstico do firmware](img/11-maquina.png)
+![Figura 11 — Painel “Máquina” com diagnóstico do firmware](manual/img/11-maquina.png)
 
 Abra pelo menu **Ferramentas → Máquina e diagnóstico** ou pelo botão **Configurações da
 máquina ($$)**. O painel mostra:
@@ -712,7 +712,7 @@ para a área de transferência (útil para suporte).
 
 ### 13.2 Configurações `$$`
 
-![Figura 12 — Editor de configurações da máquina](img/12-configuracoes.png)
+![Figura 12 — Editor de configurações da máquina](manual/img/12-configuracoes.png)
 
 O editor lista os parâmetros com **nome, descrição e unidade**. Você pode:
 
@@ -752,7 +752,7 @@ antes de qualquer alteração.
 
 ## 14. Editor de G-code
 
-![Figura 13 — Editor de G-code com validação e envio parcial](img/13-editor-gcode.png)
+![Figura 13 — Editor de G-code com validação e envio parcial](manual/img/13-editor-gcode.png)
 
 Abra pelo botão **Editar…** na aba Execução ou pelo menu **Arquivo → Editar
 G-code…**.
@@ -781,7 +781,7 @@ e reimporte. O app preserva a precisão dos valores; não arredonde coordenadas.
 
 ## 15. Pré-voo
 
-![Figura 14 — Pré-voo bloqueando um G1 sem feed](img/14-pre-voo.png)
+![Figura 14 — Pré-voo bloqueando um G1 sem feed](manual/img/14-pre-voo.png)
 
 O pré-voo roda automaticamente ao clicar **Iniciar**. Ele classifica os achados:
 
@@ -805,7 +805,7 @@ O pré-voo roda automaticamente ao clicar **Iniciar**. Ele classifica os achados
 
 ## 16. Fila de trabalhos
 
-![Figura 15 — Fila com um arquivo enfileirado](img/15-fila.png)
+![Figura 15 — Fila com um arquivo enfileirado](manual/img/15-fila.png)
 
 A fila executa vários arquivos em sequência, sem você precisar abrir um por um.
 
@@ -830,7 +830,7 @@ programa, use o **Modo produção** (seção 23).
 
 ## 17. Biblioteca de jobs
 
-![Figura 16 — Biblioteca com um job concluído](img/16-biblioteca-jobs.png)
+![Figura 16 — Biblioteca com um job concluído](manual/img/16-biblioteca-jobs.png)
 
 Os últimos **50 programas executados** ficam na biblioteca, com miniatura.
 
@@ -856,7 +856,7 @@ mudou a imagem/desenho depois, o job antigo continua com o G-code da época.
 
 ## 18. Presets de material
 
-![Figura 17 — Presets de material: criar e aplicar receitas](img/17-presets.png)
+![Figura 17 — Presets de material: criar e aplicar receitas](manual/img/17-presets.png)
 
 Um preset é uma **receita** que deu certo: potência, velocidade, passadas, modo
 e notas. Ele evita refazer testes toda vez.
@@ -888,7 +888,7 @@ velocidade.
 
 ## 19. Catálogo de materiais
 
-![Figura 18 — Catálogo de materiais com avisos de segurança](img/18-materiais.png)
+![Figura 18 — Catálogo de materiais com avisos de segurança](manual/img/18-materiais.png)
 
 O catálogo traz fichas de material com recomendação de potência/velocidade,
 passadas, notas e **aviso de segurança**.
@@ -913,7 +913,7 @@ sua máquina e o seu módulo. O catálogo não substitui o teste de material.
 
 ## 20. Teste de material
 
-![Figura 19 — Grade de teste de material](img/19-teste-material.png)
+![Figura 19 — Grade de teste de material](manual/img/19-teste-material.png)
 
 Grava uma grade de quadrados, cada um com uma combinação de **velocidade ×
 potência**, para você descobrir os parâmetros ideais.
@@ -939,7 +939,7 @@ potência**, para você descobrir os parâmetros ideais.
 
 ## 21. Teste de foco
 
-![Figura 20 — Teste de foco (spot)](img/20-teste-foco.png)
+![Figura 20 — Teste de foco (spot)](manual/img/20-teste-foco.png)
 
 Grava uma escada de linhas com o **Z variando a cada par**. A linha mais fina
 indica a melhor altura de foco.
@@ -966,7 +966,7 @@ indica a melhor altura de foco.
 
 ## 22. Lote com dados variáveis
 
-![Figura 21 — Lote com uma planilha CSV e prévia das peças](img/21-lote.png)
+![Figura 21 — Lote com uma planilha CSV e prévia das peças](manual/img/21-lote.png)
 
 O lote transforma uma planilha em uma **fila de peças**, uma por linha. É ideal
 para QR codes/códigos de barras com dados variáveis (nomes, URLs, números de
@@ -1022,7 +1022,7 @@ que é mais simples.
 
 ## 23. Modo produção
 
-![Figura 22 — Modo produção no painel Execução](img/22-producao.png)
+![Figura 22 — Modo produção no painel Execução](manual/img/22-producao.png)
 
 O modo produção repete o **programa atual** N vezes, pausando entre as peças.
 
@@ -1089,7 +1089,7 @@ com escala conhecida.
 
 ## 26. Editor vetorial (Desenhar)
 
-![Figura 23 — Editor vetorial com retângulo e elipse](img/23-desenhar.png)
+![Figura 23 — Editor vetorial com retângulo e elipse](manual/img/23-desenhar.png)
 
 O editor **Desenhar** é uma prancheta em **mm**, com réguas, grade e a área da
 máquina. O G-code sai **ancorado na origem (X0 Y0)**, no canto inferior esquerdo.
@@ -1163,7 +1163,7 @@ corte por último.
 
 ## 28. Biblioteca de símbolos
 
-![Figura 24 — Biblioteca de símbolos do editor](img/24-biblioteca-simbolos.png)
+![Figura 24 — Biblioteca de símbolos do editor](manual/img/24-biblioteca-simbolos.png)
 
 A biblioteca traz formas prontas: estrelas (5/6 pontas), hexágono, coração, raio,
 seta, lua, sol, moldura, cantos, check, cruz, X e divisória.
@@ -1178,7 +1178,7 @@ seta, lua, sol, moldura, cantos, check, cruz, X e divisória.
 
 ## 29. Gabarito (molde)
 
-![Figura 25 — Gabarito (molde) a partir do contorno](img/25-gabarito.png)
+![Figura 25 — Gabarito (molde) a partir do contorno](manual/img/25-gabarito.png)
 
 O gabarito cria um **molde** em volta da peça, com folga e marcas de registro,
 para posicionar peças repetidas.
@@ -1204,7 +1204,7 @@ a cada uma.
 
 ## 30. Geradores paramétricos
 
-![Figura 26 — Gerador de caixa com encaixe de dedos](img/26-geradores.png)
+![Figura 26 — Gerador de caixa com encaixe de dedos](manual/img/26-geradores.png)
 
 O gerador cria formas paramétricas:
 
@@ -1231,7 +1231,7 @@ precisa compensar o kerf do seu laser.
 
 ## 31. Gravar dos dois lados
 
-![Figura 27 — Gravar dos dois lados](img/27-dois-lados.png)
+![Figura 27 — Gravar dos dois lados](manual/img/27-dois-lados.png)
 
 O assistente gera **dois G-code**: lado A e lado B **espelhado**, com a mesma
 origem e marcas de registro para alinhar.
@@ -1258,7 +1258,7 @@ virar a peça final.
 
 ## 32. Marcas de registro
 
-![Figura 28 — Marcas de registro (cantos ou cruzes)](img/28-marcas-registro.png)
+![Figura 28 — Marcas de registro (cantos ou cruzes)](manual/img/28-marcas-registro.png)
 
 Insere marcas de alinhamento ao redor da arte:
 
@@ -1277,7 +1277,7 @@ físico.
 
 ## 33. Dividir em tiles
 
-![Figura 29 — Dividir em tiles com prévia](img/29-tiles.png)
+![Figura 29 — Dividir em tiles com prévia](manual/img/29-tiles.png)
 
 Para arte maior que a área da máquina, o app divide em **tiles** com sobreposição.
 
@@ -1303,7 +1303,7 @@ da arte grande.
 
 ## 34. Matriz de cópias
 
-![Figura 30 — Matriz de cópias](img/30-matriz-copias.png)
+![Figura 30 — Matriz de cópias](manual/img/30-matriz-copias.png)
 
 Cria várias cópias do objeto selecionado em uma grade.
 
@@ -1322,7 +1322,7 @@ para aproveitar melhor o material.
 
 ## 35. Encaixe na chapa
 
-![Figura 31 — Encaixe na chapa](img/31-encaixe.png)
+![Figura 31 — Encaixe na chapa](manual/img/31-encaixe.png)
 
 O encaixe organiza as peças na chapa para aproveitar o material.
 
@@ -1343,7 +1343,7 @@ gerar.
 
 ## 36. Contorno paralelo
 
-![Figura 32 — Contorno paralelo (offset)](img/32-contorno-paralelo.png)
+![Figura 32 — Contorno paralelo (offset)](manual/img/32-contorno-paralelo.png)
 
 Cria contornos paralelos ao redor de uma forma, para corte, reforço ou kerf.
 
@@ -1368,7 +1368,7 @@ camada de corte.
 
 ## 37. Tamanho da arte
 
-![Figura 33 — Diálogo “Tamanho da arte”](img/33-tamanho-arte.png)
+![Figura 33 — Diálogo “Tamanho da arte”](manual/img/33-tamanho-arte.png)
 
 Antes de gerar, o app pergunta o tamanho final da arte:
 
@@ -1386,7 +1386,7 @@ mm; o tamanho da arte é a escala final.
 
 ## 38. QR Code, Data Matrix, PDF417 e Aztec
 
-![Figura 34 — Diálogo de código 2D com QR gerado](img/34-qr.png)
+![Figura 34 — Diálogo de código 2D com QR gerado](manual/img/34-qr.png)
 
 O app gera símbolos 2D como G-code de varredura.
 
@@ -1426,7 +1426,7 @@ Teste e valide a leitura.
 
 ## 39. Código de barras 1D
 
-![Figura 35 — Diálogo de código de barras 1D](img/35-codigo-barras.png)
+![Figura 35 — Diálogo de código de barras 1D](manual/img/35-codigo-barras.png)
 
 Simbologias suportadas: **Code 128/GS1-128, EAN-13, EAN-8, UPC-A, Code 39,
 ITF-14, Codabar e Code 93**.
@@ -1453,7 +1453,7 @@ o app valida e mostra erro se o código for inválido.
 
 ## 40. Aparência e idioma
 
-![Figura 36 — Aparência e idioma](img/36-aparencia.png)
+![Figura 36 — Aparência e idioma](manual/img/36-aparencia.png)
 
 Abra em **Exibir → Aparência e idioma…**.
 
@@ -1471,7 +1471,7 @@ economiza bateria e reduz o cansaço.
 
 ## 41. Sobre
 
-![Figura 37 — Diálogo Sobre](img/37-sobre.png)
+![Figura 37 — Diálogo Sobre](manual/img/37-sobre.png)
 
 Mostra versão, licença (MIT), autor (Vinicius Werneck), desenvolvedor
 (WerneckLab), repositório no GitHub e o site. Use **Visitar lab.werneck.dev.br**
