@@ -1,0 +1,55 @@
+# GRBL Studio
+
+> Software laser GRBL nativo para Linux. Alternativa gratuita e open source (MIT) ao LaserGRBL, com conexão USB/Wi-Fi, envio de G-code à prova de buffer, editor vetorial, importação de imagem, QR/código de barras, materiais e produção em série.
+
+## Fatos principais
+
+- Nome: GRBL Studio
+- Versão atual: 0.23.0
+- Plataforma principal: Linux x86_64 (AppImage e .deb; Flatpak em preparação)
+- Licença: MIT
+- Preço: gratuito, sem assinatura, conta ou nuvem
+- Firmware: GRBL 1.1 e 0.9
+- Conexão: USB serial e Wi-Fi/TCP (ESP8266/ESP32)
+- Idiomas: português, inglês e espanhol
+- Interface: 11 temas
+- Repositório: https://github.com/viniciuswerneck/GRBL-Studio
+- Download: https://github.com/viniciuswerneck/GRBL-Studio/releases/latest
+- Documentação: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md
+- Comparativo: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/COMPARATIVO.md
+
+## Página oficial
+
+- https://grblstudio.werneck.dev.br/
+
+## Para que serve
+
+GRBL Studio controla gravadoras e cortadoras laser com firmware GRBL. O fluxo cobre conexão com a máquina, abertura de G-code, importação de imagem (line-to-line, dithering, centerline e vetorização), desenho vetorial, geração de QR Code/Data Matrix/PDF417/Aztec/código de barras 1D, presets de material, pré-voo, preview 2D, simulação, overrides em tempo real e produção em série.
+
+## Diferenciais
+
+- Aplicativo desktop nativo para Linux, sem Wine ou Mono.
+- Envio de G-code com janela por contagem de caracteres, respeitando o buffer RX e o planner do GRBL.
+- Comandos de tempo real (pausa, retomada, reset e emergência) tratados como byte único, sem newline.
+- Editor vetorial integrado com camadas, booleanas, offset, kerf, nesting e SVG/DXF/PDF.
+- QR, Data Matrix, PDF417, Aztec e nove simbologias 1D no próprio app.
+- Fila persistente, modo produção N×, pausa entre peças, contador e retomada.
+- Catálogo de materiais com dose J/mm, avisos de segurança, teste de material e teste de foco.
+- 30+ perfis de máquina e perfil Genérico GRBL.
+
+## Limitações honestas
+
+- Não controla laser CO2/Ruida, DSP ou galvo.
+- Não tem câmera nem rotativa integradas (roadmap).
+- Builds para Windows/macOS existem em CI, mas a plataforma suportada e validada é Linux.
+- Flatpak está com manifesto pronto, mas ainda não publicado.
+
+## Páginas e recursos
+
+- Página inicial e download: https://grblstudio.werneck.dev.br/
+- Primeiros passos: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/GETTING_STARTED.md
+- Manual em português: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md
+- Manual em inglês: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.en.md
+- Manual em espanhol: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.es.md
+- Changelog: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/CHANGELOG.md
+- Issues: https://github.com/viniciuswerneck/GRBL-Studio/issues

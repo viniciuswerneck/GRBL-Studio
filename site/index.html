@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GRBL Studio — software laser GRBL nativo para Linux</title>
+    <meta
+      name="description"
+      content="Software laser GRBL nativo para Linux: envio de G-code à prova de buffer, editor vetorial, imagem, QR/código de barras e produção em série. Grátis e MIT."
+    >
+    <link rel="canonical" href="https://grblstudio.werneck.dev.br/">
+    <link rel="alternate" hreflang="pt-BR" href="https://grblstudio.werneck.dev.br/">
+    <link rel="alternate" hreflang="x-default" href="https://grblstudio.werneck.dev.br/">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="author" content="Vinicius Werneck">
+    <meta name="theme-color" content="#070a0f">
+    <meta name="color-scheme" content="dark">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-title" content="GRBL Studio">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GRBL Studio">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:url" content="https://grblstudio.werneck.dev.br/">
+    <meta property="og:title" content="GRBL Studio — software laser GRBL nativo para Linux">
+    <meta
+      property="og:description"
+      content="Envio de G-code à prova de buffer, editor vetorial, imagem, QR/código de barras e produção em série. Grátis, aberto e feito para Linux."
+    >
+    <meta property="og:image" content="https://grblstudio.werneck.dev.br/assets/img/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta
+      property="og:image:alt"
+      content="GRBL Studio: interface escura com preview 2D ao lado do nome do produto e da chamada software laser GRBL nativo para Linux."
+    >
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GRBL Studio — software laser GRBL nativo para Linux">
+    <meta
+      name="twitter:description"
+      content="Envio de G-code à prova de buffer, editor vetorial, imagem, QR/código de barras e produção em série. Grátis, aberto e feito para Linux."
+    >
+    <meta name="twitter:image" content="https://grblstudio.werneck.dev.br/assets/img/og-image.png">
+    <meta
+      name="twitter:image:alt"
+      content="GRBL Studio: interface escura com preview 2D e painel de controle."
+    >
+    <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link
+      rel="preload"
+      href="assets/fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    >
+    <link
+      rel="preload"
+      href="assets/fonts/space-grotesk-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    >
+    <link
+      rel="preload"
+      as="image"
+      href="assets/img/hero-app-1440.webp"
+      imagesrcset="assets/img/hero-app-720.webp 720w, assets/img/hero-app-1440.webp 1440w"
+      imagesizes="(max-width: 940px) 92vw, 620px"
+      fetchpriority="high"
+    >
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://grblstudio.werneck.dev.br/#organization",
+            "name": "WerneckLab",
+            "url": "https://github.com/viniciuswerneck",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://grblstudio.werneck.dev.br/assets/img/icon-512.png"
+            },
+            "sameAs": ["https://github.com/viniciuswerneck"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://grblstudio.werneck.dev.br/#website",
+            "url": "https://grblstudio.werneck.dev.br/",
+            "name": "GRBL Studio",
+            "inLanguage": "pt-BR",
+            "publisher": { "@id": "https://grblstudio.werneck.dev.br/#organization" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://grblstudio.werneck.dev.br/#software",
+            "name": "GRBL Studio",
+            "alternateName": "GRBL Studio — Laser Engraving Control System",
+            "applicationCategory": "DesignApplication",
+            "applicationSubCategory": "Software de controle para gravadoras e cortadoras laser GRBL",
+            "operatingSystem": "Linux",
+            "softwareVersion": "0.23.0",
+            "license": "https://opensource.org/licenses/MIT",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "BRL",
+              "availability": "https://schema.org/InStock"
+            },
+            "downloadUrl": "https://github.com/viniciuswerneck/GRBL-Studio/releases/latest",
+            "url": "https://grblstudio.werneck.dev.br/",
+            "image": "https://grblstudio.werneck.dev.br/assets/img/og-image.png",
+            "screenshot": "https://grblstudio.werneck.dev.br/assets/img/hero-app-1440.webp",
+            "description": "Alternativa nativa ao LaserGRBL para Linux. Controle laser GRBL 1.1 via USB ou Wi-Fi, envie G-code com janela por bytes, edite vetores, importe imagens, gere QR/código de barras e produza em série.",
+            "featureList": [
+              "Conexão serial USB e Wi-Fi/TCP",
+              "Envio de G-code com janela por bytes e confirmação ok",
+              "Editor vetorial com camadas, booleanas, offset e nesting",
+              "Importação de imagem com line-to-line, dithering, centerline e vetorização",
+              "QR Code, Data Matrix, PDF417, Aztec e código de barras 1D",
+              "Fila de trabalhos, modo produção e retomada",
+              "Catálogo de materiais, presets e testes de material e foco",
+              "Preview 2D, simulação e overrides em tempo real",
+              "11 temas e interface em português, inglês e espanhol"
+            ],
+            "author": { "@id": "https://grblstudio.werneck.dev.br/#organization" },
+            "publisher": { "@id": "https://grblstudio.werneck.dev.br/#organization" },
+            "inLanguage": "pt-BR",
+            "sameAs": ["https://github.com/viniciuswerneck/GRBL-Studio"]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://grblstudio.werneck.dev.br/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "O GRBL Studio é gratuito?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sim. O GRBL Studio é open source sob licença MIT, sem assinatura, conta ou nuvem. Você baixa, usa e, se quiser, contribui com o projeto."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Funciona com a minha laser GRBL?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Se a máquina fala GRBL 1.1 ou 0.9, sim. Há conexão USB serial e Wi-Fi/TCP para ESP8266/ESP32, além de 30+ perfis prontos e um perfil Genérico GRBL."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Preciso de Wine ou Mono?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Não. O GRBL Studio é um aplicativo desktop nativo para Linux, distribuído como AppImage e .deb. O Flatpak está em preparação."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Quais formatos posso abrir?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "G-code (.gcode, .nc, .tap, .txt), imagens PNG, JPG, BMP, GIF, WebP e AVIF, SVG, DXF ASCII e PDF vetorial. Também é possível desenhar no editor interno."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Ele substitui o LightBurn?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Para laser diodo GRBL, o GRBL Studio cobre o fluxo principal: conexão, preview, imagem, vetor, camadas, materiais e produção. Não temos câmera, rotativa ou controladores CO2/Ruida; se você precisa disso, o LightBurn ainda é a escolha."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Como instalo no Linux?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Baixe o AppImage e execute, ou instale o .deb. Para acessar a porta serial, adicione seu usuário ao grupo dialout e faça logout/login."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Tem manual em português?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sim. O manual completo está em português, inglês e espanhol, com prints localizados e versão HTML navegável."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Onde reporto bugs ou peço recursos?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No GitHub Issues do projeto. O código é aberto e contribuições são bem-vindas."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <style>
+      html {
+        background: #070a0f;
+        color-scheme: dark;
+      }
+    </style>
+    <noscript>
+      <style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+    <svg width="0" height="0" aria-hidden="true" focusable="false" style="position: absolute">
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24">
+        <path d="M5 12h14M13 6l6 6-6 6"></path>
+      </symbol>
+      <symbol id="icon-arrow-up" viewBox="0 0 24 24">
+        <path d="m6 15 6-6 6 6"></path>
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"></path>
+      </symbol>
+      <symbol id="icon-github" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.05-.01-1.9-2.78.62-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.3 9.3 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"></path>
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6"></path>
+      </symbol>
+      <symbol id="icon-x" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"></path>
+        <path d="m9 12 2 2 4-4"></path>
+      </symbol>
+      <symbol id="icon-wifi" viewBox="0 0 24 24">
+        <path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5.5 5.5 0 0 1 7 0M12 19.5h.01"></path>
+      </symbol>
+      <symbol id="icon-usb" viewBox="0 0 24 24">
+        <path d="M12 21V7m0 0 3 3m-3-3L9 10M6 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm12-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"></path>
+      </symbol>
+      <symbol id="icon-crosshair" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="6"></circle>
+        <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+      </symbol>
+      <symbol id="icon-layers" viewBox="0 0 24 24">
+        <path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"></path>
+      </symbol>
+      <symbol id="icon-pen" viewBox="0 0 24 24">
+        <path d="m12 19 7-7a2.8 2.8 0 0 0-4-4l-7 7-1 5 5-1Z"></path>
+        <path d="m15 7 2 2"></path>
+      </symbol>
+      <symbol id="icon-image" viewBox="0 0 24 24">
+        <rect x="4" y="5" width="16" height="14" rx="1"></rect>
+        <circle cx="9" cy="10" r="1.5"></circle>
+        <path d="m4 16 5-5 4 4 2-2 5 5"></path>
+      </symbol>
+      <symbol id="icon-qr" viewBox="0 0 24 24">
+        <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"></path>
+      </symbol>
+      <symbol id="icon-play" viewBox="0 0 24 24">
+        <path d="m8 5 11 7-11 7V5Z"></path>
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path>
+        <circle cx="16" cy="7" r="2"></circle>
+        <circle cx="8" cy="17" r="2"></circle>
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16"></path>
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </symbol>
+      <symbol id="icon-external" viewBox="0 0 24 24">
+        <path d="M14 4h6v6M20 4l-9 9M10 5H5v14h14v-5"></path>
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <rect x="9" y="9" width="10" height="10" rx="1"></rect>
+        <path d="M5 15H4V4h11v1"></path>
+      </symbol>
+      <symbol id="icon-spark" viewBox="0 0 24 24">
+        <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"></path>
+      </symbol>
+      <symbol id="icon-package" viewBox="0 0 24 24">
+        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Zm0 0v9m8-4.5L12 12 4 7.5"></path>
+      </symbol>
+      <symbol id="icon-terminal" viewBox="0 0 24 24">
+        <path d="m5 7 5 5-5 5M12 17h7"></path>
+      </symbol>
+      <symbol id="icon-book" viewBox="0 0 24 24">
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 0 4 23V5.5Z"></path>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      </symbol>
+      <symbol id="icon-scale" viewBox="0 0 24 24">
+        <path d="M12 3v18M5 7h14M7 7l-3 6h6L7 7Zm10 0-3 6h6l-3-6Z"></path>
+      </symbol>
+      <symbol id="icon-heart" viewBox="0 0 24 24">
+        <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10Z"></path>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <path d="M12 3 2.5 20h19L12 3Z"></path>
+        <path d="M12 9v5m0 3h.01"></path>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </symbol>
+      <symbol id="icon-briefcase" viewBox="0 0 24 24">
+        <rect x="4" y="8" width="16" height="11" rx="1"></rect>
+        <path d="M9 8V6h6v2M4 13h16"></path>
+      </symbol>
+      <symbol id="icon-star" viewBox="0 0 24 24">
+        <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9L12 3Z"></path>
+      </symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v5l3 2"></path>
+      </symbol>
+      <symbol id="icon-file" viewBox="0 0 24 24">
+        <path d="M6 3h8l4 4v14H6zM14 3v5h5"></path>
+      </symbol>
+      <symbol id="icon-chat" viewBox="0 0 24 24">
+        <path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z"></path>
+      </symbol>
+      <symbol id="icon-bolt" viewBox="0 0 24 24">
+        <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path>
+      </symbol>
+      <symbol id="icon-cpu" viewBox="0 0 24 24">
+        <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+        <path d="M9 3v4m6-4v4M9 17v4m6-4v4M3 9h4m-4 6h4m10-6h4m-4 6h4"></path>
+      </symbol>
+    </svg>
+
+    <header class="site-header" id="topo">
+      <div class="container header-inner">
+        <a class="brand" href="#topo" aria-label="GRBL Studio — início">
+          <img src="assets/img/icon-64.png" width="36" height="36" alt="">
+          <span class="brand-word"><span>GRBL</span><span>STUDIO</span></span>
+        </a>
+        <nav class="nav" id="navegacao" aria-label="Navegação principal">
+          <a href="#recursos">Recursos</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#comparativo">Comparativo</a>
+          <a href="#download">Download</a>
+          <a href="#documentacao">Documentação</a>
+          <a class="nav-cta" href="#download">Baixar grátis</a>
+        </nav>
+        <div class="header-actions">
+          <a
+            class="ghost-link"
+            href="https://github.com/viniciuswerneck/GRBL-Studio"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg class="icon icon--brand" aria-hidden="true"><use href="#icon-github"></use></svg>
+            GitHub
+          </a>
+          <a class="btn btn-primary" href="#download">
+            Baixar grátis
+            <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
+          </a>
+          <button
+            class="menu-btn"
+            id="menuBtn"
+            type="button"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+            aria-controls="navegacao"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#icon-menu"></use></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="conteudo">
+      <section class="hero" aria-labelledby="titulo-principal">
+        <div class="hero-bg" aria-hidden="true"></div>
+        <div class="hero-beam" aria-hidden="true"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> Linux nativo · GRBL 1.1 · Código aberto</p>
+            <h1 id="titulo-principal">
+              O laser GRBL no Linux,<br>
+              <span class="text-gradient">com nível de estúdio.</span>
+            </h1>
+            <p class="hero-lead">
+              <strong>GRBL Studio</strong> é a alternativa nativa ao LaserGRBL: envio de G-code à prova
+              de buffer, editor vetorial, imagem, QR/código de barras e produção em série. Tudo em um
+              app leve, bonito e sem Wine.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary btn-lg" href="#download">
+                Baixar grátis
+                <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
+              </a>
+              <a class="btn btn-secondary btn-lg" href="#recursos">
+                Explorar recursos
+                <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+              </a>
+            </div>
+            <ul class="hero-points">
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> AppImage e .deb</li>
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> USB e Wi-Fi/TCP</li>
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Licença MIT</li>
+            </ul>
+            <p class="hero-note">Sem conta. Sem nuvem. Sem assinatura. Seus arquivos ficam na sua máquina.</p>
+          </div>
+
+          <div class="hero-visual">
+            <div class="hero-glow" aria-hidden="true"></div>
+            <figure class="app-window">
+              <div class="app-window-bar" aria-hidden="true">
+                <span class="window-dots"><span></span><span></span><span></span></span>
+                <span class="app-window-title">GRBL Studio <span>v0.23.0</span></span>
+                <span class="app-window-status"><span class="status-dot"></span> Ocioso</span>
+              </div>
+              <img
+                src="assets/img/hero-app-1440.webp"
+                srcset="assets/img/hero-app-720.webp 720w, assets/img/hero-app-1440.webp 1440w"
+                sizes="(max-width: 940px) 92vw, 620px"
+                width="1440"
+                height="900"
+                alt="Interface do GRBL Studio em tema escuro, com preview 2D, console de comandos, DRO e painel de conexão da máquina."
+                fetchpriority="high"
+                decoding="async"
+              >
+            </figure>
+            <div class="float-card float-card--top">
+              <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+              <span><strong>Buffer protegido</strong><span>envio por janela de bytes</span></span>
+            </div>
+            <div class="float-card float-card--mid">
+              <svg class="icon" aria-hidden="true"><use href="#icon-crosshair"></use></svg>
+              <span><strong>Preview 2D</strong><span>posição e progresso em tempo real</span></span>
+            </div>
+            <div class="float-card float-card--bottom">
+              <svg class="icon" aria-hidden="true"><use href="#icon-wifi"></use></svg>
+              <span><strong>USB + Wi-Fi</strong><span>GRBL 1.1, sem dongle</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="container hero-stats">
+          <div class="hero-stat">
+            <strong>1.000+</strong>
+            <span>testes automatizados</span>
+          </div>
+          <div class="hero-stat">
+            <strong>30+</strong>
+            <span>perfis de máquina</span>
+          </div>
+          <div class="hero-stat">
+            <strong>11</strong>
+            <span>temas de interface</span>
+          </div>
+          <div class="hero-stat">
+            <strong>3</strong>
+            <span>idiomas</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="compat" aria-labelledby="compat-title">
+        <div class="container">
+          <h2 class="compat-label" id="compat-title">Funciona com as máquinas que você já tem</h2>
+          <ul class="compat-list">
+            <li>Sculpfun</li>
+            <li>Ortur</li>
+            <li>AtomStack</li>
+            <li>TwoTrees</li>
+            <li>COMGO</li>
+            <li>NEJE</li>
+            <li>xTool D1/P2</li>
+            <li>Genérico GRBL</li>
+          </ul>
+          <p class="compat-note">
+            Perfis prontos para 30+ modelos. Marcas citadas apenas para indicar compatibilidade.
+            <a href="#comparativo">Ver detalhes</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="porque" aria-labelledby="porque-title">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="kicker">Feito para Linux</p>
+            <h2 id="porque-title">Sem Wine. Sem Mono.<br><span class="text-gradient">Sem surpresas.</span></h2>
+            <p>
+              O LaserGRBL é uma referência no Windows, mas no Linux depende de camadas de
+              compatibilidade. O GRBL Studio nasceu nativo: instala, abre e conversa com a sua
+              máquina sem mapear portas COM nem brigar com o sistema.
+            </p>
+          </div>
+          <div class="why-grid">
+            <article class="why-card reveal" data-delay="1">
+              <div class="why-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-usb"></use></svg>
+              </div>
+              <h3>Conecta de verdade</h3>
+              <p>
+                Porta serial USB ou Wi-Fi/TCP com ESP8266/ESP32. O app lê o firmware, o curso e os
+                limites da máquina e usa isso no pré-voo.
+              </p>
+              <ul>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> 30+ perfis prontos</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Detecção de desconexão</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Reconexão opcional</li>
+              </ul>
+            </article>
+            <article class="why-card reveal" data-delay="2">
+              <div class="why-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-cpu"></use></svg>
+              </div>
+              <h3>Não trava a máquina</h3>
+              <p>
+                A janela de envio conta caracteres, respeita o planner e só libera espaço a cada
+                <code>ok</code>. Nada de despejar G-code no buffer e torcer.
+              </p>
+              <ul>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Buffer RX respeitado</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Comandos de tempo real corretos</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Pausa, retomada e emergência</li>
+              </ul>
+            </article>
+            <article class="why-card reveal" data-delay="3">
+              <div class="why-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-layers"></use></svg>
+              </div>
+              <h3>Um app, o fluxo inteiro</h3>
+              <p>
+                Imagem, vetor, símbolos, materiais, fila e produção no mesmo lugar. Você não precisa
+                exportar para outro programa só para preparar a peça.
+              </p>
+              <ul>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Editor vetorial integrado</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> QR, 2D e código de barras</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Presets e testes de material</li>
+              </ul>
+            </article>
+          </div>
+          <div class="proof">
+            <div class="proof-card proof-card--bad reveal" data-delay="1">
+              <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              <div>
+                <strong>LaserGRBL no Linux</strong>
+                <p>Wine + Mono + mapeamento de portas COM. Funciona, mas não é nativo.</p>
+              </div>
+            </div>
+            <div class="proof-card proof-card--good reveal" data-delay="2">
+              <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+              <div>
+                <strong>GRBL Studio</strong>
+                <p>AppImage + <code>/dev/ttyUSB0</code> + tema nativo. Abriu, conectou, gravou.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="recursos" aria-labelledby="recursos-title">
+        <div class="container">
+          <div class="section-head section-head--split reveal">
+            <div>
+              <p class="kicker">Recursos</p>
+              <h2 id="recursos-title">Um estúdio inteiro,<br><span class="text-gradient">sem plugins.</span></h2>
+            </div>
+            <p>
+              Do primeiro G-code à produção em série: conexão, preparação, simulação e gravação
+              conversam entre si. Sem assinatura, sem exportar para cinco programas.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card feature-card--wide reveal" data-delay="1">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+                  Envio confiável
+                </span>
+                <h3>Streaming que não estoura o buffer</h3>
+                <p>
+                  A janela de envio conta caracteres, respeita o planner e só libera espaço a cada
+                  <code>ok</code>. Pausa, retomada e emergência ficam sempre a um clique — mesmo com
+                  o PC ocupado.
+                </p>
+                <ul class="feature-list">
+                  <li>janela por bytes</li>
+                  <li>planner respeitado</li>
+                  <li>barra do job flutuante</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-job-1440.webp"
+                  srcset="assets/img/feature-job-960.webp 960w, assets/img/feature-job-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Barra flutuante de gravação do GRBL Studio com progresso, pausa, overrides e botão de emergência."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--narrow feature-card--violet reveal" data-delay="2">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-pen"></use></svg>
+                  Design
+                </span>
+                <h3>Editor vetorial de verdade</h3>
+                <p>
+                  Prancheta em milímetros, texto vetorial, booleanas, contorno paralelo, camadas,
+                  kerf, nesting e SVG/DXF/PDF. O G-code sai ancorado em X0 Y0.
+                </p>
+                <ul class="feature-list">
+                  <li>camadas</li>
+                  <li>booleanas</li>
+                  <li>nesting</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-editor-1440.webp"
+                  srcset="assets/img/feature-editor-960.webp 960w, assets/img/feature-editor-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Editor vetorial do GRBL Studio com prancheta em milímetros, formas, camadas e propriedades."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--narrow feature-card--amber reveal" data-delay="1">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg>
+                  Imagem
+                </span>
+                <h3>Da foto ao G-code</h3>
+                <p>
+                  Line-to-line, dithering, centerline e vetorização. Ajustes de brilho, contraste,
+                  inversão e velocidade adaptativa para a sua máquina.
+                </p>
+                <ul class="feature-list">
+                  <li>dithering</li>
+                  <li>centerline</li>
+                  <li>perfis de material</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-image-1440.webp"
+                  srcset="assets/img/feature-image-960.webp 960w, assets/img/feature-image-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Aba de importação de imagem do GRBL Studio com ajustes e preview de gravação."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--wide reveal" data-delay="2">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-qr"></use></svg>
+                  Símbolos
+                </span>
+                <h3>QR, Data Matrix, PDF417 e 1D</h3>
+                <p>
+                  Gere símbolos no próprio app, com tamanho em mm, quiet zone, HRI e lote CSV. QR,
+                  Data Matrix, PDF417, Aztec e nove simbologias 1D — prontos para gravar.
+                </p>
+                <ul class="feature-list">
+                  <li>QR / Data Matrix</li>
+                  <li>PDF417 / Aztec</li>
+                  <li>Code 128 / EAN / UPC</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--symbols">
+                <img
+                  src="assets/img/feature-qr-640.webp"
+                  width="640"
+                  height="716"
+                  alt="Gerador de QR Code do GRBL Studio com tamanho, correção de erro e quiet zone."
+                  loading="lazy"
+                  decoding="async"
+                >
+                <img
+                  src="assets/img/feature-barcode-640.webp"
+                  width="640"
+                  height="730"
+                  alt="Gerador de código de barras Code 128 do GRBL Studio com HRI e dimensões em milímetros."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--wide feature-card--green reveal" data-delay="1">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-play"></use></svg>
+                  Produção
+                </span>
+                <h3>Do lote à série, sem planilha</h3>
+                <p>
+                  Fila persistente, modo produção N×, pausa para trocar a peça, contador e retomada.
+                  O pré-voo roda uma vez por série e o Stop continua à mão.
+                </p>
+                <ul class="feature-list">
+                  <li>fila persistente</li>
+                  <li>produção N×</li>
+                  <li>lote CSV</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-production-1440.webp"
+                  srcset="assets/img/feature-production-960.webp 960w, assets/img/feature-production-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Modo produção do GRBL Studio com contador de cópias e pausa entre peças."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--narrow reveal" data-delay="2">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+                  Materiais
+                </span>
+                <h3>Receitas que se repetem</h3>
+                <p>
+                  26 fichas com recomendação e aviso de segurança, presets com dose J/mm, grade de
+                  material e teste de foco. Material perigoso fica bloqueado.
+                </p>
+                <ul class="feature-list">
+                  <li>dose J/mm</li>
+                  <li>teste de foco</li>
+                  <li>segurança</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-materials-1440.webp"
+                  srcset="assets/img/feature-materials-960.webp 960w, assets/img/feature-materials-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Catálogo de materiais do GRBL Studio com fichas, recomendações e avisos de segurança."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--narrow reveal" data-delay="1">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-crosshair"></use></svg>
+                  Preview
+                </span>
+                <h3>Veja antes de queimar</h3>
+                <p>
+                  Playback 2D, tempo estimado, intensidade S, trecho por passada e a cabeça andando
+                  no caminho. Dá até para mover a cabeça clicando no preview.
+                </p>
+                <ul class="feature-list">
+                  <li>simulação</li>
+                  <li>tempo estimado</li>
+                  <li>mover pelo preview</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-preview-1440.webp"
+                  srcset="assets/img/feature-preview-960.webp 960w, assets/img/feature-preview-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Preview 2D do GRBL Studio com caminho de gravação, progresso e simulação."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+
+            <article class="feature-card feature-card--wide reveal" data-delay="2">
+              <div class="feature-copy">
+                <span class="feature-tag">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                  Seu ambiente
+                </span>
+                <h3>Do seu jeito, no seu idioma</h3>
+                <p>
+                  11 temas claros, escuros e de alto contraste; interface em português, inglês e
+                  espanhol; modo básico com tour e atalhos para quem quer velocidade.
+                </p>
+                <ul class="feature-list">
+                  <li>11 temas</li>
+                  <li>pt-BR / en / es</li>
+                  <li>modo básico</li>
+                </ul>
+              </div>
+              <figure class="feature-media feature-media--crop">
+                <img
+                  src="assets/img/feature-themes-1440.webp"
+                  srcset="assets/img/feature-themes-960.webp 960w, assets/img/feature-themes-1440.webp 1440w"
+                  sizes="(max-width: 940px) 92vw, (max-width: 1180px) 45vw, 560px"
+                  width="1440"
+                  height="900"
+                  alt="Tela de aparência do GRBL Studio com 11 temas e idiomas português, inglês e espanhol."
+                  loading="lazy"
+                  decoding="async"
+                >
+              </figure>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="como-funciona" aria-labelledby="como-funciona-title">
+        <div class="container">
+          <div class="section-head section-head--split reveal">
+            <div>
+              <p class="kicker">Como funciona</p>
+              <h2 id="como-funciona-title">Do zero à peça<br><span class="text-gradient">em três passos.</span></h2>
+            </div>
+            <p>
+              A curva de aprendizado é curta de propósito. O tour de boas-vindas mostra o caminho,
+              o modo básico esconde o que não é essencial e o modo avançado está lá quando você
+              precisar.
+            </p>
+          </div>
+
+          <div class="steps">
+            <article class="step reveal" data-delay="1">
+              <span class="step-number">01</span>
+              <div class="step-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-usb"></use></svg>
+              </div>
+              <h3>Conecte</h3>
+              <p>
+                Escolha a porta, o baud e o perfil da máquina. O GRBL Studio lê o firmware, o curso
+                e os limites — e já sugere o que combina com o seu hardware.
+              </p>
+            </article>
+            <article class="step reveal" data-delay="2">
+              <span class="step-number">02</span>
+              <div class="step-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-pen"></use></svg>
+              </div>
+              <h3>Prepare</h3>
+              <p>
+                Abra um G-code, importe uma imagem, desenhe no editor ou gere um símbolo. Ajuste
+                potência, velocidade, passadas e camadas no mesmo fluxo.
+              </p>
+            </article>
+            <article class="step reveal" data-delay="3">
+              <span class="step-number">03</span>
+              <div class="step-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-play"></use></svg>
+              </div>
+              <h3>Grave</h3>
+              <p>
+                Confira o preview e o pré-voo, posicione a peça e dê Play. A barra do job mantém
+                pausa, overrides e emergência sempre visíveis.
+              </p>
+            </article>
+          </div>
+
+          <div class="workflow-shot">
+            <figure class="workflow-media reveal" data-delay="1">
+              <img
+                src="assets/img/feature-preflight-1440.webp"
+                srcset="assets/img/feature-preflight-960.webp 960w, assets/img/feature-preflight-1440.webp 1440w"
+                sizes="(max-width: 940px) 92vw, 640px"
+                width="1440"
+                height="900"
+                alt="Pré-voo do GRBL Studio com validação de limites, potência e linhas perigosas."
+                loading="lazy"
+                decoding="async"
+              >
+            </figure>
+            <div class="preflight-card reveal" data-delay="2">
+              <p class="kicker">Antes de queimar</p>
+              <h3>O pré-voo avisa primeiro.</h3>
+              <p>
+                Limites da área de trabalho, linhas perigosas, M3/M4 sem S, coordenadas fora do
+                curso e velocidade acima do que a máquina permite. Melhor descobrir agora do que
+                no material.
+              </p>
+              <ul class="checklist">
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Área e limites da máquina</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Potência e modo do laser</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Linhas e comandos perigosos</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="comparativo" aria-labelledby="comparativo-title">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="kicker">Comparativo honesto</p>
+            <h2 id="comparativo-title">Por que trocar<br><span class="text-gradient">o LaserGRBL?</span></h2>
+            <p>
+              O GRBL Studio não tenta ser o LightBurn em tudo. Ele foca no que um laser diodo GRBL
+              precisa: um fluxo nativo, confiável e bonito no Linux — com as ferramentas de preparação
+              que normalmente ficam espalhadas em outros programas.
+            </p>
+          </div>
+          <p class="table-hint" aria-hidden="true">Deslize para comparar as três opções →</p>
+          <div class="table-wrap reveal" data-delay="1">
+            <table class="compare-table">
+              <caption class="sr-only">Comparativo entre GRBL Studio, LaserGRBL e LightBurn</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Critério</th>
+                  <th scope="col">GRBL Studio</th>
+                  <th scope="col">LaserGRBL</th>
+                  <th scope="col">LightBurn</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Preço e licença</td>
+                  <td class="is-ours">Grátis · MIT</td>
+                  <td>Grátis · GPLv3</td>
+                  <td>US$ 99–199</td>
+                </tr>
+                <tr>
+                  <td>Linux</td>
+                  <td class="is-ours">Nativo</td>
+                  <td>Via Wine/Mono</td>
+                  <td>Nativo</td>
+                </tr>
+                <tr>
+                  <td>Código aberto</td>
+                  <td class="is-ours"><span class="yes">Sim</span></td>
+                  <td><span class="yes">Sim</span></td>
+                  <td><span class="no">Não</span></td>
+                </tr>
+                <tr>
+                  <td>Editor vetorial</td>
+                  <td class="is-ours"><span class="yes">Integrado</span></td>
+                  <td><span class="no">—</span></td>
+                  <td><span class="yes">Integrado</span></td>
+                </tr>
+                <tr>
+                  <td>QR / Data Matrix / PDF417 / 1D</td>
+                  <td class="is-ours"><span class="yes">Sim, no app</span></td>
+                  <td><span class="no">—</span></td>
+                  <td><span class="partial">Ferramenta de código</span></td>
+                </tr>
+                <tr>
+                  <td>Fila + produção em série</td>
+                  <td class="is-ours"><span class="yes">Sim</span></td>
+                  <td><span class="no">—</span></td>
+                  <td><span class="partial">Parcial</span></td>
+                </tr>
+                <tr>
+                  <td>Câmera / rotativa</td>
+                  <td class="is-ours"><span class="partial">Roadmap</span></td>
+                  <td><span class="no">—</span></td>
+                  <td><span class="yes">Sim</span></td>
+                </tr>
+                <tr>
+                  <td>Perfis de máquina</td>
+                  <td class="is-ours">30+</td>
+                  <td>Genérico</td>
+                  <td>Centenas</td>
+                </tr>
+                <tr>
+                  <td>Temas / idiomas</td>
+                  <td class="is-ours">11 / 3</td>
+                  <td>Básico / vários</td>
+                  <td>Vários / vários</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note reveal" data-delay="2">
+            Dados de outubro de 2026, baseados em documentação pública e no código do projeto.
+            Preços e recursos mudam; confira as fontes e ressalvas no
+            <a
+              href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/COMPARATIVO.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >comparativo completo</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="para-quem" aria-labelledby="para-quem-title">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="kicker">Para quem é</p>
+            <h2 id="para-quem-title">Feito para quem<br><span class="text-gradient">faz acontecer.</span></h2>
+            <p>
+              Se você tem uma laser GRBL e quer menos atrito entre a ideia e a peça pronta, o GRBL
+              Studio foi desenhado para a sua bancada.
+            </p>
+          </div>
+          <div class="persona-grid">
+            <article class="persona reveal" data-delay="1">
+              <div class="persona-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-users"></use></svg>
+              </div>
+              <h3>Hobbista</h3>
+              <p>
+                Primeira máquina, primeiro projeto. O tour de cinco passos e o modo básico colocam
+                você para gravar sem decorar G-code.
+              </p>
+              <p class="persona-quote">“Quero ligar, escolher a imagem e ver acontecer.”</p>
+            </article>
+            <article class="persona reveal" data-delay="2">
+              <div class="persona-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-star"></use></svg>
+              </div>
+              <h3>Maker</h3>
+              <p>
+                Controle fino de verdade: overrides, configurações <code>$$</code>, macros, camadas,
+                kerf, nesting e preview com intensidade.
+              </p>
+              <p class="persona-quote">“Quero entender e ajustar cada parâmetro.”</p>
+            </article>
+            <article class="persona reveal" data-delay="3">
+              <div class="persona-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-briefcase"></use></svg>
+              </div>
+              <h3>Pequeno negócio</h3>
+              <p>
+                Fila, produção N×, presets de material, custo por peça e retomada. Menos cliques
+                repetidos, mais peças iguais.
+              </p>
+              <p class="persona-quote">“Preciso repetir o mesmo resultado amanhã.”</p>
+            </article>
+            <article class="persona reveal" data-delay="4">
+              <div class="persona-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-terminal"></use></svg>
+              </div>
+              <h3>Linux raiz</h3>
+              <p>
+                AppImage, .deb, sem Wine/Mono, código aberto e 11 temas. Instalação limpa, sem
+                camadas de compatibilidade.
+              </p>
+              <p class="persona-quote">“Se não roda nativo, não me serve.”</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="download" aria-labelledby="download-title">
+        <div class="container">
+          <div class="download-panel reveal">
+            <div class="download-copy">
+              <p class="kicker">Download</p>
+              <h2 id="download-title">Pronto para<br><span class="text-gradient">gravar?</span></h2>
+              <p>
+                Baixe a versão mais recente, conecte a máquina e comece pelo tour de boas-vindas.
+                Sem conta, sem cartão e sem telemetria.
+              </p>
+              <div class="download-meta">
+                <span class="meta-pill"><svg class="icon" aria-hidden="true"><use href="#icon-package"></use></svg> v0.23.0</span>
+                <span class="meta-pill"><svg class="icon" aria-hidden="true"><use href="#icon-terminal"></use></svg> Linux x86_64</span>
+                <span class="meta-pill"><svg class="icon" aria-hidden="true"><use href="#icon-scale"></use></svg> MIT</span>
+              </div>
+            </div>
+            <div class="download-options">
+              <a
+                class="download-card download-card--primary"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
+                <span class="download-card__text">
+                  <strong>AppImage <span class="badge">recomendado</span></strong>
+                  <span>Sem instalação. Roda em qualquer distro Linux.</span>
+                </span>
+                <svg class="icon arrow" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+              </a>
+              <a
+                class="download-card"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#icon-package"></use></svg>
+                <span class="download-card__text">
+                  <strong>.deb</strong>
+                  <span>Ubuntu, Debian, Mint e derivados.</span>
+                </span>
+                <svg class="icon arrow" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+              </a>
+              <div class="download-card is-soon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-package"></use></svg>
+                <span class="download-card__text">
+                  <strong>Flatpak</strong>
+                  <span>Manifesto pronto; publicação em preparação.</span>
+                </span>
+                <span class="badge">em breve</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="install-grid">
+            <div class="code-card reveal" data-delay="1">
+              <h3>AppImage em dois comandos</h3>
+              <p>Baixe o arquivo, torne executável e rode. Não precisa instalar.</p>
+              <div class="code-block">
+                <button class="copy-btn" type="button" aria-label="Copiar comandos do AppImage" data-copy="chmod +x GRBL-Studio-*.AppImage&#10;./GRBL-Studio-*.AppImage">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg>
+                </button>
+                <code>chmod +x GRBL-Studio-*.AppImage
+./GRBL-Studio-*.AppImage</code>
+              </div>
+            </div>
+            <div class="code-card reveal" data-delay="2">
+              <h3>.deb em um comando</h3>
+              <p>Instala o app no menu do sistema. Se o apt pedir dependências, rode <code>sudo apt -f install</code>.</p>
+              <div class="code-block">
+                <button class="copy-btn" type="button" aria-label="Copiar comando do .deb" data-copy="sudo apt install ./grbl-studio_*_amd64.deb">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg>
+                </button>
+                <code>sudo apt install ./grbl-studio_*_amd64.deb</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="install-grid">
+            <div class="permission-card reveal" data-delay="1">
+              <h3>Libere a porta serial</h3>
+              <p>
+                No Linux, adicione seu usuário ao grupo <code>dialout</code> e faça logout/login.
+                Sem isso, o app não vê <code>/dev/ttyUSB0</code> nem <code>/dev/ttyACM0</code>.
+              </p>
+              <div class="code-block">
+                <button class="copy-btn" type="button" aria-label="Copiar comando para liberar a porta serial" data-copy="sudo usermod -aG dialout $USER">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg>
+                </button>
+                <code>sudo usermod -aG dialout $USER</code>
+              </div>
+            </div>
+            <div class="code-card reveal" data-delay="2">
+              <h3>Prefere compilar?</h3>
+              <p>O código é aberto. Clone, instale as dependências e rode em modo de desenvolvimento.</p>
+              <div class="code-block">
+                <button class="copy-btn" type="button" aria-label="Copiar comandos para compilar" data-copy="git clone https://github.com/viniciuswerneck/GRBL-Studio.git&#10;cd GRBL-Studio&#10;npm install && npm run build && npm start">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg>
+                </button>
+                <code>git clone https://github.com/viniciuswerneck/GRBL-Studio.git
+cd GRBL-Studio
+npm install && npm run build && npm start</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="documentacao" aria-labelledby="documentacao-title">
+        <div class="container">
+          <div class="section-head section-head--split reveal">
+            <div>
+              <p class="kicker">Documentação</p>
+              <h2 id="documentacao-title">Aprenda em minutos.<br><span class="text-gradient">Domine em peças.</span></h2>
+            </div>
+            <p>
+              Guia de primeiros passos, manual completo com prints, comparativo técnico e changelog.
+              Tudo em português — e o manual também em inglês e espanhol.
+            </p>
+          </div>
+          <div class="docs-grid">
+            <article class="doc-card reveal" data-delay="1">
+              <div class="doc-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-bolt"></use></svg>
+              </div>
+              <h3>
+                <a
+                  href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/GETTING_STARTED.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Primeiros passos</a>
+              </h3>
+              <p>Instalação, permissão da porta serial, conexão e o primeiro job em 11 seções.</p>
+              <a
+                class="link-arrow"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/GETTING_STARTED.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Ler o guia <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+            </article>
+            <article class="doc-card reveal" data-delay="2">
+              <div class="doc-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+              </div>
+              <h3>
+                <a
+                  href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Manual completo</a>
+              </h3>
+              <p>Do básico ao avançado, com 38 prints e versão HTML navegável com busca.</p>
+              <nav class="doc-langs" aria-label="Idiomas do manual">
+                <a href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md" target="_blank" rel="noopener noreferrer">PT</a>
+                <a href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.en.md" target="_blank" rel="noopener noreferrer">EN</a>
+                <a href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.es.md" target="_blank" rel="noopener noreferrer">ES</a>
+              </nav>
+              <a
+                class="link-arrow"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Abrir o manual <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+            </article>
+            <article class="doc-card reveal" data-delay="3">
+              <div class="doc-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-scale"></use></svg>
+              </div>
+              <h3>
+                <a
+                  href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/COMPARATIVO.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Comparativo técnico</a>
+              </h3>
+              <p>GRBL Studio, LaserGRBL, LightBurn, Rayforge e mais — com fontes e ressalvas.</p>
+              <a
+                class="link-arrow"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/COMPARATIVO.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Ver comparativo <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+            </article>
+            <article class="doc-card reveal" data-delay="4">
+              <div class="doc-icon">
+                <svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>
+              </div>
+              <h3>
+                <a
+                  href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/CHANGELOG.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Changelog</a>
+              </h3>
+              <p>O que entrou na v0.23.0 e em cada versão anterior, sem letra miúda.</p>
+              <a
+                class="link-arrow"
+                href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/CHANGELOG.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Ver mudanças <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <div class="container faq-layout">
+          <div class="faq-intro reveal">
+            <p class="kicker">Perguntas frequentes</p>
+            <h2 id="faq-title">Antes de<br><span class="text-gradient">baixar.</span></h2>
+            <p>
+              As respostas diretas para as dúvidas mais comuns. Se a sua não estiver aqui, abra uma
+              issue no <a href="https://github.com/viniciuswerneck/GRBL-Studio/issues" target="_blank" rel="noopener noreferrer">GitHub</a>.
+            </p>
+          </div>
+          <div class="faq-list">
+            <details class="faq-item reveal" data-delay="1">
+              <summary>
+                O GRBL Studio é gratuito?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Sim. O GRBL Studio é open source sob licença MIT, sem assinatura, conta ou nuvem. Você baixa, usa e, se quiser, contribui com o projeto.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="1">
+              <summary>
+                Funciona com a minha laser GRBL?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Se a máquina fala GRBL 1.1 ou 0.9, sim. Há conexão USB serial e Wi-Fi/TCP para ESP8266/ESP32, além de 30+ perfis prontos e um perfil Genérico GRBL.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="2">
+              <summary>
+                Preciso de Wine ou Mono?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Não. O GRBL Studio é um aplicativo desktop nativo para Linux, distribuído como AppImage e .deb. O Flatpak está em preparação.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="2">
+              <summary>
+                Quais formatos posso abrir?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>G-code (.gcode, .nc, .tap, .txt), imagens PNG, JPG, BMP, GIF, WebP e AVIF, SVG, DXF ASCII e PDF vetorial. Também é possível desenhar no editor interno.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="3">
+              <summary>
+                Ele substitui o LightBurn?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Para laser diodo GRBL, o GRBL Studio cobre o fluxo principal: conexão, preview, imagem, vetor, camadas, materiais e produção. Não temos câmera, rotativa ou controladores CO2/Ruida; se você precisa disso, o LightBurn ainda é a escolha.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="3">
+              <summary>
+                Como instalo no Linux?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Baixe o AppImage e execute, ou instale o .deb. Para acessar a porta serial, adicione seu usuário ao grupo dialout e faça logout/login.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="4">
+              <summary>
+                Tem manual em português?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>Sim. O manual completo está em português, inglês e espanhol, com prints localizados e versão HTML navegável.</p>
+            </details>
+            <details class="faq-item reveal" data-delay="4">
+              <summary>
+                Onde reporto bugs ou peço recursos?
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+              </summary>
+              <p>No GitHub Issues do projeto. O código é aberto e contribuições são bem-vindas.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta" aria-labelledby="cta-title">
+        <div class="container">
+          <div class="final-cta__inner reveal">
+            <div class="final-cta__content">
+              <p class="kicker">Comece agora</p>
+              <h2 id="cta-title">Menos configuração.<br><span class="text-gradient">Mais criação.</span></h2>
+              <p>
+                Um app, uma máquina e a próxima ideia. O GRBL Studio cuida do protocolo para você
+                cuidar do material.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" href="#download">
+                  Baixar grátis
+                  <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
+                </a>
+                <a
+                  class="btn btn-secondary btn-lg"
+                  href="https://github.com/viniciuswerneck/GRBL-Studio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ver no GitHub
+                  <svg class="icon icon--brand" aria-hidden="true"><use href="#icon-github"></use></svg>
+                </a>
+              </div>
+              <p class="final-cta__note">Linux x86_64 · v0.23.0 · MIT · Sem conta</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#topo" aria-label="GRBL Studio — início">
+            <img src="assets/img/icon-64.png" width="36" height="36" alt="" loading="lazy">
+            <span class="brand-word"><span>GRBL</span><span>STUDIO</span></span>
+          </a>
+          <p>
+            O estúdio nativo para laser GRBL no Linux. Conexão confiável, preparação completa e
+            produção sem nuvem.
+          </p>
+          <span class="footer-license">
+            <svg class="icon" aria-hidden="true"><use href="#icon-scale"></use></svg>
+            Código aberto sob licença MIT
+          </span>
+        </div>
+        <div class="footer-col">
+          <h3>Produto</h3>
+          <a href="#recursos">Recursos</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#comparativo">Comparativo</a>
+          <a href="#download">Download</a>
+          <a href="#faq">Perguntas frequentes</a>
+        </div>
+        <div class="footer-col">
+          <h3>Recursos</h3>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Manual completo</a>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/GETTING_STARTED.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Primeiros passos</a>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/CHANGELOG.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Changelog</a>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/blob/main/LICENSE"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Licença MIT</a>
+        </div>
+        <div class="footer-col">
+          <h3>Projeto</h3>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio"
+            target="_blank"
+            rel="noopener noreferrer"
+          >GitHub</a>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/releases/latest"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Releases</a>
+          <a
+            href="https://github.com/viniciuswerneck/GRBL-Studio/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Issues</a>
+          <a href="https://werneck.dev.br" target="_blank" rel="noopener noreferrer">WerneckLab</a>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <p>© 2026 Vinicius Werneck · WerneckLab · <a href="https://grblstudio.werneck.dev.br">grblstudio.werneck.dev.br</a></p>
+        <p>Feito para Linux. <span class="heart">♥</span> Sem Wine, sem pressa, sem nuvem.</p>
+      </div>
+    </footer>
+
+    <button class="to-top" id="toTop" type="button" aria-label="Voltar ao topo">
+      <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up"></use></svg>
+    </button>
+
+    <script src="assets/js/main.js" defer></script>
+  </body>
+</html>
