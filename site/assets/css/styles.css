@@ -416,6 +416,7 @@ code {
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
+  color-scheme: dark;
 }
 
 .lang-switcher select:hover {
