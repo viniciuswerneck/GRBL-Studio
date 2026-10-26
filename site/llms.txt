@@ -14,7 +14,7 @@
 - Idiomas: português, inglês e espanhol
 - Interface: 11 temas
 - Repositório: https://github.com/viniciuswerneck/GRBL-Studio
-- Download: https://github.com/viniciuswerneck/GRBL-Studio/releases/latest
+- Download: https://github.com/viniciuswerneck/GRBL-Studio/releases
 - Documentação: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/MANUAL.md
 - Comparativo: https://github.com/viniciuswerneck/GRBL-Studio/blob/main/docs/COMPARATIVO.md
 
