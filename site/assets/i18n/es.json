@@ -1,0 +1,381 @@
+{
+  "meta": {
+    "title": "GRBL Studio — software láser GRBL nativo para Linux",
+    "description": "Software láser GRBL nativo para Linux: envío de G-code a prueba de buffer, editor vectorial, imagen, QR/código de barras y producción en serie. Gratis y MIT.",
+    "ogTitle": "GRBL Studio — software láser GRBL nativo para Linux",
+    "ogDescription": "Envío de G-code a prueba de buffer, editor vectorial, imagen, QR/código de barras y producción en serie. Gratis, abierto y hecho para Linux.",
+    "twitterTitle": "GRBL Studio — software láser GRBL nativo para Linux",
+    "twitterDescription": "Envío de G-code a prueba de buffer, editor vectorial, imagen, QR/código de barras y producción en serie. Gratis, abierto y hecho para Linux.",
+    "ogImageAlt": "GRBL Studio: interfaz oscura con preview 2D junto al nombre del producto y la llamada software láser GRBL nativo para Linux.",
+    "twitterImageAlt": "GRBL Studio: interfaz oscura con preview 2D y panel de control."
+  },
+  "skipLink": "Saltar al contenido",
+  "brand": {
+    "ariaLabel": "GRBL Studio — inicio"
+  },
+  "nav": {
+    "recursos": "Características",
+    "comoFunciona": "Cómo funciona",
+    "comparativo": "Comparativa",
+    "download": "Descarga",
+    "documentacao": "Documentación",
+    "cta": "Descargar gratis"
+  },
+  "headerActions": {
+    "github": "GitHub",
+    "download": "Descargar gratis",
+    "menuAbrir": "Abrir menú",
+    "menuFechar": "Cerrar menú"
+  },
+  "hero": {
+    "kicker": "Alternativa nativa a LaserGRBL",
+    "titleLine1": "El láser GRBL en Linux,",
+    "titleLine2": "con nivel de estudio.",
+    "subtitle": "Conexión serial/USB o Wi-Fi, envío de G-code a prueba de buffer, editor vectorial, importación de imagen, QR/código de barras, materiales, cola de producción y 11 temas — todo en una app nativa, gratis y open source (MIT).",
+    "ctaPrimary": "Descargar gratis",
+    "ctaSecondary": "Ver en GitHub",
+    "points": {
+      "appimage": "AppImage y .deb",
+      "usb": "USB y Wi-Fi/TCP",
+      "mit": "Licencia MIT"
+    },
+    "note": "Sin cuenta. Sin nube. Sin suscripción. Tus archivos quedan en tu máquina.",
+    "stats": {
+      "tests": { "value": "1.000+", "label": "tests automatizados" },
+      "profiles": { "value": "30+", "label": "perfiles de máquina" },
+      "themes": { "value": "11", "label": "temas de interfaz" },
+      "langs": { "value": "3", "label": "idiomas" }
+    }
+  },
+  "compat": {
+    "label": "Compatible con",
+    "brands": ["Ortur", "TwoTrees", "COMGO", "NEJE", "xTool D1/P2", "Genérico GRBL"],
+    "note": "Perfiles listos para 30+ modelos. Marcas citadas solo para indicar compatibilidad.",
+    "link": "Ver detalles"
+  },
+  "porque": {
+    "kicker": "Hecho para Linux",
+    "titleLine1": "Sin Wine. Sin Mono.",
+    "titleLine2": "Sin sorpresas.",
+    "description": "LaserGRBL es referencia en Windows, pero en Linux depende de capas de compatibilidad. GRBL Studio nació nativo: instala, abre y habla con tu máquina sin mapear puertos COM ni pelear con el sistema.",
+    "cards": [
+      {
+        "title": "Conecta de verdad",
+        "desc": "Puerto serial USB o Wi-Fi/TCP con ESP8266/ESP32. La app lee firmware, recorrido y límites y los usa en el pre-vuelo.",
+        "items": ["30+ perfiles listos", "Detección de desconexión", "Reconexión opcional"]
+      },
+      {
+        "title": "Respeta el buffer",
+        "desc": "Ventana de envío por conteo de caracteres (bytes), no por líneas. Cada ok libera espacio — nada de write masivo que trabe la máquina.",
+        "items": ["Buffer RX respetado", "Comandos de tiempo real correctos", "Pausa, reanudación y emergencia"]
+      },
+      {
+        "title": "Todo en el mismo sitio",
+        "desc": "De la idea a la pieza terminada sin salir de la app. Vector, imagen, QR, código de barras, materiales, preview, simulación y producción.",
+        "items": ["Editor vectorial integrado", "QR, 2D y código de barras", "Presets y tests de material"]
+      }
+    ],
+    "proof": {
+      "bad": {
+        "title": "LaserGRBL en Linux",
+        "desc": "Wine + Mono + mapeo de puertos COM. Funciona, pero no es nativo."
+      },
+      "good": {
+        "title": "GRBL Studio",
+        "desc": "AppImage + <code>/dev/ttyUSB0</code> + tema nativo. Abrió, conectó, grabó."
+      }
+    }
+  },
+  "recursos": {
+    "kicker": "Qué puedes hacer",
+    "titleLine1": "De la imagen",
+    "titleLine2": "a la pieza lista.",
+    "cards": [
+      {
+        "title": "Grabado fiable",
+        "desc": "Barra flotante con progreso, overrides de feed/velocidad/potencia, pausa/reanudación y botón de emergencia — todo con comandos de tiempo real de byte único.",
+        "imgAlt": "Barra flotante de grabado de GRBL Studio con progreso, pausa, overrides y botón de emergencia."
+      },
+      {
+        "title": "Editor vectorial",
+        "desc": "Lienzo en milímetros, formas, capas, booleanas, offset, kerf, nesting, exportación SVG/DXF/PDF. Dibuja o importa y edita directo en la app.",
+        "imgAlt": "Editor vectorial de GRBL Studio con lienzo en milímetros, formas, capas y propiedades."
+      },
+      {
+        "title": "Imagen → G-code",
+        "desc": "Line-to-line, dithering (Floyd–Steinberg, Atkinson, Bayer), centerline (skel) y vectorización (potrace). Ajuste de contraste, gamma, inversión y rotación.",
+        "imgAlt": "Pestaña de importación de imagen de GRBL Studio con ajustes y preview de grabado."
+      },
+      {
+        "title": "QR Code y Data Matrix",
+        "desc": "QR Code (Micro QR), Data Matrix, PDF417, Aztec. Tamaño, corrección de error, quiet zone e HRI. Genera vector o raster directo en G-code.",
+        "imgAlt": "Generador de QR Code de GRBL Studio con tamaño, corrección de error y quiet zone.",
+        "imgAlt2": "Generador de código de barras Code 128 de GRBL Studio con HRI y dimensiones en milímetros."
+      },
+      {
+        "title": "Producción en serie",
+        "desc": "Cola persistente, modo N× copias, pausa entre piezas, contador, reanudación tras fallo y log de ejecución. Pensado para repetibilidad en el banco.",
+        "imgAlt": "Modo producción de GRBL Studio con contador de copias y pausa entre piezas."
+      },
+      {
+        "title": "Catálogo de materiales",
+        "desc": "Fichas con dosis J/mm², velocidad, potencia, pasadas, kerf, avisos de seguridad, test de material y test de foco. Crea y comparte tus presets.",
+        "imgAlt": "Catálogo de materiales de GRBL Studio con fichas, recomendaciones y avisos de seguridad."
+      },
+      {
+        "title": "Preview 2D y simulación",
+        "desc": "Camino de grabado con colores por capa/operación, progreso animado, simulación de tiempo, límites de máquina y zoom/pan suave.",
+        "imgAlt": "Preview 2D de GRBL Studio con camino de grabado, progreso y simulación."
+      },
+      {
+        "title": "11 temas y 3 idiomas",
+        "desc": "Tema oscuro (defecto), claro, alto contraste, solarized, dracula, nord, one dark, github, monokai, gruvbox, tokyo night. Interfaz en PT, EN, ES.",
+        "imgAlt": "Pantalla de apariencia de GRBL Studio con 11 temas e idiomas portugués, inglés y español."
+      }
+    ]
+  },
+  "comoFunciona": {
+    "kicker": "Flujo en 4 pasos",
+    "titleLine1": "Conecta,",
+    "titleLine2": "prepara,",
+    "titleLine3": "graba.",
+    "steps": [
+      {
+        "number": "01",
+        "title": "Conecta",
+        "desc": "Enchufa el láser por USB o configura Wi-Fi/TCP. La app detecta firmware, lee límites y recorrido y ya valida la conexión."
+      },
+      {
+        "number": "02",
+        "title": "Prepara",
+        "desc": "Abre G-code, importa imagen, dibuja vector o genera QR/código de barras. Aplica offset, kerf, nesting y organiza en capas."
+      },
+      {
+        "number": "03",
+        "title": "Pre-vuelo",
+        "desc": "Validación automática: área de máquina, potencia/modo láser, líneas peligrosas, comandos no soportados. Corrige antes de grabar."
+      },
+      {
+        "number": "04",
+        "title": "Graba",
+        "desc": "Envía con ventana por bytes, monitoriza DRO en tiempo real, usa overrides, pausa/reanuda, para con emergencia. Cola N× para producción."
+      }
+    ],
+    "preflight": {
+      "title": "Pre-vuelo: validación antes de grabar",
+      "imgAlt": "Pre-vuelo de GRBL Studio con validación de límites, potencia y líneas peligrosas."
+    }
+  },
+  "comparativo": {
+    "kicker": "Comparativa honesta",
+    "titleLine1": "Por qué cambiar",
+    "titleLine2": "de LaserGRBL?",
+    "description": "GRBL Studio no intenta ser LightBurn en todo. Se centra en lo que necesita un láser diodo GRBL: un flujo nativo, fiable y bonito en Linux — con las herramientas de preparación que normalmente están dispersas en otros programas.",
+    "tableHint": "Desliza para comparar las tres opciones →",
+    "note": "Datos de octubre de 2026, basados en documentación pública y código del proyecto. Precios y funciones cambian; consulta fuentes y salvedades en la ",
+    "noteLink": "comparativa completa",
+    "table": {
+      "headers": ["Criterio", "GRBL Studio", "LaserGRBL", "LightBurn"],
+      "rows": [
+        ["Precio y licencia", "Gratis · MIT", "Gratis · GPLv3", "US$ 99–199"],
+        ["Linux", "Nativo", "Vía Wine/Mono", "Nativo"],
+        ["Código abierto", "Sí", "Sí", "No"],
+        ["Editor vectorial", "Completo", "No", "Completo"],
+        ["Importación de imagen", "Line-to-line, dithering, centerline, vectorización", "Básico (dithering)", "Avanzado"],
+        ["QR / 2D / Código de barras", "QR, Data Matrix, PDF417, Aztec + 9 simbologías 1D", "No", "QR + Data Matrix"],
+        ["Materiales y tests", "Catálogo, presets, test de material, test de foco", "No", "Biblioteca de materiales"],
+        ["Cola de producción", "Persistente, N×, pausa entre piezas, reanudación", "No", "Parcial"],
+        ["Overrides tiempo real", "Feed, velocidad, potencia, pausa/reanudación, emergencia", "Feed/velocidad", "Completo"],
+        ["Temas e idiomas", "11 temas · PT/EN/ES", "1 tema · EN", "Temas · Varios idiomas"],
+        ["Telemetría / nube", "Cero", "Cero", "Opcional"]
+      ],
+      "legend": {
+        "yes": "Sí",
+        "no": "No",
+        "partial": "Parcial"
+      }
+    }
+  },
+  "paraQuem": {
+    "kicker": "Para quién es",
+    "titleLine1": "Hecho para quien",
+    "titleLine2": "hace que ocurra.",
+    "description": "Si tienes un láser GRBL y quieres menos fricción entre la idea y la pieza terminada, GRBL Studio fue diseñado para tu banco.",
+    "personas": [
+      {
+        "icon": "users",
+        "title": "Makers y aficionados",
+        "desc": "Quieren grabar/cortar sin configurar Wine, sin luchar con puertos COM y con herramientas visuales integradas (imagen → G-code, QR, vector)."
+      },
+      {
+        "icon": "factory",
+        "title": "Pequeña producción",
+        "desc": "Necesitan cola N×, pausa entre piezas, contador y reanudación tras fallo. Todo persistente, sin nube, sin suscripción."
+      },
+      {
+        "icon": "code",
+        "title": "Desarrolladores e integradores",
+        "desc": "Código abierto (MIT), arquitectura modular, protocolo GRBL bien testeado. Fácil de extender, auditar o integrar en pipelines."
+      },
+      {
+        "icon": "school",
+        "title": "Educación y laboratorios",
+        "desc": "Instalación simple (AppImage/.deb), interfaz en 3 idiomas, temas accesibles, validaciones de seguridad (pre-vuelo) y logs claros."
+      }
+    ]
+  },
+  "download": {
+    "kicker": "Descarga ahora",
+    "titleLine1": "AppImage, .deb",
+    "titleLine2": "y listo.",
+    "appimage": {
+      "title": "AppImage (recomendado)",
+      "desc": "Funciona en cualquier distro x86_64 sin instalar dependencias. Descarga, da permiso de ejecución y ejecuta.",
+      "badge": "Universal",
+      "commands": [
+        "chmod +x GRBL-Studio-*.AppImage",
+        "./GRBL-Studio-*.AppImage"
+      ],
+      "note": "Requiere FUSE 2 (libfuse2) instalado — presente en la mayoría de distros."
+    },
+    "deb": {
+      "title": "Paquete .deb",
+      "desc": "Instala en el sistema (Debian/Ubuntu/Mint/Pop/…), integra al menú de aplicaciones y gestiona dependencias vía apt.",
+      "badge": "Integrado",
+      "commands": [
+        "sudo apt install ./grbl-studio_*_amd64.deb",
+        "grbl-studio"
+      ],
+      "note": "Añade tu usuario al grupo dialout para acceder al puerto serie:"
+    },
+    "permissions": {
+      "title": "Permiso de puerto serie",
+      "desc": "Para que la app acceda a /dev/ttyUSB* o /dev/ttyACM*:",
+      "commands": [
+        "sudo usermod -aG dialout $USER",
+        "# haz logout/login o reinicia"
+      ]
+    },
+    "flatpak": {
+      "title": "Flatpak (próximamente)",
+      "desc": "Manifiesto listo, publicación en Flathub en marcha. Mientras, usa AppImage o .deb.",
+      "badge": "En preparación",
+      "note": "Sigue en GitHub para saber cuándo estará disponible."
+    }
+  },
+  "documentacion": {
+    "kicker": "Documentación completa",
+    "titleLine1": "Manual, guía",
+    "titleLine2": "y changelog.",
+    "cards": [
+      {
+        "title": "Manual completo",
+        "desc": "Del básico al avanzado, con 38 capturas y versión HTML navegable con búsqueda.",
+        "langs": ["PT", "EN", "ES"],
+        "link": "Manual completo"
+      },
+      {
+        "title": "Primeros pasos",
+        "desc": "Instalación, primera conexión, envío de G-code, importación de imagen y grabación del primer archivo.",
+        "link": "Empezar ahora"
+      },
+      {
+        "title": "Changelog",
+        "desc": "Todas las versiones, novedades, correcciones y migraciones. Actualizado en cada release.",
+        "link": "Ver historial"
+      },
+      {
+        "title": "Issues y contribuciones",
+        "desc": "Reporta bugs, pide funcionalidades, envía PRs. El proyecto es open source y acepta contribuciones.",
+        "link": "Abrir en GitHub"
+      }
+    ]
+  },
+  "faq": {
+    "kicker": "Preguntas frecuentes",
+    "titleLine1": "Antes de",
+    "titleLine2": "descargar.",
+    "description": "Respuestas directas a las dudas más comunes. Si la tuya no está aquí, abre un issue en ",
+    "githubLink": "GitHub",
+    "questions": [
+      {
+        "q": "¿GRBL Studio es gratis?",
+        "a": "Sí. GRBL Studio es open source bajo licencia MIT, sin suscripción, cuenta ni nube. Lo descargas, usas y, si quieres, contribuyes."
+      },
+      {
+        "q": "¿Funciona con mi láser GRBL?",
+        "a": "Si la máquina habla GRBL 1.1 o 0.9, sí. Hay conexión USB serie y Wi-Fi/TCP para ESP8266/ESP32, además de 30+ perfiles listos y un perfil Genérico GRBL."
+      },
+      {
+        "q": "¿Necesito Wine o Mono?",
+        "a": "No. GRBL Studio es una app de escritorio nativa para Linux, distribuida como AppImage y .deb. Flatpak en preparación."
+      },
+      {
+        "q": "¿Qué formatos puedo abrir?",
+        "a": "G-code (.gcode, .nc, .tap, .txt), imágenes PNG, JPG, BMP, GIF, WebP, AVIF, SVG, DXF ASCII, PDF vectorial. También puedes dibujar en el editor interno."
+      },
+      {
+        "q": "¿Sustituye a LightBurn?",
+        "a": "Para láser diodo GRBL, GRBL Studio cubre el flujo principal: conexión, preview, imagen, vector, capas, materiales, producción. No tenemos cámara, rotativa ni controladores CO2/Ruida; si necesitas eso, LightBurn sigue siendo la opción."
+      },
+      {
+        "q": "¿Cómo instalo en Linux?",
+        "a": "Descarga el AppImage y ejecuta, o instala el .deb. Para acceder al puerto serie, añade tu usuario al grupo dialout y haz logout/login."
+      },
+      {
+        "q": "¿Hay manual en español?",
+        "a": "Sí. El manual completo está en portugués, inglés y español, con capturas localizadas y versión HTML navegable."
+      },
+      {
+        "q": "¿Dónde reporto bugs o pido funciones?",
+        "a": "En GitHub Issues del proyecto. El código es abierto y se aceptan contribuciones."
+      }
+    ]
+  },
+  "cta": {
+    "kicker": "Empieza ya",
+    "titleLine1": "Menos configuración.",
+    "titleLine2": "Más creación.",
+    "description": "Una app, una máquina y la siguiente idea. GRBL Studio cuida el protocolo para que tú cuides el material.",
+    "ctaPrimary": "Descargar gratis",
+    "ctaSecondary": "Ver documentación"
+  },
+  "footer": {
+    "description": "El estudio nativo para láser GRBL en Linux. Conexión fiable, preparación completa, producción sin nube.",
+    "license": "MIT",
+    "nav": {
+      "product": "Producto",
+      "recursos": "Características",
+      "download": "Descarga",
+      "documentacion": "Documentación",
+      "changelog": "Changelog"
+    },
+    "community": {
+      "title": "Comunidad",
+      "github": "GitHub",
+      "issues": "Issues",
+      "discussions": "Discussions",
+      "contribuir": "Contribuir"
+    },
+    "legal": {
+      "title": "Legal",
+      "privacidade": "Privacidad",
+      "licenca": "Licencia MIT",
+      "cookies": "Cookies"
+    },
+    "bottom": {
+      "domain": "grblstudio.werneck.dev.br",
+      "madeWith": "Hecho con GRBL Studio",
+      "by": "por Vinicius Werneck"
+    }
+  },
+  "langSwitcher": {
+    "label": "Idioma",
+    "pt": "Português",
+    "en": "English",
+    "es": "Español"
+  },
+  "toTop": "Volver arriba",
+  "copyBtn": "Copiar",
+  "copied": "¡Copiado!"
+}

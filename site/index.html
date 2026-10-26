@@ -351,19 +351,30 @@
 
     <header class="site-header" id="topo">
       <div class="container header-inner">
-        <a class="brand" href="#topo" aria-label="GRBL Studio — início">
+        <a class="brand" href="#topo" data-i18n-aria="brand.ariaLabel">
           <img src="assets/img/icon-64.png" width="36" height="36" alt="">
           <span class="brand-word"><span>GRBL</span><span>STUDIO</span></span>
         </a>
         <nav class="nav" id="navegacao" aria-label="Navegação principal">
-          <a href="#recursos">Recursos</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#comparativo">Comparativo</a>
-          <a href="#download">Download</a>
-          <a href="#documentacao">Documentação</a>
-          <a class="nav-cta" href="#download">Baixar grátis</a>
+          <a href="#recursos" data-i18n="nav.recursos">Recursos</a>
+          <a href="#como-funciona" data-i18n="nav.comoFunciona">Como funciona</a>
+          <a href="#comparativo" data-i18n="nav.comparativo">Comparativo</a>
+          <a href="#download" data-i18n="nav.download">Download</a>
+          <a href="#documentacao" data-i18n="nav.documentacao">Documentação</a>
+          <a class="nav-cta" href="#download" data-i18n="nav.cta">Baixar grátis</a>
         </nav>
         <div class="header-actions">
+          <div class="lang-switcher" id="langSwitcher">
+            <fieldset aria-label="Idioma">
+              <legend class="sr-only" data-i18n="langSwitcher.label">Idioma</legend>
+              <select id="langSelect" aria-label="Idioma">
+                <option value="pt-BR" data-i18n="langSwitcher.pt">Português</option>
+                <option value="en" data-i18n="langSwitcher.en">English</option>
+                <option value="es" data-i18n="langSwitcher.es">Español</option>
+              </select>
+            </fieldset>
+            <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+          </div>
           <a
             class="ghost-link"
             href="https://github.com/viniciuswerneck/GRBL-Studio"
@@ -371,10 +382,10 @@
             rel="noopener noreferrer"
           >
             <svg class="icon icon--brand" aria-hidden="true"><use href="#icon-github"></use></svg>
-            GitHub
+            <span data-i18n="headerActions.github">GitHub</span>
           </a>
-          <a class="btn btn-primary" href="#download">
-            Baixar grátis
+          <a class="btn btn-primary" href="#download" data-i18n="headerActions.download">
+            <span data-i18n="headerActions.download">Baixar grátis</span>
             <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
           </a>
           <button
@@ -397,32 +408,32 @@
         <div class="hero-beam" aria-hidden="true"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow"><span class="eyebrow-dot"></span> Linux nativo · GRBL 1.1 · Código aberto</p>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> <span data-i18n="hero.kicker">Linux nativo · GRBL 1.1 · Código aberto</span></p>
             <h1 id="titulo-principal">
-              O laser GRBL no Linux,<br>
-              <span class="text-gradient">com nível de estúdio.</span>
+              <span data-i18n="hero.titleLine1">O laser GRBL no Linux,</span><br>
+              <span class="text-gradient" data-i18n="hero.titleLine2">com nível de estúdio.</span>
             </h1>
-            <p class="hero-lead">
+            <p class="hero-lead" data-i18n="hero.subtitle">
               <strong>GRBL Studio</strong> é a alternativa nativa ao LaserGRBL: envio de G-code à prova
               de buffer, editor vetorial, imagem, QR/código de barras e produção em série. Tudo em um
               app leve, bonito e sem Wine.
             </p>
             <div class="hero-actions">
-              <a class="btn btn-primary btn-lg" href="#download">
+              <a class="btn btn-primary btn-lg" href="#download" data-i18n="hero.ctaPrimary">
                 Baixar grátis
                 <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
               </a>
-              <a class="btn btn-secondary btn-lg" href="#recursos">
+              <a class="btn btn-secondary btn-lg" href="#recursos" data-i18n="hero.ctaSecondary">
                 Explorar recursos
                 <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
               </a>
             </div>
             <ul class="hero-points">
-              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> AppImage e .deb</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> USB e Wi-Fi/TCP</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Licença MIT</li>
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="hero.points.appimage">AppImage e .deb</span></li>
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="hero.points.usb">USB e Wi-Fi/TCP</span></li>
+              <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="hero.points.mit">Licença MIT</span></li>
             </ul>
-            <p class="hero-note">Sem conta. Sem nuvem. Sem assinatura. Seus arquivos ficam na sua máquina.</p>
+            <p class="hero-note" data-i18n="hero.note">Sem conta. Sem nuvem. Sem assinatura. Seus arquivos ficam na sua máquina.</p>
           </div>
 
           <div class="hero-visual">
@@ -461,27 +472,27 @@
 
         <div class="container hero-stats">
           <div class="hero-stat">
-            <strong>1.000+</strong>
-            <span>testes automatizados</span>
+            <strong data-i18n="hero.stats.tests.value">1.000+</strong>
+            <span data-i18n="hero.stats.tests.label">testes automatizados</span>
           </div>
           <div class="hero-stat">
-            <strong>30+</strong>
-            <span>perfis de máquina</span>
+            <strong data-i18n="hero.stats.profiles.value">30+</strong>
+            <span data-i18n="hero.stats.profiles.label">perfis de máquina</span>
           </div>
           <div class="hero-stat">
-            <strong>11</strong>
-            <span>temas de interface</span>
+            <strong data-i18n="hero.stats.themes.value">11</strong>
+            <span data-i18n="hero.stats.themes.label">temas de interface</span>
           </div>
           <div class="hero-stat">
-            <strong>3</strong>
-            <span>idiomas</span>
+            <strong data-i18n="hero.stats.langs.value">3</strong>
+            <span data-i18n="hero.stats.langs.label">idiomas</span>
           </div>
         </div>
       </section>
 
       <section class="compat" aria-labelledby="compat-title">
         <div class="container">
-          <h2 class="compat-label" id="compat-title">Funciona com as máquinas que você já tem</h2>
+          <h2 class="compat-label" id="compat-title" data-i18n="compat.label">Funciona com as máquinas que você já tem</h2>
           <ul class="compat-list">
             <li>Sculpfun</li>
             <li>Ortur</li>
@@ -492,9 +503,9 @@
             <li>xTool D1/P2</li>
             <li>Genérico GRBL</li>
           </ul>
-          <p class="compat-note">
+          <p class="compat-note" data-i18n="compat.note">
             Perfis prontos para 30+ modelos. Marcas citadas apenas para indicar compatibilidade.
-            <a href="#comparativo">Ver detalhes</a>.
+            <a href="#comparativo" data-i18n="compat.link">Ver detalhes</a>.
           </p>
         </div>
       </section>
@@ -502,9 +513,9 @@
       <section class="section" id="porque" aria-labelledby="porque-title">
         <div class="container">
           <div class="section-head reveal">
-            <p class="kicker">Feito para Linux</p>
-            <h2 id="porque-title">Sem Wine. Sem Mono.<br><span class="text-gradient">Sem surpresas.</span></h2>
-            <p>
+            <p class="kicker" data-i18n="porque.kicker">Feito para Linux</p>
+            <h2 id="porque-title"><span data-i18n="porque.titleLine1">Sem Wine. Sem Mono.</span><br><span class="text-gradient" data-i18n="porque.titleLine2">Sem surpresas.</span></h2>
+            <p data-i18n="porque.description">
               O LaserGRBL é uma referência no Windows, mas no Linux depende de camadas de
               compatibilidade. O GRBL Studio nasceu nativo: instala, abre e conversa com a sua
               máquina sem mapear portas COM nem brigar com o sistema.
@@ -515,45 +526,45 @@
               <div class="why-icon">
                 <svg class="icon" aria-hidden="true"><use href="#icon-usb"></use></svg>
               </div>
-              <h3>Conecta de verdade</h3>
-              <p>
+              <h3 data-i18n="porque.cards.0.title">Conecta de verdade</h3>
+              <p data-i18n="porque.cards.0.desc">
                 Porta serial USB ou Wi-Fi/TCP com ESP8266/ESP32. O app lê o firmware, o curso e os
                 limites da máquina e usa isso no pré-voo.
               </p>
               <ul>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> 30+ perfis prontos</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Detecção de desconexão</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Reconexão opcional</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.0.items.0">30+ perfis prontos</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.0.items.1">Detecção de desconexão</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.0.items.2">Reconexão opcional</span></li>
               </ul>
             </article>
             <article class="why-card reveal" data-delay="2">
               <div class="why-icon">
                 <svg class="icon" aria-hidden="true"><use href="#icon-cpu"></use></svg>
               </div>
-              <h3>Não trava a máquina</h3>
-              <p>
+              <h3 data-i18n="porque.cards.1.title">Não trava a máquina</h3>
+              <p data-i18n="porque.cards.1.desc">
                 A janela de envio conta caracteres, respeita o planner e só libera espaço a cada
                 <code>ok</code>. Nada de despejar G-code no buffer e torcer.
               </p>
               <ul>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Buffer RX respeitado</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Comandos de tempo real corretos</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Pausa, retomada e emergência</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.1.items.0">Buffer RX respeitado</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.1.items.1">Comandos de tempo real corretos</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.1.items.2">Pausa, retomada e emergência</span></li>
               </ul>
             </article>
             <article class="why-card reveal" data-delay="3">
               <div class="why-icon">
                 <svg class="icon" aria-hidden="true"><use href="#icon-layers"></use></svg>
               </div>
-              <h3>Um app, o fluxo inteiro</h3>
-              <p>
+              <h3 data-i18n="porque.cards.2.title">Um app, o fluxo inteiro</h3>
+              <p data-i18n="porque.cards.2.desc">
                 Imagem, vetor, símbolos, materiais, fila e produção no mesmo lugar. Você não precisa
                 exportar para outro programa só para preparar a peça.
               </p>
               <ul>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Editor vetorial integrado</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> QR, 2D e código de barras</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Presets e testes de material</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.2.items.0">Editor vetorial integrado</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.2.items.1">QR, 2D e código de barras</span></li>
+                <li><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> <span data-i18n="porque.cards.2.items.2">Presets e testes de material</span></li>
               </ul>
             </article>
           </div>
@@ -561,15 +572,15 @@
             <div class="proof-card proof-card--bad reveal" data-delay="1">
               <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
               <div>
-                <strong>LaserGRBL no Linux</strong>
-                <p>Wine + Mono + mapeamento de portas COM. Funciona, mas não é nativo.</p>
+                <strong data-i18n="porque.proof.bad.title">LaserGRBL no Linux</strong>
+                <p data-i18n="porque.proof.bad.desc">Wine + Mono + mapeamento de portas COM. Funciona, mas não é nativo.</p>
               </div>
             </div>
             <div class="proof-card proof-card--good reveal" data-delay="2">
               <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
               <div>
-                <strong>GRBL Studio</strong>
-                <p>AppImage + <code>/dev/ttyUSB0</code> + tema nativo. Abriu, conectou, gravou.</p>
+                <strong data-i18n="porque.proof.good.title">GRBL Studio</strong>
+                <p data-i18n="porque.proof.good.desc">AppImage + <code>/dev/ttyUSB0</code> + tema nativo. Abriu, conectou, gravou.</p>
               </div>
             </div>
           </div>

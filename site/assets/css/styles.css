@@ -398,6 +398,46 @@ code {
   height: 17px;
 }
 
+.lang-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.lang-switcher select {
+  appearance: none;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.lang-switcher select:hover {
+  border-color: var(--accent);
+  background: rgba(76, 194, 255, 0.08);
+}
+
+.lang-switcher select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76, 194, 255, 0.15);
+}
+
+.lang-switcher .icon {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
 .menu-btn {
   display: none;
   align-items: center;
@@ -2336,6 +2376,16 @@ code {
 
   .menu-btn {
     display: inline-flex;
+  }
+
+  .lang-switcher select {
+    padding: 7px 32px 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  .lang-switcher .icon {
+    width: 14px;
+    height: 14px;
   }
 
   .ghost-link {
