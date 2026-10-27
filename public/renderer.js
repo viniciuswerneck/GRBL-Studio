@@ -15993,3 +15993,74 @@ setTimeout(() => {
     prefetchBundles();
   }
 }, 2000);
+
+// --------------------------------------------------------------- Design FAB
+// Botão flutuante para abrir o editor de desenho (Biblioteca de Símbolos)
+(function addDesignFAB() {
+  if (document.getElementById('design-fab')) return;
+
+  const fab = document.createElement('button');
+  fab.id = 'design-fab';
+  fab.type = 'button';
+  fab.title = 'Desenhar (Biblioteca de Símbolos)';
+  fab.setAttribute('aria-label', 'Abrir editor de desenho');
+  fab.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+      <path d="M2 2l7.586 7.586"></path>
+      <circle cx="11" cy="11" r="2"></circle>
+    </svg>
+  `;
+  fab.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent, #4cc2ff);
+    color: #04111e;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(76,194,255,0.3);
+    z-index: 1000;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  `;
+
+  fab.addEventListener('mouseenter', () => {
+    fab.style.transform = 'scale(1.08)';
+    fab.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4), 0 0 0 2px rgba(76,194,255,0.5)';
+  });
+  fab.addEventListener('mouseleave', () => {
+    fab.style.transform = 'scale(1)';
+    fab.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(76,194,255,0.3)';
+  });
+  fab.addEventListener('mousedown', () => {
+    fab.style.transform = 'scale(0.95)';
+  });
+  fab.addEventListener('mouseup', () => {
+    fab.style.transform = 'scale(1.08)';
+  });
+
+  fab.addEventListener('click', () => {
+    if (typeof openDesignModal === 'function') {
+      openDesignModal();
+    }
+  });
+
+  // Keyboard accessibility
+  fab.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fab.click();
+    }
+  });
+  fab.setAttribute('tabindex', '0');
+
+  document.body.appendChild(fab);
+})();
+
