@@ -8,7 +8,9 @@
   const navLinks = [...document.querySelectorAll('.nav a[href^="#"]')];
   const mobileQuery = window.matchMedia('(max-width: 940px)');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const langSelect = document.querySelector('#langSelect');
+  const langTrigger = document.querySelector('#langTrigger');
+  const langOptions = document.querySelector('#langOptions');
+  const langSelect = document.querySelector('#langSelect'); // hidden fallback
 
   // i18n state
   let currentLang = 'pt-BR';
@@ -144,22 +146,106 @@
     if (ogLocale) ogLocale.setAttribute('content', currentLang === 'pt-BR' ? 'pt_BR' : currentLang);
   }
 
-  // Language switcher
-  if (langSelect) {
-    langSelect.addEventListener('change', async (e) => {
-      const lang = e.target.value;
-      if (supportedLangs.includes(lang)) {
-        await loadTranslations(lang);
-        // Update URL without reload
-        const url = new URL(window.location);
-        if (lang === 'pt-BR') {
-          url.searchParams.delete('lang');
-        } else {
-          url.searchParams.set('lang', lang);
-        }
-        window.history.replaceState({}, '', url);
+  // Language switcher (custom dropdown)
+  function closeLangDropdown() {
+    if (langTrigger && langOptions) {
+      langTrigger.setAttribute('aria-expanded', 'false');
+      langOptions.hidden = true;
+    }
+  }
+
+  function openLangDropdown() {
+    if (langTrigger && langOptions) {
+      langTrigger.setAttribute('aria-expanded', 'true');
+      langOptions.hidden = false;
+    }
+  }
+
+  function setLangOptionSelected(value) {
+    if (!langOptions) return;
+    const options = langOptions.querySelectorAll('[role="option"]');
+    options.forEach(opt => {
+      const selected = opt.dataset.value === value;
+      opt.setAttribute('aria-selected', selected);
+    });
+    if (langTrigger) {
+      const selectedOpt = langOptions.querySelector(`[data-value="${value}"]`);
+      const valueEl = langTrigger.querySelector('.custom-select-value');
+      if (valueEl && selectedOpt) {
+        valueEl.textContent = selectedOpt.textContent;
+        valueEl.setAttribute('data-i18n', selectedOpt.getAttribute('data-i18n') || '');
+      }
+    }
+    // Sync hidden select
+    if (langSelect) langSelect.value = value;
+  }
+
+  function handleLangChange(lang) {
+    if (!supportedLangs.includes(lang)) return;
+    loadTranslations(lang);
+    setLangOptionSelected(lang);
+    closeLangDropdown();
+    // Update URL without reload
+    const url = new URL(window.location);
+    if (lang === 'pt-BR') {
+      url.searchParams.delete('lang');
+    } else {
+      url.searchParams.set('lang', lang);
+    }
+    window.history.replaceState({}, '', url);
+  }
+
+  if (langTrigger && langOptions) {
+    // Toggle dropdown
+    langTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const expanded = langTrigger.getAttribute('aria-expanded') === 'true';
+      if (expanded) closeLangDropdown();
+      else openLangDropdown();
+    });
+
+    // Option click
+    langOptions.addEventListener('click', (e) => {
+      const option = e.target.closest('[role="option"]');
+      if (option) {
+        handleLangChange(option.dataset.value);
       }
     });
+
+    // Keyboard navigation
+    langOptions.addEventListener('keydown', (e) => {
+      const options = [...langOptions.querySelectorAll('[role="option"]')];
+      const focusedIndex = options.findIndex(opt => opt === document.activeElement);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = focusedIndex >= 0 ? (focusedIndex + 1) % options.length : 0;
+        options[nextIndex].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const nextIndex = focusedIndex >= 0 ? (focusedIndex - 1 + options.length) % options.length : options.length - 1;
+        options[nextIndex].focus();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const focused = langOptions.querySelector('[role="option"]:focus');
+        if (focused) handleLangChange(focused.dataset.value);
+      } else if (e.key === 'Escape') {
+        closeLangDropdown();
+        langTrigger.focus();
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-select')) closeLangDropdown();
+    });
+
+    // Sync hidden select change (fallback)
+    if (langSelect) {
+      langSelect.addEventListener('change', (e) => {
+        handleLangChange(e.target.value);
+      });
+    }
   }
 
   // Detect language from URL on load

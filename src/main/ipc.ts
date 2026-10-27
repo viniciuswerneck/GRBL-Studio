@@ -42,6 +42,8 @@ import {
 } from '../shared/fileFilters';
 import { BATCH_MAX_FILE_BYTES } from '../shared/batch';
 import { DESIGN_DOC_EXT, DESIGN_DOC_MAX_BYTES } from '../shared/designDoc';
+import { SHAPE_LIBRARY, libraryItem } from '../shared/shapesLibrary';
+import type { Shape } from '../shared/design';
 import { TILE_MAX_COUNT } from '../shared/tiling';
 import { parsePdf, pdfToGcode, PdfError } from '../shared/pdf';
 import { buildSettingRows, validateSettingValue } from '../shared/grblSettings';
@@ -783,6 +785,30 @@ export function registerIpc(
       await writeFile(result.filePath, content, 'utf8');
       rememberDir(result.filePath);
       return result.filePath;
+    },
+  );
+
+  // --------------------------------------- biblioteca de símbolos do editor (RF-DSN-27)
+
+  ipcMain.handle(CHANNELS.designLibGet, () => {
+    // Retorna o catálogo completo (já serializável)
+    return { ok: true, items: SHAPE_LIBRARY };
+  });
+
+  ipcMain.handle(
+    CHANNELS.designLibInsert,
+    async (
+      _evt,
+      payload: { itemId: string; x: number; y: number; sizeMm: number },
+    ): Promise<{ ok: boolean; shapes: Shape[] }> => {
+      const { itemId, x, y, sizeMm } = payload ?? {};
+      if (typeof itemId !== 'string') throw new Error('itemId required');
+      const item = libraryItem(itemId);
+      if (!item) throw new Error('Unknown symbol: ' + itemId);
+      
+      const { libraryShapes } = await import('../shared/shapesLibrary.js');
+      const shapes = libraryShapes(item, sizeMm, x, y);
+      return { ok: true, shapes };
     },
   );
 

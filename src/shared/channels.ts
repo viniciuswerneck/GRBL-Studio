@@ -51,6 +51,9 @@ export const CHANNELS = {
   /** Documento do editor “Desenhar” (`.gstudio`): abrir/salvar. */
   designDocOpen: 'file:open-design',
   designDocSave: 'file:save-design',
+  /** Biblioteca de símbolos do editor “Desenhar” (RF-DSN-27). */
+  designLibGet: 'design:lib:get',
+  designLibInsert: 'design:lib:insert',
   pickDir: 'app:pick-dir',
   openLogs: 'app:open-logs',
   fontsList: 'app:fonts:list',

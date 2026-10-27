@@ -10,6 +10,7 @@ import { I18nProvider } from './lib/providers/I18nProvider';
 import { ConnectionScreen } from './lib/components/ConnectionScreen';
 import { NavRail } from './lib/components/NavRail';
 import { AppShell } from './lib/components/AppShell';
+import { DesignView } from './lib/components/DesignView';
 
 // Estado de navegação (Svelte 5 runes)
 let currentView = $state<
@@ -29,6 +30,8 @@ function navigate(view: typeof currentView) {
       <main class="app-main" role="main">
         {#if currentView === 'connection'}
           <ConnectionScreen />
+        {:else if currentView === 'design'}
+          <DesignView />
         {:else}
           <div class="view-placeholder">
             <h2>{currentView} — Em desenvolvimento</h2>

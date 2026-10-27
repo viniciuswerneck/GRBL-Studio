@@ -404,8 +404,17 @@ code {
   align-items: center;
 }
 
-.lang-switcher select {
+.custom-select {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.custom-select-trigger {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 36px 8px 12px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
@@ -417,26 +426,91 @@ code {
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
   color-scheme: dark;
+  white-space: nowrap;
 }
 
-.lang-switcher select:hover {
+.custom-select-trigger:hover {
   border-color: var(--accent);
   background: rgba(76, 194, 255, 0.08);
 }
 
-.lang-switcher select:focus {
+.custom-select-trigger:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(76, 194, 255, 0.15);
 }
 
-.lang-switcher .icon {
-  position: absolute;
-  right: 10px;
-  pointer-events: none;
+.custom-select-trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-select-icon {
   width: 16px;
   height: 16px;
   color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-trigger[aria-expanded="true"] .custom-select-icon {
+  transform: rotate(180deg);
+}
+
+.custom-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--bg-elevated, #0b131f);
+  box-shadow: var(--shadow);
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.custom-select-options[hidden] {
+  display: none;
+}
+
+.custom-select-options li {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.custom-select-options li:hover,
+.custom-select-options li[aria-selected="true"] {
+  background: rgba(76, 194, 255, 0.12);
+  color: var(--accent);
+}
+
+.custom-select-options li:focus {
+  outline: none;
+  background: rgba(76, 194, 255, 0.12);
+  color: var(--accent);
+}
+
+@media (max-width: 940px) {
+  .custom-select-trigger {
+    padding: 7px 32px 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  .lang-switcher .icon {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .menu-btn {
