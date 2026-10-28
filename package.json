@@ -43,6 +43,7 @@
     "dev": "electron-vite dev",
     "start": "electron .",
     "start:dev": "npm run build && electron .",
+    "start:no-sandbox": "npm run build && electron --no-sandbox .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
