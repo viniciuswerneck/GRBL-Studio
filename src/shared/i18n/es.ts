@@ -14,6 +14,8 @@ export const es = {
   'nav.cancel': 'Cancelar',
   'nav.import': 'Importar…',
   'nav.export': 'Exportar…',
+  close: 'Cerrar',
+  '2d': '2D',
 
   // -------------------------------------------------------------- modos UI
   'assistant.open': 'Asistente',
@@ -114,6 +116,27 @@ export const es = {
   'conn.connectFirst': 'Conecte la máquina para enviar',
   'conn.settings': 'Ajustes de la máquina ($$)',
   'port.none': 'Ningún puerto',
+
+  // ------------------------------------------------------------------ conexión (pantalla Svelte)
+  'connection.title': 'Conexión',
+  'connection.statusTitle': 'Estado de conexión',
+  'connection.state': 'Estado',
+  'connection.connected': 'Conectado',
+  'connection.connecting': 'Conectando…',
+  'connection.disconnected': 'Desconectado',
+  'connection.error': 'Error',
+  'connection.disconnect': 'Desconectar',
+  'connection.connect': 'Conectar',
+  'connection.portLabel': 'Puerto',
+  'connection.baudLabel': 'Baudios',
+  'connection.selectPort': 'Seleccionar puerto',
+  'connection.refreshPorts': 'Actualizar puertos',
+  'connection.noPorts': 'No hay puertos disponibles',
+  'connection.selectProfile': 'Seleccionar perfil',
+  'connection.machineProfileLabel': 'Perfil de máquina',
+  'connection.firmware': 'Firmware',
+  'connection.mpos': 'MPos',
+  'connection.wpos': 'WPos',
 
   // ------------------------------------------------------------------ jog
   'jog.title': 'Movimiento',

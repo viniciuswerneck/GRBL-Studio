@@ -21,6 +21,8 @@ export const ptBR = {
   'nav.cancel': 'Cancelar',
   'nav.import': 'Importar…',
   'nav.export': 'Exportar…',
+  close: 'Fechar',
+  '2d': '2D',
 
   // -------------------------------------------------------------- modos UI
   'assistant.open': 'Assistente',
@@ -121,6 +123,27 @@ export const ptBR = {
   'conn.connectFirst': 'Conecte a máquina para enviar',
   'conn.settings': 'Configurações da máquina ($$)',
   'port.none': 'Nenhuma porta',
+
+  // ------------------------------------------------------------------ conexão (tela Svelte)
+  'connection.title': 'Conexão',
+  'connection.statusTitle': 'Status da conexão',
+  'connection.state': 'Estado',
+  'connection.connected': 'Conectado',
+  'connection.connecting': 'Conectando…',
+  'connection.disconnected': 'Desconectado',
+  'connection.error': 'Erro',
+  'connection.disconnect': 'Desconectar',
+  'connection.connect': 'Conectar',
+  'connection.portLabel': 'Porta',
+  'connection.baudLabel': 'Baud',
+  'connection.selectPort': 'Selecionar porta',
+  'connection.refreshPorts': 'Atualizar portas',
+  'connection.noPorts': 'Nenhuma porta disponível',
+  'connection.selectProfile': 'Selecionar perfil',
+  'connection.machineProfileLabel': 'Perfil da máquina',
+  'connection.firmware': 'Firmware',
+  'connection.mpos': 'MPos',
+  'connection.wpos': 'WPos',
 
   // ------------------------------------------------------------------ jog
   'jog.title': 'Movimento',

@@ -12,6 +12,8 @@ export const en = {
   'nav.cancel': 'Cancel',
   'nav.import': 'Import…',
   'nav.export': 'Export…',
+  close: 'Close',
+  '2d': '2D',
 
   // -------------------------------------------------------------- modos UI
   'assistant.open': 'Assistant',
@@ -112,6 +114,27 @@ export const en = {
   'conn.connectFirst': 'Connect the machine to send',
   'conn.settings': 'Machine settings ($$)',
   'port.none': 'No ports',
+
+  // ------------------------------------------------------------------ conexão (tela Svelte)
+  'connection.title': 'Connection',
+  'connection.statusTitle': 'Connection status',
+  'connection.state': 'State',
+  'connection.connected': 'Connected',
+  'connection.connecting': 'Connecting…',
+  'connection.disconnected': 'Disconnected',
+  'connection.error': 'Error',
+  'connection.disconnect': 'Disconnect',
+  'connection.connect': 'Connect',
+  'connection.portLabel': 'Port',
+  'connection.baudLabel': 'Baud',
+  'connection.selectPort': 'Select port',
+  'connection.refreshPorts': 'Refresh ports',
+  'connection.noPorts': 'No ports available',
+  'connection.selectProfile': 'Select profile',
+  'connection.machineProfileLabel': 'Machine profile',
+  'connection.firmware': 'Firmware',
+  'connection.mpos': 'MPos',
+  'connection.wpos': 'WPos',
 
   // ------------------------------------------------------------------ jog
   'jog.title': 'Motion',

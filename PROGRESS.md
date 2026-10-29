@@ -9,7 +9,7 @@
 | 1 | Documentação e guias do usuário | ✅ concluída (GETTING_STARTED.md já completo) |
 | 2 | Qualidade e CI (checklist visual DESIGN §8, a11y gate, benchmark thresholds) | ⏳ em andamento |
 | 3 | Distribuição pública (Flatpak/Flathub, winget/brew/AUR, code signing, validação Win/macOS) | ⏳ pendente |
-| 4 | Migração renderer TS/Svelte 5 | ✅ concluída e validada. 13 componentes Svelte 5 criados (AboutModal, ConnectionBadge, JobProgress, JogControls, PortList, JogView, FileView, PreviewView, ConfigView, ImageView, StatusBar, MachineStatus, Console) + App.svelte reescrito para usar 5 views (Jog, File, Preview, Config, Image) + global.d.ts (window.grbl + *.svelte) + teste svelte-components.test.ts. `npm run build` ✅, `npm run typecheck` ✅, `npm test` ✅ (1021 testes). |
+| 4 | Migração renderer TS/Svelte 5 | 🟡 em andamento. 13 componentes Svelte 5 criados (AboutModal, ConnectionBadge, JobProgress, JogControls, PortList, JogView, FileView, PreviewView, ConfigView, ImageView, StatusBar, MachineStatus, Console) + App.svelte com 7 views (connection, jog, file, preview, config, image, design). A UI de produção ainda é o vanilla (`public/index.html` + `public/renderer.js`); o app Svelte compila como scaffold. `npm run build` ✅, `npm run typecheck` ✅, `npm test` ✅ (1021 testes). |
 | 5 | Projetos grandes (câmera, rotativa, API/CLI/plugins, i18n fr/de) | ⏳ pendente (congelado por hardware / pós-1.0) |
 
 ## Fase 2 — Qualidade e CI (em andamento)
@@ -42,7 +42,7 @@ Próximo passo da Fase 3: aguardar decisão do usuário sobre contas externas (F
 ## Fase 4 — Migração renderer TS/Svelte 5 (pendente)
 
 - v0.23.0 já iniciou: `electron.vite.config.ts`, Svelte 5 base, providers reativos, store centralizado, componentes base Fluent, tela Conexão completa
-- ⏳ Pendente: migrar `public/renderer.js` (vanilla JS) para Svelte/TS e remover do repo
+- ⏳ Pendente: concluir o cutover para o renderer Svelte (montar `main.ts` no `index.html`, plugin Svelte no `electron.vite.config.ts`, paridade das telas) e só então remover `public/renderer.js`
 
 ## Fase 5 — Projetos grandes (pendente, congelado por hardware)
 
