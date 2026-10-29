@@ -788,7 +788,7 @@ const filteredItems = $derived(
   <header class="design-toolbar">
     <div class="toolbar-group">
       <span class="toolbar-title">Desenhar</span>
-      <Badge variant="outline">v0.23.0</Badge>
+      <Badge variant="outline">v0.24.0</Badge>
     </div>
     
     <div class="toolbar-group">

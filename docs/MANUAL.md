@@ -1,6 +1,6 @@
 # Manual do Usuário — GRBL Studio
 
-> **Versão do app:** 0.23.0  
+> **Versão do app:** 0.24.0  
 > **Atualizado em:** 26/10/2026  
 > **Idioma:** Português (Brasil)  
 > **Licença:** MIT

@@ -6,6 +6,48 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-29
+
+**Release do editor de desenho** — nova tela **Design** com biblioteca de
+símbolos, migração incremental das views para Svelte 5 e site multilíngue.
+
+### Added — Tela Design + Biblioteca de Símbolos (RF-DSN-27)
+
+- **Tela Design** (`DesignView.svelte`): canvas vetorial com zoom/pan,
+  seleção múltipla, arraste, exclusão e inserção de símbolos por clique ou
+  arraste, com tamanho configurável em mm.
+- **Biblioteca de símbolos**: 14 símbolos prontos em 3 categorias (básicas,
+  natureza e decorativas) — estrelas, hexágono, coração, raio, seta, lua, sol,
+  moldura, cantos, check, cruz, xis e divisória.
+- **FAB flutuante**: botão de atalho para abrir a biblioteca de símbolos de
+  qualquer tela.
+
+### Added — Migração incremental para Svelte 5 (Fase 4)
+
+- `App.svelte` com **7 views** (connection, jog, file, preview, config, image,
+  design) e 13 componentes Svelte 5 (ThemeProvider, I18nProvider, AppShell,
+  NavRail e views).
+- Chaves i18n da tela de conexão (`connection.*`) nos três catálogos.
+- A UI de produção continua no renderer vanilla (`public/renderer.js`) até o
+  cutover; ver `PROGRESS.md` e `docs/SVELTE_MIGRATION_GUIDE.md`.
+
+### Added — Site multilíngue
+
+- Landing page em **pt-BR, en e es** (`site/assets/i18n/*.json`), com seletor
+  de idioma acessível (combobox/listbox, navegação por teclado).
+- Links de download apontando para a página de releases do GitHub.
+- Crédito ao WerneckLab no rodapé.
+
+### Fixed
+
+- **E2E flaky**: teste `fila grava os dois programas` — o emulador passou a
+  atrasar cada `ok` (120 ms) para a barra "Parar fila" aparecer antes da
+  asserção de visibilidade.
+- **Lint/CI**: formatação Biome de `public/renderer.js`, `src/main/ipc.ts`,
+  `site/*` e componentes Svelte; a11y do seletor de idioma do site.
+- **Seletor de idioma**: `aria-expanded` agora fica no botão que controla o
+  dropdown (antes estava no contêiner e não era atualizado).
+
 ## [0.23.0] - 2026-10-26
 
 **Release de infraestrutura e fundação** — automação completa de release, migração para electron-vite, Flatpak, guia de primeiros passos, checklist de hardware, splash animado e base Svelte 5.

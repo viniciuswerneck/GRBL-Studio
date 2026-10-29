@@ -41,7 +41,7 @@ Próximo passo da Fase 3: aguardar decisão do usuário sobre contas externas (F
 
 ## Fase 4 — Migração renderer TS/Svelte 5 (pendente)
 
-- v0.23.0 já iniciou: `electron.vite.config.ts`, Svelte 5 base, providers reativos, store centralizado, componentes base Fluent, tela Conexão completa
+- v0.23.0 iniciou (`electron.vite.config.ts`, Svelte 5 base, providers, tela Conexão); **v0.24.0** adicionou a tela Design + biblioteca de símbolos e App.svelte com 7 views
 - ⏳ Pendente: concluir o cutover para o renderer Svelte (montar `main.ts` no `index.html`, plugin Svelte no `electron.vite.config.ts`, paridade das telas) e só então remover `public/renderer.js`
 
 ## Fase 5 — Projetos grandes (pendente, congelado por hardware)

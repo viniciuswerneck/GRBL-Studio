@@ -1,6 +1,6 @@
 # User Manual — GRBL Studio
 
-> **Version:** 0.23.0  
+> **Version:** 0.24.0  
 > **Updated:** October 26, 2026  
 > **Language:** English  
 > **License:** MIT

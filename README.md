@@ -10,14 +10,12 @@ GRBL Studio é uma alternativa moderna e nativa para Linux ao LaserGRBL, feita e
 Electron + TypeScript, para controlar gravadoras/cortadoras laser com firmware
 **GRBL 1.1**.
 
-## 🎯 Destaques da v0.23.0
+## 🎯 Destaques da v0.24.0
 
-- ✅ **Release Automation**: GitHub Actions completo (build → test → bench → AppImage/deb/Flatpak → Release)
-- ✅ **Flatpak**: manifesto pronto para Flathub (`build/flatpak/`)
-- ✅ **Guia Primeiros Passos**: `docs/GETTING_STARTED.md` (11 seções)
-- ✅ **Hardware Checklist**: script automatizado + CI para validação em máquina real
-- ✅ **electron-vite + Svelte 5**: fundação pronta para migração do renderer
-- ✅ **Splash animado**: fade-in + pulse + progress bar (respeita `prefers-reduced-motion`)
+- ✅ **Tela Design + Biblioteca de Símbolos** (RF-DSN-27): 14 símbolos em 3 categorias, canvas com zoom/pan, arraste e tamanho em mm
+- ✅ **Svelte 5**: 13 componentes e 7 views migradas (cutover do renderer em andamento)
+- ✅ **Site multilíngue**: pt-BR, en e es com seletor de idioma acessível
+- ✅ **Qualidade**: lint Biome limpo e 1021 testes verdes
 
 ## Funcionalidades
 
