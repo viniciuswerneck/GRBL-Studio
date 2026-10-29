@@ -52,7 +52,10 @@ let gcodeGenerated = $state(false);
 let jobSource = $state<'file' | 'image' | 'design'>('file');
 
 // Status da máquina (posição, etc.)
-let machineStatus = $state<{ mpos?: [number, number, number]; wpos?: [number, number, number] } | null>(null);
+let machineStatus = $state<{
+  mpos?: [number, number, number];
+  wpos?: [number, number, number];
+} | null>(null);
 
 // --- Callbacks que acionam o main via preload (window.grbl) ---
 function onJog(axis: 'X' | 'Y' | 'Z', dir: -1 | 1, step: number) {
@@ -125,10 +128,18 @@ function onSimToggle() {
   // Simulação de job — stub de UI
 }
 
-function onZoomIn() { /* stub */ }
-function onZoomOut() { /* stub */ }
-function onZoomFit() { /* stub */ }
-function onZoom100() { /* stub */ }
+function onZoomIn() {
+  /* stub */
+}
+function onZoomOut() {
+  /* stub */
+}
+function onZoomFit() {
+  /* stub */
+}
+function onZoom100() {
+  /* stub */
+}
 
 function onApplySetting(id: string, value: string | number) {
   void window.grbl?.applySetting({ id, value });

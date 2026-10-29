@@ -16033,11 +16033,13 @@ setTimeout(() => {
 
   fab.addEventListener('mouseenter', () => {
     fab.style.transform = 'scale(1.08)';
-    fab.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4), 0 0 0 2px rgba(76,194,255,0.5)';
+    fab.style.boxShadow =
+      '0 6px 20px rgba(0,0,0,0.4), 0 0 0 2px rgba(76,194,255,0.5)';
   });
   fab.addEventListener('mouseleave', () => {
     fab.style.transform = 'scale(1)';
-    fab.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(76,194,255,0.3)';
+    fab.style.boxShadow =
+      '0 4px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(76,194,255,0.3)';
   });
   fab.addEventListener('mousedown', () => {
     fab.style.transform = 'scale(0.95)';
@@ -16063,4 +16065,3 @@ setTimeout(() => {
 
   document.body.appendChild(fab);
 })();
-

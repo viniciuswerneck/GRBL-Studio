@@ -367,18 +367,18 @@
           <div class="lang-switcher" id="langSwitcher">
             <fieldset aria-label="Idioma">
               <legend class="sr-only" data-i18n="langSwitcher.label">Idioma</legend>
-              <div class="custom-select" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Idioma">
-                <button type="button" class="custom-select-trigger" id="langTrigger" aria-labelledby="langTrigger">
+              <div class="custom-select">
+                <button type="button" class="custom-select-trigger" id="langTrigger" role="combobox" aria-haspopup="listbox" aria-controls="langOptions" aria-expanded="false" aria-label="Idioma">
                   <span class="custom-select-value" data-i18n="langSwitcher.pt">Português</span>
                   <svg class="icon custom-select-icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
                 </button>
-                <ul class="custom-select-options" role="listbox" id="langOptions" hidden>
-                  <li role="option" data-value="pt-BR" data-i18n="langSwitcher.pt" aria-selected="true">Português</li>
-                  <li role="option" data-value="en" data-i18n="langSwitcher.en" aria-selected="false">English</li>
-                  <li role="option" data-value="es" data-i18n="langSwitcher.es" aria-selected="false">Español</li>
-                </ul>
+                <div class="custom-select-options" role="listbox" id="langOptions" hidden>
+                  <div role="option" tabindex="-1" data-value="pt-BR" data-i18n="langSwitcher.pt" aria-selected="true">Português</div>
+                  <div role="option" tabindex="-1" data-value="en" data-i18n="langSwitcher.en" aria-selected="false">English</div>
+                  <div role="option" tabindex="-1" data-value="es" data-i18n="langSwitcher.es" aria-selected="false">Español</div>
+                </div>
                 <!-- Hidden select for fallback/no-JS -->
-                <select id="langSelect" hidden aria-hidden="true">
+                <select id="langSelect" hidden>
                   <option value="pt-BR" data-i18n="langSwitcher.pt">Português</option>
                   <option value="en" data-i18n="langSwitcher.en">English</option>
                   <option value="es" data-i18n="langSwitcher.es">Español</option>

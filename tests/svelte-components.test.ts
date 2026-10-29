@@ -10,10 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const COMPONENTS_DIR = join(
-  process.cwd(),
-  'src/renderer/src/lib/components',
-);
+const COMPONENTS_DIR = join(process.cwd(), 'src/renderer/src/lib/components');
 
 const components = [
   'AboutModal.svelte',
@@ -42,7 +39,13 @@ describe('Svelte components (renderer migration)', () => {
       join(process.cwd(), 'src/renderer/src/App.svelte'),
       'utf8',
     );
-    const views = ['JogView', 'FileView', 'PreviewView', 'ConfigView', 'ImageView'];
+    const views = [
+      'JogView',
+      'FileView',
+      'PreviewView',
+      'ConfigView',
+      'ImageView',
+    ];
     for (const base of views) {
       expect(app).toContain(`./lib/components/${base}`);
     }

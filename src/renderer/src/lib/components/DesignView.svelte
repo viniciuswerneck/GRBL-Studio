@@ -11,7 +11,10 @@ import { Badge } from './Badge.svelte';
 import { onMount } from 'svelte';
 
 // Types
-interface Point { x: number; y: number; }
+interface Point {
+  x: number;
+  y: number;
+}
 interface Shape {
   kind: 'line' | 'rect' | 'circle' | 'ellipse' | 'polygon' | 'text';
   closed?: boolean;
@@ -54,13 +57,32 @@ let canvasScale = $state(1);
 let canvasOffset = $state({ x: 0, y: 0 });
 let mousePos = $state({ x: 0, y: 0 });
 let hoveredShapeId = $state<string | null>(null);
-let dragState = $state<{ active: boolean; shapeId: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
+let dragState = $state<{
+  active: boolean;
+  shapeId: string;
+  startX: number;
+  startY: number;
+  origX: number;
+  origY: number;
+} | null>(null);
 
 // Categorias da biblioteca
 const CATEGORIES: LibraryCategory[] = [
-  { id: 'basic', label: 'Básicas', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
-  { id: 'nature', label: 'Natureza', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z' },
-  { id: 'deco', label: 'Decorativas', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.21c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z' }
+  {
+    id: 'basic',
+    label: 'Básicas',
+    icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+  },
+  {
+    id: 'nature',
+    label: 'Natureza',
+    icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
+  },
+  {
+    id: 'deco',
+    label: 'Decorativas',
+    icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.21c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z',
+  },
 ];
 
 // i18n keys para nomes dos símbolos (fallback para PT)
@@ -78,7 +100,7 @@ const SYMBOL_NAMES: Record<string, string> = {
   check: 'Check',
   cross: 'Cruz',
   xmark: 'X',
-  divider: 'Divisória'
+  divider: 'Divisória',
 };
 
 // Carregar biblioteca do backend
@@ -95,25 +117,137 @@ async function loadLibrary() {
   } catch (e) {
     console.warn('IPC getLibrary failed, using fallback', e);
   }
-  
+
   // Fallback: usa dados estáticos do shapesLibrary (importa via worker ou fetch)
   try {
     // Como não temos import direto, usamos dados hardcoded baseados no shapesLibrary.ts
     libraryItems = [
-      { id: 'star5', nameKey: 'design.lib.star5', category: 'basic', paths: [{ points: makeStar(5, 0.382), closed: true }] },
-      { id: 'star6', nameKey: 'design.lib.star6', category: 'basic', paths: [{ points: makeStar(6, 0.55), closed: true }] },
-      { id: 'hexagon', nameKey: 'design.lib.hexagon', category: 'basic', paths: [{ points: makePolygon(6, Math.PI/6), closed: true }] },
-      { id: 'heart', nameKey: 'design.lib.heart', category: 'basic', paths: [{ points: makeHeart(), closed: true }] },
-      { id: 'bolt', nameKey: 'design.lib.bolt', category: 'basic', paths: [{ points: makeBolt(), closed: true }] },
-      { id: 'arrow', nameKey: 'design.lib.arrow', category: 'basic', paths: [{ points: makeArrow(), closed: true }] },
-      { id: 'moon', nameKey: 'design.lib.moon', category: 'nature', paths: [{ points: makeMoon(), closed: true }] },
-      { id: 'sun', nameKey: 'design.lib.sun', category: 'nature', paths: makeSun() },
-      { id: 'frame', nameKey: 'design.lib.frame', category: 'deco', paths: [{ points: makeRect(0,0,1,1), closed: true }, { points: makeRect(0.08,0.08,0.92,0.92), closed: true }] },
-      { id: 'corners', nameKey: 'design.lib.corners', category: 'deco', paths: makeCorners() },
-      { id: 'check', nameKey: 'design.lib.check', category: 'deco', paths: [{ points: makeCheck(), closed: false }] },
-      { id: 'cross', nameKey: 'design.lib.cross', category: 'deco', paths: [{ points: makeCross(), closed: true }] },
-      { id: 'xmark', nameKey: 'design.lib.xmark', category: 'deco', paths: [{ points: [{x:0.12,y:0.12},{x:0.88,y:0.88}], closed: false }, { points: [{x:0.88,y:0.12},{x:0.12,y:0.88}], closed: false }] },
-      { id: 'divider', nameKey: 'design.lib.divider', category: 'deco', paths: [{ points: [{x:0,y:0.5},{x:0.42,y:0.5}], closed: false }, { points: [{x:0.58,y:0.5},{x:1,y:0.5}], closed: false }, { points: [{x:0.5,y:0.38},{x:0.58,y:0.5},{x:0.5,y:0.62},{x:0.42,y:0.5}], closed: true }] }
+      {
+        id: 'star5',
+        nameKey: 'design.lib.star5',
+        category: 'basic',
+        paths: [{ points: makeStar(5, 0.382), closed: true }],
+      },
+      {
+        id: 'star6',
+        nameKey: 'design.lib.star6',
+        category: 'basic',
+        paths: [{ points: makeStar(6, 0.55), closed: true }],
+      },
+      {
+        id: 'hexagon',
+        nameKey: 'design.lib.hexagon',
+        category: 'basic',
+        paths: [{ points: makePolygon(6, Math.PI / 6), closed: true }],
+      },
+      {
+        id: 'heart',
+        nameKey: 'design.lib.heart',
+        category: 'basic',
+        paths: [{ points: makeHeart(), closed: true }],
+      },
+      {
+        id: 'bolt',
+        nameKey: 'design.lib.bolt',
+        category: 'basic',
+        paths: [{ points: makeBolt(), closed: true }],
+      },
+      {
+        id: 'arrow',
+        nameKey: 'design.lib.arrow',
+        category: 'basic',
+        paths: [{ points: makeArrow(), closed: true }],
+      },
+      {
+        id: 'moon',
+        nameKey: 'design.lib.moon',
+        category: 'nature',
+        paths: [{ points: makeMoon(), closed: true }],
+      },
+      {
+        id: 'sun',
+        nameKey: 'design.lib.sun',
+        category: 'nature',
+        paths: makeSun(),
+      },
+      {
+        id: 'frame',
+        nameKey: 'design.lib.frame',
+        category: 'deco',
+        paths: [
+          { points: makeRect(0, 0, 1, 1), closed: true },
+          { points: makeRect(0.08, 0.08, 0.92, 0.92), closed: true },
+        ],
+      },
+      {
+        id: 'corners',
+        nameKey: 'design.lib.corners',
+        category: 'deco',
+        paths: makeCorners(),
+      },
+      {
+        id: 'check',
+        nameKey: 'design.lib.check',
+        category: 'deco',
+        paths: [{ points: makeCheck(), closed: false }],
+      },
+      {
+        id: 'cross',
+        nameKey: 'design.lib.cross',
+        category: 'deco',
+        paths: [{ points: makeCross(), closed: true }],
+      },
+      {
+        id: 'xmark',
+        nameKey: 'design.lib.xmark',
+        category: 'deco',
+        paths: [
+          {
+            points: [
+              { x: 0.12, y: 0.12 },
+              { x: 0.88, y: 0.88 },
+            ],
+            closed: false,
+          },
+          {
+            points: [
+              { x: 0.88, y: 0.12 },
+              { x: 0.12, y: 0.88 },
+            ],
+            closed: false,
+          },
+        ],
+      },
+      {
+        id: 'divider',
+        nameKey: 'design.lib.divider',
+        category: 'deco',
+        paths: [
+          {
+            points: [
+              { x: 0, y: 0.5 },
+              { x: 0.42, y: 0.5 },
+            ],
+            closed: false,
+          },
+          {
+            points: [
+              { x: 0.58, y: 0.5 },
+              { x: 1, y: 0.5 },
+            ],
+            closed: false,
+          },
+          {
+            points: [
+              { x: 0.5, y: 0.38 },
+              { x: 0.58, y: 0.5 },
+              { x: 0.5, y: 0.62 },
+              { x: 0.42, y: 0.5 },
+            ],
+            closed: true,
+          },
+        ],
+      },
     ];
   } catch (e) {
     console.error('Failed to load library fallback', e);
@@ -130,7 +264,7 @@ function makePolygon(n: number, rot = 0): Point[] {
   }
   return pts;
 }
-function makeStar(n: number, inner: number, rot = Math.PI/2): Point[] {
+function makeStar(n: number, inner: number, rot = Math.PI / 2): Point[] {
   const pts: Point[] = [];
   for (let i = 0; i < n * 2; i++) {
     const a = rot + (i / (n * 2)) * TAU;
@@ -144,32 +278,51 @@ function makeHeart(steps = 72): Point[] {
   for (let i = 0; i < steps; i++) {
     const t = (i / steps) * TAU;
     const x = 16 * Math.sin(t) ** 3;
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+    const y =
+      13 * Math.cos(t) -
+      5 * Math.cos(2 * t) -
+      2 * Math.cos(3 * t) -
+      Math.cos(4 * t);
     pts.push({ x, y });
   }
   return pts;
 }
 function makeBolt(): Point[] {
   return [
-    { x: 0.62, y: 1 }, { x: 0.18, y: 0.5 }, { x: 0.45, y: 0.5 },
-    { x: 0.38, y: 0 }, { x: 0.82, y: 0.52 }, { x: 0.55, y: 0.52 }
+    { x: 0.62, y: 1 },
+    { x: 0.18, y: 0.5 },
+    { x: 0.45, y: 0.5 },
+    { x: 0.38, y: 0 },
+    { x: 0.82, y: 0.52 },
+    { x: 0.55, y: 0.52 },
   ];
 }
 function makeArrow(): Point[] {
   return [
-    { x: 0, y: 0.35 }, { x: 0.58, y: 0.35 }, { x: 0.58, y: 0.12 },
-    { x: 1, y: 0.5 }, { x: 0.58, y: 0.88 }, { x: 0.58, y: 0.65 },
-    { x: 0, y: 0.65 }
+    { x: 0, y: 0.35 },
+    { x: 0.58, y: 0.35 },
+    { x: 0.58, y: 0.12 },
+    { x: 1, y: 0.5 },
+    { x: 0.58, y: 0.88 },
+    { x: 0.58, y: 0.65 },
+    { x: 0, y: 0.65 },
   ];
 }
 function makeMoon(): Point[] {
-  const outer = arc(0.5, 0.5, 0.5, -Math.PI/2, Math.PI/2, 28);
+  const outer = arc(0.5, 0.5, 0.5, -Math.PI / 2, Math.PI / 2, 28);
   const r = Math.hypot(0.22, 0.5);
   const a = Math.atan2(0.5, 0.22);
   const inner = arc(0.28, 0.5, r, a, -a, 28);
   return [...outer, ...inner];
 }
-function arc(cx: number, cy: number, r: number, a0: number, a1: number, steps = 24): Point[] {
+function arc(
+  cx: number,
+  cy: number,
+  r: number,
+  a0: number,
+  a1: number,
+  steps = 24,
+): Point[] {
   const pts: Point[] = [];
   for (let i = 0; i <= steps; i++) {
     const a = a0 + ((a1 - a0) * i) / steps;
@@ -180,7 +333,13 @@ function arc(cx: number, cy: number, r: number, a0: number, a1: number, steps = 
 function makeSun() {
   const rays = Array.from({ length: 8 }, (_, k) => {
     const a = (k / 8) * TAU;
-    return { points: [{ x: 0.5 + Math.cos(a)*0.32, y: 0.5 + Math.sin(a)*0.32 }, { x: 0.5 + Math.cos(a)*0.48, y: 0.5 + Math.sin(a)*0.48 }], closed: false };
+    return {
+      points: [
+        { x: 0.5 + Math.cos(a) * 0.32, y: 0.5 + Math.sin(a) * 0.32 },
+        { x: 0.5 + Math.cos(a) * 0.48, y: 0.5 + Math.sin(a) * 0.48 },
+      ],
+      closed: false,
+    };
   });
   return [{ points: circle(0.5, 0.5, 0.22), closed: true }, ...rays];
 }
@@ -188,25 +347,70 @@ function circle(cx: number, cy: number, r: number, steps = 40): Point[] {
   return arc(cx, cy, r, 0, TAU, steps);
 }
 function makeRect(x0: number, y0: number, x1: number, y1: number): Point[] {
-  return [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+  return [
+    { x: x0, y: y0 },
+    { x: x1, y: y0 },
+    { x: x1, y: y1 },
+    { x: x0, y: y1 },
+  ];
 }
 function makeCorners() {
   return [
-    { points: [{ x: 0, y: 0.2 }, { x: 0, y: 0 }, { x: 0.2, y: 0 }], closed: false },
-    { points: [{ x: 0.8, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0.2 }], closed: false },
-    { points: [{ x: 1, y: 0.8 }, { x: 1, y: 1 }, { x: 0.8, y: 1 }], closed: false },
-    { points: [{ x: 0.2, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 0.8 }], closed: false }
+    {
+      points: [
+        { x: 0, y: 0.2 },
+        { x: 0, y: 0 },
+        { x: 0.2, y: 0 },
+      ],
+      closed: false,
+    },
+    {
+      points: [
+        { x: 0.8, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 0.2 },
+      ],
+      closed: false,
+    },
+    {
+      points: [
+        { x: 1, y: 0.8 },
+        { x: 1, y: 1 },
+        { x: 0.8, y: 1 },
+      ],
+      closed: false,
+    },
+    {
+      points: [
+        { x: 0.2, y: 1 },
+        { x: 0, y: 1 },
+        { x: 0, y: 0.8 },
+      ],
+      closed: false,
+    },
   ];
 }
 function makeCheck() {
-  return [{ x: 0.12, y: 0.55 }, { x: 0.4, y: 0.22 }, { x: 0.9, y: 0.82 }];
+  return [
+    { x: 0.12, y: 0.55 },
+    { x: 0.4, y: 0.22 },
+    { x: 0.9, y: 0.82 },
+  ];
 }
 function makeCross() {
   return [
-    { x: 0.35, y: 0 }, { x: 0.65, y: 0 }, { x: 0.65, y: 0.35 },
-    { x: 1, y: 0.35 }, { x: 1, y: 0.65 }, { x: 0.65, y: 0.65 },
-    { x: 0.65, y: 1 }, { x: 0.35, y: 1 }, { x: 0.35, y: 0.65 },
-    { x: 0, y: 0.65 }, { x: 0, y: 0.35 }, { x: 0.35, y: 0.35 }
+    { x: 0.35, y: 0 },
+    { x: 0.65, y: 0 },
+    { x: 0.65, y: 0.35 },
+    { x: 1, y: 0.35 },
+    { x: 1, y: 0.65 },
+    { x: 0.65, y: 0.65 },
+    { x: 0.65, y: 1 },
+    { x: 0.35, y: 1 },
+    { x: 0.35, y: 0.65 },
+    { x: 0, y: 0.65 },
+    { x: 0, y: 0.35 },
+    { x: 0.35, y: 0.35 },
   ];
 }
 
@@ -214,7 +418,12 @@ function makeCross() {
 async function insertSymbol(itemId: string, x: number, y: number) {
   try {
     if (window.grbl?.design?.insertSymbol) {
-      const result = await window.grbl.design.insertSymbol({ itemId, x, y, sizeMm: symbolSizeMm });
+      const result = await window.grbl.design.insertSymbol({
+        itemId,
+        x,
+        y,
+        sizeMm: symbolSizeMm,
+      });
       if (result?.ok && result.shapes) {
         // Adiciona shapes retornados
         const newIds = result.shapes.map((s: Shape, i: number) => {
@@ -227,11 +436,14 @@ async function insertSymbol(itemId: string, x: number, y: number) {
       }
     } else {
       // Fallback local
-      const item = libraryItems.find(i => i.id === itemId);
+      const item = libraryItems.find((i) => i.id === itemId);
       if (item) {
         const newShapes = libraryShapesLocal(item, symbolSizeMm, x, y);
         for (const s of newShapes) {
-          shapes = [...shapes, { ...s, id: `shape-${Date.now()}-${Math.random()}` }];
+          shapes = [
+            ...shapes,
+            { ...s, id: `shape-${Date.now()}-${Math.random()}` },
+          ];
         }
       }
     }
@@ -241,7 +453,12 @@ async function insertSymbol(itemId: string, x: number, y: number) {
 }
 
 // Local libraryShapes implementation
-function libraryShapesLocal(item: LibraryItem, sizeMm: number, cx = 0, cy = 0): Shape[] {
+function libraryShapesLocal(
+  item: LibraryItem,
+  sizeMm: number,
+  cx = 0,
+  cy = 0,
+): Shape[] {
   if (!item) return [];
   const bounds = itemBounds(item);
   if (!bounds) return [];
@@ -251,18 +468,21 @@ function libraryShapesLocal(item: LibraryItem, sizeMm: number, cx = 0, cy = 0): 
   const scale = size / Math.max(w, h);
   const mx = (bounds.minX + bounds.maxX) / 2;
   const my = (bounds.minY + bounds.maxY) / 2;
-  return item.paths.map(path => ({
+  return item.paths.map((path) => ({
     kind: 'line' as const,
     closed: Boolean(path.closed),
-    points: path.points.map(p => ({
+    points: path.points.map((p) => ({
       x: cx + (p.x - mx) * scale,
-      y: cy - (p.y - my) * scale // Y invertido para canvas
-    }))
+      y: cy - (p.y - my) * scale, // Y invertido para canvas
+    })),
   }));
 }
 
 function itemBounds(item: LibraryItem) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const path of item.paths) {
     for (const p of path.points) {
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
@@ -282,7 +502,7 @@ function screenToCanvas(clientX: number, clientY: number) {
   const rect = canvas.getBoundingClientRect();
   return {
     x: (clientX - rect.left - canvasOffset.x) / canvasScale,
-    y: (clientY - rect.top - canvasOffset.y) / canvasScale
+    y: (clientY - rect.top - canvasOffset.y) / canvasScale,
   };
 }
 
@@ -290,14 +510,14 @@ function handleCanvasClick(e: MouseEvent) {
   if (isInserting) {
     const pos = screenToCanvas(e.clientX, e.clientY);
     // Acha o símbolo selecionado na sidebar (primeiro da categoria ativa)
-    const item = libraryItems.find(i => i.category === activeCategory);
+    const item = libraryItems.find((i) => i.category === activeCategory);
     if (item) {
       insertSymbol(item.id, pos.x, pos.y);
       isInserting = false;
     }
     return;
   }
-  
+
   // Seleção de shape
   const pos = screenToCanvas(e.clientX, e.clientY);
   const hit = hitTest(pos.x, pos.y);
@@ -320,7 +540,7 @@ function handleCanvasMouseDown(e: MouseEvent) {
       startX: e.clientX,
       startY: e.clientY,
       origX: getShapeCenter(hit).x,
-      origY: getShapeCenter(hit).y
+      origY: getShapeCenter(hit).y,
     };
   }
 }
@@ -329,15 +549,19 @@ function handleWindowMouseMove(e: MouseEvent) {
   const canvas = canvasRef;
   if (!canvas) return;
   const rect = canvas.getBoundingClientRect();
-  if (e.clientX >= rect.left && e.clientX <= rect.right && 
-      e.clientY >= rect.top && e.clientY <= rect.bottom) {
+  if (
+    e.clientX >= rect.left &&
+    e.clientX <= rect.right &&
+    e.clientY >= rect.top &&
+    e.clientY <= rect.bottom
+  ) {
     const pos = screenToCanvas(e.clientX, e.clientY);
     mousePos = { x: pos.x.toFixed(2), y: pos.y.toFixed(2) };
     // Hover
     const hit = hitTest(pos.x, pos.y);
     hoveredShapeId = hit;
   }
-  
+
   if (dragState?.active) {
     const dx = (e.clientX - dragState.startX) / canvasScale;
     const dy = (e.clientY - dragState.startY) / canvasScale;
@@ -355,7 +579,12 @@ function hitTest(x: number, y: number): string | null {
     const shape = shapes[i];
     if (shape.kind === 'line' && shape.points.length > 0) {
       const bounds = getShapeBounds(shape);
-      if (x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY) {
+      if (
+        x >= bounds.minX &&
+        x <= bounds.maxX &&
+        y >= bounds.minY &&
+        y <= bounds.maxY
+      ) {
         return shape.id;
       }
     }
@@ -364,7 +593,10 @@ function hitTest(x: number, y: number): string | null {
 }
 
 function getShapeBounds(shape: Shape) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const p of shape.points) {
     if (p.x < minX) minX = p.x;
     if (p.x > maxX) maxX = p.x;
@@ -375,25 +607,28 @@ function getShapeBounds(shape: Shape) {
 }
 
 function getShapeCenter(shapeId: string) {
-  const shape = shapes.find(s => s.id === shapeId);
+  const shape = shapes.find((s) => s.id === shapeId);
   if (!shape) return { x: 0, y: 0 };
   const bounds = getShapeBounds(shape);
-  return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+  return {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+  };
 }
 
 function moveShape(shapeId: string, x: number, y: number) {
-  const shape = shapes.find(s => s.id === shapeId);
+  const shape = shapes.find((s) => s.id === shapeId);
   if (!shape) return;
   const center = getShapeCenter(shapeId);
   const dx = x - center.x;
   const dy = y - center.y;
-  shape.points = shape.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+  shape.points = shape.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
   shapes = [...shapes]; // trigger reactivity
 }
 
 function deleteSelected() {
   if (selectedShapeIds.size > 0) {
-    shapes = shapes.filter(s => !selectedShapeIds.has(s.id));
+    shapes = shapes.filter((s) => !selectedShapeIds.has(s.id));
     selectedShapeIds.clear();
   }
 }
@@ -406,32 +641,37 @@ function drawCanvas() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  
+
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
-  
+
   // Clear
   ctx.fillStyle = '#0b131f';
   ctx.fillRect(0, 0, rect.width, rect.height);
-  
+
   // Grid
   drawGrid(ctx, rect);
-  
+
   // Transform
   ctx.save();
   ctx.translate(canvasOffset.x, canvasOffset.y);
   ctx.scale(canvasScale, canvasScale);
-  
+
   // Draw shapes
   for (const shape of shapes) {
-    drawShape(ctx, shape, selectedShapeIds.has(shape.id), hoveredShapeId === shape.id);
+    drawShape(
+      ctx,
+      shape,
+      selectedShapeIds.has(shape.id),
+      hoveredShapeId === shape.id,
+    );
   }
-  
+
   ctx.restore();
-  
+
   // Coordinates
   ctx.fillStyle = '#6b7b8d';
   ctx.font = '11px var(--font-mono, monospace)';
@@ -442,10 +682,10 @@ function drawGrid(ctx: CanvasRenderingContext2D, rect: DOMRect) {
   const gridSize = 10 * canvasScale; // 10mm grid
   const offsetX = canvasOffset.x % gridSize;
   const offsetY = canvasOffset.y % gridSize;
-  
+
   ctx.strokeStyle = 'rgba(148,190,255,0.04)';
   ctx.lineWidth = 1;
-  
+
   for (let x = offsetX; x < rect.width; x += gridSize) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -460,17 +700,22 @@ function drawGrid(ctx: CanvasRenderingContext2D, rect: DOMRect) {
   }
 }
 
-function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, selected: boolean, hovered: boolean) {
+function drawShape(
+  ctx: CanvasRenderingContext2D,
+  shape: Shape,
+  selected: boolean,
+  hovered: boolean,
+) {
   if (shape.points.length === 0) return;
-  
+
   const isSelected = selected;
   const isHovered = hovered && !isSelected;
-  
-  ctx.strokeStyle = isSelected ? '#4cc2ff' : (isHovered ? '#ffd86b' : '#b9d7ee');
+
+  ctx.strokeStyle = isSelected ? '#4cc2ff' : isHovered ? '#ffd86b' : '#b9d7ee';
   ctx.lineWidth = isSelected ? 2 / canvasScale : 1 / canvasScale;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  
+
   ctx.beginPath();
   ctx.moveTo(shape.points[0].x, shape.points[0].y);
   for (let i = 1; i < shape.points.length; i++) {
@@ -478,14 +723,24 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, selected: boolea
   }
   if (shape.closed) ctx.closePath();
   ctx.stroke();
-  
+
   // Selection handles
   if (isSelected) {
     const bounds = getShapeBounds(shape);
     ctx.fillStyle = '#4cc2ff';
     const handleSize = 6 / canvasScale;
-    [[bounds.minX, bounds.minY], [bounds.maxX, bounds.minY], [bounds.minX, bounds.maxY], [bounds.maxX, bounds.maxY]].forEach(([hx, hy]) => {
-      ctx.fillRect(hx - handleSize/2, hy - handleSize/2, handleSize, handleSize);
+    [
+      [bounds.minX, bounds.minY],
+      [bounds.maxX, bounds.minY],
+      [bounds.minX, bounds.maxY],
+      [bounds.maxX, bounds.maxY],
+    ].forEach(([hx, hy]) => {
+      ctx.fillRect(
+        hx - handleSize / 2,
+        hy - handleSize / 2,
+        handleSize,
+        handleSize,
+      );
     });
   }
 }
@@ -493,18 +748,18 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, selected: boolea
 // Lifecycle
 onMount(() => {
   loadLibrary();
-  
+
   // Render loop
   function render() {
     drawCanvas();
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
-  
+
   // Event listeners
   window.addEventListener('mousemove', handleWindowMouseMove);
   window.addEventListener('mouseup', handleWindowMouseUp);
-  
+
   return () => {
     window.removeEventListener('mousemove', handleWindowMouseMove);
     window.removeEventListener('mouseup', handleWindowMouseUp);
@@ -523,8 +778,9 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 // Computed
-const filteredItems = $derived(libraryItems.filter(i => i.category === activeCategory));
-
+const filteredItems = $derived(
+  libraryItems.filter((i) => i.category === activeCategory),
+);
 </script>
 
 <div class="design-view" onkeydown={handleKeyDown}>

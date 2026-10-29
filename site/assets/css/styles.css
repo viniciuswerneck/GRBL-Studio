@@ -424,7 +424,9 @@ code {
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
   color-scheme: dark;
   white-space: nowrap;
 }
@@ -479,7 +481,7 @@ code {
   display: none;
 }
 
-.custom-select-options li {
+.custom-select-options [role="option"] {
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--text);
@@ -489,13 +491,13 @@ code {
   transition: background 0.15s ease;
 }
 
-.custom-select-options li:hover,
-.custom-select-options li[aria-selected="true"] {
+.custom-select-options [role="option"]:hover,
+.custom-select-options [role="option"][aria-selected="true"] {
   background: rgba(76, 194, 255, 0.12);
   color: var(--accent);
 }
 
-.custom-select-options li:focus {
+.custom-select-options [role="option"]:focus {
   outline: none;
   background: rgba(76, 194, 255, 0.12);
   color: var(--accent);

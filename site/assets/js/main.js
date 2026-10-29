@@ -37,7 +37,7 @@
   // Apply translations to elements with data-i18n
   function applyTranslations() {
     const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach(el => {
+    elements.forEach((el) => {
       const key = el.getAttribute('data-i18n');
       const value = getNested(translations, key);
       if (value !== undefined) {
@@ -53,7 +53,7 @@
 
     // Handle aria-label translations
     const ariaElements = document.querySelectorAll('[data-i18n-aria]');
-    ariaElements.forEach(el => {
+    ariaElements.forEach((el) => {
       const key = el.getAttribute('data-i18n-aria');
       const value = getNested(translations, key);
       if (value !== undefined) {
@@ -74,7 +74,9 @@
     document.title = meta.title || document.title;
 
     const updateMeta = (name, content, isProperty = false) => {
-      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+      const selector = isProperty
+        ? `meta[property="${name}"]`
+        : `meta[name="${name}"]`;
       const el = document.querySelector(selector);
       if (el && content) el.setAttribute('content', content);
     };
@@ -99,26 +101,30 @@
       const t = translations;
 
       // Update SoftwareApplication
-      const software = graph.find(item => item['@type'] === 'SoftwareApplication');
+      const software = graph.find(
+        (item) => item['@type'] === 'SoftwareApplication',
+      );
       if (software) {
-        software.description = t.recursos?.cards?.[0]?.desc || software.description;
+        software.description =
+          t.recursos?.cards?.[0]?.desc || software.description;
         software.inLanguage = currentLang;
-        software.featureList = t.recursos?.cards?.map(c => c.title) || software.featureList;
+        software.featureList =
+          t.recursos?.cards?.map((c) => c.title) || software.featureList;
       }
 
       // Update WebSite
-      const website = graph.find(item => item['@type'] === 'WebSite');
+      const website = graph.find((item) => item['@type'] === 'WebSite');
       if (website) {
         website.inLanguage = currentLang;
       }
 
       // Update FAQPage
-      const faq = graph.find(item => item['@type'] === 'FAQPage');
+      const faq = graph.find((item) => item['@type'] === 'FAQPage');
       if (faq && t.faq?.questions) {
-        faq.mainEntity = t.faq.questions.map(q => ({
+        faq.mainEntity = t.faq.questions.map((q) => ({
           '@type': 'Question',
           name: q.q,
-          acceptedAnswer: { '@type': 'Answer', text: q.a }
+          acceptedAnswer: { '@type': 'Answer', text: q.a },
         }));
       }
 
@@ -130,20 +136,29 @@
 
   function updateHtmlLang() {
     root.setAttribute('lang', currentLang);
-    const alternateLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
-    alternateLinks.forEach(link => {
+    const alternateLinks = document.querySelectorAll(
+      'link[rel="alternate"][hreflang]',
+    );
+    alternateLinks.forEach((link) => {
       const hreflang = link.getAttribute('hreflang');
       if (hreflang === 'pt-BR') {
         link.setAttribute('href', `https://grblstudio.werneck.dev.br/`);
       } else if (hreflang === 'x-default') {
         link.setAttribute('href', `https://grblstudio.werneck.dev.br/`);
       } else {
-        link.setAttribute('href', `https://grblstudio.werneck.dev.br/?lang=${hreflang}`);
+        link.setAttribute(
+          'href',
+          `https://grblstudio.werneck.dev.br/?lang=${hreflang}`,
+        );
       }
     });
     // Update og:locale
     const ogLocale = document.querySelector('meta[property="og:locale"]');
-    if (ogLocale) ogLocale.setAttribute('content', currentLang === 'pt-BR' ? 'pt_BR' : currentLang);
+    if (ogLocale)
+      ogLocale.setAttribute(
+        'content',
+        currentLang === 'pt-BR' ? 'pt_BR' : currentLang,
+      );
   }
 
   // Language switcher (custom dropdown)
@@ -158,13 +173,17 @@
     if (langTrigger && langOptions) {
       langTrigger.setAttribute('aria-expanded', 'true');
       langOptions.hidden = false;
+      const selected =
+        langOptions.querySelector('[aria-selected="true"]') ||
+        langOptions.querySelector('[role="option"]');
+      if (selected) selected.focus();
     }
   }
 
   function setLangOptionSelected(value) {
     if (!langOptions) return;
     const options = langOptions.querySelectorAll('[role="option"]');
-    options.forEach(opt => {
+    options.forEach((opt) => {
       const selected = opt.dataset.value === value;
       opt.setAttribute('aria-selected', selected);
     });
@@ -173,7 +192,10 @@
       const valueEl = langTrigger.querySelector('.custom-select-value');
       if (valueEl && selectedOpt) {
         valueEl.textContent = selectedOpt.textContent;
-        valueEl.setAttribute('data-i18n', selectedOpt.getAttribute('data-i18n') || '');
+        valueEl.setAttribute(
+          'data-i18n',
+          selectedOpt.getAttribute('data-i18n') || '',
+        );
       }
     }
     // Sync hidden select
@@ -215,15 +237,21 @@
     // Keyboard navigation
     langOptions.addEventListener('keydown', (e) => {
       const options = [...langOptions.querySelectorAll('[role="option"]')];
-      const focusedIndex = options.findIndex(opt => opt === document.activeElement);
+      const focusedIndex = options.findIndex(
+        (opt) => opt === document.activeElement,
+      );
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        const nextIndex = focusedIndex >= 0 ? (focusedIndex + 1) % options.length : 0;
+        const nextIndex =
+          focusedIndex >= 0 ? (focusedIndex + 1) % options.length : 0;
         options[nextIndex].focus();
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        const nextIndex = focusedIndex >= 0 ? (focusedIndex - 1 + options.length) % options.length : options.length - 1;
+        const nextIndex =
+          focusedIndex >= 0
+            ? (focusedIndex - 1 + options.length) % options.length
+            : options.length - 1;
         options[nextIndex].focus();
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -267,7 +295,10 @@
     body.classList.remove('nav-open');
     if (menuBtn) {
       menuBtn.setAttribute('aria-expanded', 'false');
-      menuBtn.setAttribute('aria-label', getNested(translations, 'headerActions.menuAbrir') || 'Abrir menu');
+      menuBtn.setAttribute(
+        'aria-label',
+        getNested(translations, 'headerActions.menuAbrir') || 'Abrir menu',
+      );
       const use = menuBtn.querySelector('use');
       if (use) use.setAttribute('href', '#icon-menu');
     }
@@ -277,7 +308,10 @@
     body.classList.add('nav-open');
     if (menuBtn) {
       menuBtn.setAttribute('aria-expanded', 'true');
-      menuBtn.setAttribute('aria-label', getNested(translations, 'headerActions.menuFechar') || 'Fechar menu');
+      menuBtn.setAttribute(
+        'aria-label',
+        getNested(translations, 'headerActions.menuFechar') || 'Fechar menu',
+      );
       const use = menuBtn.querySelector('use');
       if (use) use.setAttribute('href', '#icon-close');
     }
@@ -397,12 +431,18 @@
 
   const copyButtons = [...document.querySelectorAll('.copy-btn')];
   for (const button of copyButtons) {
-    const defaultLabel = button.getAttribute('aria-label') || getNested(translations, 'copyBtn') || 'Copiar';
+    const defaultLabel =
+      button.getAttribute('aria-label') ||
+      getNested(translations, 'copyBtn') ||
+      'Copiar';
     let resetTimer;
 
     const markCopied = () => {
       button.classList.add('is-copied');
-      button.setAttribute('aria-label', getNested(translations, 'copied') || 'Copiado!');
+      button.setAttribute(
+        'aria-label',
+        getNested(translations, 'copied') || 'Copiado!',
+      );
       const use = button.querySelector('use');
       if (use) use.setAttribute('href', '#icon-check');
       window.clearTimeout(resetTimer);
@@ -441,7 +481,9 @@
   }
 
   if (root.classList.contains('js')) {
-    document.documentElement.style.scrollBehavior = reduceMotion.matches ? 'auto' : '';
+    document.documentElement.style.scrollBehavior = reduceMotion.matches
+      ? 'auto'
+      : '';
   }
 
   // Initialize i18n

@@ -49,7 +49,14 @@
   },
   "compat": {
     "label": "Compatible con",
-    "brands": ["Ortur", "TwoTrees", "COMGO", "NEJE", "xTool D1/P2", "Genérico GRBL"],
+    "brands": [
+      "Ortur",
+      "TwoTrees",
+      "COMGO",
+      "NEJE",
+      "xTool D1/P2",
+      "Genérico GRBL"
+    ],
     "note": "Perfiles listos para 30+ modelos. Marcas citadas solo para indicar compatibilidad.",
     "link": "Ver detalles"
   },
@@ -62,17 +69,29 @@
       {
         "title": "Conecta de verdad",
         "desc": "Puerto serial USB o Wi-Fi/TCP con ESP8266/ESP32. La app lee firmware, recorrido y límites y los usa en el pre-vuelo.",
-        "items": ["30+ perfiles listos", "Detección de desconexión", "Reconexión opcional"]
+        "items": [
+          "30+ perfiles listos",
+          "Detección de desconexión",
+          "Reconexión opcional"
+        ]
       },
       {
         "title": "Respeta el buffer",
         "desc": "Ventana de envío por conteo de caracteres (bytes), no por líneas. Cada ok libera espacio — nada de write masivo que trabe la máquina.",
-        "items": ["Buffer RX respetado", "Comandos de tiempo real correctos", "Pausa, reanudación y emergencia"]
+        "items": [
+          "Buffer RX respetado",
+          "Comandos de tiempo real correctos",
+          "Pausa, reanudación y emergencia"
+        ]
       },
       {
         "title": "Todo en el mismo sitio",
         "desc": "De la idea a la pieza terminada sin salir de la app. Vector, imagen, QR, código de barras, materiales, preview, simulación y producción.",
-        "items": ["Editor vectorial integrado", "QR, 2D y código de barras", "Presets y tests de material"]
+        "items": [
+          "Editor vectorial integrado",
+          "QR, 2D y código de barras",
+          "Presets y tests de material"
+        ]
       }
     ],
     "proof": {
@@ -181,12 +200,42 @@
         ["Linux", "Nativo", "Vía Wine/Mono", "Nativo"],
         ["Código abierto", "Sí", "Sí", "No"],
         ["Editor vectorial", "Completo", "No", "Completo"],
-        ["Importación de imagen", "Line-to-line, dithering, centerline, vectorización", "Básico (dithering)", "Avanzado"],
-        ["QR / 2D / Código de barras", "QR, Data Matrix, PDF417, Aztec + 9 simbologías 1D", "No", "QR + Data Matrix"],
-        ["Materiales y tests", "Catálogo, presets, test de material, test de foco", "No", "Biblioteca de materiales"],
-        ["Cola de producción", "Persistente, N×, pausa entre piezas, reanudación", "No", "Parcial"],
-        ["Overrides tiempo real", "Feed, velocidad, potencia, pausa/reanudación, emergencia", "Feed/velocidad", "Completo"],
-        ["Temas e idiomas", "11 temas · PT/EN/ES", "1 tema · EN", "Temas · Varios idiomas"],
+        [
+          "Importación de imagen",
+          "Line-to-line, dithering, centerline, vectorización",
+          "Básico (dithering)",
+          "Avanzado"
+        ],
+        [
+          "QR / 2D / Código de barras",
+          "QR, Data Matrix, PDF417, Aztec + 9 simbologías 1D",
+          "No",
+          "QR + Data Matrix"
+        ],
+        [
+          "Materiales y tests",
+          "Catálogo, presets, test de material, test de foco",
+          "No",
+          "Biblioteca de materiales"
+        ],
+        [
+          "Cola de producción",
+          "Persistente, N×, pausa entre piezas, reanudación",
+          "No",
+          "Parcial"
+        ],
+        [
+          "Overrides tiempo real",
+          "Feed, velocidad, potencia, pausa/reanudación, emergencia",
+          "Feed/velocidad",
+          "Completo"
+        ],
+        [
+          "Temas e idiomas",
+          "11 temas · PT/EN/ES",
+          "1 tema · EN",
+          "Temas · Varios idiomas"
+        ],
         ["Telemetría / nube", "Cero", "Cero", "Opcional"]
       ],
       "legend": {
@@ -242,10 +291,7 @@
       "title": "Paquete .deb",
       "desc": "Instala en el sistema (Debian/Ubuntu/Mint/Pop/…), integra al menú de aplicaciones y gestiona dependencias vía apt.",
       "badge": "Integrado",
-      "commands": [
-        "sudo apt install ./grbl-studio_*_amd64.deb",
-        "grbl-studio"
-      ],
+      "commands": ["sudo apt install ./grbl-studio_*_amd64.deb", "grbl-studio"],
       "note": "Añade tu usuario al grupo dialout para acceder al puerto serie:"
     },
     "permissions": {

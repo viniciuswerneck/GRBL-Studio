@@ -3206,7 +3206,9 @@ test.describe('GRBL Studio — presets de material (P2.12/RF-IMG-8)', () => {
     }
   });
   test('fila grava os dois programas em sequência no emulador', async () => {
-    const emulator = await startGrblTcp();
+    // `ok` atrasado: sem isso a fila termina antes de a barra "Parar fila"
+    // aparecer, tornando a asserção de visibilidade flaky.
+    const emulator = await startGrblTcp(undefined, 120);
     const dir = mkdtempSync(path.join(tmpdir(), 'grbl-queue-'));
     const fileA = path.join(dir, 'peca-a.gcode');
     const fileB = path.join(dir, 'peca-b.gcode');

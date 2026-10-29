@@ -49,7 +49,14 @@
   },
   "compat": {
     "label": "Compatible with",
-    "brands": ["Ortur", "TwoTrees", "COMGO", "NEJE", "xTool D1/P2", "Generic GRBL"],
+    "brands": [
+      "Ortur",
+      "TwoTrees",
+      "COMGO",
+      "NEJE",
+      "xTool D1/P2",
+      "Generic GRBL"
+    ],
     "note": "Ready profiles for 30+ models. Brands mentioned only to indicate compatibility.",
     "link": "View details"
   },
@@ -62,17 +69,29 @@
       {
         "title": "Really connects",
         "desc": "USB serial or Wi-Fi/TCP with ESP8266/ESP32. The app reads firmware, work area, and limits and uses them in pre-flight.",
-        "items": ["30+ ready profiles", "Disconnection detection", "Optional reconnection"]
+        "items": [
+          "30+ ready profiles",
+          "Disconnection detection",
+          "Optional reconnection"
+        ]
       },
       {
         "title": "Respects the buffer",
         "desc": "Character-counted send window (bytes), not lines. Each ok frees space — no bulk writes that lock the machine.",
-        "items": ["RX buffer respected", "Real-time commands correct", "Pause, resume, emergency"]
+        "items": [
+          "RX buffer respected",
+          "Real-time commands correct",
+          "Pause, resume, emergency"
+        ]
       },
       {
         "title": "Everything in one place",
         "desc": "From idea to finished part without leaving the app. Vector, image, QR, barcode, materials, preview, simulation, production.",
-        "items": ["Integrated vector editor", "QR, 2D & barcode", "Presets & material tests"]
+        "items": [
+          "Integrated vector editor",
+          "QR, 2D & barcode",
+          "Presets & material tests"
+        ]
       }
     ],
     "proof": {
@@ -181,12 +200,42 @@
         ["Linux", "Native", "Via Wine/Mono", "Native"],
         ["Open source", "Yes", "Yes", "No"],
         ["Vector editor", "Full", "No", "Full"],
-        ["Image import", "Line-to-line, dithering, centerline, vectorization", "Basic (dithering)", "Advanced"],
-        ["QR / 2D / Barcode", "QR, Data Matrix, PDF417, Aztec + 9 1D symbologies", "No", "QR + Data Matrix"],
-        ["Materials & tests", "Catalog, presets, material test, focus test", "No", "Materials library"],
-        ["Production queue", "Persistent, N×, inter-piece pause, resume", "No", "Partial"],
-        ["Real-time overrides", "Feed, velocity, power, pause/resume, emergency", "Feed/velocity", "Full"],
-        ["Themes & languages", "11 themes · PT/EN/ES", "1 theme · EN", "Themes · Many languages"],
+        [
+          "Image import",
+          "Line-to-line, dithering, centerline, vectorization",
+          "Basic (dithering)",
+          "Advanced"
+        ],
+        [
+          "QR / 2D / Barcode",
+          "QR, Data Matrix, PDF417, Aztec + 9 1D symbologies",
+          "No",
+          "QR + Data Matrix"
+        ],
+        [
+          "Materials & tests",
+          "Catalog, presets, material test, focus test",
+          "No",
+          "Materials library"
+        ],
+        [
+          "Production queue",
+          "Persistent, N×, inter-piece pause, resume",
+          "No",
+          "Partial"
+        ],
+        [
+          "Real-time overrides",
+          "Feed, velocity, power, pause/resume, emergency",
+          "Feed/velocity",
+          "Full"
+        ],
+        [
+          "Themes & languages",
+          "11 themes · PT/EN/ES",
+          "1 theme · EN",
+          "Themes · Many languages"
+        ],
         ["Telemetry / cloud", "Zero", "Zero", "Optional"]
       ],
       "legend": {
@@ -242,19 +291,13 @@
       "title": ".deb package",
       "desc": "Installs system-wide (Debian/Ubuntu/Mint/Pop/…), integrates into app menu, manages deps via apt.",
       "badge": "Integrated",
-      "commands": [
-        "sudo apt install ./grbl-studio_*_amd64.deb",
-        "grbl-studio"
-      ],
+      "commands": ["sudo apt install ./grbl-studio_*_amd64.deb", "grbl-studio"],
       "note": "Add your user to the dialout group for serial port access:"
     },
     "permissions": {
       "title": "Serial port permission",
       "desc": "So the app can access /dev/ttyUSB* or /dev/ttyACM*:",
-      "commands": [
-        "sudo usermod -aG dialout $USER",
-        "# logout/login or reboot"
-      ]
+      "commands": ["sudo usermod -aG dialout $USER", "# logout/login or reboot"]
     },
     "flatpak": {
       "title": "Flatpak (coming soon)",

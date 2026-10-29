@@ -805,7 +805,7 @@ export function registerIpc(
       if (typeof itemId !== 'string') throw new Error('itemId required');
       const item = libraryItem(itemId);
       if (!item) throw new Error('Unknown symbol: ' + itemId);
-      
+
       const { libraryShapes } = await import('../shared/shapesLibrary.js');
       const shapes = libraryShapes(item, sizeMm, x, y);
       return { ok: true, shapes };
